@@ -1,0 +1,231 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Public read for user profiles
+      allow read: if true;
+      
+      // Users can only create/update their own profile
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      
+      // Validate user data structure
+      allow write: if request.resource.data.keys().hasAll(['displayName']) &&
+                     request.resource.data.displayName is string;
+    }
+    
+    // ============================================
+    // POSTS COLLECTION (Portfolio Posts)
+    // ============================================
+    match /posts/{postId} {
+      // Public read for all posts
+      allow read: if true;
+      
+      // Authenticated users can create posts
+      // Support both userId (new) and authorId (legacy)
+      allow create: if request.auth != null &&
+                     (request.resource.data.userId == request.auth.uid ||
+                      request.resource.data.authorId == request.auth.uid) &&
+                     request.resource.data.keys().hasAny(['userId', 'authorId']) &&
+                     request.resource.data.keys().hasAll(['createdAt']) &&
+                     request.resource.data.tags is list &&
+                     request.resource.data.createdAt is timestamp;
+      
+      // Users can update/delete only their own posts
+      // Support both userId (new) and authorId (legacy)
+      allow update, delete: if request.auth != null &&
+                               (resource.data.userId == request.auth.uid ||
+                                resource.data.authorId == request.auth.uid);
+      
+      // Validate tags array
+      allow write: if !request.resource.data.keys().hasAny(['tags']) ||
+                     (request.resource.data.tags is list && 
+                      request.resource.data.tags.size() <= 20);
+                      
+      // Validate location object if present
+      allow write: if !request.resource.data.keys().hasAny(['location']) ||
+                     (request.resource.data.location is map);
+                     
+      // Validate shopLinked boolean
+      allow write: if !request.resource.data.keys().hasAny(['shopLinked']) ||
+                     (request.resource.data.shopLinked is bool);
+    }
+    
+    // ============================================
+    // SHOP ITEMS COLLECTION
+    // ============================================
+    match /shopItems/{itemId} {
+      // Public read for shop items
+      allow read: if true;
+      
+      // Authenticated users can create shop items
+      // Support both userId (new) and authorId (legacy)
+      allow create: if request.auth != null &&
+                     (request.resource.data.userId == request.auth.uid ||
+                      request.resource.data.authorId == request.auth.uid) &&
+                     request.resource.data.keys().hasAny(['userId', 'authorId']) &&
+                     request.resource.data.keys().hasAll(['title', 'createdAt']) &&
+                     request.resource.data.createdAt is timestamp;
+      
+      // Users can update/delete only their own shop items
+      // Support both userId (new) and authorId (legacy)
+      allow update, delete: if request.auth != null &&
+                               (resource.data.userId == request.auth.uid ||
+                                resource.data.authorId == request.auth.uid);
+      
+      // Validate print Sizes array if present
+      allow write: if !request.resource.data.keys().hasAny(['printSizes']) ||
+                     (request.resource.data.printSizes is list);
+      
+      // Validate available boolean
+      allow write: if !request.resource.data.keys().hasAny(['available']) ||
+                     (request.resource.data.available is bool);
+    }
+    
+    // ============================================
+    // FOLLOWS COLLECTION
+    // ============================================
+    match /follows/{followId} {
+      // Public read for follows
+      allow read: if true;
+      
+      // Users can create follow documents
+      allow create: if request.auth != null &&
+                     request.resource.data.followerId == request.auth.uid &&
+                     request.resource.data.keys().hasAll(['followerId', 'followingId', 'createdAt']) &&
+                     request.resource.data.followerId is string &&
+                     request.resource.data.followingId is string &&
+                     request.resource.data.createdAt is timestamp;
+      
+      // Users can only delete their own follow documents
+      allow delete: if request.auth != null &&
+                     resource.data.followerId == request.auth.uid;
+    }
+    
+    // ============================================
+    // LIKES COLLECTION
+    // ============================================
+    match /likes/{likeId} {
+      // Public read for likes
+      allow read: if true;
+      
+      // Users can create/delete their own likes
+      allow create: if request.auth != null &&
+                     request.resource.data.userId == request.auth.uid &&
+                     request.resource.data.keys().hasAll(['userId', 'postId', 'createdAt']) &&
+                     request.resource.data.userId is string &&
+                     request.resource.data.postId is string &&
+                     request.resource.data.createdAt is timestamp;
+      
+      allow delete: if request.auth != null &&
+                     resource.data.userId == request.auth.uid;
+    }
+    
+    // ============================================
+    // ORDERS COLLECTION
+    // ============================================
+    match /orders/{orderId} {
+      // Users can read their own orders
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // No client-side writes allowed (handled by backend)
+      allow write: if false;
+    }
+
+    // ============================================
+    // COLLECTIONS
+    // ============================================
+    match /collections/{collectionId} {
+      // Read based on visibility
+      allow read: if resource.data.visibility == 'public' ||
+                    (request.auth != null && resource.data.ownerId == request.auth.uid) ||
+                    (request.auth != null && resource.data.visibility == 'followers');
+      
+      // Authenticated users can create collections
+      allow create: if request.auth != null &&
+                     request.resource.data.ownerId == request.auth.uid &&
+                     request.resource.data.keys().hasAll(['title', 'ownerId', 'createdAt', 'visibility']) &&
+                     request.resource.data.title is string &&
+                     request.resource.data.ownerId is string &&
+                     request.resource.data.createdAt is timestamp &&
+                     request.resource.data.visibility in ['public', 'followers', 'private'] &&
+                     (!request.resource.data.keys().hasAny(['items']) || request.resource.data.items is list) &&
+                     (!request.resource.data.keys().hasAny(['postRefs']) || request.resource.data.postRefs is list);
+      
+      // Users can update/delete only their own collections
+      allow update, delete: if request.auth != null &&
+                               resource.data.ownerId == request.auth.uid;
+      
+      // Validate items array (max 10 items at creation)
+      allow write: if !request.resource.data.keys().hasAny(['items']) ||
+                     (request.resource.data.items is list &&
+                      request.resource.data.items.size() <= 10);
+      
+      // Validate postRefs array (no limit on posts added)
+      allow write: if !request.resource.data.keys().hasAny(['postRefs']) ||
+                     request.resource.data.postRefs is list;
+      
+      // Validate shopSettings
+      allow write: if !request.resource.data.keys().hasAny(['shopSettings']) ||
+                     (request.resource.data.shopSettings is map &&
+                      request.resource.data.shopSettings.showInStore is bool);
+    }
+
+    // ============================================
+    // EVENTS COLLECTION (Community Calendar)
+    // ============================================
+    match /events/{eventId} {
+      // Public read for all events
+      allow read: if true;
+      
+      // Authenticated users can create events
+      allow create: if request.auth != null &&
+                     request.resource.data.creatorId == request.auth.uid &&
+                     request.resource.data.keys().hasAll(['creatorId', 'title', 'eventDate', 'createdAt']) &&
+                     request.resource.data.title is string &&
+                     request.resource.data.title.size() > 0 &&
+                     request.resource.data.title.size() <= 100 &&
+                     request.resource.data.eventDate is timestamp &&
+                     request.resource.data.createdAt is timestamp;
+      
+      // Users can update/delete only their own events
+      allow update, delete: if request.auth != null &&
+                               resource.data.creatorId == request.auth.uid;
+      
+      // Validate event type
+      allow write: if !request.resource.data.keys().hasAny(['eventType']) ||
+                     request.resource.data.eventType in ['contest', 'seasonal', 'drop', 'user', 'scheduled_post', 'scheduled_collection'];
+      
+      // Validate description
+      allow write: if !request.resource.data.keys().hasAny(['description']) ||
+                     (request.resource.data.description is string &&
+                      request.resource.data.description.size() <= 500);
+      
+      // Validate tags
+      allow write: if !request.resource.data.keys().hasAny(['tags']) ||
+                     (request.resource.data.tags is list &&
+                      request.resource.data.tags.size() <= 10);
+    }
+
+    // ============================================
+    // COMMENTS COLLECTION (Future)
+    // ============================================
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if true;
+      
+      allow create: if request.auth != null &&
+                     request.resource.data.userId == request.auth.uid &&
+                     request.resource.data.keys().hasAll(['userId', 'text', 'createdAt']) &&
+                     request.resource.data.text is string &&
+                     request.resource.data.text.size() > 0 &&
+                     request.resource.data.text.size() <= 500;
+      
+      allow update, delete: if request.auth != null &&
+                               resource.data.userId == request.auth.uid;
+    }
+  }
+}

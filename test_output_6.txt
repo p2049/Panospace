@@ -1,0 +1,331 @@
+
+> panospace@0.0.0 test
+> jest --verbose
+
+PASS tests/Shop.test.js
+  Shop System - Size Normalization
+    √ should filter out invalid print sizes (12 ms)
+    √ should keep all valid sizes (1 ms)
+    √ should handle empty array
+    √ should handle null/undefined (1 ms)
+    √ should normalize labels from config
+  Shop System - Price Calculations
+    √ should calculate minimum price correctly (1 ms)
+    √ should handle single size
+    √ should return 0 for empty array
+    √ should calculate 60/40 split correctly (2 ms)
+    √ should handle decimal prices (1 ms)
+  Shop System - Item Filtering
+    √ should filter out items with no valid sizes
+    √ should normalize sizes in filtered items
+  Shop System - Edge Cases
+    √ should handle items with empty printSizes array
+    √ should handle items with null printSizes (2 ms)
+    √ should preserve other item properties (1 ms)
+  Shop System - Regression Tests
+    √ should not allow sizes not in PRINT_SIZES config
+    √ should handle duplicate size IDs (1 ms)
+
+PASS tests/simple.test.js
+  √ simple math (12 ms)
+
+FAIL tests/login_import.test.jsx
+  ● Test suite failed to run
+
+    ReferenceError: TextEncoder is not defined
+
+    [0m [90m 1 |[39m [36mimport[39m [33mReact[39m[33m,[39m { useRef[33m,[39m useState } [36mfrom[39m [32m'react'[39m[33m;[39m
+    [31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { [33mLink[39m[33m,[39m useNavigate } [36mfrom[39m [32m'react-router-dom'[39m[33m;[39m
+     [90m   |[39m [31m[1m^[22m[39m
+     [90m 3 |[39m [36mimport[39m { useAuth } [36mfrom[39m [32m'../context/AuthContext'[39m[33m;[39m
+     [90m 4 |[39m
+     [90m 5 |[39m [36mconst[39m [33mLogin[39m [33m=[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (node_modules/react-router/dist/development/index.js:337:31)
+      at Object.<anonymous> (node_modules/react-router/dist/development/dom-export.js:40:20)
+      at Object.<anonymous> (node_modules/react-router-dom/dist/index.js:38:18)
+      at Object.require (src/pages/Login.jsx:2:1)
+      at Object.require (tests/login_import.test.jsx:1:1)
+
+  console.warn
+    [2025-11-21T23:14:11.915Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initialization of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
+
+    [0m [90m 27 |[39m [36mexport[39m [36mconst[39m db [33m=[39m getFirestore(app)[33m;[39m
+     [90m 28 |[39m [36mexport[39m [36mconst[39m storage [33m=[39m getStorage(app)[33m;[39m
+    [31m[1m>[22m[39m[90m 29 |[39m [36mexport[39m [36mconst[39m analytics [33m=[39m getAnalytics(app)[33m;[39m
+     [90m    |[39m                                      [31m[1m^[22m[39m
+     [90m 30 |[39m [36mexport[39m [36mconst[39m functions [33m=[39m getFunctions(app)[33m;[39m
+     [90m 31 |[39m
+     [90m 32 |[39m [90m// Connect to emulators if in development[39m[0m
+
+      at Logger.defaultLogHandler [as _logHandler] (node_modules/@firebase/logger/src/logger.ts:115:57)
+      at Logger.warn (node_modules/@firebase/logger/src/logger.ts:206:10)
+      at validateIndexedDB (node_modules/@firebase/analytics/src/initialize-analytics.ts:40:12)
+      at _initializeAnalytics (node_modules/@firebase/analytics/src/initialize-analytics.ts:107:51)
+      at factory (node_modules/@firebase/analytics/src/factory.ts:224:38)
+      at Component.instanceFactory (node_modules/@firebase/analytics/src/index.ts:58:16)
+      at Provider.getOrInitializeService (node_modules/@firebase/component/src/provider.ts:318:33)
+      at Provider.initialize (node_modules/@firebase/component/src/provider.ts:242:27)
+      at initializeAnalytics (node_modules/@firebase/analytics/src/api.ts:112:47)
+      at getAnalytics (node_modules/@firebase/analytics/src/api.ts:85:10)
+      at Object.<anonymous> (src/firebase.js:29:38)
+      at Object.require (src/context/AuthContext.jsx:2:1)
+      at Object.require (tests/auth_context.test.jsx:1:1)
+
+  console.info
+    WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.
+
+      at emitEmulatorWarning (node_modules/@firebase/auth/src/core/auth/emulator.ts:171:13)
+
+  console.log
+    Connected to Firebase Emulators
+
+      at Object.log (src/firebase.js:38:13)
+
+PASS tests/auth_context.test.jsx
+  √ imports AuthProvider (12 ms)
+
+PASS tests/react_sanity.test.jsx
+  √ renders react component (39 ms)
+
+  console.warn
+    [2025-11-21T23:14:12.302Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initialization of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
+
+    [0m [90m 27 |[39m [36mexport[39m [36mconst[39m db [33m=[39m getFirestore(app)[33m;[39m
+     [90m 28 |[39m [36mexport[39m [36mconst[39m storage [33m=[39m getStorage(app)[33m;[39m
+    [31m[1m>[22m[39m[90m 29 |[39m [36mexport[39m [36mconst[39m analytics [33m=[39m getAnalytics(app)[33m;[39m
+     [90m    |[39m                                      [31m[1m^[22m[39m
+     [90m 30 |[39m [36mexport[39m [36mconst[39m functions [33m=[39m getFunctions(app)[33m;[39m
+     [90m 31 |[39m
+     [90m 32 |[39m [90m// Connect to emulators if in development[39m[0m
+
+      at Logger.defaultLogHandler [as _logHandler] (node_modules/@firebase/logger/src/logger.ts:115:57)
+      at Logger.warn (node_modules/@firebase/logger/src/logger.ts:206:10)
+      at validateIndexedDB (node_modules/@firebase/analytics/src/initialize-analytics.ts:40:12)
+      at _initializeAnalytics (node_modules/@firebase/analytics/src/initialize-analytics.ts:107:51)
+      at factory (node_modules/@firebase/analytics/src/factory.ts:224:38)
+      at Component.instanceFactory (node_modules/@firebase/analytics/src/index.ts:58:16)
+      at Provider.getOrInitializeService (node_modules/@firebase/component/src/provider.ts:318:33)
+      at Provider.initialize (node_modules/@firebase/component/src/provider.ts:242:27)
+      at initializeAnalytics (node_modules/@firebase/analytics/src/api.ts:112:47)
+      at getAnalytics (node_modules/@firebase/analytics/src/api.ts:85:10)
+      at Object.<anonymous> (src/firebase.js:29:38)
+      at Object.require (src/pages/Search.jsx:6:1)
+      at Object.require (tests/Search.test.jsx:3:1)
+
+  console.warn
+    [2025-11-21T23:14:12.360Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initialization of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
+
+    [0m [90m 27 |[39m [36mexport[39m [36mconst[39m db [33m=[39m getFirestore(app)[33m;[39m
+     [90m 28 |[39m [36mexport[39m [36mconst[39m storage [33m=[39m getStorage(app)[33m;[39m
+    [31m[1m>[22m[39m[90m 29 |[39m [36mexport[39m [36mconst[39m analytics [33m=[39m getAnalytics(app)[33m;[39m
+     [90m    |[39m                                      [31m[1m^[22m[39m
+     [90m 30 |[39m [36mexport[39m [36mconst[39m functions [33m=[39m getFunctions(app)[33m;[39m
+     [90m 31 |[39m
+     [90m 32 |[39m [90m// Connect to emulators if in development[39m[0m
+
+      at Logger.defaultLogHandler [as _logHandler] (node_modules/@firebase/logger/src/logger.ts:115:57)
+      at Logger.warn (node_modules/@firebase/logger/src/logger.ts:206:10)
+      at validateIndexedDB (node_modules/@firebase/analytics/src/initialize-analytics.ts:40:12)
+      at _initializeAnalytics (node_modules/@firebase/analytics/src/initialize-analytics.ts:107:51)
+      at factory (node_modules/@firebase/analytics/src/factory.ts:224:38)
+      at Component.instanceFactory (node_modules/@firebase/analytics/src/index.ts:58:16)
+      at Provider.getOrInitializeService (node_modules/@firebase/component/src/provider.ts:318:33)
+      at Provider.initialize (node_modules/@firebase/component/src/provider.ts:242:27)
+      at initializeAnalytics (node_modules/@firebase/analytics/src/api.ts:112:47)
+      at getAnalytics (node_modules/@firebase/analytics/src/api.ts:85:10)
+      at Object.<anonymous> (src/firebase.js:29:38)
+      at Object.require (src/hooks/useCreatePost.js:3:1)
+      at Object.require (src/pages/CreatePost.jsx:3:1)
+      at Object.require (tests/CreatePost.test.jsx:3:1)
+
+  console.warn
+    [2025-11-21T23:14:12.360Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initialization of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
+
+    [0m [90m 27 |[39m [36mexport[39m [36mconst[39m db [33m=[39m getFirestore(app)[33m;[39m
+     [90m 28 |[39m [36mexport[39m [36mconst[39m storage [33m=[39m getStorage(app)[33m;[39m
+    [31m[1m>[22m[39m[90m 29 |[39m [36mexport[39m [36mconst[39m analytics [33m=[39m getAnalytics(app)[33m;[39m
+     [90m    |[39m                                      [31m[1m^[22m[39m
+     [90m 30 |[39m [36mexport[39m [36mconst[39m functions [33m=[39m getFunctions(app)[33m;[39m
+     [90m 31 |[39m
+     [90m 32 |[39m [90m// Connect to emulators if in development[39m[0m
+
+      at Logger.defaultLogHandler [as _logHandler] (node_modules/@firebase/logger/src/logger.ts:115:57)
+      at Logger.warn (node_modules/@firebase/logger/src/logger.ts:206:10)
+      at validateIndexedDB (node_modules/@firebase/analytics/src/initialize-analytics.ts:40:12)
+      at _initializeAnalytics (node_modules/@firebase/analytics/src/initialize-analytics.ts:107:51)
+      at factory (node_modules/@firebase/analytics/src/factory.ts:224:38)
+      at Component.instanceFactory (node_modules/@firebase/analytics/src/index.ts:58:16)
+      at Provider.getOrInitializeService (node_modules/@firebase/component/src/provider.ts:318:33)
+      at Provider.initialize (node_modules/@firebase/component/src/provider.ts:242:27)
+      at initializeAnalytics (node_modules/@firebase/analytics/src/api.ts:112:47)
+      at getAnalytics (node_modules/@firebase/analytics/src/api.ts:85:10)
+      at Object.<anonymous> (src/firebase.js:29:38)
+      at Object.require (src/pages/Profile.jsx:3:1)
+      at Object.require (tests/Profile.test.jsx:3:1)
+
+  console.info
+    WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.
+
+      at emitEmulatorWarning (node_modules/@firebase/auth/src/core/auth/emulator.ts:171:13)
+
+  console.warn
+    [2025-11-21T23:14:12.382Z]  @firebase/analytics: Analytics: IndexedDB unavailable or restricted in this environment. Wrap initialization of analytics in analytics.isSupported() to prevent initialization in unsupported environments. Details: IndexedDB is not available in this environment. (analytics/indexeddb-unavailable).
+
+    [0m [90m 27 |[39m [36mexport[39m [36mconst[39m db [33m=[39m getFirestore(app)[33m;[39m
+     [90m 28 |[39m [36mexport[39m [36mconst[39m storage [33m=[39m getStorage(app)[33m;[39m
+    [31m[1m>[22m[39m[90m 29 |[39m [36mexport[39m [36mconst[39m analytics [33m=[39m getAnalytics(app)[33m;[39m
+     [90m    |[39m                                      [31m[1m^[22m[39m
+     [90m 30 |[39m [36mexport[39m [36mconst[39m functions [33m=[39m getFunctions(app)[33m;[39m
+     [90m 31 |[39m
+     [90m 32 |[39m [90m// Connect to emulators if in development[39m[0m
+
+      at Logger.defaultLogHandler [as _logHandler] (node_modules/@firebase/logger/src/logger.ts:115:57)
+      at Logger.warn (node_modules/@firebase/logger/src/logger.ts:206:10)
+      at validateIndexedDB (node_modules/@firebase/analytics/src/initialize-analytics.ts:40:12)
+      at _initializeAnalytics (node_modules/@firebase/analytics/src/initialize-analytics.ts:107:51)
+      at factory (node_modules/@firebase/analytics/src/factory.ts:224:38)
+      at Component.instanceFactory (node_modules/@firebase/analytics/src/index.ts:58:16)
+      at Provider.getOrInitializeService (node_modules/@firebase/component/src/provider.ts:318:33)
+      at Provider.initialize (node_modules/@firebase/component/src/provider.ts:242:27)
+      at initializeAnalytics (node_modules/@firebase/analytics/src/api.ts:112:47)
+      at getAnalytics (node_modules/@firebase/analytics/src/api.ts:85:10)
+      at Object.<anonymous> (src/firebase.js:29:38)
+      at Object.require (src/pages/Feed.jsx:2:1)
+      at Object.require (tests/Feed.test.jsx:3:1)
+
+FAIL tests/Search.test.jsx
+  ● Test suite failed to run
+
+    TypeError: (0 , _firestore.connectFirestoreEmulator) is not a function
+
+    [0m [90m 33 |[39m [36mif[39m (window[33m.[39mlocation[33m.[39mhostname [33m===[39m [32m"localhost"[39m) {
+     [90m 34 |[39m     connectAuthEmulator(auth[33m,[39m [32m"http://localhost:9099"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 35 |[39m     connectFirestoreEmulator(db[33m,[39m [32m"localhost"[39m[33m,[39m [35m8080[39m)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 36 |[39m     connectStorageEmulator(storage[33m,[39m [32m"localhost"[39m[33m,[39m [35m9199[39m)[33m;[39m
+     [90m 37 |[39m     connectFunctionsEmulator(functions[33m,[39m [32m"localhost"[39m[33m,[39m [35m5001[39m)[33m;[39m
+     [90m 38 |[39m     console[33m.[39mlog([32m"Connected to Firebase Emulators"[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/firebase.js:35:29)
+      at Object.require (src/pages/Search.jsx:6:1)
+      at Object.require (tests/Search.test.jsx:3:1)
+
+  console.info
+    WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.
+
+      at emitEmulatorWarning (node_modules/@firebase/auth/src/core/auth/emulator.ts:171:13)
+
+  console.info
+    WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.
+
+      at emitEmulatorWarning (node_modules/@firebase/auth/src/core/auth/emulator.ts:171:13)
+
+  console.info
+    WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.
+
+      at emitEmulatorWarning (node_modules/@firebase/auth/src/core/auth/emulator.ts:171:13)
+
+FAIL tests/Profile.test.jsx
+  ● Test suite failed to run
+
+    TypeError: (0 , _firestore.connectFirestoreEmulator) is not a function
+
+    [0m [90m 33 |[39m [36mif[39m (window[33m.[39mlocation[33m.[39mhostname [33m===[39m [32m"localhost"[39m) {
+     [90m 34 |[39m     connectAuthEmulator(auth[33m,[39m [32m"http://localhost:9099"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 35 |[39m     connectFirestoreEmulator(db[33m,[39m [32m"localhost"[39m[33m,[39m [35m8080[39m)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 36 |[39m     connectStorageEmulator(storage[33m,[39m [32m"localhost"[39m[33m,[39m [35m9199[39m)[33m;[39m
+     [90m 37 |[39m     connectFunctionsEmulator(functions[33m,[39m [32m"localhost"[39m[33m,[39m [35m5001[39m)[33m;[39m
+     [90m 38 |[39m     console[33m.[39mlog([32m"Connected to Firebase Emulators"[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/firebase.js:35:29)
+      at Object.require (src/pages/Profile.jsx:3:1)
+      at Object.require (tests/Profile.test.jsx:3:1)
+
+FAIL tests/CreatePost.test.jsx
+  ● Test suite failed to run
+
+    TypeError: (0 , _firestore.connectFirestoreEmulator) is not a function
+
+    [0m [90m 33 |[39m [36mif[39m (window[33m.[39mlocation[33m.[39mhostname [33m===[39m [32m"localhost"[39m) {
+     [90m 34 |[39m     connectAuthEmulator(auth[33m,[39m [32m"http://localhost:9099"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 35 |[39m     connectFirestoreEmulator(db[33m,[39m [32m"localhost"[39m[33m,[39m [35m8080[39m)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 36 |[39m     connectStorageEmulator(storage[33m,[39m [32m"localhost"[39m[33m,[39m [35m9199[39m)[33m;[39m
+     [90m 37 |[39m     connectFunctionsEmulator(functions[33m,[39m [32m"localhost"[39m[33m,[39m [35m5001[39m)[33m;[39m
+     [90m 38 |[39m     console[33m.[39mlog([32m"Connected to Firebase Emulators"[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (src/firebase.js:35:29)
+      at Object.require (src/hooks/useCreatePost.js:3:1)
+      at Object.require (src/pages/CreatePost.jsx:3:1)
+      at Object.require (tests/CreatePost.test.jsx:3:1)
+
+FAIL tests/Feed.test.jsx
+  ● Test suite failed to run
+
+    TypeError: Cannot use 'in' operator to search for '_delegate' in undefined
+
+    [0m [90m 33 |[39m [36mif[39m (window[33m.[39mlocation[33m.[39mhostname [33m===[39m [32m"localhost"[39m) {
+     [90m 34 |[39m     connectAuthEmulator(auth[33m,[39m [32m"http://localhost:9099"[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 35 |[39m     connectFirestoreEmulator(db[33m,[39m [32m"localhost"[39m[33m,[39m [35m8080[39m)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 36 |[39m     connectStorageEmulator(storage[33m,[39m [32m"localhost"[39m[33m,[39m [35m9199[39m)[33m;[39m
+     [90m 37 |[39m     connectFunctionsEmulator(functions[33m,[39m [32m"localhost"[39m[33m,[39m [35m5001[39m)[33m;[39m
+     [90m 38 |[39m     console[33m.[39mlog([32m"Connected to Firebase Emulators"[39m)[33m;[39m[0m
+
+      at obj (node_modules/@firebase/firestore/src/util/input_validation.ts:156:22)
+      at __PRIVATE_cast (node_modules/@firebase/firestore/src/lite-api/database.ts:330:15)
+      at Object.<anonymous> (src/firebase.js:35:29)
+      at Object.require (src/pages/Feed.jsx:2:1)
+      at Object.require (tests/Feed.test.jsx:3:1)
+
+FAIL tests/Signup.test.jsx
+  Signup Component
+    √ renders signup form (128 ms)
+    √ handles successful signup (68 ms)
+    √ shows error when passwords do not match (48 ms)
+    √ displays error on signup failure (46 ms)
+    × passes accessibility check (80 ms)
+
+  ● Signup Component › passes accessibility check
+
+    TypeError: expect(...).toHaveNoViolations is not a function
+
+    [0m [90m  96 |[39m         [36mconst[39m { container } [33m=[39m render([33m<[39m[33mSignup[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m  97 |[39m         [36mconst[39m results [33m=[39m [36mawait[39m axe(container)[33m;[39m
+    [31m[1m>[22m[39m[90m  98 |[39m         expect(results)[33m.[39mtoHaveNoViolations()[33m;[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m  99 |[39m     }[33m,[39m [35m10000[39m)[33m;[39m
+     [90m 100 |[39m })[33m;[39m
+     [90m 101 |[39m[0m
+
+      at Object.toHaveNoViolations (tests/Signup.test.jsx:98:25)
+
+FAIL tests/Login.test.jsx
+  Login Component
+    √ renders login form (133 ms)
+    √ handles email/password login (46 ms)
+    √ handles google login (39 ms)
+    √ displays error on login failure (46 ms)
+    × passes accessibility check (81 ms)
+
+  ● Login Component › passes accessibility check
+
+    TypeError: expect(...).toHaveNoViolations is not a function
+
+    [0m [90m 82 |[39m         [36mconst[39m { container } [33m=[39m render([33m<[39m[33mLogin[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m 83 |[39m         [36mconst[39m results [33m=[39m [36mawait[39m axe(container)[33m;[39m
+    [31m[1m>[22m[39m[90m 84 |[39m         expect(results)[33m.[39mtoHaveNoViolations()[33m;[39m
+     [90m    |[39m                         [31m[1m^[22m[39m
+     [90m 85 |[39m     })[33m;[39m
+     [90m 86 |[39m })[33m;[39m
+     [90m 87 |[39m[0m
+
+      at Object.toHaveNoViolations (tests/Login.test.jsx:84:25)
+
+Test Suites: 7 failed, 4 passed, 11 total
+Tests:       2 failed, 28 passed, 30 total
+Snapshots:   0 total
+Time:        5.089 s
+Ran all test suites.

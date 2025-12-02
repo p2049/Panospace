@@ -1,0 +1,468 @@
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const algoliasearch = require('algoliasearch');
+const axios = require('axios');
+
+// Initialize Firebase Admin
+admin.initializeApp();
+
+// Initialize Algolia
+const ALGOLIA_APP_ID = functions.config().algolia?.app_id || process.env.ALGOLIA_APP_ID || '';
+const ALGOLIA_ADMIN_KEY = functions.config().algolia?.admin_key || process.env.ALGOLIA_ADMIN_KEY || '';
+const ALGOLIA_INDEX_NAME = 'posts';
+
+let algoliaClient = null;
+let algoliaIndex = null;
+
+if (ALGOLIA_APP_ID && ALGOLIA_ADMIN_KEY) {
+    algoliaClient = algoliasearch(ALGOLIA_APP_ID, ALGOLIA_ADMIN_KEY);
+    algoliaIndex = algoliaClient.initIndex(ALGOLIA_INDEX_NAME);
+    console.log('Algolia initialized successfully');
+} else {
+    console.warn('Algolia not configured - search features will use Firestore fallback');
+}
+
+// Printful API Configuration
+const PRINTFUL_API_KEY = functions.config().printful?.api_key || process.env.PRINTFUL_API_KEY || '';
+const PRINTFUL_BASE_URL = 'https://api.printful.com';
+
+// Stripe Configuration
+const STRIPE_SECRET_KEY = functions.config().stripe?.secret || process.env.STRIPE_SECRET_KEY || '';
+const stripe = require('stripe')(STRIPE_SECRET_KEY);
+const STRIPE_WEBHOOK_SECRET = functions.config().stripe?.webhook_secret || process.env.STRIPE_WEBHOOK_SECRET || '';
+
+// Estimated Base Costs (in cents) for Margin Calculation
+// Keys match PRINT_SIZES ids in frontend
+const ESTIMATED_BASE_COSTS = {
+    '8x10': 800,   // $8.00
+    '11x14': 1000, // $10.00
+    '16x20': 1400, // $14.00
+    '18x24': 1600, // $16.00
+    '24x36': 2200  // $22.00
+};
+
+// ============================================
+// POST LIFECYCLE TRIGGERS
+// ============================================
+
+exports.onPostCreate = functions.firestore
+    .document('posts/{postId}')
+    .onCreate(async (snap, context) => {
+        const postId = context.params.postId;
+        const postData = snap.data();
+
+        try {
+            console.log(`Post created: ${postId}`);
+
+            const searchKeywords = generateSearchKeywords(
+                postData.title || '',
+                postData.tags || [],
+                postData.authorName || '',
+                postData.location || {}
+            );
+
+            const existingKeywords = postData.searchKeywords || [];
+            const allKeywords = [...new Set([...existingKeywords, ...searchKeywords])];
+
+            await snap.ref.update({
+                searchKeywords: allKeywords,
+                likeCount: 0,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            if (algoliaIndex) {
+                const algoliaObject = {
+                    objectID: postId,
+                    postId: postId,
+                    authorId: postData.authorId,
+                    authorName: postData.authorName || 'Anonymous',
+                    title: postData.title || '',
+                    tags: postData.tags || [],
+                    location: postData.location || {},
+                    imageUrl: postData.imageUrl || '',
+                    createdAt: postData.createdAt?._seconds || Date.now() / 1000,
+                    shopLinked: postData.shopLinked || false
+                };
+                await algoliaIndex.saveObject(algoliaObject);
+            }
+
+            return { success: true };
+        } catch (error) {
+            console.error(`Error processing post create for ${postId}:`, error);
+            return { error: error.message };
+        }
+    });
+
+exports.onPostUpdate = functions.firestore
+    .document('posts/{postId}')
+    .onUpdate(async (change, context) => {
+        const postId = context.params.postId;
+        const newData = change.after.data();
+
+        try {
+            if (algoliaIndex) {
+                const algoliaObject = {
+                    objectID: postId,
+                    postId: postId,
+                    authorId: newData.authorId,
+                    authorName: newData.authorName || 'Anonymous',
+                    title: newData.title || '',
+                    tags: newData.tags || [],
+                    location: newData.location || {},
+                    imageUrl: newData.imageUrl || '',
+                    createdAt: newData.createdAt?._seconds || Date.now() / 1000,
+                    shopLinked: newData.shopLinked || false
+                };
+                await algoliaIndex.saveObject(algoliaObject);
+            }
+            return { success: true };
+        } catch (error) {
+            console.error(`Error processing post update for ${postId}:`, error);
+            return { error: error.message };
+        }
+    });
+
+exports.onPostDelete = functions.firestore
+    .document('posts/{postId}')
+    .onDelete(async (snap, context) => {
+        const postId = context.params.postId;
+
+        try {
+            console.log(`Post deleted: ${postId}`);
+
+            if (algoliaIndex) {
+                await algoliaIndex.deleteObject(postId);
+            }
+
+            // Delete associated shop items
+            const db = admin.firestore();
+            const shopItemsRef = db.collection('shopItems');
+
+            // Query by postRef (new) and portfolioPostId (legacy)
+            const q1 = shopItemsRef.where('postRef', '==', db.doc(`posts/${postId}`)).get();
+            const q2 = shopItemsRef.where('portfolioPostId', '==', postId).get();
+
+            const [snap1, snap2] = await Promise.all([q1, q2]);
+
+            const docsToDelete = new Set();
+            snap1.forEach(doc => docsToDelete.add(doc.ref));
+            snap2.forEach(doc => docsToDelete.add(doc.ref));
+
+            const deletePromises = Array.from(docsToDelete).map(ref => ref.delete());
+            await Promise.all(deletePromises);
+
+            console.log(`Deleted ${deletePromises.length} associated shop items`);
+
+            return { success: true };
+        } catch (error) {
+            console.error(`Error processing post delete for ${postId}:`, error);
+            return { error: error.message };
+        }
+    });
+
+// ============================================
+// PRINTFUL / POD INTEGRATION
+// ============================================
+
+exports.createPodProduct = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+
+    const { shopItemId, imageUrl, title } = data;
+
+    if (!shopItemId || !imageUrl) {
+        throw new functions.https.HttpsError('invalid-argument', 'shopItemId and imageUrl are required');
+    }
+
+    try {
+        const shopItemDoc = await admin.firestore().collection('shopItems').doc(shopItemId).get();
+
+        if (!shopItemDoc.exists) {
+            throw new functions.https.HttpsError('not-found', 'Shop item not found');
+        }
+
+        const itemData = shopItemDoc.data();
+        if (itemData.ownerId !== context.auth.uid && itemData.authorId !== context.auth.uid) {
+            throw new functions.https.HttpsError('permission-denied', 'User does not own this shop item');
+        }
+
+        // Mock Mode
+        if (!PRINTFUL_API_KEY) {
+            console.warn('Printful API not configured - using mock mode');
+            const mockProductId = `mock_${shopItemId}_${Date.now()}`;
+
+            // Create mock variants based on the item's print sizes
+            const mockVariants = (itemData.printSizes || []).map(size => ({
+                sizeId: size.id,
+                variantId: `${mockProductId}_${size.id}`,
+                price: size.price, // Dollar price
+                label: size.label
+            }));
+
+            await admin.firestore().collection('shopItems').doc(shopItemId).update({
+                podProductId: mockProductId,
+                podProvider: 'printful_mock',
+                podVariants: mockVariants,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            return { success: true, productId: mockProductId, mode: 'mock' };
+        }
+
+        // Real Printful Mode
+        // 1. Create Sync Product
+        const response = await axios.post(
+            `${PRINTFUL_BASE_URL}/store/products`,
+            {
+                sync_product: {
+                    name: title || 'Art Print',
+                    thumbnail: imageUrl
+                },
+                sync_variants: (itemData.printSizes || []).map(size => ({
+                    retail_price: String(size.price), // Printful expects string "24.99"
+                    variant_id: getPrintfulVariantId(size.id), // Helper to map our ID to Printful Catalog ID
+                    files: [{ url: imageUrl }]
+                }))
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const productId = response.data.result.id;
+
+        await admin.firestore().collection('shopItems').doc(shopItemId).update({
+            podProductId: productId,
+            podProvider: 'printful',
+            podVariants: response.data.result.sync_variants.map(v => ({
+                variantId: v.id, // This is the Sync Variant ID needed for orders
+                price: v.retail_price,
+                label: v.name,
+                sizeId: mapVariantIdToSizeId(v.variant_id) // Helper to map back if needed, or rely on order
+            })),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        return { success: true, productId: productId, mode: 'production' };
+
+    } catch (error) {
+        console.error('Error creating POD product:', error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+// ============================================
+// STRIPE INTEGRATION
+// ============================================
+
+exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be logged in');
+    }
+
+    // Note: 'postId' here is effectively the shopItemId in the new system
+    const { postId, size, imageUrl, title, origin } = data;
+    const shopItemId = postId;
+    const baseUrl = origin || 'http://localhost:5173';
+
+    try {
+        // 1. Fetch Shop Item to get accurate price and variant ID
+        const shopItemDoc = await admin.firestore().collection('shopItems').doc(shopItemId).get();
+        if (!shopItemDoc.exists) {
+            throw new functions.https.HttpsError('not-found', 'Shop item not found');
+        }
+        const shopItem = shopItemDoc.data();
+
+        // 2. Find the selected size configuration
+        // We expect size to be an ID like '8x10', '11x14'
+        const sizeConfig = (shopItem.printSizes || []).find(s => s.id === size);
+        if (!sizeConfig) {
+            throw new functions.https.HttpsError('invalid-argument', `Invalid size selected: ${size}`);
+        }
+
+        // 3. Find the POD variant ID (for fulfillment)
+        // Try to match by sizeId first, then label
+        const podVariant = (shopItem.podVariants || []).find(v => v.sizeId === size || v.label === sizeConfig.label);
+        const variantId = podVariant ? podVariant.variantId : `mock_${size}`;
+
+        // 4. Calculate Price in Cents
+        const unitAmountCents = Math.round(Number(sizeConfig.price) * 100);
+
+        // 5. Create Stripe Session
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{
+                price_data: {
+                    currency: 'usd',
+                    product_data: {
+                        name: `${title || 'Art Print'} - ${sizeConfig.label}`,
+                        images: [imageUrl],
+                        metadata: {
+                            shopItemId: shopItemId,
+                            sizeId: size
+                        }
+                    },
+                    unit_amount: unitAmountCents,
+                },
+                quantity: 1,
+            }],
+            mode: 'payment',
+            success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/shop/${shopItemId}`,
+            metadata: {
+                userId: context.auth.uid,
+                authorId: shopItem.authorId,
+                shopItemId: shopItemId,
+                sizeId: size,
+                imageUrl: imageUrl,
+                variantId: variantId
+            }
+        });
+
+        return { sessionId: session.id };
+    } catch (error) {
+        console.error('Stripe session creation failed:', error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        const { shopItemId, sizeId, userId, authorId, imageUrl, variantId } = session.metadata;
+
+        try {
+            // Calculate Financials
+            const revenueCents = session.amount_total;
+            const baseCostCents = ESTIMATED_BASE_COSTS[sizeId] || 1500;
+            const grossProfitCents = Math.max(0, revenueCents - baseCostCents);
+
+            // 60% to Artist, 40% to Platform (applied to Margin)
+            const artistPayoutCents = Math.floor(grossProfitCents * 0.60);
+            const platformFeeCents = grossProfitCents - artistPayoutCents;
+
+            // Create Order
+            const orderRef = admin.firestore().collection('orders').doc(session.id);
+            await orderRef.set({
+                userId,
+                authorId,
+                shopItemId,
+                amount: revenueCents,
+                currency: session.currency,
+                baseCost: baseCostCents,
+                grossProfit: grossProfitCents,
+                artistPayout: artistPayoutCents,
+                platformFee: platformFeeCents,
+                payoutStatus: 'pending',
+                status: 'paid',
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                shippingDetails: session.shipping_details,
+                items: [{
+                    sizeId,
+                    imageUrl,
+                    variantId
+                }]
+            });
+
+            // Send to Printful
+            if (PRINTFUL_API_KEY && variantId && !variantId.startsWith('mock_')) {
+                await createPrintfulOrder({
+                    recipient: session.shipping_details,
+                    items: [{ variant_id: variantId, url: imageUrl }]
+                });
+                await orderRef.update({ fulfillmentStatus: 'processing' });
+            } else {
+                await orderRef.update({ fulfillmentStatus: 'mock_fulfilled' });
+            }
+
+            console.log('Order processed successfully:', session.id);
+        } catch (error) {
+            console.error('Error processing order:', error);
+        }
+    }
+
+    res.json({ received: true });
+});
+
+// ============================================
+// HELPERS
+// ============================================
+
+function generateSearchKeywords(title, tags, authorName, location) {
+    const keywords = new Set();
+    const addWords = (str) => (str || '').toLowerCase().split(/\s+/).filter(w => w.length > 1).forEach(w => keywords.add(w));
+
+    addWords(title);
+    addWords(authorName);
+    (tags || []).forEach(tag => {
+        keywords.add(tag.toLowerCase());
+        if (tag.length > 3) {
+            for (let i = 2; i <= tag.length; i++) keywords.add(tag.substring(0, i).toLowerCase());
+        }
+    });
+    if (location) [location.city, location.state, location.country].filter(Boolean).forEach(l => addWords(l));
+
+    return Array.from(keywords).slice(0, 50);
+}
+
+function getPrintfulVariantId(sizeId) {
+    // Map our size IDs to Printful Catalog Variant IDs (Enhanced Matte Paper Poster)
+    const MAP = {
+        '8x10': 1349,
+        '11x14': 1350,
+        '16x20': 1351,
+        '18x24': 1352,
+        '24x36': 1353
+    };
+    return MAP[sizeId] || 1349;
+}
+
+// Helper to reverse map variant ID to size ID (approximate)
+function mapVariantIdToSizeId(variantId) {
+    const MAP = {
+        1349: '8x10',
+        1350: '11x14',
+        1351: '16x20',
+        1352: '18x24',
+        1353: '24x36'
+    };
+    return MAP[variantId] || '8x10';
+}
+
+async function createPrintfulOrder({ recipient, items }) {
+    const shipping = {
+        name: recipient?.name || 'Unknown',
+        address1: recipient?.address?.line1 || '',
+        address2: recipient?.address?.line2 || '',
+        city: recipient?.address?.city || '',
+        state_code: recipient?.address?.state || '',
+        country_code: recipient?.address?.country || '',
+        zip: recipient?.address?.postal_code || ''
+    };
+
+    const response = await axios.post(`${PRINTFUL_BASE_URL}/orders`, {
+        recipient: shipping,
+        items: items.map(item => ({
+            variant_id: item.variant_id,
+            quantity: 1,
+            files: [{ url: item.url }]
+        }))
+    }, {
+        headers: { 'Authorization': `Bearer ${PRINTFUL_API_KEY}` }
+    });
+
+    return response.data.result;
+}

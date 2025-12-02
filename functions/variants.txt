@@ -1,0 +1,17 @@
+FOUND VARIANTS:
+SIZE: A1 (23.3″×33.1″) | ID: 19527 | Price: 16.89
+SIZE: A2 (16.5″×23.3″) | ID: 19528 | Price: 12.64
+SIZE: 10″×10″ | ID: 6239 | Price: 7.89
+SIZE: 11″×14″ | ID: 14125 | Price: 9.64
+SIZE: 12″×12″ | ID: 4464 | Price: 8.89
+SIZE: 12″×16″ | ID: 1349 | Price: 10.89
+SIZE: 12″×18″ | ID: 3876 | Price: 11.39
+SIZE: 14″×14″ | ID: 6240 | Price: 9.89
+SIZE: 16″×16″ | ID: 4465 | Price: 11.64
+SIZE: 16″×20″ | ID: 3877 | Price: 11.89
+SIZE: 18″×18″ | ID: 6242 | Price: 12.39
+SIZE: 18″×24″ | ID: 1 | Price: 12.89
+SIZE: 20″×30″ | ID: 16365 | Price: 12.89
+SIZE: 24″×36″ | ID: 2 | Price: 17.89
+SIZE: 5″×7″ | ID: 16364 | Price: 5.39
+SIZE: 8″×10″ | ID: 4463 | Price: 6.89

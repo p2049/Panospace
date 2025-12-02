@@ -1,0 +1,18 @@
+﻿src/index.ts(9,61): error TS2322: Type '"2024-08-19"' is not assignable to type '"2025-11-17.clover"'.
+src/index.ts(83,62): error TS2345: Argument of type '(req: Request, res: Response<any>) => Promise<Response<any> | undefined>' is not assignable to parameter of type '(req: Request, resp: Response<any>) => void | Promise<void>'.
+  Type 'Promise<Response<any> | undefined>' is not assignable to type 'void | Promise<void>'.
+    Type 'Promise<Response<any> | undefined>' is not assignable to type 'Promise<void>'.
+      Type 'Response<any> | undefined' is not assignable to type 'void'.
+        Type 'Response<any>' is not assignable to type 'void'.
+src/index.ts(83,62): error TS7030: Not all code paths return a value.
+src/iotUpload.ts(4,30): error TS7016: Could not find a declaration file for module 'uuid'. 'C:/Users/pjadl/Panospace/functions/node_modules/uuid/dist/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+src/iotUpload.ts(27,52): error TS2345: Argument of type '(req: Request, res: Response<any>) => Promise<Response<any> | undefined>' is not assignable to parameter of type '(req: Request, resp: Response<any>) => void | Promise<void>'.
+  Type 'Promise<Response<any> | undefined>' is not assignable to type 'void | Promise<void>'.
+    Type 'Promise<Response<any> | undefined>' is not assignable to type 'Promise<void>'.
+      Type 'Response<any> | undefined' is not assignable to type 'void'.
+        Type 'Response<any>' is not assignable to type 'void'.
+src/iotUpload.ts(27,52): error TS7030: Not all code paths return a value.
+src/posts.ts(102,15): error TS6133: 'postId' is declared but its value is never read.
+src/printful.ts(21,7): error TS6133: 'PRINTFUL_PRODUCT_IDS' is declared but its value is never read.
+src/printful.ts(128,16): error TS6133: 'callPrintfulAPI' is declared but its value is never read.
