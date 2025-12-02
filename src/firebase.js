@@ -6,13 +6,13 @@ import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCSQsWG8zdGGAT3BXUjuOh75IO2OO3af5c",
-    authDomain: "panospace-7v4ucn.firebaseapp.com",
-    projectId: "panospace-7v4ucn",
-    storageBucket: "panospace-7v4ucn.firebasestorage.app",
-    messagingSenderId: "832100282894",
-    appId: "1:832100282894:web:371c454407d68d5ef3425f",
-    measurementId: "G-XXSZBBYJWL"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

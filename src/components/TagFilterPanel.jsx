@@ -1,0 +1,150 @@
+import React from 'react';
+import { FaCheck, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+
+const TagFilterPanel = ({
+    category,
+    selectedTags = [],
+    onTagToggle,
+    isExpanded = true,
+    onToggleExpand
+}) => {
+    if (!category) return null;
+
+    return (
+        <>
+            <style>{`
+                .tags-grid::-webkit-scrollbar {
+                    height: 6px;
+                }
+                .tags-grid::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.02);
+                    border-radius: 3px;
+                }
+                .tags-grid::-webkit-scrollbar-thumb {
+                    background: rgba(127, 255, 212, 0.3);
+                    border-radius: 3px;
+                }
+                .tags-grid::-webkit-scrollbar-thumb:hover {
+                    background: rgba(127, 255, 212, 0.5);
+                }
+            `}</style>
+            <div className="tag-filter-panel" style={{
+                marginBottom: '0.8rem',
+                background: 'rgba(0, 0, 0, 0.4)',
+                borderRadius: '16px',
+                border: '1px solid rgba(127, 255, 212, 0.3)',
+                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(127, 255, 212, 0.05)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease'
+            }}>
+                <div
+                    className="panel-header"
+                    onClick={onToggleExpand}
+                    style={{
+                        padding: '0.8rem 1.2rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.03)' : 'none'
+                    }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{
+                            fontWeight: 700,
+                            color: '#fff',
+                            fontFamily: 'var(--font-family-heading)',
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            fontSize: '0.85rem',
+                            textShadow: '0 0 10px rgba(255, 255, 255, 0.1)'
+                        }}>
+                            {category.label}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', letterSpacing: '0.02em' }}>{category.description}</span>
+                    </div>
+                    {isExpanded ?
+                        <FaChevronUp size={10} color="var(--ice-mint)" style={{ opacity: 0.8, filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))' }} /> :
+                        <FaChevronDown size={10} color="rgba(255, 255, 255, 0.3)" />
+                    }
+                </div>
+
+                {isExpanded && (
+                    <div className="panel-content" style={{ padding: '0.5rem 1.2rem 1rem 1.2rem' }}>
+                        <div className="tags-grid" style={{
+                            display: 'grid',
+                            gridTemplateRows: 'repeat(2, min-content)',
+                            gridAutoFlow: 'column',
+                            gridAutoColumns: 'max-content', // Ensure columns fit content
+                            gap: '0.4rem',
+                            rowGap: '0.5rem',
+                            width: '100%',
+                            overflowX: 'auto',
+                            overflowY: 'hidden',
+                            paddingBottom: '0.5rem',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'rgba(127, 255, 212, 0.3) rgba(255, 255, 255, 0.02)',
+                            touchAction: 'auto' // Allow both horizontal and vertical scrolling
+                        }}>
+                            {category.examples.map(tag => {
+                                const isSelected = selectedTags.includes(tag);
+                                return (
+                                    <button
+                                        key={tag}
+                                        onClick={() => onTagToggle(tag)}
+                                        style={{
+                                            background: isSelected ? 'rgba(127, 255, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                                            border: isSelected ? '1px solid var(--ice-mint)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                            color: isSelected ? 'var(--ice-mint)' : '#ffffff',
+                                            padding: '0.45rem 0.75rem',
+                                            borderRadius: '6px',
+                                            fontSize: '0.7rem',
+                                            cursor: 'pointer',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            whiteSpace: 'nowrap',
+                                            fontFamily: 'var(--font-family-mono)',
+                                            letterSpacing: '0.05em',
+                                            textTransform: 'uppercase',
+                                            fontWeight: isSelected ? 600 : 400,
+                                            boxShadow: isSelected ? '0 0 15px rgba(127, 255, 212, 0.15), inset 0 0 10px rgba(127, 255, 212, 0.05)' : 'none',
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            backdropFilter: 'blur(5px)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isSelected) {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                                                e.currentTarget.style.color = '#fff';
+                                                e.currentTarget.style.boxShadow = '0 0 10px rgba(255, 255, 255, 0.05)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isSelected) {
+                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                                                e.currentTarget.style.color = 'rgba(255, 255, 255, 0.95)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }
+                                        }}
+                                    >
+                                        {isSelected && <FaCheck size={9} style={{ filter: 'drop-shadow(0 0 2px var(--ice-mint))' }} />}
+                                        {tag}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+};
+
+export default TagFilterPanel;

@@ -1,6 +1,6 @@
 import { db } from '../firebase';
-import { collection, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
-import type { MonthlyWinner, ContestStats, ContestEntry } from '../types/contest';
+import { collection, query, where, orderBy, limit, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import type { MonthlyWinner, ContestStats, ContestEntry, Contest, FullContestEntry } from '../types/contest';
 
 /**
  * Get current month's top posts for leaderboard
@@ -58,8 +58,8 @@ export async function getPreviousWinner(): Promise<MonthlyWinner | null> {
     const snapshot = await getDocs(q);
     if (snapshot.empty || !snapshot.docs[0]) return null;
 
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as MonthlyWinner;
+    const docSnap = snapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as MonthlyWinner;
 }
 
 /**
@@ -73,7 +73,7 @@ export async function getAllWinners(): Promise<MonthlyWinner[]> {
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MonthlyWinner));
+    return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as MonthlyWinner));
 }
 
 /**
@@ -96,4 +96,47 @@ export async function getContestStats(): Promise<ContestStats> {
         topPosts,
         previousWinner: previousWinner || undefined
     };
+}
+
+/**
+ * Get contest by ID
+ */
+export async function getContest(contestId: string): Promise<Contest | null> {
+    const contestDoc = await getDoc(doc(db, 'contests', contestId));
+    if (!contestDoc.exists()) return null;
+    return { id: contestDoc.id, ...contestDoc.data() } as Contest;
+}
+
+/**
+ * Get contest entries
+ */
+export async function getContestEntries(contestId: string): Promise<FullContestEntry[]> {
+    const q = query(
+        collection(db, `contests/${contestId}/entries`),
+        orderBy('submittedAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as FullContestEntry));
+}
+
+/**
+ * Get contest leaderboard (sorted by valid likes)
+ */
+export async function getContestLeaderboard(contestId: string): Promise<FullContestEntry[]> {
+    const entries = await getContestEntries(contestId);
+
+    // If contest is closed, entries should already have validLikeCount
+    // Otherwise, sort by regular likeCount
+    const sorted = entries.sort((a, b) => {
+        const aLikes = a.validLikeCount ?? a.likeCount ?? 0;
+        const bLikes = b.validLikeCount ?? b.likeCount ?? 0;
+        return bLikes - aLikes;
+    });
+
+    // Assign ranks
+    sorted.forEach((entry, index) => {
+        entry.finalRank = index + 1;
+    });
+
+    return sorted;
 }

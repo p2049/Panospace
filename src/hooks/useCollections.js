@@ -12,7 +12,8 @@ import {
     serverTimestamp,
     orderBy,
     arrayUnion,
-    arrayRemove
+    arrayRemove,
+    limit
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -36,7 +37,8 @@ export const useCollections = (userId) => {
             const collectionsQuery = query(
                 collection(db, 'collections'),
                 where('ownerId', '==', userId),
-                orderBy('createdAt', 'desc')
+                orderBy('createdAt', 'desc'),
+                limit(50) // 🚀 OPTIMIZATION: Prevent unbounded reads
             );
             const snapshot = await getDocs(collectionsQuery);
             const fetchedCollections = snapshot.docs.map(doc => ({

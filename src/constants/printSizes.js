@@ -108,7 +108,7 @@ export const STICKER_SIZES = [
  * @param {string} tier - 'economy' or 'premium'
  * @returns {object} Pricing breakdown
  */
-export const calculateTieredPricing = (sizeId, tier = PRINT_TIERS.ECONOMY) => {
+export const calculateTieredPricing = (sizeId, tier = PRINT_TIERS.ECONOMY, isUltra = false) => {
     const sizeDef = PRINT_SIZES.find(s => s.id === sizeId);
     if (!sizeDef) return null;
 
@@ -116,7 +116,9 @@ export const calculateTieredPricing = (sizeId, tier = PRINT_TIERS.ECONOMY) => {
     if (!data) return null;
 
     const baseCost = data.baseCost;
-    const artistProfit = baseCost * 0.25; // 25% of base cost
+
+    // Standard markup for pricing calculation (keeps retail price consistent)
+    const standardMarkup = baseCost * 0.25;
 
     let finalPrice = 0;
 
@@ -124,14 +126,18 @@ export const calculateTieredPricing = (sizeId, tier = PRINT_TIERS.ECONOMY) => {
         // Economy Rule: 90% of Redbubble
         finalPrice = data.redbubblePrice * 0.90;
     } else {
-        // Premium Rule: (Base + Artist) * 1.7 OR 90% of RB Premium (whichever is higher)
-        const markupPrice = (baseCost + artistProfit) * 1.7;
+        // Premium Rule: (Base + StandardMarkup) * 1.7 OR 90% of RB Premium
+        const markupPrice = (baseCost + standardMarkup) * 1.7;
         const rbCompPrice = data.redbubblePrice * 0.90;
         finalPrice = Math.max(markupPrice, rbCompPrice);
     }
 
-    // Platform gets the rest
-    const platformProfit = finalPrice - (baseCost + artistProfit);
+    // Profit Split Logic
+    const totalProfit = Math.max(0, finalPrice - baseCost);
+    const artistShare = isUltra ? 0.75 : 0.60; // 75% for Ultra, 60% for Standard
+
+    const artistProfit = totalProfit * artistShare;
+    const platformProfit = totalProfit * (1 - artistShare);
 
     return {
         sizeId,

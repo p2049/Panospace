@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getContestStats, getAllWinners } from '../services/contestService';
 import type { ContestStats, MonthlyWinner } from '../types/contest';
-import { FaTrophy, FaCrown, FaFire, FaInfoCircle } from 'react-icons/fa';
+import { FaTrophy, FaCrown, FaFire, FaInfoCircle, FaPlus } from 'react-icons/fa';
+import SmartImage from '../components/SmartImage';
+import { useAuth } from '../context/AuthContext';
+import { getUserTier, USER_TIERS } from '../services/monetizationService';
+import PaywallModal from '../components/monetization/PaywallModal';
 
 const Contest = () => {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const [stats, setStats] = useState<ContestStats | null>(null);
     const [winners, setWinners] = useState<MonthlyWinner[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showPaywall, setShowPaywall] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -28,6 +34,21 @@ const Contest = () => {
         fetchData();
     }, []);
 
+    const handleHostClick = async () => {
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
+
+        const tier = await getUserTier(currentUser.uid);
+        if (tier === USER_TIERS.ULTRA || tier === USER_TIERS.PARTNER) {
+            // Navigate to the unified event creator with contest type pre-selected
+            navigate('/event/create?type=contest');
+        } else {
+            setShowPaywall(true);
+        }
+    };
+
     if (loading) {
         return (
             <div style={{ minHeight: '100vh', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -41,7 +62,40 @@ const Contest = () => {
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem' }}>
             {/* Hero Section */}
-            <div style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)', padding: '4rem 2rem', textAlign: 'center', borderBottom: '2px solid #7FFFD4' }}>
+            <div style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)', padding: '4rem 2rem', textAlign: 'center', borderBottom: '2px solid #7FFFD4', position: 'relative' }}>
+
+                {/* Host Button (Top Right) */}
+                <button
+                    onClick={handleHostClick}
+                    style={{
+                        position: 'absolute',
+                        top: '2rem',
+                        right: '2rem',
+                        background: 'rgba(255, 215, 0, 0.15)',
+                        border: '1px solid #FFD700',
+                        color: '#FFD700',
+                        padding: '0.8rem 1.5rem',
+                        borderRadius: '30px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s',
+                        zIndex: 10
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                >
+                    <FaPlus /> Host a Contest
+                </button>
+
                 <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📸</div>
                 <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '1rem', background: 'linear-gradient(90deg, #7FFFD4, #FFD700)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     Photo of the Month
@@ -113,7 +167,8 @@ const Contest = () => {
                                     border: entry.rank <= 3 ? '2px solid #FFD700' : '1px solid #222'
                                 }}
                             >
-                                <img src={entry.imageUrl} alt={entry.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                {/* @ts-ignore */}
+                                <SmartImage src={entry.imageUrl} alt={entry.title} />
                                 <div style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', background: entry.rank === 1 ? '#FFD700' : '#000', color: entry.rank === 1 ? '#000' : '#fff', padding: '0.3rem 0.6rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.9rem' }}>
                                     #{entry.rank}
                                 </div>
@@ -145,7 +200,8 @@ const Contest = () => {
                         }}
                     >
                         <div style={{ aspectRatio: '16/9', position: 'relative' }}>
-                            <img src={stats.previousWinner.imageUrl} alt={stats.previousWinner.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {/* @ts-ignore */}
+                            <SmartImage src={stats.previousWinner.imageUrl} alt={stats.previousWinner.title} />
                             <div style={{ position: 'absolute', top: '1rem', right: '1rem', background: '#FFD700', color: '#000', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <FaTrophy /> WINNER
                             </div>
@@ -179,19 +235,18 @@ const Contest = () => {
                                     borderRadius: '12px',
                                     overflow: 'hidden',
                                     cursor: 'pointer',
-                                    transition: 'transform 0.2s, border-color 0.2s',
+                                    transition: 'border-color 0.2s',
                                 }}
                                 onMouseEnter={e => {
-                                    e.currentTarget.style.transform = 'scale(1.02)';
                                     e.currentTarget.style.borderColor = '#7FFFD4';
                                 }}
                                 onMouseLeave={e => {
-                                    e.currentTarget.style.transform = 'scale(1)';
                                     e.currentTarget.style.borderColor = '#333';
                                 }}
                             >
                                 <div style={{ aspectRatio: '1', position: 'relative' }}>
-                                    <img src={winner.imageUrl} alt={winner.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    {/* @ts-ignore */}
+                                    <SmartImage src={winner.imageUrl} alt={winner.title} />
                                     <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: '#FFD700', color: '#000', padding: '0.3rem 0.6rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.8rem' }}>
                                         <FaTrophy />
                                     </div>
@@ -206,6 +261,14 @@ const Contest = () => {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {/* Modals */}
+            {showPaywall && (
+                <PaywallModal
+                    featureName="Host Contests"
+                    onClose={() => setShowPaywall(false)}
+                />
             )}
         </div>
     );

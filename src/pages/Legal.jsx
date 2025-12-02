@@ -93,6 +93,9 @@ const Legal = () => {
                 <button onClick={() => setActiveTab('privacy')} style={tabStyle(activeTab === 'privacy')}>
                     <FaUserShield /> Privacy Policy
                 </button>
+                <button onClick={() => setActiveTab('contact')} style={tabStyle(activeTab === 'contact')}>
+                    <FaShieldAlt /> Contact
+                </button>
             </div>
 
             <div style={sectionStyle}>
@@ -189,8 +192,30 @@ const Legal = () => {
                         <h3 style={h3Style}>3. Data Security</h3>
                         <p>We use industry-standard security measures to protect your information. However, no method of transmission over the internet is 100% secure.</p>
 
-                        <h3 style={h3Style}>4. Your Rights</h3>
+                        <h3 style={h3Style}>4. Cookies & Tracking</h3>
+                        <p>We use cookies solely for authentication and session management. We do not use third-party tracking cookies for advertising purposes.</p>
+
+                        <h3 style={h3Style}>5. Your Rights</h3>
                         <p>You have the right to access, correct, or delete your personal data. You can request account deletion at any time through your profile settings.</p>
+                    </div>
+                )}
+
+                {activeTab === 'contact' && (
+                    <div className="fade-in">
+                        <h2 style={h2Style}>Contact & Support</h2>
+                        <p>If you have any questions, concerns, or need to report a violation, please contact us.</p>
+
+                        <div style={{ marginTop: '2rem', background: '#111', padding: '1.5rem', borderRadius: '12px', border: '1px solid #333' }}>
+                            <h3 style={{ ...h3Style, marginTop: 0 }}>General Support</h3>
+                            <p style={{ color: '#aaa' }}>For account issues, bugs, or feedback:</p>
+                            <a href="mailto:support@panospace.app" style={{ color: '#fff', textDecoration: 'underline', fontSize: '1.1rem' }}>support@panospace.app</a>
+                        </div>
+
+                        <div style={{ marginTop: '1rem', background: '#111', padding: '1.5rem', borderRadius: '12px', border: '1px solid #333' }}>
+                            <h3 style={{ ...h3Style, marginTop: 0 }}>Legal & Safety</h3>
+                            <p style={{ color: '#aaa' }}>For DMCA takedowns, safety reports, or legal inquiries:</p>
+                            <a href="mailto:legal@panospace.app" style={{ color: '#fff', textDecoration: 'underline', fontSize: '1.1rem' }}>legal@panospace.app</a>
+                        </div>
                     </div>
                 )}
             </div>

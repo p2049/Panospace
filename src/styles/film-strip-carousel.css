@@ -1,0 +1,174 @@
+/**
+ * FILM STRIP CAROUSEL - COHESIVE LAYOUT
+ * 
+ * A single container that wraps sprocket borders and images together.
+ * Proportions: 8% top border, 84% images, 8% bottom border
+ */
+
+/* Wrapper centers the entire film strip */
+.film-strip-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+
+/* Main container - single cohesive film strip */
+.film-strip-container {
+    width: min(90vw, 1400px);
+    height: 70vh;
+    margin: 32px auto;
+    display: flex;
+    flex-direction: column;
+    background: #0a0a0a;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Sprocket borders - 8% each */
+.film-strip-border {
+    height: 8%;
+    background: #0a0a0a;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #000;
+    flex-shrink: 0;
+
+    /* Subtle film grain texture */
+    background-image:
+        linear-gradient(180deg, #0d0d0d 0%, #080808 50%, #0d0d0d 100%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    background-blend-mode: normal;
+}
+
+.film-strip-border-top {
+    border-bottom: 2px solid #000;
+}
+
+.film-strip-border-bottom {
+    border-top: 2px solid #000;
+}
+
+/* Sprocket holes pattern */
+.sprocket-holes {
+    width: 100%;
+    height: 60%;
+    /* 60% of border height */
+    display: block;
+    opacity: 0.7;
+
+    /* Rounded rectangular holes using SVG pattern */
+    background-image: url("data:image/svg+xml,%3Csvg width='24' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='20%25' width='16' height='60%25' rx='2' ry='2' fill='%23ffffff' fill-opacity='0.7'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: center;
+    background-size: 24px 100%;
+}
+
+/* Image row - 84% of container */
+.film-strip-images-row {
+    height: 84%;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    background: #000;
+    gap: 16px;
+    padding: 0 16px;
+    align-items: center;
+
+    /* Smooth momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+}
+
+/* Individual film frame */
+.film-frame {
+    flex: 0 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    position: relative;
+}
+
+/* Frame image */
+.film-frame-image {
+    height: 100%;
+    width: auto;
+    object-fit: cover;
+    display: block;
+    user-select: none;
+    border-radius: 2px;
+
+    /* Subtle film aesthetic */
+    filter: contrast(1.02) brightness(0.99);
+}
+
+/* Text slide fallback */
+.film-frame-text {
+    min-width: 300px;
+    max-width: 500px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: sans-serif;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Scrollbar styling - minimal */
+.film-strip-images-row::-webkit-scrollbar {
+    height: 6px;
+}
+
+.film-strip-images-row::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.film-strip-images-row::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.film-strip-images-row::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .film-strip-container {
+        height: 60vh;
+    }
+}
+
+@media (max-width: 768px) {
+    .film-strip-container {
+        height: 55vh;
+        margin: 24px auto;
+    }
+
+    .film-strip-images-row {
+        gap: 12px;
+        padding: 0 12px;
+    }
+}
+
+/* No sprockets variant */
+.film-strip-wrapper.no-sprockets .film-strip-container {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.film-strip-wrapper.no-sprockets .film-strip-images-row {
+    height: 100%;
+    background: transparent;
+}

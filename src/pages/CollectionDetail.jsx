@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, getDocs, query, where, collection as firestoreCollection } from 'firebase/firestore';
+import { doc, getDoc, getDocs, query, where, collection as firestoreCollection, documentId, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useCollection, useCreateCollection } from '../hooks/useCollections';
 import { FaArrowLeft, FaLock, FaUsers, FaGlobe, FaStore, FaEdit, FaShoppingCart, FaPlus } from 'react-icons/fa';
+import SmartImage from '../components/SmartImage';
 
 const CollectionDetail = () => {
     const { id } = useParams();
@@ -43,16 +44,25 @@ const CollectionDetail = () => {
                     });
                 }
 
-                // 2. Add images from referenced posts
+                // 2. Add images from referenced posts (BATCH FETCH)
                 if (collection.postRefs && collection.postRefs.length > 0) {
-                    const postPromises = collection.postRefs.map(postId =>
-                        getDoc(doc(db, 'posts', postId))
-                    );
+                    // Batch fetch posts in groups of 10 (Firestore 'in' limit)
+                    const batchSize = 10;
+                    const batches = [];
 
-                    const postDocs = await Promise.all(postPromises);
+                    for (let i = 0; i < collection.postRefs.length; i += batchSize) {
+                        const batch = collection.postRefs.slice(i, i + batchSize);
+                        const q = query(
+                            firestoreCollection(db, 'posts'),
+                            where(documentId(), 'in', batch)
+                        );
+                        batches.push(getDocs(q));
+                    }
 
-                    postDocs.forEach(postDoc => {
-                        if (postDoc.exists()) {
+                    const batchResults = await Promise.all(batches);
+
+                    batchResults.forEach(snapshot => {
+                        snapshot.docs.forEach(postDoc => {
                             const postData = postDoc.data();
                             const postImages = postData.images || postData.items || [];
 
@@ -66,7 +76,7 @@ const CollectionDetail = () => {
                                     aspectRatio: img.aspectRatio
                                 });
                             });
-                        }
+                        });
                     });
                 }
 
@@ -80,11 +90,13 @@ const CollectionDetail = () => {
                     }
                 }
 
-                // Fetch user's posts if owner
+                // Fetch user's posts if owner (with limit)
                 if (currentUser && collection.ownerId === currentUser.uid) {
                     const postsQuery = query(
                         firestoreCollection(db, 'posts'),
-                        where('authorId', '==', currentUser.uid)
+                        where('authorId', '==', currentUser.uid),
+                        orderBy('createdAt', 'desc'),
+                        limit(20)
                     );
                     const postsSnap = await getDocs(postsQuery);
                     const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -191,10 +203,9 @@ const CollectionDetail = () => {
                             overflow: 'hidden',
                             marginBottom: '2rem'
                         }}>
-                            <img
+                            <SmartImage
                                 src={collection.coverImage}
                                 alt={collection.title}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                         </div>
                     )}
@@ -328,13 +339,10 @@ const CollectionDetail = () => {
                                         border: '1px solid #222',
                                         position: 'relative'
                                     }}
-                                    onMouseEnter={(e) => image.type === 'post-image' && (e.currentTarget.style.transform = 'scale(1.02)')}
-                                    onMouseLeave={(e) => image.type === 'post-image' && (e.currentTarget.style.transform = 'scale(1)')}
                                 >
-                                    <img
+                                    <SmartImage
                                         src={image.imageUrl}
                                         alt=""
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                     />
                                     {image.type === 'post-image' && image.postTitle && (
                                         <div style={{
@@ -409,10 +417,9 @@ const CollectionDetail = () => {
                                             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                                         >
                                             {post.images?.[0]?.url || post.imageUrl ? (
-                                                <img
+                                                <SmartImage
                                                     src={post.images?.[0]?.url || post.imageUrl}
                                                     alt={post.title}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 />
                                             ) : (
                                                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>

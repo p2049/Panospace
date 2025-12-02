@@ -1,0 +1,306 @@
+/* PanoSpace Universal Viewport Scaling System */
+/* Ensures perfect UI experience across ALL screen types and resolutions */
+
+:root {
+    /* ============================================
+     FLUID TYPOGRAPHY SCALE using clamp()
+     Automatically scales between min and max based on viewport width
+     ============================================ */
+
+    /* Ultra-fine granular font sizes */
+    --font-size-2xs: clamp(0.6rem, 0.45rem + 0.4vw, 0.7rem);
+    --font-size-xs: clamp(0.65rem, 0.5rem + 0.5vw, 0.75rem);
+    --font-size-sm: clamp(0.75rem, 0.6rem + 0.6vw, 0.875rem);
+    --font-size-base: clamp(0.875rem, 0.7rem + 0.7vw, 1rem);
+    --font-size-md: clamp(0.95rem, 0.8rem + 0.8vw, 1.1rem);
+    --font-size-lg: clamp(1.1rem, 0.9rem + 1vw, 1.3rem);
+    --font-size-xl: clamp(1.3rem, 1rem + 1.2vw, 1.6rem);
+    --font-size-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+    --font-size-3xl: clamp(1.8rem, 1.4rem + 2vw, 2.5rem);
+
+    /* ============================================
+     FLUID SPACING SCALE
+     Consistent spacing that adapts to screen size
+     ============================================ */
+
+    --spacing-2xs: clamp(0.125rem, 0.1rem + 0.2vw, 0.25rem);
+    --spacing-xs: clamp(0.25rem, 0.2rem + 0.3vw, 0.5rem);
+    --spacing-sm: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+    --spacing-md: clamp(0.75rem, 0.6rem + 0.7vw, 1rem);
+    --spacing-lg: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+    --spacing-xl: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+    --spacing-2xl: clamp(2rem, 1.5rem + 2vw, 3rem);
+    --spacing-3xl: clamp(2.5rem, 2rem + 2.5vw, 4rem);
+
+    /* ============================================
+     FLUID CONTAINER & LAYOUT
+     ============================================ */
+
+    --container-padding: clamp(1rem, 2vw, 2rem);
+    --grid-gap: clamp(0.75rem, 1vw, 1.5rem);
+    --border-radius-sm: clamp(4px, 0.5vw, 8px);
+    --border-radius-md: clamp(8px, 1vw, 16px);
+    --border-radius-lg: clamp(12px, 1.5vw, 24px);
+
+    /* ============================================
+     RESPONSIVE BREAKPOINTS (for reference)
+     ============================================ */
+
+    --breakpoint-xs: 320px;
+    /* iPhone SE, small phones */
+    --breakpoint-sm: 480px;
+    /* Larger phones */
+    --breakpoint-md: 768px;
+    /* Tablets portrait */
+    --breakpoint-lg: 1024px;
+    /* Tablets landscape, small laptops */
+    --breakpoint-xl: 1440px;
+    /* Desktop */
+    --breakpoint-2xl: 1920px;
+    /* Full HD */
+    --breakpoint-3xl: 2560px;
+    /* 2K */
+    --breakpoint-4xl: 3840px;
+    /* 4K */
+}
+
+/* ============================================
+   SCREEN-TYPE-SPECIFIC OPTIMIZATIONS
+   ============================================ */
+
+/* Ultra Small Phones (320px - 374px) - iPhone SE 1st gen, older Android */
+@media (min-width: 320px) and (max-width: 374px) {
+    :root {
+        --font-size-base: clamp(0.8rem, 2.5vw, 0.85rem);
+        --spacing-md: clamp(0.5rem, 1.5vw, 0.65rem);
+        --container-padding: clamp(0.75rem, 2vw, 1rem);
+    }
+}
+
+/* Small Phones (375px - 479px) - iPhone SE 2nd/3rd gen, iPhone 12 mini */
+@media (min-width: 375px) and (max-width: 479px) {
+    :root {
+        --font-size-base: clamp(0.85rem, 2.3vw, 0.9rem);
+        --spacing-md: clamp(0.6rem, 1.8vw, 0.75rem);
+    }
+}
+
+/* Standard Phones (480px - 767px) - iPhone 12/13/14, most Android phones */
+@media (min-width: 480px) and (max-width: 767px) {
+    :root {
+        --font-size-base: clamp(0.875rem, 2vw, 0.95rem);
+        --spacing-md: clamp(0.7rem, 1.5vw, 0.85rem);
+    }
+}
+
+/* Tablets Portrait (768px - 1023px) - iPad, Android tablets */
+@media (min-width: 768px) and (max-width: 1023px) {
+    :root {
+        --font-size-base: clamp(0.9rem, 1.5vw, 1rem);
+        --spacing-md: clamp(0.8rem, 1.2vw, 1rem);
+        --grid-gap: clamp(1rem, 1.5vw, 1.25rem);
+    }
+}
+
+/* Tablets Landscape / Small Laptops (1024px - 1439px) - iPad Pro, Surface */
+@media (min-width: 1024px) and (max-width: 1439px) {
+    :root {
+        --font-size-base: clamp(0.95rem, 1.2vw, 1rem);
+        --spacing-md: clamp(0.85rem, 1vw, 1rem);
+        --grid-gap: clamp(1.1rem, 1.3vw, 1.4rem);
+    }
+}
+
+/* Desktop / Laptop (1440px - 1919px) - MacBook Pro, standard monitors */
+@media (min-width: 1440px) and (max-width: 1919px) {
+    :root {
+        --font-size-base: 1rem;
+        --spacing-md: 1rem;
+        --grid-gap: 1.5rem;
+    }
+}
+
+/* Full HD (1920px - 2559px) - 1080p monitors */
+@media (min-width: 1920px) and (max-width: 2559px) {
+    :root {
+        --font-size-base: clamp(1rem, 0.8vw, 1.1rem);
+        --spacing-md: clamp(1rem, 0.8vw, 1.2rem);
+        --grid-gap: clamp(1.5rem, 1vw, 1.75rem);
+    }
+}
+
+/* 2K / QHD (2560px - 3839px) - 1440p monitors, iMac 5K */
+@media (min-width: 2560px) and (max-width: 3839px) {
+    :root {
+        --font-size-base: clamp(1.05rem, 0.6vw, 1.15rem);
+        --spacing-md: clamp(1.1rem, 0.7vw, 1.3rem);
+        --grid-gap: clamp(1.6rem, 0.9vw, 2rem);
+        /* Cap maximum sizes to prevent UI from becoming too large */
+        --font-size-2xl: 2rem;
+        --spacing-2xl: 3rem;
+    }
+}
+
+/* 4K / UHD (3840px - 5119px) - 2160p monitors */
+@media (min-width: 3840px) and (max-width: 5119px) {
+    :root {
+        --font-size-base: 1.1rem;
+        --spacing-md: 1.25rem;
+        --grid-gap: 2rem;
+        /* Strict caps for 4K */
+        --font-size-2xl: 2.2rem;
+        --spacing-2xl: 3.5rem;
+    }
+}
+
+/* 5K and above (5120px+) - Pro Display XDR, 8K displays */
+@media (min-width: 5120px) {
+    :root {
+        --font-size-base: 1.15rem;
+        --spacing-md: 1.3rem;
+        --grid-gap: 2.25rem;
+        /* Maximum caps for ultra-high-res displays */
+        --font-size-2xl: 2.5rem;
+        --spacing-2xl: 4rem;
+    }
+}
+
+/* ============================================
+   LANDSCAPE ORIENTATION ADJUSTMENTS
+   Optimize for horizontal viewing (primary use case)
+   ============================================ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+    :root {
+        /* Reduce vertical spacing in landscape on short screens */
+        --spacing-md: clamp(0.5rem, 1vh, 0.75rem);
+        --spacing-lg: clamp(0.75rem, 1.5vh, 1rem);
+        --spacing-xl: clamp(1rem, 2vh, 1.5rem);
+    }
+}
+
+/* ============================================
+   HIGH DPI / RETINA DISPLAY ADJUSTMENTS
+   ============================================ */
+
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+    :root {
+        /* Slightly reduce font sizes on high-DPI displays for crispness */
+        --font-size-base: clamp(0.85rem, 0.7rem + 0.65vw, 0.98rem);
+    }
+}
+
+/* ============================================
+   APPLY FLUID SCALING TO COMMON ELEMENTS
+   ============================================ */
+
+body {
+    font-size: var(--font-size-base);
+}
+
+h1 {
+    font-size: var(--font-size-3xl);
+}
+
+h2 {
+    font-size: var(--font-size-2xl);
+}
+
+h3 {
+    font-size: var(--font-size-xl);
+}
+
+h4 {
+    font-size: var(--font-size-lg);
+}
+
+h5 {
+    font-size: var(--font-size-md);
+}
+
+h6 {
+    font-size: var(--font-size-base);
+}
+
+button {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+}
+
+input,
+select,
+textarea {
+    font-size: var(--font-size-base);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+}
+
+/* ============================================
+   UTILITY CLASSES FOR MANUAL SCALING
+   ============================================ */
+
+.text-2xs {
+    font-size: var(--font-size-2xs) !important;
+}
+
+.text-xs {
+    font-size: var(--font-size-xs) !important;
+}
+
+.text-sm {
+    font-size: var(--font-size-sm) !important;
+}
+
+.text-base {
+    font-size: var(--font-size-base) !important;
+}
+
+.text-md {
+    font-size: var(--font-size-md) !important;
+}
+
+.text-lg {
+    font-size: var(--font-size-lg) !important;
+}
+
+.text-xl {
+    font-size: var(--font-size-xl) !important;
+}
+
+.text-2xl {
+    font-size: var(--font-size-2xl) !important;
+}
+
+.text-3xl {
+    font-size: var(--font-size-3xl) !important;
+}
+
+.p-2xs {
+    padding: var(--spacing-2xs) !important;
+}
+
+.p-xs {
+    padding: var(--spacing-xs) !important;
+}
+
+.p-sm {
+    padding: var(--spacing-sm) !important;
+}
+
+.p-md {
+    padding: var(--spacing-md) !important;
+}
+
+.p-lg {
+    padding: var(--spacing-lg) !important;
+}
+
+.p-xl {
+    padding: var(--spacing-xl) !important;
+}
+
+.p-2xl {
+    padding: var(--spacing-2xl) !important;
+}

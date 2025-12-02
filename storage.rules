@@ -17,8 +17,8 @@ service firebase.storage {
     
     // Profile photos - AUTH REQUIRED TO READ (user privacy)
     match /profile_photos/{userId}/{allPaths=**} {
-      // Only authenticated users can view profile photos
-      allow read: if request.auth != null;
+      // Public read for profile photos (avatars are public identity)
+      allow read: if true;
       
       // Users can only upload their own profile photo
       // Validate file size (max 5MB) and type (images only)

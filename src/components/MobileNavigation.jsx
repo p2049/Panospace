@@ -1,24 +1,23 @@
-// FILE: src/components/MobileNavigation.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaHome, FaSearch, FaUser, FaPlusSquare, FaCog, FaSignOutAlt, FaCalendar } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import NotificationBadge from './NotificationBadge';
 
 const MobileNavigation = () => {
-    const [leftOpen, setLeftOpen] = useState(false);
-    const [rightOpen, setRightOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
     const [lastActivity, setLastActivity] = useState(Date.now());
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentUser, logout } = useAuth();
+    const { logout } = useAuth();
+
     const inactivityTimerRef = useRef(null);
 
     // Auto-collapse logic
     useEffect(() => {
         const checkInactivity = () => {
-            if (Date.now() - lastActivity > 3000) { // 3 seconds inactivity
-                setLeftOpen(false);
-                setRightOpen(false);
+            if (Date.now() - lastActivity > 4000) { // 4 seconds inactivity
+                setIsOpen(false);
             }
         };
 
@@ -38,8 +37,7 @@ const MobileNavigation = () => {
 
     const handleNavClick = (path) => {
         navigate(path);
-        setLeftOpen(false);
-        setRightOpen(false);
+        setIsOpen(false);
         handleInteraction();
     };
 
@@ -47,7 +45,7 @@ const MobileNavigation = () => {
         try {
             await logout();
             navigate('/login');
-            setRightOpen(false);
+            setIsOpen(false);
         } catch (error) {
             console.error("Logout failed", error);
         }
@@ -59,105 +57,123 @@ const MobileNavigation = () => {
         alignItems: 'center',
         justifyContent: 'center',
         color: '#fff',
-        padding: '1.5rem 0',
+        padding: '0.8rem 0',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        opacity: 0.7
+        opacity: 0.7,
+        width: '100%'
     };
 
     const activeNavItemStyle = {
         ...navItemStyle,
         opacity: 1,
-        color: '#fff',
+        color: 'var(--ice-mint, #7FFFD4)',
         transform: 'scale(1.1)'
     };
 
-    const panelStyle = (isOpen, side) => ({
+    const panelStyle = {
         position: 'fixed',
-        top: '50%',
-        [side]: isOpen ? '0' : '-80px',
-        transform: 'translateY(-50%)',
+        top: 0,
+        bottom: 0,
+        right: isOpen ? '0' : '-120px',
         width: '70px',
-        height: 'auto',
-        backgroundColor: 'rgba(10, 10, 10, 0.8)',
-        backdropFilter: 'blur(15px)',
-        borderRadius: side === 'left' ? '0 20px 20px 0' : '20px 0 0 20px',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        backdropFilter: 'blur(20px)',
+        borderLeft: '1px solid rgba(127, 255, 212, 0.2)',
+        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        padding: '1rem 0',
-        boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5)',
-        border: '1px solid rgba(255, 255, 255, 0.1)'
-    });
+        alignItems: 'center',
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+        paddingRight: 'env(safe-area-inset-right)',
+        boxShadow: '-5px 0 20px rgba(0, 0, 0, 0.5)',
+        overflowY: 'auto',
+        boxSizing: 'content-box'
+    };
 
-    const edgePeekStyle = (side) => ({
+    const menuButtonStyle = {
         position: 'fixed',
-        top: '50%',
-        [side]: '0',
-        transform: 'translateY(-50%)',
-        width: '30px',
-        height: '120px',
+        top: 'max(0.75rem, env(safe-area-inset-top))',
+        right: '1rem',
+        zIndex: 10000,
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease',
+        transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+        color: '#7FFFD4',
+        background: 'transparent', // Removed circle background
+        width: '40px', // Keep touch target size
+        height: '40px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9998,
-        cursor: 'pointer',
-        opacity: 0.6,
-        transition: 'opacity 0.2s'
-    });
+        // Removed borderRadius and backdropFilter
+    };
 
     return (
         <>
-            {/* Left Panel - Navigation */}
+            {/* Hamburger Menu Button */}
             <div
-                style={panelStyle(leftOpen, 'left')}
-                onClick={handleInteraction}
+                style={menuButtonStyle}
+                onClick={() => { setIsOpen(!isOpen); handleInteraction(); }}
+                title="Menu"
             >
-                <div onClick={() => handleNavClick('/')} style={location.pathname === '/' ? activeNavItemStyle : navItemStyle}>
-                    <FaHome size={24} />
-                </div>
-                <div onClick={() => handleNavClick('/search')} style={location.pathname === '/search' ? activeNavItemStyle : navItemStyle}>
-                    <FaSearch size={24} />
-                </div>
-                <div onClick={() => handleNavClick('/profile/me')} style={location.pathname.startsWith('/profile') ? activeNavItemStyle : navItemStyle}>
-                    <FaUser size={24} />
-                </div>
-                <div onClick={() => handleNavClick('/calendar')} style={location.pathname === '/calendar' ? activeNavItemStyle : navItemStyle}>
-                    <FaCalendar size={24} />
-                </div>
+                <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.8))' }} // Slight shadow
+                >
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
             </div>
 
-            {/* Left Edge Peek */}
-            {!leftOpen && (
-                <div style={edgePeekStyle('left')} onClick={() => { setLeftOpen(true); setRightOpen(false); handleInteraction(); }}>
-                    <div style={{ width: '4px', height: '40px', background: 'rgba(255,255,255,0.5)', borderRadius: '2px' }} />
-                </div>
-            )}
-
-            {/* Right Panel - Actions (3 buttons only) */}
+            {/* Right Navigation Panel */}
             <div
-                style={panelStyle(rightOpen, 'right')}
+                style={panelStyle}
                 onClick={handleInteraction}
             >
-                <div onClick={() => handleNavClick('/create')} style={location.pathname === '/create' ? activeNavItemStyle : navItemStyle}>
-                    <FaPlusSquare size={24} />
-                </div>
-                <div onClick={() => handleNavClick('/edit-profile')} style={location.pathname === '/edit-profile' ? activeNavItemStyle : navItemStyle}>
-                    <FaCog size={24} />
-                </div>
-                <div onClick={handleLogout} style={{ ...navItemStyle, color: '#ff4444' }}>
-                    <FaSignOutAlt size={24} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%', alignItems: 'center' }}>
+                    <div onClick={() => handleNavClick('/')} style={location.pathname === '/' ? activeNavItemStyle : navItemStyle}>
+                        <FaHome size={20} />
+                    </div>
+                    <div onClick={() => handleNavClick('/search')} style={location.pathname === '/search' ? activeNavItemStyle : navItemStyle}>
+                        <FaSearch size={20} />
+                    </div>
+                    <div onClick={() => handleNavClick('/create')} style={location.pathname === '/create' ? activeNavItemStyle : navItemStyle}>
+                        <FaPlusSquare size={20} />
+                    </div>
+                    <div
+                        onClick={() => handleNavClick('/notifications')}
+                        style={{
+                            ...navItemStyle,
+                            ...(location.pathname === '/notifications' ? { opacity: 1, color: 'var(--ice-mint, #7FFFD4)', transform: 'scale(1.1)' } : {})
+                        }}
+                    >
+                        <NotificationBadge size={28} />
+                    </div>
+                    <div onClick={() => handleNavClick('/calendar')} style={location.pathname === '/calendar' ? activeNavItemStyle : navItemStyle}>
+                        <FaCalendar size={20} />
+                    </div>
+                    <div onClick={() => handleNavClick('/settings')} style={location.pathname === '/settings' ? activeNavItemStyle : navItemStyle}>
+                        <FaCog size={20} />
+                    </div>
+
+                    <div onClick={handleLogout} style={{ ...navItemStyle, color: '#ff4444', marginTop: 'auto', marginBottom: '1rem' }}>
+                        <FaSignOutAlt size={20} />
+                    </div>
                 </div>
             </div>
-
-            {/* Right Edge Peek */}
-            {!rightOpen && (
-                <div style={edgePeekStyle('right')} onClick={() => { setRightOpen(true); setLeftOpen(false); handleInteraction(); }}>
-                    <div style={{ width: '4px', height: '40px', background: 'rgba(255,255,255,0.5)', borderRadius: '2px' }} />
-                </div>
-            )}
         </>
     );
 };

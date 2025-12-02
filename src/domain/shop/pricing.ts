@@ -95,7 +95,8 @@ const PLATFORM_SHARE = 0.4;
  */
 export function calculateEarnings(
     retailPriceDollars: number,
-    sizeId?: string
+    sizeId?: string,
+    isUltra: boolean = false
 ): Earnings {
     const totalCents = Math.round(retailPriceDollars * 100);
 
@@ -108,8 +109,12 @@ export function calculateEarnings(
     const profitCents = Math.max(0, totalCents - baseCostCents);
 
     // Split profit between artist and platform
-    const artistEarningsCents = Math.round(profitCents * ARTIST_SHARE);
-    const platformCutCents = Math.round(profitCents * PLATFORM_SHARE);
+    // Ultra users get 75%, standard users get 60%
+    const artistShare = isUltra ? 0.75 : ARTIST_SHARE;
+    const platformShare = 1 - artistShare;
+
+    const artistEarningsCents = Math.round(profitCents * artistShare);
+    const platformCutCents = Math.round(profitCents * platformShare);
 
     return {
         artistEarningsCents,

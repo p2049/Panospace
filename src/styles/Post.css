@@ -1,0 +1,74 @@
+.post-actions-container {
+    position: absolute;
+    bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
+    /* Higher for mobile visibility */
+    right: 20px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.post-title-overlay {
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: 4.5rem;
+    /* More spacing from planet icon */
+    max-width: 60%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 40px;
+}
+
+.post-title-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    margin: 0;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Mobile Optimization */
+@media (max-width: 768px) {
+    .post-title-text {
+        font-size: 1rem;
+    }
+
+    .post-title-overlay {
+        left: 4rem;
+        /* Adjusted for mobile */
+        max-width: 65%;
+    }
+}
+
+/* Landscape Mobile Optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+    .author-overlay {
+        bottom: 30px !important;
+        /* Lower positioning for landscape mode */
+    }
+
+    .post-actions-container {
+        bottom: 15px;
+        right: 15px;
+        transform: scale(0.85);
+        transform-origin: bottom right;
+    }
+
+    .post-title-overlay {
+        left: 4.5rem;
+    }
+
+    .post-title-text {
+        font-size: 0.9rem;
+    }
+}

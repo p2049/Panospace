@@ -247,6 +247,7 @@ const ShopItemDetail = () => {
                                 <img
                                     src={item.imageUrl}
                                     alt={item.title}
+                                    loading="lazy"
                                     style={{
                                         width: '100%',
                                         height: '100%',
@@ -465,23 +466,44 @@ const ShopItemDetail = () => {
                 </button>
 
                 {isOwner && (
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        style={{
-                            background: '#333',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '0.8rem 1.2rem',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        <FaEdit /> Edit Item
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        {item.isLimitedEdition && (
+                            <button
+                                onClick={() => alert("Resale feature coming soon!")} // Placeholder for Resale Modal
+                                style={{
+                                    background: 'rgba(255, 215, 0, 0.1)',
+                                    color: '#FFD700',
+                                    border: '1px solid rgba(255, 215, 0, 0.3)',
+                                    padding: '0.8rem 1.2rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                <FaTag /> Resell Item
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            style={{
+                                background: '#333',
+                                color: '#fff',
+                                border: 'none',
+                                padding: '0.8rem 1.2rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            <FaEdit /> Edit Item
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -508,6 +530,7 @@ const ShopItemDetail = () => {
                     <img
                         src={item.imageUrl}
                         alt={item.title}
+                        loading="lazy"
                         style={{
                             width: '100%',
                             height: '100%',
@@ -537,7 +560,34 @@ const ShopItemDetail = () => {
                                 PREMIUM QUALITY
                             </div>
                         )}
+                        {item.isLimitedEdition && (
+                            <div style={{
+                                background: 'rgba(255, 215, 0, 0.1)',
+                                color: '#FFD700',
+                                padding: '0.2rem 0.6rem',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                border: '1px solid rgba(255, 215, 0, 0.3)'
+                            }}>
+                                LIMITED EDITION {item.editionSize ? `(1 of ${item.editionSize})` : ''}
+                            </div>
+                        )}
                     </div>
+
+                    {item.isLimitedEdition && item.soldCount >= item.editionSize && (
+                        <div style={{
+                            background: 'rgba(255, 0, 0, 0.1)',
+                            color: '#FF4444',
+                            padding: '0.5rem',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                            fontWeight: 'bold',
+                            border: '1px solid rgba(255, 0, 0, 0.3)'
+                        }}>
+                            SOLD OUT
+                        </div>
+                    )}
 
                     <div style={{ height: '1px', background: '#222', width: '100%' }} />
 

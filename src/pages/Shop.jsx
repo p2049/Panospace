@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { FaShoppingBag, FaTag } from 'react-icons/fa';
+import SmartImage from '../components/SmartImage';
 
 // Helper to sanitize and validate shop items from Firestore
 const sanitizeShopItem = (raw) => {
@@ -62,7 +63,7 @@ const Shop = () => {
                 const q = query(
                     collection(db, 'shopItems'),
                     orderBy('createdAt', 'desc'),
-                    limit(50)
+                    limit(20)
                 );
 
                 const querySnapshot = await getDocs(q);
@@ -94,9 +95,12 @@ const Shop = () => {
 
     if (error) {
         return (
-            <div style={{ height: '100vh', background: '#000', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '1rem' }}>
-                <p>{error}</p>
-                <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1rem', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}>Retry</button>
+            <div style={{ height: '100vh', background: '#000', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#ff6b6b' }}>Unable to load shop</h2>
+                <p style={{ color: '#aaa', maxWidth: '400px', marginBottom: '1.5rem' }}>{error}</p>
+                <button onClick={() => window.location.reload()} style={{ padding: '0.6rem 1.2rem', background: '#333', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    Retry
+                </button>
             </div>
         );
     }
@@ -118,42 +122,46 @@ const Shop = () => {
                         <p>No items available in the shop yet.</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))', gap: '2px' }}>
                         {items.map(item => (
                             <div
                                 key={item.id}
                                 onClick={() => navigate(`/shop/${item.id}`)}
                                 style={{
-                                    aspectRatio: '1',
                                     background: '#111',
-                                    borderRadius: '8px',
+                                    borderRadius: '2px',
                                     overflow: 'hidden',
                                     cursor: 'pointer',
                                     position: 'relative',
-                                    border: '1px solid #222',
-                                    transition: 'transform 0.2s'
+                                    border: '1px solid #0a0a0a'
                                 }}
                             >
-                                <img
-                                    src={item.imageUrl}
-                                    alt={item.title}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    loading="lazy"
-                                />
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
-                                    padding: '1rem 0.5rem 0.5rem',
-                                    color: '#fff'
-                                }}>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {item.title}
+                                {/* Fixed height container with 1:1 aspect ratio */}
+                                <div style={{ width: '100%', paddingBottom: '100%', position: 'relative', background: '#000' }}>
+                                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                                        <SmartImage
+                                            src={item.imageUrl}
+                                            alt={item.title}
+                                            loading="lazy"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
+                                        />
                                     </div>
-                                    <div style={{ fontSize: '0.8rem', color: '#7FFFD4', marginTop: '0.2rem' }}>
-                                        {item.minPrice !== null ? `From $${item.minPrice.toFixed(2)}` : 'View Details'}
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
+                                        padding: '1rem 0.5rem 0.5rem',
+                                        color: '#fff',
+                                        zIndex: 2
+                                    }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {item.title}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: '#7FFFD4', marginTop: '0.2rem' }}>
+                                            {item.minPrice !== null ? `From $${item.minPrice.toFixed(2)}` : 'View Details'}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

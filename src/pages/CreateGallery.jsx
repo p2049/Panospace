@@ -1,0 +1,443 @@
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { createGallery } from '../services/galleryService';
+import { FaImage, FaTags, FaMapMarkerAlt, FaLock, FaGlobe, FaArrowLeft } from 'react-icons/fa';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import '../styles/create-gallery.css';
+
+const POPULAR_TAGS = [
+    'landscape', 'portrait', 'street', 'nature', 'urban', 'film',
+    'digital', 'black-and-white', 'color', 'architecture', 'wildlife',
+    'macro', 'night', 'sunset', 'travel', 'documentary'
+];
+
+// TESTING MODE - Set to true to bypass premium check
+const TESTING_MODE = true;
+
+const CreateGallery = () => {
+    const navigate = useNavigate();
+    const { currentUser } = useAuth();
+    const [userProfile, setUserProfile] = useState(null);
+    const [fetchingProfile, setFetchingProfile] = useState(true);
+    const fileInputRef = useRef(null);
+
+    // Generate stars for background animation
+    const stars = useMemo(() => {
+        return [...Array(100)].map((_, i) => ({
+            id: i,
+            width: Math.random() * 2 + 1,
+            height: Math.random() * 2 + 1,
+            top: Math.random() * 100,
+            left: Math.random() * 100,
+            opacity: Math.random() * 0.5 + 0.3,
+            duration: Math.random() * 3 + 2,
+            delay: Math.random() * 2,
+            glow: Math.random() * 3 + 2
+        }));
+    }, []);
+
+    // Fetch user profile
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!currentUser) return;
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    setUserProfile(userDoc.data());
+                }
+            } catch (error) {
+                console.error('Error fetching user profile:', error);
+            } finally {
+                setFetchingProfile(false);
+            }
+        };
+        fetchProfile();
+    }, [currentUser]);
+
+    // Form state
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [coverImage, setCoverImage] = useState(null);
+    const [coverImagePreview, setCoverImagePreview] = useState(null);
+    const [contentType, setContentType] = useState('both');
+    const [requiredTags, setRequiredTags] = useState([]);
+    const [customTag, setCustomTag] = useState('');
+    const [requiredLocations, setRequiredLocations] = useState([]);
+    const [locationInput, setLocationInput] = useState('');
+    const [isPublic, setIsPublic] = useState(true);
+    const [moderationEnabled, setModerationEnabled] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    if (fetchingProfile) {
+        return <div className="loading-spinner">Loading profile...</div>;
+    }
+
+    // Check if user is premium (bypass in testing mode)
+    if (!TESTING_MODE && !userProfile?.isPremium) {
+        return (
+            <div className="create-gallery-container">
+                <div className="premium-required">
+                    <h2>Premium Feature</h2>
+                    <p>Galleries are a premium feature. Upgrade to create collaborative spaces!</p>
+                    <button onClick={() => navigate('/ultra')} className="upgrade-btn">
+                        Upgrade to Premium
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const handleCoverImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setCoverImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setCoverImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleTagToggle = (tag) => {
+        setRequiredTags(prev =>
+            prev.includes(tag)
+                ? prev.filter(t => t !== tag)
+                : [...prev, tag]
+        );
+    };
+
+    const handleAddCustomTag = () => {
+        if (customTag.trim() && !requiredTags.includes(customTag.trim())) {
+            setRequiredTags(prev => [...prev, customTag.trim()]);
+            setCustomTag('');
+        }
+    };
+
+    const handleAddLocation = () => {
+        if (locationInput.trim() && !requiredLocations.includes(locationInput.trim())) {
+            setRequiredLocations(prev => [...prev, locationInput.trim()]);
+            setLocationInput('');
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        console.log('Starting gallery creation...');
+
+        if (!title.trim()) {
+            alert('Please enter a gallery title');
+            return;
+        }
+
+        if (!currentUser || !userProfile) {
+            console.error('Missing user data:', { currentUser, userProfile });
+            alert('User data missing. Please try refreshing the page.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const galleryData = {
+                title: title.trim(),
+                description: description.trim(),
+                contentType,
+                requiredTags,
+                requiredLocations,
+                isPublic,
+                moderationEnabled
+            };
+
+            console.log('Sending gallery data:', galleryData);
+
+            const gallery = await createGallery(
+                galleryData,
+                coverImage,
+                currentUser.uid,
+                userProfile
+            );
+
+            console.log('Gallery created successfully:', gallery);
+
+            if (gallery && gallery.id) {
+                console.log('Navigating to:', `/gallery/${gallery.id}`);
+                navigate(`/gallery/${gallery.id}`);
+            } else {
+                console.error('Gallery created but no ID returned:', gallery);
+                alert('Gallery created but ID missing. Check console.');
+            }
+        } catch (error) {
+            console.error('Error creating gallery:', error);
+            alert(`Failed to create gallery: ${error.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    return (
+        <div className="create-gallery-container" style={{ position: 'relative', overflow: 'hidden' }}>
+            {/* Animated Stars Background */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                pointerEvents: 'none',
+                zIndex: 0
+            }}>
+                {stars.map((star) => (
+                    <div
+                        key={star.id}
+                        style={{
+                            position: 'absolute',
+                            width: star.width + 'px',
+                            height: star.height + 'px',
+                            background: '#7FFFD4',
+                            borderRadius: '50%',
+                            top: star.top + '%',
+                            left: star.left + '%',
+                            opacity: star.opacity,
+                            animation: `twinkle ${star.duration}s ease-in-out infinite`,
+                            animationDelay: `${star.delay}s`,
+                            boxShadow: `0 0 ${star.glow}px #7FFFD4`
+                        }}
+                    />
+                ))}
+            </div>
+            <style>{`
+                @keyframes twinkle {
+                    0%, 100% { opacity: 0.3; transform: scale(1); }
+                    50% { opacity: 1; transform: scale(1.2); }
+                }
+            `}</style>
+
+            <div className="create-gallery-header" style={{ position: 'relative', zIndex: 1 }}>
+                <button onClick={() => navigate(-1)} className="back-btn">
+                    <FaArrowLeft /> Back
+                </button>
+                <h1>Create Gallery</h1>
+                <p className="subtitle">Create a collaborative space for sharing content</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="create-gallery-form">
+                {/* Cover Image */}
+                <div className="form-section">
+                    <h3><FaImage /> Cover Image</h3>
+                    <div
+                        className="cover-upload-area"
+                        onClick={() => fileInputRef.current?.click()}
+                        style={{
+                            backgroundImage: coverImagePreview ? `url(${coverImagePreview})` : 'none'
+                        }}
+                    >
+                        {!coverImagePreview && (
+                            <div className="upload-placeholder">
+                                <FaImage size={48} />
+                                <p>Click to upload cover image</p>
+                                <span>Recommended: 1200x400px</span>
+                            </div>
+                        )}
+                    </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverImageSelect}
+                        style={{ display: 'none' }}
+                    />
+                </div>
+
+                {/* Basic Info */}
+                <div className="form-section">
+                    <h3>Basic Information</h3>
+                    <div className="form-field">
+                        <label>Gallery Title *</label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="e.g., Urban Photography Collective"
+                            maxLength={100}
+                            required
+                        />
+                    </div>
+                    <div className="form-field">
+                        <label>Description</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Describe what this gallery is about..."
+                            rows={4}
+                            maxLength={500}
+                        />
+                    </div>
+                </div>
+
+                {/* Content Type */}
+                <div className="form-section">
+                    <h3>Content Type</h3>
+                    <p className="field-hint">What can members add to this gallery?</p>
+                    <div className="content-type-options">
+                        <label className={`content-type-option ${contentType === 'posts' ? 'active' : ''}`}>
+                            <input
+                                type="radio"
+                                value="posts"
+                                checked={contentType === 'posts'}
+                                onChange={(e) => setContentType(e.target.value)}
+                            />
+                            <div>
+                                <strong>Posts Only</strong>
+                                <span>Individual photos and images</span>
+                            </div>
+                        </label>
+                        <label className={`content-type-option ${contentType === 'collections' ? 'active' : ''}`}>
+                            <input
+                                type="radio"
+                                value="collections"
+                                checked={contentType === 'collections'}
+                                onChange={(e) => setContentType(e.target.value)}
+                            />
+                            <div>
+                                <strong>Collections Only</strong>
+                                <span>Curated collections of posts</span>
+                            </div>
+                        </label>
+                        <label className={`content-type-option ${contentType === 'both' ? 'active' : ''}`}>
+                            <input
+                                type="radio"
+                                value="both"
+                                checked={contentType === 'both'}
+                                onChange={(e) => setContentType(e.target.value)}
+                            />
+                            <div>
+                                <strong>Both</strong>
+                                <span>Posts and collections</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Required Tags */}
+                <div className="form-section">
+                    <h3><FaTags /> Gallery Tags (Optional)</h3>
+                    <p className="field-hint">Tags help users discover your gallery through search</p>
+
+                    <div className="tag-selector">
+                        {POPULAR_TAGS.map(tag => (
+                            <button
+                                key={tag}
+                                type="button"
+                                className={`tag-btn ${requiredTags.includes(tag) ? 'active' : ''}`}
+                                onClick={() => handleTagToggle(tag)}
+                            >
+                                {tag}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="custom-tag-input">
+                        <input
+                            type="text"
+                            value={customTag}
+                            onChange={(e) => setCustomTag(e.target.value)}
+                            placeholder="Add custom tag..."
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
+                        />
+                        <button type="button" onClick={handleAddCustomTag}>Add</button>
+                    </div>
+
+                    {requiredTags.length > 0 && (
+                        <div className="selected-tags">
+                            <strong>Gallery tags:</strong>
+                            {requiredTags.map(tag => (
+                                <span key={tag} className="selected-tag">
+                                    {tag}
+                                    <button type="button" onClick={() => handleTagToggle(tag)}>×</button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Required Locations */}
+                <div className="form-section">
+                    <h3><FaMapMarkerAlt /> Location Focus (Optional)</h3>
+                    <p className="field-hint">Specify locations this gallery focuses on</p>
+
+                    <div className="location-input">
+                        <input
+                            type="text"
+                            value={locationInput}
+                            onChange={(e) => setLocationInput(e.target.value)}
+                            placeholder="e.g., New York, Tokyo, Paris..."
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocation())}
+                        />
+                        <button type="button" onClick={handleAddLocation}>Add</button>
+                    </div>
+
+                    {requiredLocations.length > 0 && (
+                        <div className="selected-locations">
+                            {requiredLocations.map(loc => (
+                                <span key={loc} className="selected-location">
+                                    {loc}
+                                    <button
+                                        type="button"
+                                        onClick={() => setRequiredLocations(prev => prev.filter(l => l !== loc))}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Settings */}
+                <div className="form-section">
+                    <h3>Gallery Settings</h3>
+
+                    <label className="toggle-option">
+                        <input
+                            type="checkbox"
+                            checked={isPublic}
+                            onChange={(e) => setIsPublic(e.target.checked)}
+                        />
+                        <div>
+                            <strong>{isPublic ? <FaGlobe /> : <FaLock />} {isPublic ? 'Public' : 'Private'}</strong>
+                            <span>{isPublic ? 'Anyone can view this gallery' : 'Only members can view'}</span>
+                        </div>
+                    </label>
+
+                    <label className="toggle-option">
+                        <input
+                            type="checkbox"
+                            checked={moderationEnabled}
+                            onChange={(e) => setModerationEnabled(e.target.checked)}
+                        />
+                        <div>
+                            <strong>Require Approval</strong>
+                            <span>You must approve content before it appears</span>
+                        </div>
+                    </label>
+                </div>
+
+                {/* Submit */}
+                <div className="form-actions">
+                    <button type="button" onClick={() => navigate(-1)} className="cancel-btn">
+                        Cancel
+                    </button>
+                    <button type="submit" disabled={loading} className="create-btn">
+                        {loading ? 'Creating...' : 'Create Gallery'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default CreateGallery;

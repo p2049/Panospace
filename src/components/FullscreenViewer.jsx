@@ -93,7 +93,10 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
             {!isMobile && totalSlides > 1 && currentSlide > 0 && (
                 <button
                     onClick={() => setCurrentSlide(c => c - 1)}
-                    style={{ position: 'absolute', left: '2rem', top: '50%', transform: 'translateY(-50%)', width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, cursor: 'pointer' }}
+                    className="slide-nav-arrow"
+                    style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', width: '40px', height: '40px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, cursor: 'pointer', opacity: 0.6, transition: 'opacity 0.2s ease, transform 0.2s ease', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.transform = 'translateY(-50%) scale(1)'; }}
                 >
                     <FaChevronLeft />
                 </button>
@@ -102,7 +105,10 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
             {!isMobile && totalSlides > 1 && currentSlide < totalSlides - 1 && (
                 <button
                     onClick={() => setCurrentSlide(c => c + 1)}
-                    style={{ position: 'absolute', right: '2rem', top: '50%', transform: 'translateY(-50%)', width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, cursor: 'pointer' }}
+                    className="slide-nav-arrow"
+                    style={{ position: 'absolute', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', width: '40px', height: '40px', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, cursor: 'pointer', opacity: 0.6, transition: 'opacity 0.2s ease, transform 0.2s ease', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.transform = 'translateY(-50%) scale(1)'; }}
                 >
                     <FaChevronRight />
                 </button>
@@ -128,7 +134,7 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
 
             {/* Slide indicator */}
             {totalSlides > 1 && (
-                <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.7)', padding: '0.5rem 1rem', borderRadius: '20px', color: '#fff', fontSize: '0.9rem' }}>
+                <div style={{ position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.6)', padding: '0.4rem 0.9rem', borderRadius: '16px', color: '#fff', fontSize: '0.85rem', fontWeight: '500' }}>
                     {currentSlide + 1} / {totalSlides}
                 </div>
             )}

@@ -5,8 +5,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
 import { ART_DISCIPLINES } from '../constants/artDisciplines';
+import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '../constants/gradients';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -24,6 +25,11 @@ const EditProfile = () => {
     const [selectedNiches, setSelectedNiches] = useState({}); // Object: { "Photography": ["Landscape"] }
     const [expandedDiscipline, setExpandedDiscipline] = useState(null); // For UI accordion
 
+    // Profile Theme State
+    const [selectedGradient, setSelectedGradient] = useState('green-default');
+    const [unlockedGradients, setUnlockedGradients] = useState(['green-default']);
+    const [starColor, setStarColor] = useState('#7FFFD4'); // Default ice-mint
+
     useEffect(() => {
         const fetchUserData = async () => {
             if (currentUser) {
@@ -37,6 +43,13 @@ const EditProfile = () => {
                     if (data.disciplines) {
                         setSelectedMain(data.disciplines.main || []);
                         setSelectedNiches(data.disciplines.niches || {});
+                    }
+
+                    // Load profile theme
+                    if (data.profileTheme) {
+                        setSelectedGradient(data.profileTheme.gradientId || 'green-default');
+                        setUnlockedGradients(data.profileTheme.unlockedGradients || ['green-default']);
+                        setStarColor(data.profileTheme.starColor || '#7FFFD4');
                     }
                 }
             }
@@ -128,6 +141,11 @@ const EditProfile = () => {
                 disciplines: {
                     main: selectedMain,
                     niches: selectedNiches
+                },
+                profileTheme: {
+                    gradientId: selectedGradient,
+                    unlockedGradients: unlockedGradients,
+                    starColor: starColor
                 },
                 email: currentUser.email,
                 updatedAt: new Date()
@@ -283,7 +301,20 @@ const EditProfile = () => {
                                                         {Object.values(selectedNiches).flat().length}/5 Total
                                                     </span>
                                                 </div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateRows: 'repeat(2, min-content)',
+                                                    gridAutoFlow: 'column',
+                                                    gridAutoColumns: 'max-content',
+                                                    gap: '0.5rem',
+                                                    rowGap: '0.8rem',
+                                                    width: '100%',
+                                                    overflowX: 'auto',
+                                                    overflowY: 'hidden',
+                                                    paddingBottom: '0.5rem',
+                                                    scrollbarWidth: 'thin',
+                                                    scrollbarColor: 'rgba(127, 255, 212, 0.3) rgba(255, 255, 255, 0.02)'
+                                                }}>
                                                     {ART_DISCIPLINES[discipline].map(niche => {
                                                         const isNicheSelected = selectedNiches[discipline]?.includes(niche);
                                                         return (
@@ -298,7 +329,8 @@ const EditProfile = () => {
                                                                     border: isNicheSelected ? '1px solid #fff' : '1px solid #444',
                                                                     background: isNicheSelected ? '#fff' : 'transparent',
                                                                     color: isNicheSelected ? '#000' : '#ccc',
-                                                                    cursor: 'pointer'
+                                                                    cursor: 'pointer',
+                                                                    whiteSpace: 'nowrap'
                                                                 }}
                                                             >
                                                                 {niche}
@@ -311,6 +343,170 @@ const EditProfile = () => {
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+
+                    {/* Profile Theme Section */}
+                    <div className="form-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Theme</label>
+                            <FaInfoCircle size={14} color="#888" title="Unlock more gradients through achievements" />
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                            Customize your profile with different gradient backgrounds.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+                            {Object.values(PROFILE_GRADIENTS).map(gradient => {
+                                const isUnlocked = unlockedGradients.includes(gradient.id);
+                                const isSelected = selectedGradient === gradient.id;
+
+                                return (
+                                    <button
+                                        key={gradient.id}
+                                        type="button"
+                                        onClick={() => isUnlocked && setSelectedGradient(gradient.id)}
+                                        disabled={!isUnlocked}
+                                        style={{
+                                            padding: '0',
+                                            border: isSelected ? '2px solid var(--ice-mint)' : '2px solid #333',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                                            opacity: isUnlocked ? 1 : 0.4,
+                                            position: 'relative',
+                                            background: 'transparent'
+                                        }}
+                                    >
+                                        <div style={{
+                                            height: '80px',
+                                            background: gradient.background,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            position: 'relative'
+                                        }}>
+                                            {!isUnlocked && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    inset: 0,
+                                                    background: 'rgba(0,0,0,0.7)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <FaLock color="#666" size={20} />
+                                                </div>
+                                            )}
+                                            {isSelected && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '8px',
+                                                    right: '8px',
+                                                    background: 'var(--ice-mint)',
+                                                    borderRadius: '50%',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <FaCheck color="#000" size={12} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{
+                                            padding: '0.5rem',
+                                            background: '#111',
+                                            textAlign: 'center'
+                                        }}>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: '600', color: isUnlocked ? '#fff' : '#666' }}>
+                                                {gradient.name}
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', color: '#888', marginTop: '2px' }}>
+                                                {gradient.description}
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Star Color Customization */}
+                    <div className="form-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Star Color</label>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                            Customize the color of the animated stars on your profile banner.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.75rem' }}>
+                            {[
+                                { name: 'Ice Mint', color: '#7FFFD4' },
+                                { name: 'Purple', color: '#9D4EDD' },
+                                { name: 'Blue', color: '#4CC9F0' },
+                                { name: 'Pink', color: '#FF006E' },
+                                { name: 'Gold', color: '#FFD60A' },
+                                { name: 'Orange', color: '#FF9E00' },
+                                { name: 'Red', color: '#FF4D4D' },
+                                { name: 'Green', color: '#06FFA5' },
+                                { name: 'Cyan', color: '#00F5FF' },
+                                { name: 'White', color: '#FFFFFF' }
+                            ].map(option => (
+                                <button
+                                    key={option.color}
+                                    type="button"
+                                    onClick={() => setStarColor(option.color)}
+                                    style={{
+                                        padding: '0',
+                                        border: starColor === option.color ? '3px solid var(--ice-mint)' : '2px solid #333',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        background: 'transparent',
+                                        position: 'relative'
+                                    }}
+                                >
+                                    <div style={{
+                                        height: '60px',
+                                        background: '#000',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {/* Preview stars */}
+                                        {[...Array(5)].map((_, i) => (
+                                            <div
+                                                key={i}
+                                                style={{
+                                                    position: 'absolute',
+                                                    width: '2px',
+                                                    height: '2px',
+                                                    background: option.color,
+                                                    borderRadius: '50%',
+                                                    top: `${20 + i * 15}%`,
+                                                    left: `${15 + i * 15}%`,
+                                                    boxShadow: `0 0 3px ${option.color}`
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div style={{
+                                        padding: '0.4rem',
+                                        background: '#111',
+                                        textAlign: 'center',
+                                        fontSize: '0.75rem',
+                                        color: starColor === option.color ? '#fff' : '#888',
+                                        fontWeight: starColor === option.color ? '600' : '400'
+                                    }}>
+                                        {option.name}
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     </div>
 

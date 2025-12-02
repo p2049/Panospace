@@ -43,8 +43,16 @@ export interface UserProfile {
     updatedAt?: Timestamp;
 
     // Future: Premium features
+    // Future: Premium features
     isPremium?: boolean;
     premiumUntil?: Timestamp;
+
+    // Monetization
+    isUltra?: boolean;
+    isPartner?: boolean;
+    partnerType?: 'city' | 'campus' | 'park';
+    subscriptionStatus?: 'active' | 'canceled' | 'expired';
+    subscriptionUpdatedAt?: Timestamp;
 }
 
 // ============================================
@@ -77,6 +85,11 @@ export interface PostItem {
     addToShop: boolean;
     printSizes?: string[]; // IDs of selected sizes
     customPrices?: Record<string, number>; // Custom prices per size
+
+    // Monetization (Limited Editions)
+    isLimitedEdition?: boolean;
+    editionSize?: number;
+    rarityLevel?: 'common' | 'rare' | 'ultra' | 'legendary';
 
     // Text-specific
     content?: string;
@@ -119,6 +132,13 @@ export interface Post {
     // Feed placement (NEW: Algorithm support)
     feedScore?: number; // Calculated relevance score
     _score?: number; // Temporary scoring property for ranking
+
+    // Monetization
+    authorIsUltra?: boolean;
+    boostLevel?: number;
+    boostExpiresAt?: Timestamp;
+    isBoosted?: boolean;
+    boostMultiplier?: number;
 
     // Metadata
     createdAt: Timestamp;
@@ -201,6 +221,12 @@ export interface ShopItem {
     viewCount?: number;
     purchaseCount?: number;
     totalRevenueCents?: number;
+
+    // Monetization
+    isLimitedEdition?: boolean;
+    editionSize?: number;
+    soldCount?: number;
+    rarityLevel?: 'common' | 'rare' | 'ultra' | 'legendary';
 }
 
 // ============================================

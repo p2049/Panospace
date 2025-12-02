@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panospace - Hard Reset Utility</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 3rem;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #ff4444;
+        }
+
+        .warning {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .warning h2 {
+            color: #ff4444;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info {
+            background: rgba(127, 255, 212, 0.1);
+            border: 1px solid #7FFFD4;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .info h3 {
+            color: #7FFFD4;
+            margin-bottom: 0.5rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: #ff4444;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        button:hover:not(:disabled) {
+            background: #ff6666;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .progress.active {
+            display: block;
+        }
+
+        .log {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #7FFFD4;
+        }
+
+        .log-error {
+            color: #ff4444;
+        }
+
+        .log-success {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚨 Hard Reset Utility</h1>
+
+        <div class="warning">
+            <h2>⚠️ WARNING</h2>
+            <p>This will permanently delete ALL posts and shop items from Firestore. This action cannot be undone!</p>
+        </div>
+
+        <div class="info">
+            <h3>What this will do:</h3>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Delete all documents from 'posts' collection</li>
+                <li>Delete all documents from 'shopItems' collection</li>
+                <li>Clear all post data from the feed</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>Manual steps required after:</h3>
+            <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Go to Firebase Console → Storage</li>
+                <li>Delete the /posts folder</li>
+                <li>Create a new empty /posts folder</li>
+            </ol>
+        </div>
+
+        <button id="resetBtn" onclick="confirmReset()">DELETE ALL POSTS</button>
+
+        <div id="progress" class="progress">
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase config from src/firebase.js
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSQsWG8zdGGAT3BXUjuOh75IO2OO3af5c",
+            authDomain: "panospace-7v4ucn.firebaseapp.com",
+            projectId: "panospace-7v4ucn",
+            storageBucket: "panospace-7v4ucn.firebasestorage.app",
+            messagingSenderId: "832100282894",
+            appId: "1:832100282894:web:371c454407d68d5ef3425f",
+            measurementId: "G-XXSZBBYJWL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.collection = collection;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+
+        console.log('Firebase initialized successfully');
+    </script>
+
+    <script>
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const className = type === 'error' ? 'log-error' : type === 'success' ? 'log-success' : '';
+            logEl.innerHTML += `<div class="${className}">${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function confirmReset() {
+            const confirmed = confirm('Are you ABSOLUTELY SURE you want to delete ALL posts and shop items? This cannot be undone!');
+            if (!confirmed) return;
+
+            const doubleConfirm = prompt('Type "DELETE ALL POSTS" to confirm:');
+            if (doubleConfirm !== 'DELETE ALL POSTS') {
+                alert('Reset cancelled.');
+                return;
+            }
+
+            performHardReset();
+        }
+
+        async function performHardReset() {
+            const btn = document.getElementById('resetBtn');
+            const progress = document.getElementById('progress');
+
+            btn.disabled = true;
+            progress.classList.add('active');
+
+            log('🚨 Starting hard reset...', 'info');
+
+            try {
+                // Delete posts
+                log('Fetching posts collection...', 'info');
+                const postsSnapshot = await window.getDocs(window.collection(window.db, 'posts'));
+                log(`Found ${postsSnapshot.size} posts to delete`, 'info');
+
+                let deletedPosts = 0;
+                for (const postDoc of postsSnapshot.docs) {
+                    await window.deleteDoc(window.doc(window.db, 'posts', postDoc.id));
+                    deletedPosts++;
+                    if (deletedPosts % 10 === 0) {
+                        log(`Deleted ${deletedPosts}/${postsSnapshot.size} posts...`, 'info');
+                    }
+                }
+                log(`✅ Deleted ${deletedPosts} posts`, 'success');
+
+                // Delete shop items
+                log('Fetching shopItems collection...', 'info');
+                const shopSnapshot = await window.getDocs(window.collection(window.db, 'shopItems'));
+                log(`Found ${shopSnapshot.size} shop items to delete`, 'info');
+
+                let deletedShop = 0;
+                for (const shopDoc of shopSnapshot.docs) {
+                    await window.deleteDoc(window.doc(window.db, 'shopItems', shopDoc.id));
+                    deletedShop++;
+                    if (deletedShop % 10 === 0) {
+                        log(`Deleted ${deletedShop}/${shopSnapshot.size} shop items...`, 'info');
+                    }
+                }
+                log(`✅ Deleted ${deletedShop} shop items`, 'success');
+
+                log('', 'info');
+                log('🎉 Hard reset complete!', 'success');
+                log('', 'info');
+                log('⚠️  IMPORTANT: Manual steps required:', 'info');
+                log('1. Go to Firebase Console → Storage', 'info');
+                log('2. Delete the /posts folder', 'info');
+                log('3. Create a new empty /posts folder', 'info');
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

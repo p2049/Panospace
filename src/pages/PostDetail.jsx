@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -8,6 +8,7 @@ import Post from '../components/Post';
 const PostDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(true);
     const [posts, setPosts] = useState([]);
     const [initialPostIndex, setInitialPostIndex] = useState(0);
@@ -18,6 +19,15 @@ const PostDetail = () => {
         const fetchUserPosts = async () => {
             try {
                 setLoading(true);
+
+                // Check if we have context posts passed from navigation (e.g. from Search)
+                if (location.state?.contextPosts) {
+                    console.log('Using context posts from navigation state');
+                    setPosts(location.state.contextPosts);
+                    setInitialPostIndex(location.state.initialIndex || 0);
+                    setLoading(false);
+                    return;
+                }
 
                 // 1. Fetch the selected post to get the user ID
                 console.log('Fetching post:', id);
@@ -38,23 +48,17 @@ const PostDetail = () => {
                     return;
                 }
 
-                // 2. Fetch all posts from this user
-                // Note: Using 'authorId' and client-side sorting to avoid index issues
+                // 2. Fetch recent posts from this user (limit to 10 for "More from this author")
                 try {
                     console.log('Fetching user feed for:', userId);
                     const userPostsQuery = query(
                         collection(db, 'posts'),
-                        where('authorId', '==', userId)
+                        where('authorId', '==', userId),
+                        orderBy('createdAt', 'desc'),
+                        limit(10)
                     );
                     const postsSnap = await getDocs(userPostsQuery);
                     const userPosts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-                    // Sort by createdAt desc
-                    userPosts.sort((a, b) => {
-                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-                        return dateB - dateA;
-                    });
 
                     // Find the index of the selected post
                     const selectedIndex = userPosts.findIndex(p => p.id === id);
@@ -82,7 +86,7 @@ const PostDetail = () => {
         };
 
         fetchUserPosts();
-    }, [id]);
+    }, [id, location.state]);
 
     // Scroll to the initial post after posts are loaded
     useEffect(() => {

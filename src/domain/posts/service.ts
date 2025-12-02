@@ -80,6 +80,11 @@ export async function createPost(
         location: formData.location,
     });
 
+    // Check user tier for Ultra status
+    const { getUserTier, USER_TIERS } = await import('../../services/monetizationService');
+    const tier = await getUserTier(userId);
+    const isUltra = tier === USER_TIERS.ULTRA;
+
     // Create post document
     const postData = {
         authorId: userId,
@@ -96,6 +101,7 @@ export async function createPost(
         likeCount: 0,
         commentCount: 0,
         shopLinked: items.some(item => item.addToShop),
+        authorIsUltra: isUltra, // Monetization flag
     };
 
     const docRef = await addDoc(collection(db, POSTS_COLLECTION), postData);

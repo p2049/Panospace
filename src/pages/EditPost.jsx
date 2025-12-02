@@ -134,7 +134,7 @@ const EditPost = () => {
                 <button onClick={() => navigate(-1)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', opacity: 0.8 }}>
                     <FaArrowLeft /> Cancel
                 </button>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: '500', letterSpacing: '1px' }}>EDIT POST</h2>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '0.05em', fontFamily: 'var(--font-family-heading)', textTransform: 'uppercase' }}>EDIT POST</h2>
                 <button
                     onClick={handleSave}
                     disabled={saving}

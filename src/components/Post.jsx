@@ -3,8 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
-import { FaCamera, FaChevronLeft, FaChevronRight, FaInfoCircle, FaUserCircle, FaMapMarkerAlt, FaTrash } from 'react-icons/fa';
+import { FaCamera, FaInfoCircle, FaUserCircle, FaMapMarkerAlt, FaTrash } from 'react-icons/fa';
 import LikeButton from './LikeButton';
+import FilmStripCarousel from './FilmStripCarousel';
+import FilmStripPost from './FilmStripPost';
+import SmartImage from './SmartImage';
+import DateStampOverlay from './DateStampOverlay';
+import SpaceCardBadge from './SpaceCardBadge';
+import SoundTagBadge from './SoundTagBadge';
+import { useUI } from '../context/UIContext';
+import '../styles/Post.css';
 
 const ExifDisplay = ({ exif }) => {
     if (!exif) return null;
@@ -43,66 +51,91 @@ const ExifDisplay = ({ exif }) => {
 };
 
 const Post = ({ post }) => {
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const { currentUser } = useAuth();
+    const { setActivePost } = useUI(); // Use global UI context
     const navigate = useNavigate();
     const containerRef = useRef(null);
-    const [currentSlide, setCurrentSlide] = useState(0);
     const [showInfo, setShowInfo] = useState(false);
+    const [currentSlide, setCurrentSlide] = useState(0);
 
-    // Detect mobile vs desktop
+    // Intersection Observer to track active post
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        setActivePost(post); // Set this post as active when visible
+                    }
+                });
+            },
+            { threshold: 0.6 } // 60% visibility required
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => {
+            if (containerRef.current) {
+                observer.unobserve(containerRef.current);
+            }
+        };
+    }, [post, setActivePost]);
+
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+    const [touchStartY, setTouchStartY] = useState(null);
+    const [touchEndY, setTouchEndY] = useState(null);
+
+    // Minimum swipe distance (in px)
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+        setTouchEndY(null);
+        setTouchStartY(e.targetTouches[0].clientY);
+    };
+
+    const onTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+        setTouchEndY(e.targetTouches[0].clientY);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+
+        const distanceX = touchStart - touchEnd;
+        const distanceY = touchStartY - touchEndY;
+
+        // Check if it's more horizontal than vertical
+        const isHorizontal = Math.abs(distanceX) > Math.abs(distanceY);
+
+        if (isHorizontal) {
+            const isLeftSwipe = distanceX > minSwipeDistance;
+            const isRightSwipe = distanceX < -minSwipeDistance;
+
+            if (isLeftSwipe) {
+                nextSlide();
+            }
+            if (isRightSwipe) {
+                prevSlide();
+            }
+        }
+    };
 
     // Handle legacy 'slides' vs new 'items' vs current 'images' structure
-    const items = post.images || post.items || post.slides || [];
+    let items = post.images || post.items || post.slides || [];
 
     // If no items exist but we have an imageUrl or shopImageUrl, create a single item
     if (items.length === 0) {
         const fallbackUrl = post?.images?.[0]?.url || post.imageUrl || post.shopImageUrl || '';
         if (fallbackUrl) {
-            items.push({ type: 'image', url: fallbackUrl });
+            items = [{ type: 'image', url: fallbackUrl }];
         }
     }
 
-    // DEBUG: Log post data structure
-    console.log('🔍 POST DATA:', {
-        postId: post.id,
-        hasImages: !!post.images,
-        imagesLength: post.images?.length,
-        hasItems: !!post.items,
-        hasSlides: !!post.slides,
-        firstImageUrl: items[0]?.url,
-        fallbackImageUrl: post?.images?.[0]?.url || post.imageUrl,
-        shopImageUrl: post.shopImageUrl,
-        itemsArray: items
-    });
-
-    const totalSlides = items.length;
-    const currentItem = items[currentSlide] || {};
-
-    const nextSlide = () => {
-        if (currentSlide < totalSlides - 1) {
-            setCurrentSlide(currentSlide + 1);
-            containerRef.current?.children[0]?.scrollTo({
-                left: (currentSlide + 1) * window.innerWidth,
-                behavior: 'smooth'
-            });
-        }
-    };
-
-    const prevSlide = () => {
-        if (currentSlide > 0) {
-            setCurrentSlide(currentSlide - 1);
-            containerRef.current?.children[0]?.scrollTo({
-                left: (currentSlide - 1) * window.innerWidth,
-                behavior: 'smooth'
-            });
-        }
-    };
+    const currentItem = items[currentSlide] || items[0] || {}; // Use currentSlide for EXIF
 
     const handleDelete = async () => {
         if (window.confirm("Are you sure you want to delete this post? This cannot be undone.")) {
@@ -113,6 +146,14 @@ const Post = ({ post }) => {
                 alert("Failed to delete post.");
             }
         }
+    };
+
+    const nextSlide = () => {
+        setCurrentSlide((prev) => (prev + 1) % items.length);
+    };
+
+    const prevSlide = () => {
+        setCurrentSlide((prev) => (prev - 1 + items.length) % items.length);
     };
 
     const postContainerStyle = {
@@ -126,94 +167,26 @@ const Post = ({ post }) => {
         backgroundColor: '#000'
     };
 
-    const slideContainerStyle = {
-        display: 'flex',
-        height: '100%',
-        width: '100%',
-        overflowX: 'auto',
-        scrollSnapType: 'x mandatory',
-        scrollBehavior: 'smooth',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none'
-    };
-
-    const slideStyle = {
-        minWidth: '100%',
-        height: '100%',
-        scrollSnapAlign: 'center',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative'
-    };
-
-    // ANTI-CROP: Use contain, show full image at any aspect ratio
-    const imageSlideStyle = {
-        width: '100%',
-        height: 'auto',
-        maxHeight: '100vh',
-        objectFit: 'contain', // NEVER CROP - show full image
-        backgroundColor: '#000',
-        transition: 'opacity 0.3s ease-in-out'
-    };
-
-    const textSlideStyle = {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '3rem',
-        fontSize: '2rem',
-        textAlign: 'center',
-        color: '#fff',
-        background: 'radial-gradient(circle at center, rgba(40,40,40,0.9) 0%, rgba(10,10,10,0.95) 100%)',
-        backdropFilter: 'blur(20px)',
-        fontFamily: 'Inter, sans-serif',
-        fontWeight: '300',
-        lineHeight: '1.6',
-        textShadow: '0 2px 10px rgba(0,0,0,0.5)'
-    };
-
     const authorOverlayStyle = {
         position: 'absolute',
-        bottom: '20px',
+        bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))', // Higher positioning for mobile visibility
         left: '20px',
         display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem 1rem',
-        background: 'rgba(0, 0, 0, 0.3)',
-        backdropFilter: 'blur(5px)',
-        borderRadius: '20px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        flexDirection: 'column',
+        gap: '0.1rem', // Tighter gap
+        padding: '0.2rem 0.5rem', // Tighter padding
+        background: 'rgba(0, 0, 0, 0.4)',
+        backdropFilter: 'blur(4px)',
+        borderRadius: '4px',
+        borderLeft: '2px solid #7FFFD4',
         zIndex: 10,
         cursor: 'pointer',
+        width: 'fit-content', // Hug content
         maxWidth: '200px'
     };
 
-    // DESKTOP ONLY: Show arrows
-    const arrowButtonStyle = {
-        position: 'absolute',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        background: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '50%',
-        width: '60px',
-        height: '60px',
-        display: isMobile ? 'none' : 'flex', // HIDE ON MOBILE
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        color: '#fff',
-        fontSize: '1.5rem',
-        zIndex: 20,
-        transition: 'all 0.2s ease',
-        opacity: 0.7
-    };
+    // Check if this post should use Film Strip Mode
+    const useFilmStripMode = post.uiOverlays?.sprocketBorder === true;
 
     return (
         <div ref={containerRef} style={postContainerStyle} data-testid="post-item">
@@ -229,86 +202,190 @@ const Post = ({ post }) => {
                 }}>
                     No content available
                 </div>
-            ) : (
-                <div style={slideContainerStyle}>
-                    {items.map((item, index) => (
-                        <div key={index} style={slideStyle}>
-                            {item.url ? (
-                                <img
-                                    src={item.url || post?.images?.[0]?.url || post.imageUrl || post.shopImageUrl || ''}
-                                    alt={`Slide ${index + 1}`}
-                                    style={imageSlideStyle}
-                                    loading="lazy"
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        const placeholder = document.createElement('div');
-                                        placeholder.style.cssText = 'width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #888; font-size: 1.2rem;';
-                                        placeholder.textContent = 'Image unavailable';
-                                        e.target.parentNode.appendChild(placeholder);
-                                    }}
-                                />
-                            ) : (
-                                <div style={textSlideStyle}>
-                                    {item.content || item.text}
-                                </div>
+            ) : items.length === 1 ? (
+                /* SINGLE IMAGE VIEW - NO FILM STRIP */
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', position: 'relative' }}>
+                    {items[0].url || (typeof items[0] === 'string' && items[0].match(/^http/)) ? (
+                        <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+                            <img
+                                src={items[0].url || items[0]}
+                                alt="Post content"
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    width: 'auto',
+                                    height: 'auto',
+                                    objectFit: 'contain',
+                                    display: 'block'
+                                }}
+                            />
+                            {/* Date Stamp Overlay - positioned relative to image */}
+                            {post.uiOverlays?.quartzDate && (
+                                <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
                             )}
                         </div>
-                    ))}
+                    ) : (
+                        <div style={{ color: '#fff', fontSize: '1.5rem', padding: '2rem', textAlign: 'center' }}>
+                            {items[0].content || items[0].text || (typeof items[0] === 'string' ? items[0] : JSON.stringify(items[0]))}
+                        </div>
+                    )}
+                </div>
+            ) : useFilmStripMode ? (
+                /* FILM STRIP MODE - Real PNG overlay */
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FilmStripPost images={items} uiOverlays={post.uiOverlays} />
+                </div>
+            ) : (
+                /* REGULAR MULTI-IMAGE - Full-screen slides */
+                <div
+                    style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', touchAction: 'pan-y' }}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                >
+
+
+                    {/* Current slide image */}
+                    {items[currentSlide].url || (typeof items[currentSlide] === 'string' && items[currentSlide].match(/^http/)) ? (
+                        <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+                            <img
+                                src={items[currentSlide].url || items[currentSlide]}
+                                alt={`Slide ${currentSlide + 1}`}
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    width: 'auto',
+                                    height: 'auto',
+                                    objectFit: 'contain',
+                                    display: 'block'
+                                }}
+                            />
+                            {/* Date Stamp Overlay - positioned relative to image */}
+                            {post.uiOverlays?.quartzDate && (
+                                <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{ color: '#fff', fontSize: '1.5rem', padding: '2rem', textAlign: 'center' }}>
+                            {items[currentSlide].content || items[currentSlide].text || (typeof items[currentSlide] === 'string' ? items[currentSlide] : JSON.stringify(items[currentSlide]))}
+                        </div>
+                    )}
+
+                    {/* Navigation arrows - Futuristic hexagonal design */}
+                    {items.length > 1 && (
+                        <>
+                            {currentSlide > 0 && (
+                                <button
+                                    onClick={prevSlide}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '20px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        fontSize: '3rem',
+                                        fontWeight: '300',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        zIndex: 15,
+                                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
+                                        transition: 'all 0.2s ease',
+                                        padding: '0',
+                                        width: 'auto',
+                                        height: 'auto'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
+                                        e.currentTarget.style.transform = 'translateY(-50%) scale(1.15)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                                        e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                                    }}
+                                >
+                                    ‹
+                                </button>
+                            )}
+                            {currentSlide < items.length - 1 && (
+                                <button
+                                    onClick={nextSlide}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '20px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'rgba(255, 255, 255, 0.7)',
+                                        fontSize: '3rem',
+                                        fontWeight: '300',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        zIndex: 15,
+                                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
+                                        transition: 'all 0.2s ease',
+                                        padding: '0',
+                                        width: 'auto',
+                                        height: 'auto'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
+                                        e.currentTarget.style.transform = 'translateY(-50%) scale(1.15)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                                        e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                                    }}
+                                >
+                                    ›
+                                </button>
+                            )}
+
+
+                        </>
+                    )}
                 </div>
             )}
 
-            {/* Navigation Arrows - DESKTOP ONLY */}
-            {!isMobile && totalSlides > 1 && currentSlide > 0 && (
-                <button
-                    onClick={prevSlide}
-                    style={{ ...arrowButtonStyle, left: '2rem' }}
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
-                >
-                    <FaChevronLeft />
-                </button>
-            )}
+            {/* Digital Goods Badges */}
+            <div style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                zIndex: 20,
+                alignItems: 'flex-end'
+            }}>
+                {post.spaceCardId && (
+                    <SpaceCardBadge
+                        type={post.isSpaceCardCreator ? 'creator' : 'owner'}
+                        rarity={post.spaceCardRarity || 'Common'}
+                    />
+                )}
+                {post.soundTagId && (
+                    <SoundTagBadge
+                        hasSound={true}
+                        label={post.soundTagTitle || 'SoundTag'}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            alert("SoundTag Preview Coming Soon");
+                        }}
+                    />
+                )}
+            </div>
 
-            {!isMobile && totalSlides > 1 && currentSlide < totalSlides - 1 && (
-                <button
-                    onClick={nextSlide}
-                    style={{ ...arrowButtonStyle, right: '2rem' }}
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
-                >
-                    <FaChevronRight />
-                </button>
-            )}
-
-            {/* Slide Indicator */}
-            {totalSlides > 1 && (
-                <div style={{
-                    position: 'absolute',
-                    top: '2rem',
-                    right: '2rem',
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    backdropFilter: 'blur(10px)',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    color: '#fff',
-                    fontSize: '0.9rem',
-                    zIndex: 10
-                }}>
-                    {currentSlide + 1} / {totalSlides}
-                </div>
-            )}
-
-            {/* Title & Tags Overlay */}
+            {/* Title & Tags Overlay - To the right of planet icon on left side */}
             {(post.title || (post.tags && post.tags.length > 0)) && (
-                <div style={{
-                    position: 'absolute',
-                    top: '2rem',
-                    left: '2rem',
-                    maxWidth: '80%',
-                    zIndex: 10,
-                    pointerEvents: 'none'
-                }}>
-                    {post.title && <h2 style={{ fontSize: '1.5rem', fontWeight: '600', textShadow: '0 2px 4px rgba(0,0,0,0.8)', marginBottom: '0.5rem' }}>{post.title}</h2>}
+                <div className="post-title-overlay">
+                    {post.title && <h2 className="post-title-text">{post.title}</h2>}
                     {post.tags && (
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             {post.tags.map(tag => (
@@ -319,28 +396,34 @@ const Post = ({ post }) => {
                 </div>
             )}
 
-            {/* Info Toggle Button (for EXIF) */}
+            {/* Info Toggle Button (for EXIF) - Next to username, green aesthetic */}
             {currentItem?.exif && (
                 <button
                     onClick={() => setShowInfo(!showInfo)}
                     style={{
                         position: 'absolute',
-                        bottom: '70px',
-                        right: '20px',
-                        background: showInfo ? '#fff' : 'rgba(0,0,0,0.5)',
-                        color: showInfo ? '#000' : '#fff',
-                        border: 'none',
+                        bottom: '20px',
+                        left: '220px',
+                        background: '#000',
+                        color: 'rgba(127, 255, 212, 0.3)',
+                        border: '2px solid rgba(127, 255, 212, 0.3)',
                         borderRadius: '50%',
-                        width: '40px',
-                        height: '40px',
+                        width: '24px',
+                        height: '24px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        zIndex: 20
+                        zIndex: 20,
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        fontFamily: '"Orbitron", "Courier New", monospace',
+                        fontStyle: 'normal',
+                        boxShadow: showInfo ? '0 0 12px rgba(127, 255, 212, 0.6)' : '0 2px 8px rgba(0, 0, 0, 0.5)',
+                        transition: 'all 0.2s'
                     }}
                 >
-                    <FaInfoCircle />
+                    i
                 </button>
             )}
 
@@ -349,90 +432,52 @@ const Post = ({ post }) => {
 
             {/* Author Info & Location */}
             <div
+                className="author-overlay"
                 style={authorOverlayStyle}
                 onClick={() => navigate(`/profile/${post.userId || post.authorId}`)}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}
             >
-                <FaUserCircle size={32} style={{ color: '#fff' }} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ color: '#fff', fontWeight: '500', fontSize: '1rem' }}>
-                        {post.username || post.authorName || 'Anonymous'}
+                {/* Minimal Username Display */}
+                <span style={{
+                    color: '#7FFFD4',
+                    fontWeight: '600',
+                    fontSize: '0.85rem',
+                    fontFamily: '"Rajdhani", monospace',
+                    letterSpacing: '1.5px',
+                    textTransform: 'uppercase',
+                    textShadow: '0 0 8px rgba(127, 255, 212, 0.3)'
+                }}>
+                    @{post.username || post.authorName || 'ANONYMOUS'}
+                </span>
+
+                {post.location && (post.location.city || post.location.country) && (
+                    <span style={{ color: '#aaa', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'monospace' }}>
+                        <FaMapMarkerAlt size={8} />
+                        {[post.location.city, post.location.country].filter(Boolean).join(', ').toUpperCase()}
                     </span>
-                    {post.location && (post.location.city || post.location.country) && (
-                        <span style={{ color: '#ccc', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <FaMapMarkerAlt size={10} />
-                            {[post.location.city, post.location.state, post.location.country].filter(Boolean).join(', ')}
-                        </span>
-                    )}
-                </div>
+                )}
             </div>
 
-            {/* Like Button */}
-            <div style={{
-                position: 'absolute',
-                bottom: '20px',
-                right: '20px',
-                zIndex: 10
-            }}>
+            {/* Like Button & Slide Counter - Swapped with info button */}
+            <div className="post-actions-container">
+                {/* Slide Counter - Minimal design */}
+                {items.length > 1 && !useFilmStripMode && (
+                    <div style={{
+                        color: 'rgba(255, 255, 255, 0.85)',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        fontFamily: '"Rajdhani", "SF Mono", "Monaco", monospace',
+                        letterSpacing: '1px',
+                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
+                        fontVariantNumeric: 'tabular-nums'
+                    }}>
+                        {currentSlide + 1}/{items.length}
+                    </div>
+                )}
                 <LikeButton postId={post.id} />
             </div>
 
-            {/* Edit & Delete Buttons (Owner Only) */}
-            {currentUser && currentUser.uid === post.authorId && (
-                <div style={{
-                    position: 'absolute',
-                    top: '2rem',
-                    right: totalSlides > 1 ? '6rem' : '2rem',
-                    display: 'flex',
-                    gap: '1rem',
-                    zIndex: 20
-                }}>
-                    <button
-                        onClick={() => navigate(`/edit-post/${post.id}`)}
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.2)',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '35px',
-                            height: '35px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            backdropFilter: 'blur(5px)'
-                        }}
-                        title="Edit Post"
-                    >
-                        <FaCamera size={14} />
-                    </button>
-                    <button
-                        onClick={handleDelete}
-                        style={{
-                            background: 'rgba(200, 0, 0, 0.6)',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '35px',
-                            height: '35px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer'
-                        }}
-                        title="Delete Post"
-                    >
-                        <FaTrash size={14} />
-                    </button>
-                </div>
-            )}
-
-            <style>{`
-                div::-webkit-scrollbar {
-                    display: none;
-                }
-            `}</style>
         </div>
     );
 };

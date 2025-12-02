@@ -1,13 +1,15 @@
 // src/hooks/useCreatePost.js
-import { useState } from 'react';
+import { useState, useRef } from 'react'; // 🔐 Added useRef for rate limiting
 import { db, storage } from '../firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import exifr from 'exifr';
 import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printfulApi';
 import { formatPrice } from '../utils/helpers';
+import { PhotoDexService } from '../services/PhotoDexService';
+import { AccountTypeService } from '../services/AccountTypeService';
 
 // ---------------------------------------------------------------------------
 // Helper: extract EXIF from a File
@@ -47,20 +49,33 @@ const extractExif = async (file) => {
 export const useCreatePost = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // 🔐 SECURITY: Rate limiting - prevent spam posting
+    const lastPostTime = useRef(0);
+    const MIN_POST_INTERVAL = 30000; // 30 seconds between posts
     const [progress, setProgress] = useState(0);
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
     // -----------------------------------------------------------------------
     // createPost – full implementation
+    // status: 'published' (default) | 'draft'
     // -----------------------------------------------------------------------
-    const createPost = async (postData, slides) => {
+    const createPost = async (postData, slides, status = 'published') => {
         setLoading(true);
         setError(null);
         setProgress(0);
 
         try {
             if (!currentUser) throw new Error('Must be logged in');
+
+            // 🔐 SECURITY: Enforce rate limiting
+            const now = Date.now();
+            if (now - lastPostTime.current < MIN_POST_INTERVAL) {
+                const waitTime = Math.ceil((MIN_POST_INTERVAL - (now - lastPostTime.current)) / 1000);
+                throw new Error(`Please wait ${waitTime} seconds before posting again`);
+            }
+            lastPostTime.current = now;
 
             // ---------------------------------------------------------------
             // 0️⃣ Author information (fallbacks) - ALWAYS fetch from Firestore first
@@ -89,6 +104,25 @@ export const useCreatePost = () => {
 
             const username = authorName;
             const avatar = currentUser.photoURL || '';
+
+            // Check if user is Ultra
+            let isUltra = false;
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    isUltra = userDoc.data().isUltra || false;
+                }
+            } catch (e) {
+                console.warn('Could not fetch user profile for Ultra check', e);
+            }
+
+            // Get user's account type for feed filtering
+            let authorAccountType = 'art'; // Default
+            try {
+                authorAccountType = await AccountTypeService.getAccountType(currentUser.uid);
+            } catch (e) {
+                console.warn('Could not fetch account type, using default', e);
+            }
 
             // ---------------------------------------------------------------
             // 1️⃣ Upload images & collect metadata
@@ -181,6 +215,10 @@ export const useCreatePost = () => {
                             height,
                             aspectRatio: imgRatio,
                             allowCropped: slide.allowCropped || false,
+                            // Limited Edition Fields
+                            isLimitedEdition: slide.isLimitedEdition || false,
+                            editionSize: slide.editionSize || 10,
+                            price: slide.price || 0
                         };
                     }
                     // Text slide fallback
@@ -206,15 +244,98 @@ export const useCreatePost = () => {
             // ---------------------------------------------------------------
             // 3️⃣ Create main post document
             // ---------------------------------------------------------------
+            // Extract image URLs and create thumbnails array
+            const imageUrls = items
+                .filter((i) => i.type === 'image')
+                .map((i) => i.url);
+
+            const thumbnailUrls = imageUrls; // For now, use same URLs as thumbnails
+
+            // Extract location data
+            const locationName = postData.location ?
+                [postData.location.city, postData.location.state, postData.location.country]
+                    .filter(Boolean)
+                    .join(', ') : '';
+
             const postDoc = {
+                // ✅ REQUIRED FIELDS (New Schema)
+                uid: currentUser.uid,
+                username,
+                userAvatar: avatar,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                caption: postData.title || '',
+                imageUrls,
+                thumbnailUrls,
+                tags: postData.tags || [],
+                locationName,
+                lat: postData.location?.lat || null,
+                lng: postData.location?.lng || null,
+                likesCount: 0,
+                commentsCount: 0,
+                artType: postData.artType || 'photography',
+                category: postData.category || 'general',
+                contestTag: postData.contestTag || '',
+                safe: true,
+                shopEnabled: items.some((i) => i.addToShop === true),
+                shopProducts: items.some((i) => i.addToShop === true) ?
+                    items.filter((i) => i.addToShop).map((i) => ({
+                        url: i.url,
+                        tier: i.productTier,
+                        sizes: i.printSizes
+                    })) : [],
+                hasSlides: items.length > 1,
+                hasItems: items.length > 0,
+                hasImages: imageUrls.length > 0,
+
+                // Account Type (for dual feed system)
+                authorAccountType, // 'art' or 'social'
+
+                // Collections System
+                collectionId: postData.collectionId || null,
+                collectionPostToFeed: postData.collectionPostToFeed ?? null, // Denormalized for performance
+                showInProfile: postData.showInProfile !== undefined ? postData.showInProfile : true,
+
+                // LEGACY FIELDS (Keep for backwards compatibility)
                 userId: currentUser.uid,
                 authorId: currentUser.uid,
-                username,
                 profileImage: avatar,
                 title: postData.title || '',
                 description: postData.description || '',
-                tags: postData.tags || [],
+
+                // Aesthetic Metadata
+                colorTags: postData.colorTags || [],
+                moodTags: postData.moodTags || [],
+                seasonalTags: postData.seasonalTags || [],
+                timeOfDayTags: postData.timeOfDayTags || [],
+
+                // Film Metadata (Unified)
+                filmMetadata: postData.filmMetadata || null,
+                enableRatings: postData.enableRatings || false,
+
+                // UI Overlays (Quartz Date, Borders)
+                uiOverlays: postData.uiOverlays || null,
+                filmInfo: postData.filmMetadata?.isFilm ? {
+                    filmStock: postData.filmMetadata.stock,
+                    camera: postData.filmMetadata.cameraOverride,
+                    lens: postData.filmMetadata.lensOverride,
+                    iso: postData.filmMetadata.iso,
+                    format: postData.filmMetadata.format,
+                    scanner: postData.filmMetadata.scanner,
+                    notes: postData.filmMetadata.lab
+                } : null,
+
+                // Post Type Settings
+                postType: postData.postType || 'standard',
+                flipbookSettings: postData.flipbookSettings || null,
+                layoutSettings: postData.layoutSettings || null,
+                panoStackSettings: postData.panoStackSettings || null,
                 location: postData.location || null,
+
+                // UI Overlays (Film Sprockets, Quartz Date, etc.)
+                uiOverlays: postData.uiOverlays || null,
+
+                // Detailed images array (legacy)
                 images: items
                     .filter((i) => i.type === 'image')
                     .map((i) => ({
@@ -231,15 +352,50 @@ export const useCreatePost = () => {
                         aspectRatio: i.aspectRatio || null,
                         allowCropped: i.allowCropped || false,
                     })),
+
                 searchKeywords,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
                 likeCount: 0,
                 commentCount: 0,
                 addToShop: items.some((i) => i.addToShop === true),
+                moderationStatus: 'active',
+                status: status,
             };
 
             const docRef = await addDoc(collection(db, 'posts'), postDoc);
+
+            // ---------------------------------------------------------------
+            // 🚨 FAIL-SAFE: Verify images exist in storage immediately
+            // ---------------------------------------------------------------
+            try {
+                const imageUrls = items.filter(i => i.type === 'image').map(i => i.url);
+                const verificationPromises = imageUrls.map(async (url) => {
+                    try {
+                        // We can't easily use fetch() due to CORS on some storage buckets, 
+                        // but we can use getMetadata from firebase/storage to check existence.
+                        // However, we already have the URL. Let's try to fetch it with a HEAD request if possible, 
+                        // or just rely on the fact that we just got the downloadURL.
+                        // A more robust check is to re-get the download URL or metadata.
+
+                        // Let's parse the URL to get the ref again
+                        const urlObj = new URL(url);
+                        const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
+                        if (!pathMatch) throw new Error('Invalid URL format');
+
+                        const storagePath = decodeURIComponent(pathMatch[1]);
+                        const storageRef = ref(storage, storagePath);
+                        await getDownloadURL(storageRef); // This throws if file is missing
+                    } catch (e) {
+                        throw new Error(`Image verification failed for ${url}: ${e.message}`);
+                    }
+                });
+
+                await Promise.all(verificationPromises);
+            } catch (verificationError) {
+                console.error('❌ Post verification failed! Rolling back...', verificationError);
+                // Delete the ghost post
+                await deleteDoc(doc(db, 'posts', docRef.id));
+                throw new Error('Post creation failed: Image verification failed. Please try again.');
+            }
 
             // ---------------------------------------------------------------
             // 4️⃣ Create shop items for images flagged for sale
@@ -259,7 +415,7 @@ export const useCreatePost = () => {
                     let printSizesConfig = PRINT_SIZES.filter((size) =>
                         item.printSizes.includes(size.id)
                     ).map((size) => {
-                        const pricing = calculateTieredPricing(size.id, item.productTier);
+                        const pricing = calculateTieredPricing(size.id, item.productTier, isUltra);
                         if (!pricing) return null;
 
                         return {
@@ -310,6 +466,13 @@ export const useCreatePost = () => {
                         createdAt: serverTimestamp(),
                         tags: postData.tags || [],
                         searchKeywords,
+                        // Limited Edition Fields
+                        isLimitedEdition: item.isLimitedEdition || false,
+                        editionSize: item.isLimitedEdition ? (item.editionSize || 10) : null,
+                        price: item.price || 0, // Store base price for reference if needed
+                        soldCount: 0,
+                        isSoldOut: false,
+                        resaleAllowed: item.isLimitedEdition || false, // Allow resale for limited editions
                     };
 
                     await addDoc(collection(db, 'shopItems'), shopItemDoc);
@@ -343,10 +506,42 @@ export const useCreatePost = () => {
             }
 
             // ---------------------------------------------------------------
-            // 6️⃣ Navigate to home feed to show the new post
+            // 6️⃣ Check for PhotoDex badges
+            // ---------------------------------------------------------------
+            let photoDexResult = { newBadges: [], bonusXP: 0 };
+            try {
+                photoDexResult = await PhotoDexService.checkAndAwardBadge(
+                    currentUser.uid,
+                    currentUser.displayName || currentUser.email,
+                    docRef.id,
+                    postDoc
+                );
+            } catch (photoDexError) {
+                console.error('PhotoDex check failed:', photoDexError);
+                // Don't fail the post creation if PhotoDex fails
+            }
+
+            // ---------------------------------------------------------------
+            // 7️⃣ Add to Collection (if selected)
+            // ---------------------------------------------------------------
+            if (postData.collectionId) {
+                try {
+                    const collectionRef = doc(db, 'collections', postData.collectionId);
+                    await updateDoc(collectionRef, {
+                        postRefs: arrayUnion(docRef.id),
+                        updatedAt: serverTimestamp()
+                    });
+                } catch (collectionError) {
+                    console.error('Failed to add post to collection:', collectionError);
+                    // Don't fail the post creation, just log the error
+                }
+            }
+
+            // ---------------------------------------------------------------
+            // 7️⃣ Navigate to home feed to show the new post
             // ---------------------------------------------------------------
             navigate('/');
-            return docRef.id;
+            return { postId: docRef.id, photoDexResult };
         } catch (err) {
             console.error('Create post failed:', err);
             setError(err.message);

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { db } from '../firebase';
+import { useState, useCallback } from 'react';
+import { db, functions } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
 import {
     collection,
     query,
@@ -9,6 +10,9 @@ import {
     limit,
     startAfter
 } from 'firebase/firestore';
+import { getDerivedDate, isSameDate } from '../utils/dateHelpers';
+import { SORT_OPTIONS } from '../constants/searchFilters';
+import { sortPostsByTrending } from '../utils/trendingAlgorithm';
 
 export const useSearch = () => {
     const [loading, setLoading] = useState(false);
@@ -21,26 +25,58 @@ export const useSearch = () => {
      *  - use the first word to query 'searchKeywords' via array-contains
      *  - client-side filter for the rest of the words across displayName/username/bio/email/artTypes
      */
-    const searchUsers = async (searchTerm, lastDoc = null) => {
+    /**
+     * SEARCH USERS
+     * Strategy:
+     *  - tokenize the search term
+     *  - use the first word to query 'searchKeywords' via array-contains
+     *  - client-side filter for the rest of the words across displayName/username/bio/email/artTypes
+     */
+    const searchUsers = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { userIds = [] } = filters;
         const term = (searchTerm || '').toLowerCase().trim();
-        if (!term) return { data: [], lastDoc: null };
+
+        // If no term and no userIds, return empty (unless we want to support "list all users" which we usually don't)
+        if (!term && userIds.length === 0) return { data: [], lastDoc: null };
 
         setLoading(true);
         setError(null);
 
-        const words = term.split(/\s+/).filter(w => w.length > 1);
-        const primaryWord = words[0] || term;
-
         try {
             const usersRef = collection(db, 'users');
-            let q = query(
-                usersRef,
-                where('searchKeywords', 'array-contains', primaryWord),
-                orderBy('displayName'),
-                limit(50)
-            );
+            let q;
 
-            if (lastDoc) {
+            if (userIds.length > 0) {
+                // Filter by specific user IDs (e.g. Museum Members)
+                // 'in' query is limited to 10 (or 30). Slice for safety.
+                // For MVP, we'll slice to 10.
+                const safeUserIds = userIds.slice(0, 10);
+
+                // If term exists, we might want to filter client-side after fetching by IDs
+                // because we can't combine 'in' with 'array-contains' easily if not on same field
+                q = query(
+                    usersRef,
+                    where('__name__', 'in', safeUserIds), // __name__ is document ID
+                    limit(50)
+                );
+            } else {
+                // Standard search
+                const words = term.split(/\s+/).filter(w => w.length > 1);
+                const primaryWord = words[0] || term;
+
+                q = query(
+                    usersRef,
+                    where('searchKeywords', 'array-contains', primaryWord),
+                    orderBy('displayName'),
+                    limit(50)
+                );
+            }
+
+            if (lastDoc && userIds.length === 0) {
+                // Only apply pagination for standard search for now
+                const words = term.split(/\s+/).filter(w => w.length > 1);
+                const primaryWord = words[0] || term;
+
                 q = query(
                     usersRef,
                     where('searchKeywords', 'array-contains', primaryWord),
@@ -56,22 +92,28 @@ export const useSearch = () => {
                 ...d.data()
             }));
 
-            const filtered = docs.filter(user => {
-                const searchableText = [
-                    user.displayName,
-                    user.username,
-                    user.bio,
-                    user.email,
-                    ...(user.artTypes || [])
-                ]
-                    .filter(Boolean)
-                    .join(' ')
-                    .toLowerCase();
+            let filtered = docs;
 
-                return words.length === 0
-                    ? searchableText.includes(primaryWord)
-                    : words.every(w => searchableText.includes(w));
-            });
+            // Client-side filtering for search term
+            if (term) {
+                const words = term.split(/\s+/).filter(w => w.length > 1);
+                filtered = filtered.filter(user => {
+                    const searchableText = [
+                        user.displayName,
+                        user.username,
+                        user.bio,
+                        user.email,
+                        ...(user.artTypes || [])
+                    ]
+                        .filter(Boolean)
+                        .join(' ')
+                        .toLowerCase();
+
+                    return words.length === 0
+                        ? searchableText.includes(words[0] || term)
+                        : words.every(w => searchableText.includes(w));
+                });
+            }
 
             const newLastDoc =
                 snapshot.docs.length > 0
@@ -86,18 +128,25 @@ export const useSearch = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     /**
      * SEARCH POSTS
-     * Strategy:
-     *  - if artTypes filter: query posts where tags contains primary art type
-     *  - else if searchTerm: query posts where searchKeywords contains primary word
-     *  - else: fallback to recent posts
-     *  - then client-side filter on artTypes, location, remaining words
      */
-    const searchPosts = async (searchTerm, filters = {}, lastDoc = null) => {
-        const { artTypes = [], location = '' } = filters;
+    const searchPosts = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const {
+            tags = [],
+            parkId = '',
+            selectedDate = null,
+            location = '',
+            camera = '',
+            film = '',
+            orientation = '',
+            aspectRatio = '',
+            sort = 'newest',
+            authorIds = [] // New filter for following only
+        } = filters;
+
         const term = (searchTerm || '').toLowerCase().trim();
         const words = term.split(/\s+/).filter(w => w.length > 0);
         const primaryWord = words[0] || term;
@@ -108,31 +157,55 @@ export const useSearch = () => {
         try {
             const postsRef = collection(db, 'posts');
             let q;
+            let orderByField = 'createdAt';
+            let orderDirection = 'desc';
 
-            if (artTypes.length > 0) {
-                // Primary art type search
-                // Index required: posts [tags CONTAINS, createdAt DESC]
-                const primaryType = artTypes[0];
+            // Determine sorting
+            if (sort === 'oldest') {
+                orderDirection = 'asc';
+            } else if (sort === 'popular') {
+                orderByField = 'likeCount';
+            }
+            // Note: 'trending' is handled client-side with sophisticated algorithm
+
+            // Construct Base Query
+            if (authorIds.length > 0) {
+                // Filter by specific authors (Following Only)
+                // Note: 'in' query is limited to 10 items (or 30 depending on version, but safe to slice)
+                // For now, we'll take the top 10 most recent followed users if the list is huge, 
+                // or we might need to do multiple queries if following > 10. 
+                // For MVP, we'll slice to 10 to prevent crashes.
+                // Ideally, we should batch this or use a different strategy for large following lists.
+                const safeAuthorIds = authorIds.slice(0, 10);
+
                 q = query(
                     postsRef,
-                    where('tags', 'array-contains', primaryType),
-                    orderBy('createdAt', 'desc'),
+                    where('authorId', 'in', safeAuthorIds),
+                    orderBy(orderByField, orderDirection),
+                    limit(50)
+                );
+            } else if (tags.length > 0) {
+                // Primary tag search
+                const primaryTag = tags[0];
+                q = query(
+                    postsRef,
+                    where('tags', 'array-contains', primaryTag),
+                    orderBy(orderByField, orderDirection),
                     limit(100)
                 );
             } else if (term) {
                 // Keyword search
-                // Index required: posts [searchKeywords CONTAINS, createdAt DESC]
                 q = query(
                     postsRef,
                     where('searchKeywords', 'array-contains', primaryWord),
-                    orderBy('createdAt', 'desc'),
+                    orderBy(orderByField, orderDirection),
                     limit(100)
                 );
             } else {
-                // Recent posts fallback
+                // Fallback (Recent/Sorted)
                 q = query(
                     postsRef,
-                    orderBy('createdAt', 'desc'),
+                    orderBy(orderByField, orderDirection),
                     limit(50)
                 );
             }
@@ -151,18 +224,33 @@ export const useSearch = () => {
                     ? snapshot.docs[snapshot.docs.length - 1]
                     : null;
 
-            // Client-side filtering: artTypes, location, and additional words
+            // Client-side filtering
             let filtered = docs;
 
-            if (artTypes.length > 0) {
+            // Filter by Tags (remaining tags)
+            if (tags.length > 0) {
                 filtered = filtered.filter(post => {
                     const postTags = (post.tags || []).map(t => t.toLowerCase());
-                    return artTypes.every(type =>
-                        postTags.includes(type.toLowerCase())
+                    return tags.every(tag =>
+                        postTags.includes(tag.toLowerCase())
                     );
                 });
             }
 
+            // Park filter
+            if (parkId) {
+                filtered = filtered.filter(post => post.parkId === parkId);
+            }
+
+            // Date filter
+            if (selectedDate) {
+                filtered = filtered.filter(post => {
+                    const postDate = getDerivedDate(post);
+                    return postDate && isSameDate(postDate, selectedDate);
+                });
+            }
+
+            // Location filter
             if (location.trim()) {
                 const locLower = location.toLowerCase().trim();
                 filtered = filtered.filter(post => {
@@ -174,6 +262,64 @@ export const useSearch = () => {
                 });
             }
 
+            // Camera filter
+            if (camera) {
+                const camLower = camera.toLowerCase();
+                filtered = filtered.filter(post => {
+                    const make = (post.exif?.make || '').toLowerCase();
+                    const model = (post.exif?.model || '').toLowerCase();
+                    return make.includes(camLower) || model.includes(camLower);
+                });
+            }
+
+            // Film filter
+            if (film) {
+                const filmLower = film.toLowerCase();
+                filtered = filtered.filter(post => {
+                    // Check tags for film stock or explicit exif field if it exists
+                    const tags = (post.tags || []).map(t => t.toLowerCase());
+                    return tags.some(t => t.includes(filmLower));
+                });
+            }
+
+            // Orientation filter
+            if (orientation) {
+                filtered = filtered.filter(post => {
+                    // If orientation is explicitly stored
+                    if (post.orientation) return post.orientation === orientation;
+
+                    // Otherwise calculate from dimensions
+                    const width = post.width || post.exif?.pixelXDimension || 0;
+                    const height = post.height || post.exif?.pixelYDimension || 0;
+                    if (!width || !height) return true; // Keep if unknown
+
+                    if (orientation === 'landscape') return width > height;
+                    if (orientation === 'portrait') return height > width;
+                    if (orientation === 'square') return width === height;
+                    return true;
+                });
+            }
+
+            // Aspect Ratio filter (approximate)
+            if (aspectRatio) {
+                filtered = filtered.filter(post => {
+                    const width = post.width || post.exif?.pixelXDimension || 0;
+                    const height = post.height || post.exif?.pixelYDimension || 0;
+                    if (!width || !height) return true;
+
+                    const ratio = width / height;
+                    // Simple tolerance check
+                    if (aspectRatio === '1:1') return Math.abs(ratio - 1) < 0.05;
+                    if (aspectRatio === '4:5') return Math.abs(ratio - 0.8) < 0.05;
+                    if (aspectRatio === '16:9') return Math.abs(ratio - 1.77) < 0.05;
+                    if (aspectRatio === '2:3') return Math.abs(ratio - 0.66) < 0.05;
+                    if (aspectRatio === '3:2') return Math.abs(ratio - 1.5) < 0.05;
+                    if (aspectRatio === '21:9') return Math.abs(ratio - 2.33) < 0.05;
+                    return true;
+                });
+            }
+
+            // Search Term filter (remaining words)
             if (term) {
                 filtered = filtered.filter(post => {
                     const searchableText = [
@@ -192,6 +338,34 @@ export const useSearch = () => {
                 });
             }
 
+            // Apply client-side sorting to handle derived fields (EXIF date) and ensure correct order
+            // We apply this even for 'newest' to respect EXIF dates over upload dates
+            if (!term) {
+                if (sort === 'trending') {
+                    // Use sophisticated trending algorithm with time-based fallback
+                    const trendingResult = sortPostsByTrending(filtered);
+                    filtered = trendingResult.posts;
+                    // Optionally log which time period was used
+                    console.log(`Trending posts from: ${trendingResult.period}`);
+                } else {
+                    filtered.sort((a, b) => {
+                        if (sort === 'newest' || sort === 'oldest') {
+                            const dateA = getDerivedDate(a) || new Date(0);
+                            const dateB = getDerivedDate(b) || new Date(0);
+                            return sort === 'newest'
+                                ? dateB - dateA
+                                : dateA - dateB;
+                        }
+
+                        if (sort === 'popular') {
+                            return (b.likeCount || 0) - (a.likeCount || 0);
+                        }
+
+                        return 0;
+                    });
+                }
+            }
+
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Post search error:', err);
@@ -200,11 +374,499 @@ export const useSearch = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    /**
+     * SEARCH GALLERIES
+     * Strategy:
+     *  - if searchTerm: query galleries where searchKeywords contains primary word
+     *  - else: fallback to recent galleries
+     *  - then client-side filter on tags, location, remaining words
+     */
+    const searchGalleries = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { tags = [], location = '', galleryIds = [] } = filters;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const words = term.split(/\s+/).filter(w => w.length > 0);
+        const primaryWord = words[0] || term;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const galleriesRef = collection(db, 'galleries');
+            let q;
+
+            if (galleryIds.length > 0) {
+                // Filter by specific gallery IDs
+                const safeGalleryIds = galleryIds.slice(0, 10);
+                q = query(
+                    galleriesRef,
+                    where('__name__', 'in', safeGalleryIds),
+                    limit(50)
+                );
+            } else if (tags.length > 0) {
+                // Primary tag search
+                const primaryTag = tags[0];
+                q = query(
+                    galleriesRef,
+                    where('tags', 'array-contains', primaryTag),
+                    orderBy('createdAt', 'desc'),
+                    limit(100)
+                );
+            } else if (term) {
+                // Keyword search
+                q = query(
+                    galleriesRef,
+                    where('searchKeywords', 'array-contains', primaryWord),
+                    orderBy('createdAt', 'desc'),
+                    limit(100)
+                );
+            } else {
+                // Recent galleries fallback
+                q = query(
+                    galleriesRef,
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+            }
+
+            if (lastDoc && galleryIds.length === 0) {
+                q = query(q, startAfter(lastDoc));
+            }
+
+            const snapshot = await getDocs(q);
+            const docs = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            const newLastDoc =
+                snapshot.docs.length > 0
+                    ? snapshot.docs[snapshot.docs.length - 1]
+                    : null;
+
+            // Client-side filtering: tags, location, and additional words
+            let filtered = docs;
+
+            if (tags.length > 0) {
+                filtered = filtered.filter(gallery => {
+                    const galleryTags = (gallery.tags || []).map(t => t.toLowerCase());
+                    return tags.every(tag =>
+                        galleryTags.includes(tag.toLowerCase())
+                    );
+                });
+            }
+
+            if (location.trim()) {
+                const locLower = location.toLowerCase().trim();
+                filtered = filtered.filter(gallery => {
+                    const locations = gallery.locations || [];
+                    return locations.some(loc => {
+                        const city = (loc.city || '').toLowerCase();
+                        const state = (loc.state || '').toLowerCase();
+                        const country = (loc.country || '').toLowerCase();
+                        const fullLoc = `${city} ${state} ${country}`;
+                        return fullLoc.includes(locLower);
+                    });
+                });
+            }
+
+            if (term) {
+                filtered = filtered.filter(gallery => {
+                    const searchableText = [
+                        gallery.title,
+                        gallery.description,
+                        gallery.ownerUsername,
+                        ...(gallery.tags || []),
+                        ...(gallery.locations || []).map(l => `${l.city} ${l.state} ${l.country}`).join(' ')
+                    ]
+                        .filter(Boolean)
+                        .join(' ')
+                        .toLowerCase();
+
+                    return words.every(w => searchableText.includes(w));
+                });
+            }
+
+            return { data: filtered, lastDoc: newLastDoc };
+        } catch (err) {
+            console.error('Gallery search error:', err);
+            setError(err);
+            return { data: [], lastDoc: null };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    /**
+     * SEARCH COLLECTIONS
+     * Strategy:
+     *  - if tags filter: query collections where tags contains primary tag
+     *  - else if searchTerm: query collections where searchKeywords contains primary word
+     *  - else: fallback to recent collections
+     *  - then client-side filter on tags, discipline, creator, visibility
+     */
+    const searchCollections = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { tags = [], discipline = '', creatorId = '' } = filters;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const words = term.split(/\s+/).filter(w => w.length > 0);
+        const primaryWord = words[0] || term;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const collectionsRef = collection(db, 'collections');
+            let q;
+
+            if (tags.length > 0) {
+                const primaryTag = tags[0];
+                q = query(
+                    collectionsRef,
+                    where('tags', 'array-contains', primaryTag),
+                    where('visibility', '==', 'public'),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+            } else if (term) {
+                q = query(
+                    collectionsRef,
+                    where('searchKeywords', 'array-contains', primaryWord),
+                    where('visibility', '==', 'public'),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+            } else {
+                q = query(
+                    collectionsRef,
+                    where('visibility', '==', 'public'),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+            }
+
+            if (lastDoc) {
+                q = query(q, startAfter(lastDoc));
+            }
+
+            const snapshot = await getDocs(q);
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+            // Client-side filtering
+            let filtered = docs;
+
+            if (tags.length > 0) {
+                filtered = filtered.filter(collection => {
+                    const collectionTags = (collection.tags || []).map(t => t.toLowerCase());
+                    return tags.every(tag => collectionTags.includes(tag.toLowerCase()));
+                });
+            }
+
+            if (discipline) {
+                filtered = filtered.filter(collection => collection.discipline === discipline);
+            }
+
+            if (creatorId) {
+                filtered = filtered.filter(collection => collection.ownerId === creatorId);
+            }
+
+            if (term) {
+                filtered = filtered.filter(collection => {
+                    const searchableText = [
+                        collection.title,
+                        collection.description,
+                        collection.ownerUsername,
+                        ...(collection.tags || [])
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    return words.every(w => searchableText.includes(w));
+                });
+            }
+
+            return { data: filtered, lastDoc: newLastDoc };
+        } catch (err) {
+            console.error('Collection search error:', err);
+            setError(err);
+            return { data: [], lastDoc: null };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    /**
+     * SEARCH CONTESTS
+     * Strategy:
+     *  - Query contests collection
+     *  - Filter by status, tags, art type, entry type
+     *  - Sort by deadline (soonest first)
+     */
+    const searchContests = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { tags = [], artType = '', entryType = '', status = 'active' } = filters;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const words = term.split(/\s+/).filter(w => w.length > 0);
+        const primaryWord = words[0] || term;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const contestsRef = collection(db, 'contests');
+            let q;
+
+            if (tags.length > 0) {
+                const primaryTag = tags[0];
+                q = query(
+                    contestsRef,
+                    where('tags', 'array-contains', primaryTag),
+                    orderBy('deadline', 'asc'),
+                    limit(50)
+                );
+            } else if (term) {
+                q = query(
+                    contestsRef,
+                    where('searchKeywords', 'array-contains', primaryWord),
+                    orderBy('deadline', 'asc'),
+                    limit(50)
+                );
+            } else {
+                q = query(
+                    contestsRef,
+                    orderBy('deadline', 'asc'),
+                    limit(50)
+                );
+            }
+
+            if (lastDoc) {
+                q = query(q, startAfter(lastDoc));
+            }
+
+            const snapshot = await getDocs(q);
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+            // Client-side filtering
+            let filtered = docs;
+
+            if (status) {
+                filtered = filtered.filter(contest => contest.status === status);
+            }
+
+            if (artType) {
+                filtered = filtered.filter(contest => contest.artType === artType);
+            }
+
+            if (entryType) {
+                filtered = filtered.filter(contest => contest.entryType === entryType);
+            }
+
+            if (term) {
+                filtered = filtered.filter(contest => {
+                    const searchableText = [
+                        contest.title,
+                        contest.description,
+                        ...(contest.tags || [])
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    return words.every(w => searchableText.includes(w));
+                });
+            }
+
+            return { data: filtered, lastDoc: newLastDoc };
+        } catch (err) {
+            console.error('Contest search error:', err);
+            setError(err);
+            return { data: [], lastDoc: null };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    /**
+     * SEARCH EVENTS
+     * Strategy:
+     *  - Query events collection
+     *  - Filter by type, park, status, date
+     *  - Sort by date (soonest first)
+     */
+    const searchEvents = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { type = '', parkId = '', status = 'upcoming' } = filters;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const words = term.split(/\s+/).filter(w => w.length > 0);
+        const primaryWord = words[0] || term;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const eventsRef = collection(db, 'events');
+            let q;
+
+            if (term) {
+                q = query(
+                    eventsRef,
+                    where('searchKeywords', 'array-contains', primaryWord),
+                    orderBy('date', 'asc'),
+                    limit(50)
+                );
+            } else {
+                q = query(
+                    eventsRef,
+                    orderBy('date', 'asc'),
+                    limit(50)
+                );
+            }
+
+            if (lastDoc) {
+                q = query(q, startAfter(lastDoc));
+            }
+
+            const snapshot = await getDocs(q);
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+            // Client-side filtering
+            let filtered = docs;
+
+            if (status) {
+                filtered = filtered.filter(event => event.status === status);
+            }
+
+            if (type) {
+                filtered = filtered.filter(event => event.type === type);
+            }
+
+            if (parkId) {
+                filtered = filtered.filter(event => event.parkId === parkId);
+            }
+
+            if (term) {
+                filtered = filtered.filter(event => {
+                    const searchableText = [
+                        event.title,
+                        event.description,
+                        event.parkName,
+                        event.location?.city,
+                        event.location?.state,
+                        ...(event.tags || [])
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    return words.every(w => searchableText.includes(w));
+                });
+            }
+
+            return { data: filtered, lastDoc: newLastDoc };
+        } catch (err) {
+            console.error('Event search error:', err);
+            setError(err);
+            return { data: [], lastDoc: null };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    /**
+     * SEARCH SPACECARDS
+     * Strategy:
+     *  - Query spacecards collection
+     *  - Filter by discipline, rarity, forSale, price range
+     *  - Sort by createdAt or price
+     */
+    const searchSpaceCards = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { tags = [], discipline = '', rarity = '', forSale = null, sort = 'newest' } = filters;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const words = term.split(/\s+/).filter(w => w.length > 0);
+        const primaryWord = words[0] || term;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const spacecardsRef = collection(db, 'spacecards');
+            let q;
+            let orderByField = 'createdAt';
+            let orderDirection = 'desc';
+
+            if (sort === 'price-low') {
+                orderByField = 'price';
+                orderDirection = 'asc';
+            } else if (sort === 'price-high') {
+                orderByField = 'price';
+                orderDirection = 'desc';
+            }
+
+            if (tags.length > 0) {
+                const primaryTag = tags[0];
+                q = query(
+                    spacecardsRef,
+                    where('tags', 'array-contains', primaryTag),
+                    orderBy(orderByField, orderDirection),
+                    limit(50)
+                );
+            } else if (term) {
+                q = query(
+                    spacecardsRef,
+                    where('searchKeywords', 'array-contains', primaryWord),
+                    orderBy(orderByField, orderDirection),
+                    limit(50)
+                );
+            } else {
+                q = query(
+                    spacecardsRef,
+                    orderBy(orderByField, orderDirection),
+                    limit(50)
+                );
+            }
+
+            if (lastDoc) {
+                q = query(q, startAfter(lastDoc));
+            }
+
+            const snapshot = await getDocs(q);
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+            // Client-side filtering
+            let filtered = docs;
+
+            if (discipline) {
+                filtered = filtered.filter(card => card.discipline === discipline);
+            }
+
+            if (rarity) {
+                filtered = filtered.filter(card => card.rarity === rarity);
+            }
+
+            if (forSale !== null) {
+                filtered = filtered.filter(card => card.forSale === forSale);
+            }
+
+            if (term) {
+                filtered = filtered.filter(card => {
+                    const searchableText = [
+                        card.title,
+                        card.description,
+                        card.creatorUsername,
+                        ...(card.tags || [])
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    return words.every(w => searchableText.includes(w));
+                });
+            }
+
+            return { data: filtered, lastDoc: newLastDoc };
+        } catch (err) {
+            console.error('SpaceCard search error:', err);
+            setError(err);
+            return { data: [], lastDoc: null };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     return {
         searchUsers,
         searchPosts,
+        searchGalleries,
+        searchCollections,
+        searchContests,
+        searchEvents,
+        searchSpaceCards,
         loading,
         error
     };

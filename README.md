@@ -24,6 +24,16 @@ PanoSpace is positioned to capture the **$4.2B photography marketplace** by offe
 
 ---
 
+## 🌌 **Philosophy**
+
+> **"Products Fade. Worlds Endure."**
+
+PanoSpace isn't just a product — it's a **living aesthetic**, a **visual universe** designed to outlast technology trends. We're building creative mythology that will inspire generations, the way analog film, space imagery, and cinematic moods have transcended decades.
+
+**Read our full philosophy**: [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
+
+---
+
 ## 💰 **Revenue Model**
 
 ### Primary Revenue Streams:

@@ -28,7 +28,8 @@ const SHOP_ITEMS_COLLECTION = 'shopItems';
  */
 export async function createShopItemsFromPost(
     post: Post,
-    selectedItems: PostItem[]
+    selectedItems: PostItem[],
+    authorIsUltra: boolean = false
 ): Promise<ShopItem[]> {
     const shopItems: ShopItem[] = [];
 
@@ -43,7 +44,7 @@ export async function createShopItemsFromPost(
             .map(size => {
                 const customPrice = item.customPrices?.[size.id];
                 const price = customPrice !== undefined ? Number(customPrice) : size.price;
-                const earnings = calculateEarnings(price);
+                const earnings = calculateEarnings(price, size.id, authorIsUltra);
 
                 return {
                     id: size.id,
@@ -71,6 +72,12 @@ export async function createShopItemsFromPost(
             tags: post.tags,
             printSizes,
             createdAt: serverTimestamp(),
+
+            // Monetization
+            isLimitedEdition: item.isLimitedEdition || false,
+            editionSize: item.editionSize || 0,
+            rarityLevel: item.rarityLevel || 'common',
+            soldCount: 0
         };
 
         const docRef = await addDoc(collection(db, SHOP_ITEMS_COLLECTION), shopItemData);

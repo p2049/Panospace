@@ -465,8 +465,241 @@
         grid-template-columns: 1fr;
     }
 
+    margin-bottom: 1rem;
+}
+
+.category-chip {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.category-chip.active {
+    background: var(--ice-mint);
+    color: var(--black);
+    border-color: var(--ice-mint);
+    font-weight: 600;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tag {
+    background: rgba(127, 255, 212, 0.2);
+    color: var(--ice-mint);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tag button {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Location Grid */
+.location-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+/* EXIF & Shop */
+.exif-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.btn-add-exif,
+.btn-edit-exif {
+    background: rgba(127, 255, 212, 0.1);
+    border: 1px solid var(--ice-mint);
+    color: var(--ice-mint);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: all 0.2s;
+}
+
+.btn-add-exif:hover,
+.btn-edit-exif:hover {
+    background: rgba(127, 255, 212, 0.2);
+}
+
+.shop-toggle-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 1rem;
+    background: rgba(127, 255, 212, 0.05);
+    border: 1px solid rgba(127, 255, 212, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s;
+    margin-top: 1.5rem;
+}
+
+.shop-toggle-main:hover {
+    background: rgba(127, 255, 212, 0.1);
+}
+
+.shop-toggle-main input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--ice-mint);
+}
+
+/* Pricing */
+.sizes-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.size-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.size-card.selected {
+    border-color: var(--ice-mint);
+    background: rgba(127, 255, 212, 0.05);
+}
+
+.size-card label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+}
+
+.size-card input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ice-mint);
+}
+
+.price-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-left: 2rem;
+}
+
+.price-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.4rem;
+    color: #fff;
+    width: 100px;
+}
+
+.earnings-label {
+    font-size: 0.85rem;
+    color: var(--ice-mint);
+    margin-left: auto;
+}
+
+.shop-toggle-small {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: #fff;
+    cursor: pointer;
+}
+
+.shop-toggle-small input {
+    cursor: pointer;
+    accent-color: var(--ice-mint);
+}
+
+.field-hint {
+
+    .header-btn,
+    .header-btn-primary {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+
+    .location-grid {
+        grid-template-columns: 1fr;
+    }
+
     .form-section {
         padding: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .create-post-layout {
+        flex-direction: column;
+    }
+
+    .preview-column {
+        width: 100%;
+        height: auto;
+        position: relative;
+        top: 0;
+        border-right: none;
+        border-bottom: 1px dashed var(--ice-mint);
+        max-height: 40vh;
+    }
+
+    .form-column {
+        padding: 1rem;
+    }
+
+    .location-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gallery-item {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .add-more-row-btn {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .create-post-header {
+        gap: 0.5rem;
     }
 }
 

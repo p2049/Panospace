@@ -15,7 +15,8 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
         showInStore: false,
         bundlePrice: '',
         scheduledDropDate: '',
-        selectedPostIds: []
+        selectedPostIds: [],
+        isGallery: false
     });
 
     const [coverImageUrl, setCoverImageUrl] = useState('');
@@ -31,7 +32,8 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
                 showInStore: false,
                 bundlePrice: '',
                 scheduledDropDate: '',
-                selectedPostIds: []
+                selectedPostIds: [],
+                isGallery: false
             });
             setCoverImageUrl('');
         }
@@ -56,7 +58,8 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
                 showInFeed: formData.showInFeed,
                 showInStore: formData.showInStore,
                 bundlePrice: formData.bundlePrice ? parseFloat(formData.bundlePrice) : null,
-                scheduledDropDate: formData.scheduledDropDate ? new Date(formData.scheduledDropDate) : null
+                scheduledDropDate: formData.scheduledDropDate ? new Date(formData.scheduledDropDate) : null,
+                isGallery: formData.isGallery
             };
 
             const newCollection = await createCollection(collectionData);
@@ -218,6 +221,23 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
                         </div>
                     </div>
 
+                    {/* Collection Type (Gallery Toggle) */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', background: '#222', borderRadius: '8px', border: '1px solid #333' }}>
+                            <input
+                                type="checkbox"
+                                checked={formData.isGallery}
+                                onChange={(e) => setFormData({ ...formData, isGallery: e.target.checked })}
+                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                            />
+                            <FaImage style={{ color: '#7FFFD4' }} />
+                            <div>
+                                <div style={{ color: '#fff', fontWeight: '600' }}>Create as Gallery</div>
+                                <div style={{ color: '#666', fontSize: '0.85rem' }}>Public, followable collection for curating specific themes</div>
+                            </div>
+                        </label>
+                    </div>
+
                     {/* Feed & Store Options */}
                     <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', background: '#222', borderRadius: '8px', border: '1px solid #333' }}>
@@ -274,6 +294,20 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
                             />
                             <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
                                 Leave empty to sell items individually
+                            </div>
+
+                            {/* Copyright Warning for Store Items */}
+                            <div style={{
+                                marginTop: '0.75rem',
+                                padding: '0.75rem',
+                                background: 'rgba(255, 165, 0, 0.1)',
+                                border: '1px solid rgba(255, 165, 0, 0.3)',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                color: '#ffb84d',
+                                lineHeight: '1.4'
+                            }}>
+                                ⚠️ <strong>Copyright Notice:</strong> By listing this item, you certify that you own all rights to this content. Unauthorized sale of copyrighted material is prohibited.
                             </div>
                         </div>
                     )}

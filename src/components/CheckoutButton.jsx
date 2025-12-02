@@ -1,17 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { functions } from '../firebase';
+import { functions, db } from '../firebase';
 import { httpsCallable } from 'firebase/functions';
-import { FaShoppingCart } from 'react-icons/fa';
+import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
+import { FaShoppingCart, FaWallet } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { WalletService } from '../services/WalletService';
 
 // Initialize Stripe with the provided test key
 const stripePromise = loadStripe('pk_test_51SVxZtF3FCQ1N5YCyooRPhAZiECp9ivHgrIcOcomZPy6fbcCy34C6I7mT4dgC27yh51VcwPebwCAuVdOkgtaJKBa00mB4c8yta');
 
 const CheckoutButton = ({ post, selectedSize, buttonStyle }) => {
+    const { currentUser } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [showWalletOption, setShowWalletOption] = useState(false);
 
-    const handleCheckout = async () => {
+    // Get price for selected size
+    const selectedSizeConfig = post.printSizes?.find(s => s.id === selectedSize);
+    const price = selectedSizeConfig ? Number(selectedSizeConfig.price) : 0;
+
+    useEffect(() => {
+        const fetchWallet = async () => {
+            if (currentUser) {
+                const wallet = await WalletService.getWallet(currentUser.uid);
+                if (wallet) {
+                    setWalletBalance(wallet.balance);
+                }
+            }
+        };
+        fetchWallet();
+    }, [currentUser]);
+
+    // Check if user can afford with wallet
+    useEffect(() => {
+        if (price > 0 && walletBalance >= price) {
+            setShowWalletOption(true);
+        } else {
+            setShowWalletOption(false);
+        }
+    }, [price, walletBalance]);
+
+    const handleWalletPurchase = async () => {
+        if (!currentUser) {
+            setError("Please log in to purchase.");
+            return;
+        }
+        if (!selectedSize) {
+            setError('Please select a size');
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // 1. Check Stock (Double Check)
+            if (post.isLimitedEdition) {
+                const freshDoc = await getDoc(doc(db, 'shopItems', post.id));
+                if (freshDoc.exists()) {
+                    const data = freshDoc.data();
+                    if (data.soldCount >= data.editionSize) {
+                        throw new Error("Sorry, this item just sold out!");
+                    }
+                }
+            }
+
+            // 2. Process Transaction
+            await WalletService.processPrimaryPurchase(
+                currentUser.uid,
+                post.userId, // Seller ID
+                post.id, // Item ID
+                'print', // Item Type
+                price,
+                post.title
+            );
+
+            // 3. Update Stock & Sold Count
+            if (post.isLimitedEdition) {
+                await updateDoc(doc(db, 'shopItems', post.id), {
+                    soldCount: increment(1),
+                    // Check if sold out after this (client-side prediction, backend rule would be better)
+                });
+            }
+
+            alert("Purchase successful! Item added to your collection.");
+            window.location.reload(); // Refresh to show updated stock/wallet
+
+        } catch (err) {
+            console.error("Wallet purchase failed:", err);
+            setError(err.message || "Purchase failed.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStripeCheckout = async () => {
         if (!selectedSize) {
             setError('Please select a size');
             return;
@@ -23,8 +108,6 @@ const CheckoutButton = ({ post, selectedSize, buttonStyle }) => {
         try {
             const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
 
-            // Ensure we are passing all required data
-            // post.id is the shopItemId in the new system
             const payload = {
                 postId: post.id,
                 size: selectedSize,
@@ -51,24 +134,39 @@ const CheckoutButton = ({ post, selectedSize, buttonStyle }) => {
             }
         } catch (err) {
             console.error("Checkout failed:", err);
-
-            // Graceful error handling
             if (err.code === 'functions/not-found') {
                 setError("Checkout is temporarily unavailable. Please try again later.");
             } else if (err.code === 'functions/unauthenticated') {
                 setError("Please log in to make a purchase.");
-            } else if (err.code === 'functions/invalid-argument') {
-                setError("Invalid product configuration. Please try another size.");
             } else {
                 setError("Checkout failed. Please try again.");
             }
-
             setLoading(false);
         }
     };
 
+    // Disable if sold out
+    const isSoldOut = post.isLimitedEdition && post.soldCount >= post.editionSize;
+
+    if (isSoldOut) {
+        return (
+            <button
+                disabled
+                style={{
+                    ...buttonStyle,
+                    background: '#333',
+                    color: '#888',
+                    cursor: 'not-allowed',
+                    opacity: 0.7
+                }}
+            >
+                Sold Out
+            </button>
+        );
+    }
+
     return (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
             {error && (
                 <div style={{
                     padding: '1rem',
@@ -76,61 +174,50 @@ const CheckoutButton = ({ post, selectedSize, buttonStyle }) => {
                     border: '1px solid rgba(244, 67, 54, 0.3)',
                     borderRadius: '8px',
                     color: '#f44336',
-                    marginBottom: '1rem',
                     fontSize: '0.9rem'
                 }}>
                     {error}
                 </div>
             )}
 
+            {/* Wallet Option */}
+            {showWalletOption && (
+                <button
+                    onClick={handleWalletPurchase}
+                    disabled={loading || !selectedSize}
+                    style={{
+                        ...buttonStyle,
+                        background: 'rgba(127, 255, 212, 0.15)',
+                        color: '#7FFFD4',
+                        border: '1px solid #7FFFD4',
+                        opacity: (loading || !selectedSize) ? 0.6 : 1,
+                        cursor: (loading || !selectedSize) ? 'not-allowed' : 'pointer',
+                    }}
+                >
+                    {loading ? 'Processing...' : (
+                        <>
+                            <FaWallet /> Pay with Wallet (${walletBalance.toFixed(2)})
+                        </>
+                    )}
+                </button>
+            )}
+
+            {/* Stripe Option */}
             <button
-                onClick={handleCheckout}
+                onClick={handleStripeCheckout}
                 disabled={loading || !selectedSize}
                 style={{
                     ...buttonStyle,
                     opacity: (loading || !selectedSize) ? 0.6 : 1,
                     cursor: (loading || !selectedSize) ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                    if (!loading && selectedSize) {
-                        e.currentTarget.style.background = '#f5f5f5';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,255,255,0.2)';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#fff';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
                 }}
             >
-                {loading ? (
+                {loading ? 'Processing...' : (
                     <>
-                        <div style={{
-                            width: '20px',
-                            height: '20px',
-                            border: '2px solid #000',
-                            borderTop: '2px solid transparent',
-                            borderRadius: '50%',
-                            animation: 'spin 0.8s linear infinite'
-                        }} />
-                        Processing...
-                    </>
-                ) : (
-                    <>
-                        <FaShoppingCart size={20} />
-                        Buy Print
+                        <FaShoppingCart /> Pay with Card
                     </>
                 )}
             </button>
-
-            <style>{`
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     );
 };

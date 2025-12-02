@@ -1,0 +1,217 @@
+/**
+ * SLEEK DARK MODE 35mm FILM STRIP UI
+ * 
+ * A clean, modern interpretation of a 35mm film strip that fits the app's dark aesthetic.
+ * Uses the app's core color palette:
+ * - Black: #050505
+ * - Dark Gray: #161616
+ * - Borders: #333333
+ */
+
+.film-strip-35mm {
+    /* Container */
+    display: flex;
+    flex-direction: column;
+    background: #050505;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Top and bottom film edges */
+.film-edge {
+    height: 12px;
+    background: #161616;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    border-top: 1px solid #222;
+    border-bottom: 1px solid #222;
+    user-select: none;
+}
+
+.film-edge-top {
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+}
+
+.film-edge-bottom {
+    justify-content: flex-end;
+    border-top: 1px solid #333;
+}
+
+.film-stock-label {
+    opacity: 0.5;
+}
+
+.safety-film-text {
+    opacity: 0.4;
+}
+
+.edge-code {
+    opacity: 0.3;
+}
+
+/* Main film body */
+.film-body {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #0a0a0a;
+}
+
+/* Sprocket tracks */
+.sprocket-track {
+    display: flex;
+    height: 24px;
+    background: #0f0f0f;
+    position: relative;
+    overflow: hidden;
+    align-items: center;
+}
+
+.sprocket-track-top {
+    border-bottom: 1px solid #222;
+}
+
+.sprocket-track-bottom {
+    border-top: 1px solid #222;
+}
+
+/* Group of sprocket holes */
+.sprocket-group {
+    display: flex;
+    gap: 12px;
+    padding: 0 12px;
+    align-items: center;
+    justify-content: center;
+    min-width: 300px;
+    /* Matches frame width */
+}
+
+/* Individual sprocket hole */
+.sprocket-hole {
+    width: 10px;
+    height: 14px;
+    background: #2a2a2a;
+    border-radius: 2px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+    border: 1px solid #333;
+}
+
+/* Film frames container */
+.film-frames {
+    display: flex;
+    background: #000;
+    position: relative;
+    min-height: 200px;
+}
+
+/* Individual film frame */
+.film-frame {
+    position: relative;
+    display: flex;
+    min-width: 300px;
+    height: 200px;
+    background: #050505;
+    border-left: 1px solid #222;
+    border-right: 1px solid #222;
+}
+
+/* Frame numbers */
+.frame-number {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.4);
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.frame-number-left {
+    border-right: 1px solid #222;
+}
+
+.frame-number-right {
+    border-left: 1px solid #222;
+    transform: rotate(180deg);
+}
+
+/* Image container */
+.frame-image-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    margin: 2px 0;
+}
+
+/* Actual image */
+.frame-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    opacity: 0.95;
+    transition: opacity 0.3s ease;
+}
+
+.frame-image:hover {
+    opacity: 1;
+}
+
+/* Separator between frames */
+.frame-separator {
+    width: 1px;
+    background: #333;
+}
+
+/* Scrollbar styling */
+.film-strip-35mm::-webkit-scrollbar {
+    height: 8px;
+}
+
+.film-strip-35mm::-webkit-scrollbar-track {
+    background: #050505;
+}
+
+.film-strip-35mm::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+
+.film-strip-35mm::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sprocket-group {
+        min-width: 260px;
+    }
+
+    .film-frame {
+        min-width: 260px;
+        height: 173px;
+        /* Maintain 3:2 ratio approx */
+    }
+}

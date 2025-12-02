@@ -5,196 +5,198 @@ import { FaCamera, FaTimes } from 'react-icons/fa';
  * Manual EXIF Input Form
  * Allows users to manually enter camera metadata when EXIF extraction fails
  */
-const ManualExifForm = ({ existingExif, onSave, onCancel }) => {
-    const [formData, setFormData] = useState({
-        make: '',
-        model: '',
-        lensModel: '',
-        focalLength: '',
-        fNumber: '',
-        exposureTime: '',
-        iso: '',
-        dateTime: '',
-    });
+const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false }) => {
+  const [formData, setFormData] = useState({
+    make: '',
+    model: '',
+    lensModel: '',
+    focalLength: '',
+    fNumber: '',
+    exposureTime: '',
+    iso: '',
+    dateTime: '',
+  });
 
-    // Pre-fill with existing EXIF if available
-    useEffect(() => {
-        if (existingExif) {
-            setFormData({
-                make: existingExif.make || '',
-                model: existingExif.model || '',
-                lensModel: existingExif.lensModel || '',
-                focalLength: existingExif.focalLength || '',
-                fNumber: existingExif.fNumber || '',
-                exposureTime: existingExif.exposureTime || '',
-                iso: existingExif.iso || '',
-                dateTime: existingExif.dateTime || '',
-            });
-        }
-    }, [existingExif]);
+  // Pre-fill with existing EXIF if available
+  useEffect(() => {
+    if (existingExif) {
+      setFormData({
+        make: existingExif.make || '',
+        model: existingExif.model || '',
+        lensModel: existingExif.lensModel || '',
+        focalLength: existingExif.focalLength || '',
+        fNumber: existingExif.fNumber || '',
+        exposureTime: existingExif.exposureTime || '',
+        iso: existingExif.iso || '',
+        dateTime: existingExif.dateTime || '',
+      });
+    }
+  }, [existingExif]);
 
-    const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-    const handleSave = () => {
-        // Build EXIF object matching the extracted EXIF structure
-        const exifData = {};
+  const handleSave = () => {
+    // Build EXIF object matching the extracted EXIF structure
+    const exifData = {};
 
-        if (formData.make) exifData.make = formData.make;
-        if (formData.model) exifData.model = formData.model;
-        if (formData.lensModel) exifData.lensModel = formData.lensModel;
-        if (formData.focalLength) exifData.focalLength = Number(formData.focalLength);
-        if (formData.fNumber) exifData.fNumber = Number(formData.fNumber);
-        if (formData.exposureTime) exifData.exposureTime = formData.exposureTime;
-        if (formData.iso) exifData.iso = Number(formData.iso);
-        if (formData.dateTime) exifData.dateTime = formData.dateTime;
+    if (formData.make) exifData.make = formData.make;
+    if (formData.model) exifData.model = formData.model;
+    if (formData.lensModel) exifData.lensModel = formData.lensModel;
+    if (formData.focalLength) exifData.focalLength = Number(formData.focalLength);
+    if (formData.fNumber) exifData.fNumber = Number(formData.fNumber);
+    if (formData.exposureTime) exifData.exposureTime = formData.exposureTime;
+    if (formData.iso) exifData.iso = Number(formData.iso);
+    if (formData.dateTime) exifData.dateTime = formData.dateTime;
 
-        onSave(exifData);
-    };
+    onSave(exifData);
+  };
 
-    const isValid = () => {
-        // At least one field should be filled
-        return Object.values(formData).some(val => val && val.toString().trim() !== '');
-    };
+  const isValid = () => {
+    // At least one field should be filled
+    return Object.values(formData).some(val => val && val.toString().trim() !== '');
+  };
 
-    return (
-        <div className="manual-exif-form">
-            <div className="exif-form-header">
-                <div className="exif-form-title">
-                    <FaCamera style={{ marginRight: '0.5rem' }} />
-                    <span>Manual Camera Data</span>
-                </div>
-                <button
-                    onClick={onCancel}
-                    className="exif-close-btn"
-                    aria-label="Close"
-                >
-                    <FaTimes />
-                </button>
+  return (
+    <div className="manual-exif-form">
+      <div className="exif-form-header">
+        <div className="exif-form-title">
+          <FaCamera style={{ marginRight: '0.5rem' }} />
+          <span>Manual Camera Data</span>
+        </div>
+        <button
+          onClick={onCancel}
+          className="exif-close-btn"
+          aria-label="Close"
+        >
+          <FaTimes />
+        </button>
+      </div>
+
+      <div className="exif-form-grid">
+        {/* Camera Make & Model - Hidden if Film Mode */}
+        {!hideCameraLens && (
+          <>
+            <div className="exif-form-field">
+              <label>Camera Make</label>
+              <input
+                type="text"
+                value={formData.make}
+                onChange={(e) => handleChange('make', e.target.value)}
+                placeholder="e.g., Canon, Nikon, Sony"
+                className="exif-input"
+              />
             </div>
 
-            <div className="exif-form-grid">
-                {/* Camera Make */}
-                <div className="exif-form-field">
-                    <label>Camera Make</label>
-                    <input
-                        type="text"
-                        value={formData.make}
-                        onChange={(e) => handleChange('make', e.target.value)}
-                        placeholder="e.g., Canon, Nikon, Sony"
-                        className="exif-input"
-                    />
-                </div>
-
-                {/* Camera Model */}
-                <div className="exif-form-field">
-                    <label>Camera Model</label>
-                    <input
-                        type="text"
-                        value={formData.model}
-                        onChange={(e) => handleChange('model', e.target.value)}
-                        placeholder="e.g., EOS R5, Z9, A7R IV"
-                        className="exif-input"
-                    />
-                </div>
-
-                {/* Lens Model */}
-                <div className="exif-form-field full-width">
-                    <label>Lens Model</label>
-                    <input
-                        type="text"
-                        value={formData.lensModel}
-                        onChange={(e) => handleChange('lensModel', e.target.value)}
-                        placeholder="e.g., RF 24-70mm f/2.8L"
-                        className="exif-input"
-                    />
-                </div>
-
-                {/* Focal Length */}
-                <div className="exif-form-field">
-                    <label>Focal Length (mm)</label>
-                    <input
-                        type="number"
-                        value={formData.focalLength}
-                        onChange={(e) => handleChange('focalLength', e.target.value)}
-                        placeholder="e.g., 50"
-                        className="exif-input"
-                        min="1"
-                        max="2000"
-                    />
-                </div>
-
-                {/* Aperture */}
-                <div className="exif-form-field">
-                    <label>Aperture (f-stop)</label>
-                    <input
-                        type="number"
-                        value={formData.fNumber}
-                        onChange={(e) => handleChange('fNumber', e.target.value)}
-                        placeholder="e.g., 2.8"
-                        className="exif-input"
-                        step="0.1"
-                        min="0.7"
-                        max="64"
-                    />
-                </div>
-
-                {/* Shutter Speed */}
-                <div className="exif-form-field">
-                    <label>Shutter Speed</label>
-                    <input
-                        type="text"
-                        value={formData.exposureTime}
-                        onChange={(e) => handleChange('exposureTime', e.target.value)}
-                        placeholder="e.g., 1/250 or 2s"
-                        className="exif-input"
-                    />
-                </div>
-
-                {/* ISO */}
-                <div className="exif-form-field">
-                    <label>ISO</label>
-                    <input
-                        type="number"
-                        value={formData.iso}
-                        onChange={(e) => handleChange('iso', e.target.value)}
-                        placeholder="e.g., 100, 400, 3200"
-                        className="exif-input"
-                        min="50"
-                        max="409600"
-                    />
-                </div>
-
-                {/* Shot Date */}
-                <div className="exif-form-field full-width">
-                    <label>Shot Date</label>
-                    <input
-                        type="datetime-local"
-                        value={formData.dateTime}
-                        onChange={(e) => handleChange('dateTime', e.target.value)}
-                        className="exif-input"
-                    />
-                </div>
+            <div className="exif-form-field">
+              <label>Camera Model</label>
+              <input
+                type="text"
+                value={formData.model}
+                onChange={(e) => handleChange('model', e.target.value)}
+                placeholder="e.g., EOS R5, Z9, A7R IV"
+                className="exif-input"
+              />
             </div>
 
-            <div className="exif-form-actions">
-                <button
-                    onClick={onCancel}
-                    className="exif-btn-secondary"
-                >
-                    Cancel
-                </button>
-                <button
-                    onClick={handleSave}
-                    className="exif-btn-primary"
-                    disabled={!isValid()}
-                >
-                    Save Camera Data
-                </button>
+            <div className="exif-form-field full-width">
+              <label>Lens Model</label>
+              <input
+                type="text"
+                value={formData.lensModel}
+                onChange={(e) => handleChange('lensModel', e.target.value)}
+                placeholder="e.g., RF 24-70mm f/2.8L"
+                className="exif-input"
+              />
             </div>
+          </>
+        )}
 
-            <style jsx>{`
+        {/* Focal Length */}
+        <div className="exif-form-field">
+          <label>Focal Length (mm)</label>
+          <input
+            type="number"
+            value={formData.focalLength}
+            onChange={(e) => handleChange('focalLength', e.target.value)}
+            placeholder="e.g., 50"
+            className="exif-input"
+            min="1"
+            max="2000"
+          />
+        </div>
+
+        {/* Aperture */}
+        <div className="exif-form-field">
+          <label>Aperture (f-stop)</label>
+          <input
+            type="number"
+            value={formData.fNumber}
+            onChange={(e) => handleChange('fNumber', e.target.value)}
+            placeholder="e.g., 2.8"
+            className="exif-input"
+            step="0.1"
+            min="0.7"
+            max="64"
+          />
+        </div>
+
+        {/* Shutter Speed */}
+        <div className="exif-form-field">
+          <label>Shutter Speed</label>
+          <input
+            type="text"
+            value={formData.exposureTime}
+            onChange={(e) => handleChange('exposureTime', e.target.value)}
+            placeholder="e.g., 1/250 or 2s"
+            className="exif-input"
+          />
+        </div>
+
+        {/* ISO */}
+        <div className="exif-form-field">
+          <label>ISO</label>
+          <input
+            type="number"
+            value={formData.iso}
+            onChange={(e) => handleChange('iso', e.target.value)}
+            placeholder="e.g., 100, 400, 3200"
+            className="exif-input"
+            min="50"
+            max="409600"
+          />
+        </div>
+
+        {/* Shot Date */}
+        <div className="exif-form-field full-width">
+          <label>Shot Date</label>
+          <input
+            type="datetime-local"
+            value={formData.dateTime}
+            onChange={(e) => handleChange('dateTime', e.target.value)}
+            className="exif-input"
+          />
+        </div>
+      </div>
+
+      <div className="exif-form-actions">
+        <button
+          onClick={onCancel}
+          className="exif-btn-secondary"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="exif-btn-primary"
+          disabled={!isValid()}
+        >
+          Save Camera Data
+        </button>
+      </div>
+
+      <style jsx>{`
         .manual-exif-form {
           background: var(--graphite);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -279,6 +281,15 @@ const ManualExifForm = ({ existingExif, onSave, onCancel }) => {
           color: rgba(255, 255, 255, 0.3);
         }
 
+        .exif-input[type="datetime-local"] {
+          color-scheme: dark;
+        }
+
+        .exif-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+          cursor: pointer;
+        }
+
         .exif-form-actions {
           display: flex;
           justify-content: flex-end;
@@ -332,8 +343,8 @@ const ManualExifForm = ({ existingExif, onSave, onCancel }) => {
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default ManualExifForm;

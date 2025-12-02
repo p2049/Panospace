@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     collection,
     query,
@@ -75,6 +75,13 @@ export const useFollowingEvents = (creatorIds, startDate, endDate) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Create stable reference for creatorIds to prevent infinite loops
+    // Sort and stringify to ensure same IDs in different order produce same key
+    const stableCreatorIds = useMemo(() => {
+        if (!creatorIds || creatorIds.length === 0) return '';
+        return [...creatorIds].sort().join(',');
+    }, [creatorIds?.length, ...(creatorIds || [])]);
+
     const refetch = async () => {
         if (!creatorIds || creatorIds.length === 0 || !startDate || !endDate) {
             setLoading(false);
@@ -127,7 +134,8 @@ export const useFollowingEvents = (creatorIds, startDate, endDate) => {
 
     useEffect(() => {
         refetch();
-    }, [creatorIds?.join(','), startDate?.getTime(), endDate?.getTime()]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stableCreatorIds, startDate?.getTime(), endDate?.getTime()]);
 
     return { events, loading, error, refetch };
 };
