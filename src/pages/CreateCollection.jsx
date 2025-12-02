@@ -1,10 +1,11 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { useCreateCollection } from '../hooks/useCollections';
 import { db } from '../firebase';
+import StarBackground from '../components/StarBackground';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FaImage, FaTimes, FaPlus, FaLock, FaUsers, FaGlobe, FaStore, FaTag, FaUniversity, FaBook, FaClock, FaCalendar } from 'react-icons/fa';
 import exifr from 'exifr';
@@ -19,20 +20,7 @@ const CreateCollection = () => {
     const { createCollection, loading: creating } = useCreateCollection();
     const fileInputRef = useRef(null);
 
-    // Generate stars for background animation
-    const stars = useMemo(() => {
-        return [...Array(100)].map((_, i) => ({
-            id: i,
-            width: Math.random() * 2 + 1,
-            height: Math.random() * 2 + 1,
-            top: Math.random() * 100,
-            left: Math.random() * 100,
-            opacity: Math.random() * 0.5 + 0.3,
-            duration: Math.random() * 3 + 2,
-            delay: Math.random() * 2,
-            glow: Math.random() * 3 + 2
-        }));
-    }, []);
+
 
     const [creationMode, setCreationMode] = useState('collection'); // 'collection', 'gallery', 'museum', or 'magazine'
     const [title, setTitle] = useState('');
@@ -351,10 +339,10 @@ const CreateCollection = () => {
                     Cancel
                 </button>
                 <h1 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-                    {creationMode === 'gallery' ? 'Create Gallery' : 
-                     creationMode === 'museum' ? 'Create Museum' : 
-                     creationMode === 'magazine' ? 'Create Magazine' : 
-                     'Create Collection'}
+                    {creationMode === 'gallery' ? 'Create Gallery' :
+                        creationMode === 'museum' ? 'Create Museum' :
+                            creationMode === 'magazine' ? 'Create Magazine' :
+                                'Create Collection'}
                 </h1>
                 <button
                     onClick={handleSubmit}

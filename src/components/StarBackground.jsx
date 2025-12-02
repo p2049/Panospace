@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 
-const StarBackground = ({ starColor = '#7FFFD4' }) => {
+const StarBackground = ({ starColor = '#7FFFD4', transparent = false }) => {
     // Detect if device is mobile to save battery
     const [isMobile, setIsMobile] = useState(false);
 
@@ -71,7 +71,7 @@ const StarBackground = ({ starColor = '#7FFFD4' }) => {
             pointerEvents: 'none',
             zIndex: 0,
             overflow: 'hidden',
-            background: 'radial-gradient(ellipse at center, rgba(10, 10, 20, 0.3) 0%, rgba(0, 0, 0, 0.95) 70%, #000 100%)'
+            background: transparent ? 'transparent' : 'radial-gradient(ellipse at center, rgba(10, 10, 20, 0.3) 0%, rgba(0, 0, 0, 0.95) 70%, #000 100%)'
         }}>
             {!isMobile && (
                 <>

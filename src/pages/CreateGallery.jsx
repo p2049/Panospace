@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { createGallery } from '../services/galleryService';
@@ -6,6 +6,7 @@ import { FaImage, FaTags, FaMapMarkerAlt, FaLock, FaGlobe, FaArrowLeft } from 'r
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import '../styles/create-gallery.css';
+import StarBackground from '../components/StarBackground';
 
 const POPULAR_TAGS = [
     'landscape', 'portrait', 'street', 'nature', 'urban', 'film',
@@ -23,20 +24,7 @@ const CreateGallery = () => {
     const [fetchingProfile, setFetchingProfile] = useState(true);
     const fileInputRef = useRef(null);
 
-    // Generate stars for background animation
-    const stars = useMemo(() => {
-        return [...Array(100)].map((_, i) => ({
-            id: i,
-            width: Math.random() * 2 + 1,
-            height: Math.random() * 2 + 1,
-            top: Math.random() * 100,
-            left: Math.random() * 100,
-            opacity: Math.random() * 0.5 + 0.3,
-            duration: Math.random() * 3 + 2,
-            delay: Math.random() * 2,
-            glow: Math.random() * 3 + 2
-        }));
-    }, []);
+
 
     // Fetch user profile
     useEffect(() => {
@@ -181,40 +169,8 @@ const CreateGallery = () => {
     return (
         <div className="create-gallery-container" style={{ position: 'relative', overflow: 'hidden' }}>
             {/* Animated Stars Background */}
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                pointerEvents: 'none',
-                zIndex: 0
-            }}>
-                {stars.map((star) => (
-                    <div
-                        key={star.id}
-                        style={{
-                            position: 'absolute',
-                            width: star.width + 'px',
-                            height: star.height + 'px',
-                            background: '#7FFFD4',
-                            borderRadius: '50%',
-                            top: star.top + '%',
-                            left: star.left + '%',
-                            opacity: star.opacity,
-                            animation: `twinkle ${star.duration}s ease-in-out infinite`,
-                            animationDelay: `${star.delay}s`,
-                            boxShadow: `0 0 ${star.glow}px #7FFFD4`
-                        }}
-                    />
-                ))}
-            </div>
-            <style>{`
-                @keyframes twinkle {
-                    0%, 100% { opacity: 0.3; transform: scale(1); }
-                    50% { opacity: 1; transform: scale(1.2); }
-                }
-            `}</style>
+            {/* Animated Stars Background */}
+            <StarBackground />
 
             <div className="create-gallery-header" style={{ position: 'relative', zIndex: 1 }}>
                 <button onClick={() => navigate(-1)} className="back-btn">
