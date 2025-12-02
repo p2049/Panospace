@@ -101,7 +101,7 @@ const EventPage = () => {
             </div>
 
             {/* Submissions Grid */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+            <div className="container-md">
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
                     Submissions ({submissions.length})
                 </h2>

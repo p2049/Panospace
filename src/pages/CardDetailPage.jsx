@@ -1,42 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaStar, FaShoppingCart, FaUser, FaClock, FaChartLine } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { useSpaceCard } from '../hooks/useSpaceCard';
 import { SpaceCardService, RARITY_TIERS } from '../services/SpaceCardService';
 import SpaceCardComponent from '../components/SpaceCardComponent';
+import { PageSkeleton } from '../components/ui/Skeleton';
 
 const CardDetailPage = () => {
     const { cardId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
 
-    const [card, setCard] = useState(null);
-    const [listings, setListings] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // Use custom hook for card data
+    const { card, listings, loading, error } = useSpaceCard(cardId);
+
     const [minting, setMinting] = useState(false);
-
-    useEffect(() => {
-        const fetchCardDetails = async () => {
-            setLoading(true);
-            try {
-                const cardData = await SpaceCardService.getCard(cardId);
-                setCard(cardData);
-
-                // Fetch marketplace listings for this card
-                const marketplace = await SpaceCardService.getMarketplace();
-                const cardListings = marketplace.filter(item => item.id === cardId);
-                setListings(cardListings);
-            } catch (error) {
-                console.error('Error fetching card details:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (cardId) {
-            fetchCardDetails();
-        }
-    }, [cardId]);
 
     const handleMint = async () => {
         if (!currentUser) {
@@ -83,12 +62,10 @@ const CardDetailPage = () => {
         }
     };
 
+
+
     if (loading) {
-        return (
-            <div style={{ minHeight: '100vh', background: 'var(--black)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Loading card details...
-            </div>
-        );
+        return <PageSkeleton />;
     }
 
     if (!card) {
@@ -122,7 +99,7 @@ const CardDetailPage = () => {
             </div>
 
             {/* Content */}
-            <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="container-md">
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', marginBottom: '3rem' }}>
                     {/* Card Preview */}
                     <div>

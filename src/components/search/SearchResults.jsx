@@ -4,7 +4,7 @@ import StarBackground from '../StarBackground';
 import GridPostCard from '../GridPostCard';
 import FeedPostCard from '../FeedPostCard';
 import UserCard from '../UserCard';
-import GalleryCard from '../GalleryCard';
+import GalleryCard from '../ui/cards/GalleryCard';
 import CollectionCard from '../CollectionCard';
 import ContestCard from '../ContestCard';
 import EventCard from '../EventCard';

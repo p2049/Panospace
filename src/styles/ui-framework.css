@@ -1,0 +1,506 @@
+/**
+ * PanoSpace UI Framework
+ * Global reusable CSS classes for consistent styling across the application
+ * Maintains the mint/black aesthetic
+ */
+
+/* ============================================
+   PAGE CONTAINERS
+   ============================================ */
+
+/* Full-height page with black background */
+.ps-page {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding-bottom: 6rem;
+}
+
+.ps-page-4rem {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding-bottom: 4rem;
+}
+
+.ps-page-80px {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding-bottom: 80px;
+}
+
+.ps-page-2rem {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding: 2rem;
+}
+
+/* Full viewport page (no padding) */
+.ps-page-full {
+    height: 100vh;
+    width: 100vw;
+    background: #000;
+    color: #fff;
+}
+
+/* Page with overflow hidden and relative positioning */
+.ps-page-overflow {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding-bottom: 6rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Full viewport with overflow hidden */
+.ps-page-full-overflow {
+    height: 100vh;
+    width: 100vw;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ============================================
+   LOADING & ERROR STATES
+   ============================================ */
+
+/* Centered loading/error state */
+.ps-loading {
+    height: 100vh;
+    background: #000;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Centered state with flex column */
+.ps-loading-column {
+    height: 100vh;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    gap: 1rem;
+}
+
+/* Min-height centered state */
+.ps-centered {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justifyContent: center;
+}
+
+/* Centered with padding */
+.ps-centered-padded {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+/* ============================================
+   STICKY HEADERS
+   ============================================ */
+
+/* Sticky header at top */
+.ps-sticky-header {
+    position: sticky;
+    top: 0;
+    background: #000;
+    z-index: 100;
+    border-bottom: 1px solid #333;
+}
+
+/* Sticky header with padding */
+.ps-sticky-header-padded {
+    position: sticky;
+    top: 0;
+    background: #000;
+    z-index: 100;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #333;
+}
+
+/* Sticky header with z-index 10 */
+.ps-sticky-header-z10 {
+    position: sticky;
+    top: 0;
+    background: #000;
+    z-index: 10;
+    padding: 2rem;
+    border-bottom: 1px solid #222;
+}
+
+/* Fixed header */
+.ps-fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #000;
+    z-index: 100;
+    border-bottom: 1px solid #333;
+}
+
+/* ============================================
+   CONTAINERS & WRAPPERS
+   ============================================ */
+
+/* Max-width container centered */
+.ps-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.ps-container-1200 {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.ps-container-1400 {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Padded content area */
+.ps-content-padded {
+    padding: 2rem;
+}
+
+.ps-content-padded-1rem {
+    padding: 1rem;
+}
+
+/* Section containers with consistent spacing */
+.section {
+    padding: 2rem;
+}
+
+.section-tight {
+    padding: 1rem;
+}
+
+.section-loose {
+    padding: 3rem;
+}
+
+/* Container with max-width (medium) */
+.container-md {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Container variants */
+.container-sm {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.container-lg {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Container with 1rem padding */
+.container-md-1rem {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Container without padding */
+.container-md-no-padding {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Page wrapper (common pattern) */
+.page {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding-bottom: 6rem;
+}
+
+.page-tight {
+    min-height: 100vh;
+    background: #000;
+    color: #fff;
+    padding-bottom: 4rem;
+}
+
+/* ============================================
+   GRID LAYOUTS
+   ============================================ */
+
+/* Responsive grid for cards/items */
+.ps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.ps-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.ps-grid-3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.ps-grid-4col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+/* Auto-fit grid */
+.ps-grid-autofit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* ============================================
+   FLEX LAYOUTS
+   ============================================ */
+
+/* Flex row with gap */
+.ps-flex-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.ps-flex-row-centered {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ps-flex-row-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Flex column with gap */
+.ps-flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ps-flex-column-2rem {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Centered flex */
+.ps-flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ============================================
+   BACKGROUNDS
+   ============================================ */
+
+.ps-bg-black {
+    background: #000;
+}
+
+.ps-bg-dark {
+    background: #111;
+}
+
+.ps-bg-darker {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.ps-bg-transparent {
+    background: transparent;
+}
+
+/* ============================================
+   BORDERS
+   ============================================ */
+
+.ps-border-top {
+    border-top: 1px solid #333;
+}
+
+.ps-border-bottom {
+    border-bottom: 1px solid #333;
+}
+
+.ps-border-bottom-222 {
+    border-bottom: 1px solid #222;
+}
+
+.ps-border-all {
+    border: 1px solid #333;
+}
+
+.ps-border-mint {
+    border: 1px solid #7FFFD4;
+}
+
+/* ============================================
+   SPACING UTILITIES
+   ============================================ */
+
+.ps-pb-6rem {
+    padding-bottom: 6rem;
+}
+
+.ps-pb-4rem {
+    padding-bottom: 4rem;
+}
+
+.ps-pb-80px {
+    padding-bottom: 80px;
+}
+
+.ps-p-2rem {
+    padding: 2rem;
+}
+
+.ps-p-1rem {
+    padding: 1rem;
+}
+
+.ps-m-auto {
+    margin: 0 auto;
+}
+
+/* ============================================
+   POSITIONING
+   ============================================ */
+
+.ps-relative {
+    position: relative;
+}
+
+.ps-absolute {
+    position: absolute;
+}
+
+.ps-fixed {
+    position: fixed;
+}
+
+.ps-sticky {
+    position: sticky;
+}
+
+/* ============================================
+   Z-INDEX LAYERS
+   ============================================ */
+
+.ps-z-0 {
+    z-index: 0;
+}
+
+.ps-z-1 {
+    z-index: 1;
+}
+
+.ps-z-10 {
+    z-index: 10;
+}
+
+.ps-z-100 {
+    z-index: 100;
+}
+
+/* ============================================
+   TEXT UTILITIES
+   ============================================ */
+
+.ps-text-white {
+    color: #fff;
+}
+
+.ps-text-mint {
+    color: #7FFFD4;
+}
+
+.ps-text-gray {
+    color: #888;
+}
+
+.ps-text-center {
+    text-align: center;
+}
+
+/* ============================================
+   OVERFLOW
+   ============================================ */
+
+.ps-overflow-hidden {
+    overflow: hidden;
+}
+
+.ps-overflow-auto {
+    overflow: auto;
+}
+
+/* ============================================
+   ASPECT RATIOS
+   ============================================ */
+
+.ps-aspect-square {
+    width: 100%;
+    padding-bottom: 100%;
+    position: relative;
+    background: #000;
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 768px) {
+    .ps-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .ps-grid-3col,
+    .ps-grid-4col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .ps-container,
+    .ps-container-1200,
+    .ps-container-1400 {
+        padding: 1rem;
+    }
+}

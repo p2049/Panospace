@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useGallery } from '../hooks/useGallery';
 import {
-    getGallery,
     getGalleryPosts,
     getGalleryCollections
 } from '../services/galleryService';
-import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { PageSkeleton, SkeletonGrid } from '../components/ui/Skeleton';
 import {
     FaArrowLeft,
     FaLock,
@@ -28,12 +28,13 @@ const GalleryPage = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
 
-    const [gallery, setGallery] = useState(null);
+    // Use custom hook for gallery data
+    const { gallery, loading, error: galleryError } = useGallery(id);
+
     const [activeTab, setActiveTab] = useState('posts');
     const [posts, setPosts] = useState([]);
     const [collections, setCollections] = useState([]);
     const [members, setMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [contentLoading, setContentLoading] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [magazine, setMagazine] = useState(null);
@@ -43,9 +44,31 @@ const GalleryPage = () => {
     const isOwner = currentUser && gallery && gallery.ownerId === currentUser.uid;
     const isMember = currentUser && gallery && gallery.members?.includes(currentUser.uid);
 
+    // Load magazine data when gallery loads
     useEffect(() => {
-        loadGallery();
-    }, [id]);
+        const loadMagazineData = async () => {
+            if (!gallery) return;
+
+            try {
+                // Check if this gallery has a linked magazine
+                const magazines = await getMagazinesByGallery(id);
+                if (magazines.length > 0) {
+                    const mag = magazines[0];
+                    setMagazine(mag);
+
+                    // Get next queued issue
+                    const issues = await getMagazineIssues(mag.id, 'queued');
+                    if (issues.length > 0) {
+                        setNextIssue(issues[0]);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading magazine data:', error);
+            }
+        };
+
+        loadMagazineData();
+    }, [gallery, id]);
 
     useEffect(() => {
         if (gallery) {
@@ -53,67 +76,112 @@ const GalleryPage = () => {
         }
     }, [activeTab, gallery]);
 
-    const loadGallery = async () => {
-        try {
-            setLoading(true);
-            const galleryData = await getGallery(id);
-            setGallery(galleryData);
-
-            // Check if this gallery has a linked magazine
-            const magazines = await getMagazinesByGallery(id);
-            if (magazines.length > 0) {
-                const mag = magazines[0];
-                setMagazine(mag);
-
-                // Get next queued issue
-                const issues = await getMagazineIssues(mag.id, 'queued');
-                if (issues.length > 0) {
-                    setNextIssue(issues[0]);
-                }
-            }
-        } catch (error) {
-            console.error('Error loading gallery:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const loadContent = async () => {
         setContentLoading(true);
         try {
             if (activeTab === 'posts') {
                 const galleryPosts = await getGalleryPosts(id);
-                const postPromises = galleryPosts.map(async (gp) => {
-                    const postDoc = await getDoc(doc(db, 'posts', gp.postId));
-                    if (postDoc.exists()) {
-                        return { id: postDoc.id, ...postDoc.data() };
+
+                // Extract post IDs and batch fetch
+                const postIds = galleryPosts.map(gp => gp.postId).filter(Boolean);
+
+                if (postIds.length === 0) {
+                    setPosts([]);
+                } else {
+                    // Firestore 'in' queries support max 30 items, so batch if needed
+                    const batchSize = 30;
+                    const batches = [];
+
+                    for (let i = 0; i < postIds.length; i += batchSize) {
+                        const batchIds = postIds.slice(i, i + batchSize);
+                        batches.push(batchIds);
                     }
-                    return null;
-                });
-                const postsData = (await Promise.all(postPromises)).filter(Boolean);
-                setPosts(postsData);
+
+                    // Execute batched queries in parallel
+                    const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
+                    const allPosts = [];
+
+                    await Promise.all(batches.map(async (batchIds) => {
+                        const postsQuery = query(
+                            collection(db, 'posts'),
+                            where(documentId(), 'in', batchIds)
+                        );
+                        const snapshot = await getDocs(postsQuery);
+                        snapshot.docs.forEach(doc => {
+                            allPosts.push({ id: doc.id, ...doc.data() });
+                        });
+                    }));
+
+                    setPosts(allPosts);
+                }
             } else if (activeTab === 'collections') {
                 const galleryCollections = await getGalleryCollections(id);
-                const collectionPromises = galleryCollections.map(async (gc) => {
-                    const collectionDoc = await getDoc(doc(db, 'collections', gc.collectionId));
-                    if (collectionDoc.exists()) {
-                        return { id: collectionDoc.id, ...collectionDoc.data() };
+
+                // Extract collection IDs and batch fetch
+                const collectionIds = galleryCollections.map(gc => gc.collectionId).filter(Boolean);
+
+                if (collectionIds.length === 0) {
+                    setCollections([]);
+                } else {
+                    // Batch collections queries
+                    const batchSize = 30;
+                    const batches = [];
+
+                    for (let i = 0; i < collectionIds.length; i += batchSize) {
+                        const batchIds = collectionIds.slice(i, i + batchSize);
+                        batches.push(batchIds);
                     }
-                    return null;
-                });
-                const collectionsData = (await Promise.all(collectionPromises)).filter(Boolean);
-                setCollections(collectionsData);
+
+                    const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
+                    const allCollections = [];
+
+                    await Promise.all(batches.map(async (batchIds) => {
+                        const collectionsQuery = query(
+                            collection(db, 'collections'),
+                            where(documentId(), 'in', batchIds)
+                        );
+                        const snapshot = await getDocs(collectionsQuery);
+                        snapshot.docs.forEach(doc => {
+                            allCollections.push({ id: doc.id, ...doc.data() });
+                        });
+                    }));
+
+                    setCollections(allCollections);
+                }
             } else if (activeTab === 'members') {
                 if (gallery.members && gallery.members.length > 0) {
-                    const memberPromises = gallery.members.map(async (memberId) => {
-                        const userDoc = await getDoc(doc(db, 'users', memberId));
-                        if (userDoc.exists()) {
-                            return { id: userDoc.id, ...userDoc.data() };
+                    // Batch members queries
+                    const memberIds = gallery.members.filter(Boolean);
+
+                    if (memberIds.length === 0) {
+                        setMembers([]);
+                    } else {
+                        const batchSize = 30;
+                        const batches = [];
+
+                        for (let i = 0; i < memberIds.length; i += batchSize) {
+                            const batchIds = memberIds.slice(i, i + batchSize);
+                            batches.push(batchIds);
                         }
-                        return null;
-                    });
-                    const membersData = (await Promise.all(memberPromises)).filter(Boolean);
-                    setMembers(membersData);
+
+                        const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
+                        const allMembers = [];
+
+                        await Promise.all(batches.map(async (batchIds) => {
+                            const membersQuery = query(
+                                collection(db, 'users'),
+                                where(documentId(), 'in', batchIds)
+                            );
+                            const snapshot = await getDocs(membersQuery);
+                            snapshot.docs.forEach(doc => {
+                                allMembers.push({ id: doc.id, ...doc.data() });
+                            });
+                        }));
+
+                        setMembers(allMembers);
+                    }
+                } else {
+                    setMembers([]);
                 }
             }
         } catch (error) {
@@ -124,12 +192,7 @@ const GalleryPage = () => {
     };
 
     if (loading) {
-        return (
-            <div className="gallery-loading">
-                <div className="spinner"></div>
-                <p>Loading gallery...</p>
-            </div>
-        );
+        return <PageSkeleton />;
     }
 
     if (!gallery) {
@@ -233,9 +296,7 @@ const GalleryPage = () => {
                 )}
 
                 {contentLoading ? (
-                    <div className="content-loading">
-                        <div className="spinner"></div>
-                    </div>
+                    <SkeletonGrid count={6} aspectRatio="1/1" columns="repeat(auto-fill, minmax(250px, 1fr))" />
                 ) : (
                     <>
                         {activeTab === 'posts' && (

@@ -1,49 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import { getMagazineIssues } from '../services/magazineService';
+import { useMagazine } from '../hooks/useMagazine';
 import { FaArrowLeft, FaBook, FaClock, FaCalendar, FaImage, FaUsers, FaEye } from 'react-icons/fa';
 import SEO from '../components/SEO';
 import StarBackground from '../components/StarBackground';
+import { PageSkeleton } from '../components/ui/Skeleton';
 
 const MagazineView = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const [magazine, setMagazine] = useState(null);
-    const [issues, setIssues] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchMagazine = async () => {
-            try {
-                const magazineRef = doc(db, 'magazines', id);
-                const magazineSnap = await getDoc(magazineRef);
-
-                if (magazineSnap.exists()) {
-                    setMagazine({ id: magazineSnap.id, ...magazineSnap.data() });
-
-                    // Fetch issues
-                    const fetchedIssues = await getMagazineIssues(id);
-                    setIssues(fetchedIssues);
-                } else {
-                    setError('Magazine not found');
-                }
-            } catch (err) {
-                console.error('Error fetching magazine:', err);
-                setError('Failed to load magazine');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) {
-            fetchMagazine();
-        }
-    }, [id]);
+    // Use custom hook for magazine data
+    const { magazine, issues, loading, error } = useMagazine(id);
 
     const formatReleaseFrequency = (frequency) => {
         return frequency === 'monthly' ? 'Monthly' : 'Bi-Monthly';
@@ -63,7 +33,7 @@ const MagazineView = () => {
 
     const isOwner = magazine?.ownerId === currentUser?.uid;
 
-    if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>Loading Magazine...</div>;
+    if (loading) return <PageSkeleton />;
     if (error || !magazine) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>{error || 'Magazine not found'}</div>;
 
     return (
@@ -110,7 +80,7 @@ const MagazineView = () => {
                     </div>
                 )}
 
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+                <div className="container-md" style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', color: '#7FFFD4' }}>
                         <FaBook size={24} />
                         <span style={{ textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold', fontSize: '0.9rem' }}>Magazine</span>
@@ -142,7 +112,7 @@ const MagazineView = () => {
             </div>
 
             {/* Content Section */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+            <div className="container-md" style={{ padding: '2rem 1rem' }}>
                 {issues.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '4rem', color: '#666' }}>
                         <FaBook size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />

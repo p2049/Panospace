@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCollection } from '../hooks/useCollections';
 import { FaArrowLeft, FaUniversity, FaImage, FaUser, FaPlus, FaCheck, FaSearch } from 'react-icons/fa';
 import SEO from '../components/SEO';
-import GalleryCard from '../components/GalleryCard';
+import GalleryCard from '../components/ui/cards/GalleryCard';
 import StarBackground from '../components/StarBackground';
 
 const MuseumView = () => {
@@ -157,7 +157,7 @@ const MuseumView = () => {
                     )}
                 </div>
 
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+                <div className="container-md" style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', color: '#7FFFD4' }}>
                         <FaUniversity size={24} />
                         <span style={{ textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold', fontSize: '0.9rem' }}>Museum</span>
@@ -179,7 +179,7 @@ const MuseumView = () => {
             </div>
 
             {/* Content Section */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 1rem' }}>
+            <div className="container-md" style={{ padding: '2rem 1rem' }}>
 
                 {/* Galleries */}
                 {galleries.length > 0 && (

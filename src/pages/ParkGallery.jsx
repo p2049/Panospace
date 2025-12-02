@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getParkById } from '../constants/parksData';
 import { useParks } from '../hooks/useParks';
 import { FaArrowLeft, FaMapMarkerAlt, FaMountain, FaTree, FaImage } from 'react-icons/fa';
+import { SkeletonGrid } from '../components/ui/Skeleton';
 
 const ParkGallery = () => {
     const { parkId } = useParams();
@@ -120,26 +121,11 @@ const ParkGallery = () => {
             </div>
 
             {/* Posts Grid */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+            <div className="container-md">
+
+
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '4rem', color: '#888' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            border: '3px solid rgba(127, 255, 212, 0.1)',
-                            borderTop: '3px solid #7FFFD4',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite',
-                            margin: '0 auto 1rem auto'
-                        }} />
-                        <p>Loading posts...</p>
-                        <style>{`
-                            @keyframes spin {
-                                0% { transform: rotate(0deg); }
-                                100% { transform: rotate(360deg); }
-                            }
-                        `}</style>
-                    </div>
+                    <SkeletonGrid count={8} aspectRatio="1/1" columns="repeat(auto-fill, minmax(250px, 1fr))" />
                 ) : posts.length > 0 ? (
                     <div style={{
                         display: 'grid',

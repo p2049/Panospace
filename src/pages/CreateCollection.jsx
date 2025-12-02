@@ -1,11 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { useCreateCollection } from '../hooks/useCollections';
 import { db } from '../firebase';
-import StarBackground from '../components/StarBackground';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { FaUniversity, FaBook } from 'react-icons/fa';
 import exifr from 'exifr';
@@ -28,7 +27,20 @@ const CreateCollection = () => {
     const { createCollection, loading: creating } = useCreateCollection();
     const fileInputRef = useRef(null);
 
-
+    // Generate stars once and memoize them
+    const stars = useMemo(() => {
+        return [...Array(100)].map((_, i) => ({
+            id: i,
+            width: Math.random() * 2 + 1,
+            height: Math.random() * 2 + 1,
+            top: Math.random() * 100,
+            left: Math.random() * 100,
+            opacity: Math.random() * 0.5 + 0.3,
+            duration: Math.random() * 3 + 2,
+            delay: Math.random() * 2,
+            glow: Math.random() * 3 + 2
+        }));
+    }, []);
 
     const [creationMode, setCreationMode] = useState('collection'); // 'collection', 'gallery', 'museum', or 'magazine'
     const [title, setTitle] = useState('');
@@ -286,7 +298,7 @@ const CreateCollection = () => {
     const activeImage = images[activeImageIndex];
 
     return (
-        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem', position: 'relative', overflow: 'hidden' }}>
+        <div className="ps-page-overflow">
             {/* Animated Stars Background */}
             <div style={{
                 position: 'fixed',

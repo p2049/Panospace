@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, addDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -16,7 +16,7 @@ import ReportModal from '../components/ReportModal';
 import CreateCardModal from '../components/CreateCardModal';
 import BusinessCardModal from '../components/BusinessCardModal';
 import CommissionModal from '../components/monetization/CommissionModal';
-import { FaUniversity, FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus } from 'react-icons/fa';
+import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus } from 'react-icons/fa';
 
 
 const Profile = () => {
@@ -92,11 +92,11 @@ const Profile = () => {
         }
     };
 
-    if (loading) return <div style={{ height: '100vh', background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>Loading...</div>;
+    if (loading) return <div className="ps-loading">Loading...</div>;
 
     if (!user) {
         return (
-            <div style={{ height: '100vh', background: '#000', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff', gap: '1rem' }}>
+            <div className="ps-loading-column">
                 <SEO title="User Not Found" />
                 <h2>User not found</h2>
                 <button onClick={() => navigate('/')} style={{ padding: '0.5rem 1rem', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}>Go Home</button>
@@ -107,7 +107,7 @@ const Profile = () => {
     const isOwnProfile = currentUser?.uid === user.id;
 
     return (
-        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem' }}>
+        <div className="ps-page">
             <SEO
                 title={user.displayName || 'Profile'}
                 description={user.bio || `Check out ${user.displayName}'s profile on Panospace.`}

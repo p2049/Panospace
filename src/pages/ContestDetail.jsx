@@ -1,45 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaTrophy, FaClock, FaUsers, FaDollarSign, FaArrowLeft } from 'react-icons/fa';
-import { getContest, getContestLeaderboard } from '../services/contestService';
+import { useContest } from '../hooks/useContest';
 import { useAuth } from '../context/AuthContext';
 import SmartImage from '../components/SmartImage';
 import ContestEntryModal from '../components/contests/ContestEntryModal';
+import { PageSkeleton } from '../components/ui/Skeleton';
 
 const ContestDetail = () => {
     const { contestId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-    const [contest, setContest] = useState(null);
-    const [leaderboard, setLeaderboard] = useState([]);
-    const [loading, setLoading] = useState(true);
+
+    // Use custom hook for contest data
+    const { contest, leaderboard, loading, error } = useContest(contestId);
+
     const [showEntryModal, setShowEntryModal] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [contestData, entries] = await Promise.all([
-                    getContest(contestId),
-                    getContestLeaderboard(contestId)
-                ]);
-                setContest(contestData);
-                setLeaderboard(entries);
-            } catch (error) {
-                console.error('Error loading contest:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, [contestId]);
+
 
     if (loading) {
-        return (
-            <div style={{ minHeight: '100vh', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Loading contest...
-            </div>
-        );
+        return <PageSkeleton />;
     }
 
     if (!contest) {

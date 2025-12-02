@@ -175,7 +175,7 @@ const CollectionDetail = () => {
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem' }}>
             {/* Header */}
-            <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="container-md">
                 <button
                     onClick={() => navigate(-1)}
                     style={{

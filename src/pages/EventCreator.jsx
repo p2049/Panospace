@@ -167,7 +167,7 @@ const EventCreator = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem', position: 'relative', overflow: 'hidden' }}>
+        <div className="ps-page-overflow">
             {/* Animated Stars Background */}
             <div style={{
                 position: 'fixed',
@@ -199,13 +199,7 @@ const EventCreator = () => {
             </div>
 
             {/* Header */}
-            <div style={{
-                padding: '1rem 2rem',
-                borderBottom: '1px solid #333',
-                position: 'sticky',
-                top: 0,
-                background: '#000',
-                zIndex: 100,
+            <div className="ps-sticky-header-padded" style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
