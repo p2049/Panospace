@@ -6,10 +6,11 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import exifr from 'exifr';
-import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printfulApi';
+import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printPricing';
 import { formatPrice } from '../utils/helpers';
 import { PhotoDexService } from '../services/PhotoDexService';
 import { AccountTypeService } from '../services/AccountTypeService';
+import { generateSearchKeywords } from '../utils/searchKeywords';
 
 // ---------------------------------------------------------------------------
 // Helper: extract EXIF from a File
@@ -236,9 +237,9 @@ export const useCreatePost = () => {
             // 2️⃣ Build search keywords (title, tags, username)
             // ---------------------------------------------------------------
             const searchKeywords = [
-                ...(postData.title || '').toLowerCase().split(' '),
+                ...generateSearchKeywords(postData.title || ''),
                 ...(postData.tags || []).map((t) => t.toLowerCase()),
-                username.toLowerCase(),
+                ...generateSearchKeywords(username),
             ].filter((k) => k.length > 0);
 
             // ---------------------------------------------------------------
@@ -410,7 +411,7 @@ export const useCreatePost = () => {
                     // (Assuming top-level import was updated in previous step or we rely on existing imports)
                     // Wait, I need to update the imports in this file too!
 
-                    const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES } = await import('../utils/printfulApi');
+                    const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES } = await import('../utils/printPricing');
 
                     let printSizesConfig = PRINT_SIZES.filter((size) =>
                         item.printSizes.includes(size.id)

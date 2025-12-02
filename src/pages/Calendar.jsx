@@ -5,6 +5,7 @@ import { useEvents, useFollowingEvents } from '../hooks/useEvents';
 
 import { FaPlus, FaChevronLeft, FaChevronRight, FaCalendar, FaUsers, FaSearch } from 'react-icons/fa';
 import { formatDateForInput } from '../utils/dateHelpers';
+import { generateCalendarDays } from '../utils/calendarHelpers';
 
 const Calendar = () => {
     const { currentUser } = useAuth();
@@ -38,39 +39,7 @@ const Calendar = () => {
     const loading = viewMode === 'all' ? loadingAll : loadingFollowing;
 
     // Generate calendar days
-    const calendarDays = useMemo(() => {
-        const days = [];
-        const firstDayOfMonth = monthStart.getDay();
-        const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-
-        // Previous month days
-        const prevMonthDays = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
-        for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-            days.push({
-                date: new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, prevMonthDays - i),
-                isCurrentMonth: false
-            });
-        }
-
-        // Current month days
-        for (let i = 1; i <= daysInMonth; i++) {
-            days.push({
-                date: new Date(currentDate.getFullYear(), currentDate.getMonth(), i),
-                isCurrentMonth: true
-            });
-        }
-
-        // Next month days to fill grid
-        const remainingDays = 42 - days.length; // 6 rows * 7 days
-        for (let i = 1; i <= remainingDays; i++) {
-            days.push({
-                date: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, i),
-                isCurrentMonth: false
-            });
-        }
-
-        return days;
-    }, [currentDate]);
+    const calendarDays = useMemo(() => generateCalendarDays(currentDate), [currentDate]);
 
     // Get events for a specific day
     const getEventsForDay = (date) => {

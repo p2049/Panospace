@@ -5,6 +5,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { FaArrowLeft, FaTags, FaMapMarkerAlt, FaSave } from 'react-icons/fa';
 import Toast from '../components/Toast';
+import { generateSearchKeywords } from '../utils/searchKeywords';
 
 const EditPost = () => {
     const { id } = useParams();
@@ -57,20 +58,7 @@ const EditPost = () => {
         fetchPost();
     }, [id, currentUser, navigate]);
 
-    const generateSearchKeywords = (text) => {
-        if (!text) return [];
-        const words = text.toLowerCase().split(/[\s,]+/);
-        const keywords = new Set();
 
-        words.forEach(word => {
-            keywords.add(word);
-            for (let i = 2; i <= word.length; i++) {
-                keywords.add(word.substring(0, i));
-            }
-        });
-
-        return Array.from(keywords);
-    };
 
     const handleSave = async () => {
         if (!currentUser || !post) return;

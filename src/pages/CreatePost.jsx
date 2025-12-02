@@ -3,15 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCreatePost } from '../hooks/useCreatePost';
 import { useCollections } from '../hooks/useCollections';
-import { FaImage, FaTimes, FaPlus, FaStore, FaInfoCircle, FaCamera, FaMagic, FaLayerGroup, FaSmile, FaStar } from 'react-icons/fa';
-import { PRINT_SIZES, PRINT_TIERS } from '../utils/printfulApi';
-import ManualExifForm from '../components/ManualExifForm';
-import TagFilterPanel from '../components/TagFilterPanel';
-import { TAG_CATEGORIES, getTagCategory } from '../constants/tagCategories';
+
+import ThumbnailStrip from '../components/create-post/ThumbnailStrip';
+import ImageCarousel from '../components/create-post/ImageCarousel';
+import TagCategoryPanel from '../components/create-post/TagCategoryPanel';
+import FilmOptionsPanel from '../components/create-post/FilmOptionsPanel';
+import ManualExifEditor from '../components/create-post/ManualExifEditor';
+import ShopConfiguration from '../components/create-post/ShopConfiguration';
+import CollectionSelector from '../components/create-post/CollectionSelector';
+import RatingSystemSelector from '../components/create-post/RatingSystemSelector';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { FILM_STOCKS, FILM_FORMATS, COMMON_FILM_ISOS } from '../constants/filmStocks';
-import { SpaceCardService, RARITY_TIERS, EDITION_TYPES } from '../services/SpaceCardService';
+import { SpaceCardService } from '../services/SpaceCardService';
+import PageHeader from '../components/PageHeader';
+
 
 
 const CreatePost = () => {
@@ -412,183 +417,47 @@ const CreatePost = () => {
 
     return (
         <div className="create-post-container">
-            {/* Header */}
-            <div className="create-post-header" style={{ marginTop: '60px' }}>
-                <button onClick={() => navigate(-1)} className="header-btn">
-                    <FaTimes /> Cancel
-                </button>
-                <h2>CREATE POST</h2>
-                <button
-                    onClick={handleSubmit}
-                    disabled={loading || slides.length === 0}
-                    className="header-btn-primary"
-                >
-                    {loading ? `Uploading ${progress}%` : 'Publish'}
-                </button>
-            </div >
+            <PageHeader
+                title="CREATE POST"
+                leftAction={
+                    <button onClick={() => navigate(-1)} className="header-btn">
+                        <FaTimes /> Cancel
+                    </button>
+                }
+                rightAction={
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading || slides.length === 0}
+                        className="header-btn-primary"
+                    >
+                        {loading ? `Uploading ${progress}%` : 'Publish'}
+                    </button>
+                }
+                showProgress={loading}
+                progress={progress}
+                style={{ marginTop: '60px' }}
+            />
 
-            {/* Progress Bar */}
-            {
-                loading && (
-                    <div style={{ width: '100%', height: '4px', background: '#333' }}>
-                        <div style={{
-                            width: `${progress}%`,
-                            height: '100%',
-                            background: 'var(--ice-mint)',
-                            transition: 'width 0.3s ease'
-                        }} />
-                    </div>
-                )
-            }
 
             <div className="create-post-layout">
                 {/* LEFT COLUMN: Images, Previews, Tags */}
                 <div className="left-column">
                     {/* 1. Image Carousel */}
-                    {slides.length === 0 ? (
-                        <div className="empty-state" onClick={() => fileInputRef.current?.click()}>
-                            <FaImage size={48} />
-                            <p>Click to select images</p>
-                            <span>Up to 10 images</span>
-                        </div>
-                    ) : (
-                        <div className="carousel-container">
-                            <div
-                                className="carousel-track"
-                                onTouchStart={onTouchStart}
-                                onTouchMove={onTouchMove}
-                                onTouchEnd={onTouchEnd}
-                                style={{
-                                    transform: `translateX(-${activeSlideIndex * 100}%)`,
-                                    transition: 'transform 0.3s ease-out'
-                                }}
-                            >
-                                {slides.map((slide, idx) => (
-                                    <div key={idx} className="carousel-slide">
-                                        <img src={slide.preview} alt={`Slide ${idx + 1}`} />
-
-
-                                        <div className="carousel-overlay">
-                                            <button
-                                                className="slide-remove-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    removeSlide(idx, e);
-                                                }}
-                                            >
-                                                <FaTimes />
-                                            </button>
-
-                                            <div className="overlay-bottom-bar">
-                                                <label className="shop-toggle-small" onClick={(e) => e.stopPropagation()}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={slide.addToShop}
-                                                        onChange={(e) => updateSlide(idx, { addToShop: e.target.checked })}
-                                                    />
-                                                    <FaStore /> Shop
-                                                </label>
-                                                {(slide.exif || slide.manualExif) && (
-                                                    <span className="exif-badge"><FaCamera /></span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Thumbnail Scrollbar with Reorder Controls */}
-                            {slides.length > 1 && (
-                                <div className="thumbnail-scrollbar">
-                                    {slides.map((slide, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={`thumbnail ${idx === activeSlideIndex ? 'active' : ''}`}
-                                            draggable
-                                            onDragStart={(e) => handleDragStart(e, idx)}
-                                            onDragOver={handleDragOver}
-                                            onDrop={(e) => handleDrop(e, idx)}
-                                            onClick={() => setActiveSlideIndex(idx)}
-                                            style={{ position: 'relative', cursor: 'grab' }}
-                                        >
-                                            <img src={slide.preview} alt={`Thumbnail ${idx + 1}`} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                            {idx === activeSlideIndex && (
-                                                <div className="thumbnail-indicator" />
-                                            )}
-                                            {/* Reorder arrows */}
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '2px',
-                                                right: '2px',
-                                                display: 'flex',
-                                                gap: '2px',
-                                                opacity: 0.8
-                                            }}>
-                                                {idx > 0 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            moveSlide(idx, 'left');
-                                                        }}
-                                                        style={{
-                                                            background: 'rgba(0,0,0,0.7)',
-                                                            border: 'none',
-                                                            borderRadius: '3px',
-                                                            color: '#7FFFD4',
-                                                            width: '18px',
-                                                            height: '18px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            fontSize: '10px'
-                                                        }}
-                                                        title="Move left"
-                                                    >
-                                                        ←
-                                                    </button>
-                                                )}
-                                                {idx < slides.length - 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            moveSlide(idx, 'right');
-                                                        }}
-                                                        style={{
-                                                            background: 'rgba(0,0,0,0.7)',
-                                                            border: 'none',
-                                                            borderRadius: '3px',
-                                                            color: '#7FFFD4',
-                                                            width: '18px',
-                                                            height: '18px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            cursor: 'pointer',
-                                                            fontSize: '10px'
-                                                        }}
-                                                        title="Move right"
-                                                    >
-                                                        →
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* Add More Button */}
-                            <button
-                                className="add-more-carousel-btn"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <FaPlus /> Add Another Photo
-                            </button>
-                        </div>
-                    )}
+                    <ImageCarousel
+                        slides={slides}
+                        activeSlideIndex={activeSlideIndex}
+                        setActiveSlideIndex={setActiveSlideIndex}
+                        removeSlide={removeSlide}
+                        updateSlide={updateSlide}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                        handleDragStart={handleDragStart}
+                        handleDragOver={handleDragOver}
+                        handleDrop={handleDrop}
+                        moveSlide={moveSlide}
+                        onAddMoreClick={() => fileInputRef.current?.click()}
+                    />
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -599,25 +468,12 @@ const CreatePost = () => {
                     />
 
                     {/* 2. Tags & Categories (Moved to Left) */}
-                    <div className="form-section" style={{ marginTop: '1.5rem' }}>
-                        <h3>Tags & Categories</h3>
-                        <p className="field-hint" style={{ marginBottom: '1rem' }}>
-                            Select tags to help people find your work.
-                        </p>
-
-                        <div className="tags-container">
-                            {Object.values(TAG_CATEGORIES).map(category => (
-                                <TagFilterPanel
-                                    key={category.id}
-                                    category={category}
-                                    selectedTags={tags}
-                                    onTagToggle={handleTagToggle}
-                                    isExpanded={expandedCategories[category.id]}
-                                    onToggleExpand={() => toggleCategory(category.id)}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    <TagCategoryPanel
+                        tags={tags}
+                        handleTagToggle={handleTagToggle}
+                        expandedCategories={expandedCategories}
+                        toggleCategory={toggleCategory}
+                    />
                 </div>
 
                 {/* RIGHT COLUMN: Post Details & Settings */}
@@ -696,315 +552,35 @@ const CreatePost = () => {
                     </div>
 
                     {/* Collection Selection - Compact */}
-                    <div className="form-section" style={{ padding: '0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
-                                <FaLayerGroup style={{ marginRight: '0.5rem', color: '#7FFFD4' }} />
-                                Collection
-                            </h3>
-                            {selectedCollectionId && (
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={showInProfile}
-                                        onChange={(e) => setShowInProfile(e.target.checked)}
-                                        style={{ width: '14px', height: '14px' }}
-                                    />
-                                    Also show in profile
-                                </label>
-                            )}
-                        </div>
-
-                        <select
-                            value={selectedCollectionId}
-                            onChange={(e) => setSelectedCollectionId(e.target.value)}
-                            className="form-input"
-                            style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem' }}
-                        >
-                            <option value="">Select a collection (optional)...</option>
-                            {collections.map(collection => (
-                                <option key={collection.id} value={collection.id}>
-                                    {collection.title}
-                                </option>
-                            ))}
-                        </select>
-
-
-
-                        {selectedCollectionId && (() => {
-                            const selectedCollection = collections.find(c => c.id === selectedCollectionId);
-                            return selectedCollection ? (
-                                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#888', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>📌 {selectedCollection.title}</span>
-                                    <span style={{ color: '#444' }}>|</span>
-                                    <span>{selectedCollection.postToFeed ? 'Visible in Feed' : 'Hidden from Feed'}</span>
-                                </div>
-                            ) : null;
-                        })()}
-                    </div>
+                    <CollectionSelector
+                        collections={collections}
+                        selectedCollectionId={selectedCollectionId}
+                        setSelectedCollectionId={setSelectedCollectionId}
+                        showInProfile={showInProfile}
+                        setShowInProfile={setShowInProfile}
+                    />
 
                     {/* Film Control Center */}
-                    <div className="form-section">
-                        {/* Master Toggle */}
-                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: filmMetadata.isFilm ? '1rem' : 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FaMagic style={{ color: '#7FFFD4' }} />
-                                <span style={{ fontWeight: '600', fontSize: '1rem' }}>Film Photography</span>
-                            </div>
-                            <div style={{ position: 'relative', width: '40px', height: '20px' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={filmMetadata.isFilm}
-                                    onChange={(e) => setFilmMetadata({ ...filmMetadata, isFilm: e.target.checked })}
-                                    style={{ opacity: 0, width: 0, height: 0 }}
-                                />
-                                <div style={{
-                                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                                    background: filmMetadata.isFilm ? '#7FFFD4' : '#333',
-                                    borderRadius: '20px', transition: '0.3s'
-                                }}></div>
-                                <div style={{
-                                    position: 'absolute', top: '2px', left: filmMetadata.isFilm ? '22px' : '2px',
-                                    width: '16px', height: '16px', background: '#fff',
-                                    borderRadius: '50%', transition: '0.3s'
-                                }}></div>
-                            </div>
-                        </label>
-
-                        {filmMetadata.isFilm && (
-                            <div style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
-                                {/* Metadata Row - Compact */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                    <select
-                                        value={filmMetadata.stock}
-                                        onChange={(e) => setFilmMetadata({ ...filmMetadata, stock: e.target.value })}
-                                        className="form-input"
-                                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
-                                    >
-                                        <option value="">Stock...</option>
-                                        {FILM_STOCKS.map(stock => <option key={stock} value={stock}>{stock}</option>)}
-                                    </select>
-                                    <select
-                                        value={filmMetadata.format}
-                                        onChange={(e) => setFilmMetadata({ ...filmMetadata, format: e.target.value })}
-                                        className="form-input"
-                                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
-                                    >
-                                        <option value="">Format...</option>
-                                        {FILM_FORMATS.map(fmt => <option key={fmt} value={fmt}>{fmt}</option>)}
-                                    </select>
-                                    <select
-                                        value={filmMetadata.iso}
-                                        onChange={(e) => setFilmMetadata({ ...filmMetadata, iso: e.target.value })}
-                                        className="form-input"
-                                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
-                                    >
-                                        <option value="">ISO...</option>
-                                        {COMMON_FILM_ISOS.map(iso => <option key={iso} value={iso}>{iso}</option>)}
-                                    </select>
-                                </div>
-
-                                {/* Secondary Metadata Row */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-                                    <input
-                                        type="text"
-                                        placeholder="Camera (e.g. Canon AE-1)"
-                                        value={filmMetadata.cameraOverride}
-                                        onChange={(e) => setFilmMetadata({ ...filmMetadata, cameraOverride: e.target.value })}
-                                        className="form-input"
-                                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Lens (e.g. 50mm f/1.8)"
-                                        value={filmMetadata.lensOverride}
-                                        onChange={(e) => setFilmMetadata({ ...filmMetadata, lensOverride: e.target.value })}
-                                        className="form-input"
-                                        style={{ padding: '0.4rem', fontSize: '0.85rem' }}
-                                    />
-                                </div>
-
-                                {/* Visuals Subsection */}
-                                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                                    <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#888', marginBottom: '0.5rem' }}>
-                                        Visuals
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                        {/* Date Stamp Toggle */}
-                                        <div style={{ flex: 1, minWidth: '140px' }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={enableQuartzDate}
-                                                    onChange={(e) => setEnableQuartzDate(e.target.checked)}
-                                                    style={{ width: '16px', height: '16px' }}
-                                                />
-                                                Quartz Date Stamp
-                                            </label>
-
-                                            {enableQuartzDate && (
-                                                <div style={{ marginTop: '0.5rem' }}>
-                                                    <input
-                                                        type="text"
-                                                        value={quartzDateString}
-                                                        onChange={(e) => setQuartzDateString(e.target.value)}
-                                                        className="form-input"
-                                                        placeholder="D M 'Y"
-                                                        style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%', marginBottom: '0.5rem' }}
-                                                    />
-                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                        <span style={{ fontSize: '0.75rem', color: '#888' }}>Color:</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setQuartzColor('#7FFFD4')}
-                                                            style={{
-                                                                width: '28px',
-                                                                height: '28px',
-                                                                background: '#7FFFD4',
-                                                                border: quartzColor === '#7FFFD4' ? '2px solid #fff' : '1px solid #333',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                boxShadow: quartzColor === '#7FFFD4' ? '0 0 8px #7FFFD4' : 'none'
-                                                            }}
-                                                            title="PanoSpace Green"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setQuartzColor('#FF4500')}
-                                                            style={{
-                                                                width: '28px',
-                                                                height: '28px',
-                                                                background: '#FF4500',
-                                                                border: quartzColor === '#FF4500' ? '2px solid #fff' : '1px solid #333',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                boxShadow: quartzColor === '#FF4500' ? '0 0 8px #FF4500' : 'none'
-                                                            }}
-                                                            title="Film Orange"
-                                                        />
-                                                        <input
-                                                            type="color"
-                                                            value={quartzColor}
-                                                            onChange={(e) => setQuartzColor(e.target.value)}
-                                                            style={{
-                                                                width: '28px',
-                                                                height: '28px',
-                                                                border: '1px solid #333',
-                                                                borderRadius: '4px',
-                                                                background: 'none',
-                                                                cursor: 'pointer'
-                                                            }}
-                                                            title="Custom Color"
-                                                        />
-                                                    </div>
-                                                    <div style={{ marginTop: '0.5rem' }}>
-                                                        <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '0.25rem' }}>Date Format:</label>
-                                                        <select
-                                                            value={quartzDateFormat}
-                                                            onChange={(e) => {
-                                                                const newFormat = e.target.value;
-                                                                setQuartzDateFormat(newFormat);
-                                                                // Auto-update the text string based on format
-                                                                const today = new Date();
-                                                                const d = String(today.getDate()).padStart(2, '0');
-                                                                const m = String(today.getMonth() + 1).padStart(2, '0');
-                                                                const y = String(today.getFullYear()).slice(2);
-
-                                                                let newText = '';
-                                                                if (newFormat === 'YY.MM.DD') newText = `${y}.${m}.${d}`;
-                                                                else if (newFormat === 'MM.DD.YY') newText = `${m}.${d}.${y}`;
-                                                                else if (newFormat === 'DD.MM.YY') newText = `${d}.${m}.${y}`;
-                                                                else if (newFormat === "DD MM 'YY") newText = `${today.getDate()} ${today.getMonth() + 1} '${y}`;
-                                                                else if (newFormat === "MM DD 'YY") newText = `${today.getMonth() + 1} ${today.getDate()} '${y}`;
-                                                                else if (newFormat === "YY MM DD") newText = `${y} ${m} ${d}`;
-
-                                                                setQuartzDateString(newText);
-                                                            }}
-                                                            className="form-input"
-                                                            style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%' }}
-                                                        >
-                                                            <option value="MM DD 'YY">MM DD 'YY (US Classic - Default)</option>
-                                                            <option value="YY.MM.DD">YY.MM.DD</option>
-                                                            <option value="MM.DD.YY">MM.DD.YY (US)</option>
-                                                            <option value="DD.MM.YY">DD.MM.YY (EU)</option>
-                                                            <option value="DD MM 'YY">DD MM 'YY (Classic)</option>
-                                                            <option value="YY MM DD">YY MM DD (Classic)</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Film Border Toggle */}
-                                        <div style={{ flex: 1, minWidth: '140px' }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={enableSprocketOverlay}
-                                                    onChange={(e) => setEnableSprocketOverlay(e.target.checked)}
-                                                    style={{ width: '16px', height: '16px' }}
-                                                />
-                                                Film Strip Border
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <FilmOptionsPanel
+                        filmMetadata={filmMetadata}
+                        setFilmMetadata={setFilmMetadata}
+                        enableQuartzDate={enableQuartzDate}
+                        setEnableQuartzDate={setEnableQuartzDate}
+                        quartzDateString={quartzDateString}
+                        setQuartzDateString={setQuartzDateString}
+                        quartzColor={quartzColor}
+                        setQuartzColor={setQuartzColor}
+                        quartzDateFormat={quartzDateFormat}
+                        setQuartzDateFormat={setQuartzDateFormat}
+                        enableSprocketOverlay={enableSprocketOverlay}
+                        setEnableSprocketOverlay={setEnableSprocketOverlay}
+                    />
 
                     {/* Rating System Toggle */}
-                    <div className="form-section" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>Rating System</span>
-                            <span style={{ fontSize: '0.75rem', color: '#888' }}>
-                                {enableRatings ? 'Users can rate 1-5 stars' : 'Standard like button'}
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button
-                                type="button"
-                                onClick={() => setEnableRatings(false)}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    borderRadius: '6px',
-                                    border: !enableRatings ? '1px solid #7FFFD4' : '1px solid #333',
-                                    background: !enableRatings ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
-                                    color: !enableRatings ? '#7FFFD4' : '#666',
-                                    cursor: 'pointer',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
-                                }}
-                            >
-                                <FaSmile size={16} /> Smiley
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setEnableRatings(true)}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    borderRadius: '6px',
-                                    border: enableRatings ? '1px solid #7FFFD4' : '1px solid #333',
-                                    background: enableRatings ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
-                                    color: enableRatings ? '#7FFFD4' : '#666',
-                                    cursor: 'pointer',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem'
-                                }}
-                            >
-                                <FaStar size={16} /> 5-Star
-                            </button>
-                        </div>
-                    </div>
+                    <RatingSystemSelector
+                        enableRatings={enableRatings}
+                        setEnableRatings={setEnableRatings}
+                    />
 
 
                     {/* Active Image Settings (Contextual) */}
@@ -1027,146 +603,27 @@ const CreatePost = () => {
                             )}
 
                             {/* EXIF Controls */}
-                            <div className="exif-section">
-                                <div className="exif-header">
-                                    <span><FaCamera /> Camera Data</span>
-                                    <button
-                                        className="btn-edit-exif"
-                                        onClick={() => setShowManualExif(prev => ({ ...prev, [activeSlideIndex]: true }))}
-                                    >
-                                        {hasExif ? 'Edit Data' : 'Add Data'}
-                                    </button>
-                                </div>
-
-                                {hasExif && !showManualExif[activeSlideIndex] && (
-                                    <div className="exif-display">
-                                        {(activeSlide.exif?.make || activeSlide.manualExif?.make) && (
-                                            <div>{activeSlide.exif?.make || activeSlide.manualExif?.make} {activeSlide.exif?.model || activeSlide.manualExif?.model}</div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {showManualExif[activeSlideIndex] && (
-                                    <ManualExifForm
-                                        existingExif={activeSlide.manualExif || activeSlide.exif}
-                                        onSave={handleManualExifSave}
-                                        onCancel={() => setShowManualExif(prev => ({ ...prev, [activeSlideIndex]: false }))}
-                                    />
-                                )}
-                            </div>
+                            <ManualExifEditor
+                                activeSlide={activeSlide}
+                                activeSlideIndex={activeSlideIndex}
+                                showManualExif={showManualExif}
+                                setShowManualExif={setShowManualExif}
+                                handleManualExifSave={handleManualExifSave}
+                                hasExif={hasExif}
+                            />
 
 
 
                             // ... existing code ...
 
                             {/* Shop Configuration */}
-                            <div style={{ marginTop: '1rem', padding: '1rem', background: '#111', borderRadius: '8px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <h4 style={{ color: '#7FFFD4', margin: 0 }}>Shop Configuration</h4>
-                                    <button
-                                        type="button"
-                                        onClick={handleAddAllToShop}
-                                        style={{
-                                            background: 'transparent',
-                                            border: '1px solid #7FFFD4',
-                                            color: '#7FFFD4',
-                                            padding: '0.3rem 0.8rem',
-                                            borderRadius: '4px',
-                                            fontSize: '0.8rem',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        {slides.every(s => s.addToShop) ? 'Remove All from Shop' : 'Add All to Shop'}
-                                    </button>
-                                </div>
-
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '1rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={activeSlide.addToShop}
-                                        onChange={(e) => updateSlide(activeSlideIndex, { addToShop: e.target.checked })}
-                                        style={{ width: '18px', height: '18px' }}
-                                    />
-                                    Sell this image
-                                </label>
-
-                                {/* Copyright Warning for Shop Items */}
-                                {activeSlide.addToShop && (
-                                    <div style={{
-                                        marginBottom: '1rem',
-                                        padding: '0.75rem',
-                                        background: 'rgba(127, 255, 212, 0.1)',
-                                        border: '1px solid rgba(127, 255, 212, 0.3)',
-                                        borderRadius: '6px',
-                                        fontSize: '0.75rem',
-                                        color: '#7FFFD4',
-                                        lineHeight: '1.4'
-                                    }}>
-                                        ℹ️ <strong>Shop Draft:</strong> This will create a shop draft. Visit your Shop Drafts page to publish it after confirming copyright ownership.
-                                    </div>
-                                )}
-
-                                {activeSlide.addToShop && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                                        <button
-                                            onClick={() => updateSlide(activeSlideIndex, { productTier: PRINT_TIERS.ECONOMY })}
-                                            style={{
-                                                padding: '0.5rem',
-                                                background: activeSlide.productTier === PRINT_TIERS.ECONOMY ? 'rgba(127, 255, 212, 0.2)' : '#222',
-                                                color: activeSlide.productTier === PRINT_TIERS.ECONOMY ? '#7FFFD4' : '#888',
-                                                border: activeSlide.productTier === PRINT_TIERS.ECONOMY ? '1px solid #7FFFD4' : '1px solid #333',
-                                                borderRadius: '6px',
-                                                fontSize: '0.8rem',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Economy
-                                        </button>
-                                        <button
-                                            onClick={() => updateSlide(activeSlideIndex, { productTier: PRINT_TIERS.PREMIUM })}
-                                            style={{
-                                                padding: '0.5rem',
-                                                background: activeSlide.productTier === PRINT_TIERS.PREMIUM ? 'rgba(127, 255, 212, 0.2)' : '#222',
-                                                color: activeSlide.productTier === PRINT_TIERS.PREMIUM ? '#7FFFD4' : '#888',
-                                                border: activeSlide.productTier === PRINT_TIERS.PREMIUM ? '1px solid #7FFFD4' : '1px solid #333',
-                                                borderRadius: '6px',
-                                                fontSize: '0.8rem',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Premium
-                                        </button>
-                                        <button
-                                            onClick={() => updateSlide(activeSlideIndex, { productTier: PRINT_TIERS.LIMITED })}
-                                            style={{
-                                                padding: '0.5rem',
-                                                background: activeSlide.productTier === PRINT_TIERS.LIMITED ? 'rgba(127, 255, 212, 0.2)' : '#222',
-                                                color: activeSlide.productTier === PRINT_TIERS.LIMITED ? '#7FFFD4' : '#888',
-                                                border: activeSlide.productTier === PRINT_TIERS.LIMITED ? '1px solid #7FFFD4' : '1px solid #333',
-                                                borderRadius: '6px',
-                                                fontSize: '0.8rem',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Limited
-                                        </button>
-                                        <button
-                                            onClick={() => updateSlide(activeSlideIndex, { includeStickers: !activeSlide.includeStickers })}
-                                            style={{
-                                                padding: '0.5rem',
-                                                background: activeSlide.includeStickers ? 'rgba(127, 255, 212, 0.2)' : '#222',
-                                                color: activeSlide.includeStickers ? '#7FFFD4' : '#888',
-                                                border: activeSlide.includeStickers ? '1px solid #7FFFD4' : '1px solid #333',
-                                                borderRadius: '6px',
-                                                fontSize: '0.8rem',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            + Stickers
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            <ShopConfiguration
+                                activeSlide={activeSlide}
+                                activeSlideIndex={activeSlideIndex}
+                                slides={slides}
+                                updateSlide={updateSlide}
+                                handleAddAllToShop={handleAddAllToShop}
+                            />
                         </div>
                     )}
                 </div>

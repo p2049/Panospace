@@ -12,7 +12,7 @@ import {
     calculateTieredPricing,
     calculateStickerPricing,
     getValidSizesForImage
-} from '../utils/printfulApi';
+} from '../utils/printPricing';
 import { formatPrice } from '../utils/helpers';
 
 const ShopItemDetail = () => {

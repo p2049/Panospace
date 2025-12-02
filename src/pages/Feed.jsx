@@ -10,6 +10,7 @@ import StarBackground from '../components/StarBackground';
 import { useFeedType } from '../hooks/useFeedType';
 import FeedTypeIndicator from '../components/FeedTypeIndicator';
 import { isDualFeedsEnabled } from '../config/feedConfig';
+import { filterVisiblePosts } from '../utils/filterHelpers';
 
 // Feed component - Main home feed view
 const Feed = () => {
@@ -29,7 +30,7 @@ const Feed = () => {
     const navigate = useNavigate();
 
     // Filter out blocked content
-    const visiblePosts = posts.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
+    const visiblePosts = filterVisiblePosts(posts, blockedUsers);
 
     return (
         <div style={{ height: '100vh', width: '100vw', background: '#000', overflow: 'hidden', position: 'relative' }}>

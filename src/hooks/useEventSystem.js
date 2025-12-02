@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useCountdown } from './useCountdown';
 import {
     collection,
     query,
@@ -202,25 +203,15 @@ export const useEvent = (eventId) => {
 export const useEventSubmissions = (eventId, isTimedDrop, dropTime) => {
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isRevealed, setIsRevealed] = useState(false);
+
+    const { isExpired } = useCountdown(isTimedDrop ? dropTime : null);
+    const isRevealed = !isTimedDrop || !dropTime || isExpired;
 
     useEffect(() => {
         if (!eventId) return;
 
-        const checkRevealStatus = () => {
-            if (!isTimedDrop) return true;
-            if (!dropTime) return true;
-
-            const now = new Date();
-            const drop = dropTime.toDate ? dropTime.toDate() : new Date(dropTime);
-            return now >= drop;
-        };
-
         const fetchSubmissions = async () => {
             setLoading(true);
-            const revealed = checkRevealStatus();
-            setIsRevealed(revealed);
-
             try {
                 const q = query(
                     collection(db, 'eventSubmissions'),
@@ -240,22 +231,6 @@ export const useEventSubmissions = (eventId, isTimedDrop, dropTime) => {
         };
 
         fetchSubmissions();
-
-        // If timed drop, set up an interval to check for reveal time
-        let interval;
-        if (isTimedDrop && !checkRevealStatus()) {
-            interval = setInterval(() => {
-                const revealed = checkRevealStatus();
-                if (revealed) {
-                    setIsRevealed(true);
-                    clearInterval(interval);
-                }
-            }, 1000);
-        }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
     }, [eventId, isTimedDrop, dropTime]);
 
     return { submissions, loading, isRevealed };

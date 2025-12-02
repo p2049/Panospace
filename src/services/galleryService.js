@@ -17,6 +17,7 @@ import {
     increment
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { generateSearchKeywords } from '../utils/searchKeywords';
 
 /**
  * Gallery Service
@@ -37,10 +38,10 @@ export const createGallery = async (galleryData, coverImageFile, userId, userPro
 
         // Build search keywords
         const searchKeywords = [
-            ...galleryData.title.toLowerCase().split(' '),
-            ...galleryData.description.toLowerCase().split(' '),
+            ...generateSearchKeywords(galleryData.title),
+            ...generateSearchKeywords(galleryData.description),
             ...(galleryData.requiredTags || []).map(tag => tag.toLowerCase()),
-            (userProfile.username || userProfile.displayName || '').toLowerCase()
+            ...generateSearchKeywords(userProfile.username || userProfile.displayName || '')
         ].filter(Boolean);
 
         const gallery = {

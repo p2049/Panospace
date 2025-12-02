@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useCountdown } from '../hooks/useCountdown';
 import { getEventStatus, shouldShowSubmissions, canSubmitToEvent } from '../utils/eventValidation';
 import { FaClock, FaCalendar, FaUsers, FaTrophy } from 'react-icons/fa';
 
@@ -7,37 +8,21 @@ import { FaClock, FaCalendar, FaUsers, FaTrophy } from 'react-icons/fa';
  * Shows countdown to drop reveal time
  */
 const DropTimer = ({ event }) => {
-    const [timeLeft, setTimeLeft] = useState('');
+    const targetDate = event.dropTime || event.startTime;
+    const { days, hours, minutes, seconds, isExpired } = useCountdown(targetDate);
 
-    useEffect(() => {
-        const updateTimer = () => {
-            const now = new Date();
-            const dropTime = event.dropTime ? new Date(event.dropTime) : new Date(event.startTime);
-            const diff = dropTime - now;
-
-            if (diff <= 0) {
-                setTimeLeft('DROP REVEALED!');
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            if (days > 0) {
-                setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-            } else if (hours > 0) {
-                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-            } else {
-                setTimeLeft(`${minutes}m ${seconds}s`);
-            }
-        };
-
-        updateTimer();
-        const interval = setInterval(updateTimer, 1000);
-        return () => clearInterval(interval);
-    }, [event]);
+    let timeLeft = '';
+    if (isExpired) {
+        timeLeft = 'DROP REVEALED!';
+    } else {
+        if (days > 0) {
+            timeLeft = `${days}d ${hours}h ${minutes}m`;
+        } else if (hours > 0) {
+            timeLeft = `${hours}h ${minutes}m ${seconds}s`;
+        } else {
+            timeLeft = `${minutes}m ${seconds}s`;
+        }
+    }
 
     if (!event.isTimedDrop && event.eventType !== 'timed-drop') {
         return null;

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEvent, useEventSubmissions } from '../hooks/useEventSystem';
 import EventSubmissionModal from '../components/EventSubmissionModal';
+import { useCountdown } from '../hooks/useCountdown';
 import { FaClock, FaTag, FaUser, FaCamera, FaLock } from 'react-icons/fa';
 import SmartImage from '../components/SmartImage';
 
@@ -20,30 +21,13 @@ const EventPage = () => {
     );
 
     const [showSubmitModal, setShowSubmitModal] = useState(false);
-    const [timeLeft, setTimeLeft] = useState('');
 
     // Countdown timer for timed drops
-    useEffect(() => {
-        if (!event?.isTimedDrop || !event?.dropTime || isRevealed) return;
+    const { hours, minutes, seconds, isExpired } = useCountdown(
+        (event?.isTimedDrop && event?.dropTime && !isRevealed) ? event.dropTime : null
+    );
 
-        const timer = setInterval(() => {
-            const now = new Date();
-            const drop = event.dropTime.toDate();
-            const diff = drop - now;
-
-            if (diff <= 0) {
-                setTimeLeft('Live Now');
-                clearInterval(timer);
-            } else {
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-            }
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [event, isRevealed]);
+    const timeLeft = isExpired ? 'Live Now' : `${hours}h ${minutes}m ${seconds}s`;
 
     if (eventLoading) return <div style={{ padding: '2rem', color: '#fff' }}>Loading event...</div>;
     if (error) return <div style={{ padding: '2rem', color: '#ff4444' }}>Error: {error}</div>;

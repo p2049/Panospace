@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, query, where, orderBy, limit } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
+import { generateSearchKeywords } from '../utils/searchKeywords';
 
 export const useGalleries = () => {
     const [loading, setLoading] = useState(false);
@@ -16,9 +17,10 @@ export const useGalleries = () => {
             if (!currentUser) throw new Error('Must be logged in');
 
             // Generate search keywords from title and description
-            const titleWords = (data.title || '').toLowerCase().split(/\s+/).filter(w => w.length > 1);
-            const descWords = (data.description || '').toLowerCase().split(/\s+/).filter(w => w.length > 1);
-            const searchKeywords = [...new Set([...titleWords, ...descWords])];
+            const searchKeywords = [
+                ...generateSearchKeywords(data.title || ''),
+                ...generateSearchKeywords(data.description || '')
+            ];
 
             const galleryDoc = {
                 ownerId: currentUser.uid,

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, addDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useBlock } from '../hooks/useBlock';
 import { useCollections } from '../hooks/useCollections';
-import { SpaceCardService } from '../services/SpaceCardService';
+import { useProfile } from '../hooks/useProfile';
 import SEO from '../components/SEO';
 import StarBackground from '../components/StarBackground';
 import WalletDisplay from '../components/WalletDisplay';
@@ -27,200 +27,29 @@ const Profile = () => {
     const [showCreateMuseumModal, setShowCreateMuseumModal] = useState(false);
 
     const targetId = (id === 'me' || !id) ? currentUser?.uid : id;
-    const isMountedRef = useRef(true);
 
-    const [user, setUser] = useState(null);
-    const [posts, setPosts] = useState([]);
-    const [shopItems, setShopItems] = useState([]);
-    const [spaceCards, setSpaceCards] = useState([]);
-    const [purchasedPrints, setPurchasedPrints] = useState([]);
-    const [badges, setBadges] = useState([]);
     const [activeTab, setActiveTab] = useState('posts');
-    const [loading, setLoading] = useState(true);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showBusinessCard, setShowBusinessCard] = useState(false);
     const [showCreateCardModal, setShowCreateCardModal] = useState(false);
     const [showCommissionModal, setShowCommissionModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [followDocId, setFollowDocId] = useState(null);
     const [followLoading, setFollowLoading] = useState(false);
     const { collections, loading: collectionsLoading } = useCollections(targetId);
 
-    useEffect(() => {
-        return () => {
-            isMountedRef.current = false;
-        };
-    }, []);
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            if (!targetId) {
-                setLoading(false);
-                return;
-            }
-
-            // If we already have the user and it matches target, don't refetch
-            if (user && user.id === targetId) return;
-
-            try {
-                setLoading(true);
-                let userData = null;
-
-                try {
-                    const userDoc = await getDoc(doc(db, 'users', targetId));
-                    if (userDoc.exists()) {
-                        userData = { id: userDoc.id, ...userDoc.data() };
-                    }
-                } catch (e) {
-                    console.warn('Error fetching user doc:', e);
-                }
-
-                if (!userData && currentUser && targetId === currentUser.uid) {
-                    userData = {
-                        id: currentUser.uid,
-                        displayName: currentUser.displayName || 'Anonymous',
-                        photoURL: currentUser.photoURL,
-                        bio: 'Welcome to your profile!'
-                    };
-                }
-
-                if (isMountedRef.current) {
-                    setUser(userData);
-                    // Reset data when user changes
-                    setPosts([]);
-                    setShopItems([]);
-                    setSpaceCards([]);
-                    setPurchasedPrints([]);
-                    setBadges([]);
-                }
-            } catch (error) {
-                console.error('Error loading profile:', error);
-            } finally {
-                if (isMountedRef.current) setLoading(false);
-            }
-        };
-
-        fetchUser();
-    }, [targetId, currentUser?.uid]);
-
-    // Lazy load tab data
-    useEffect(() => {
-        const fetchTabData = async () => {
-            if (!user || !targetId || !isMountedRef.current) return;
-
-            try {
-                // Posts - only show posts that are marked to show in profile
-                if (activeTab === 'posts' && posts.length === 0) {
-                    const userPostsQuery = query(
-                        collection(db, 'posts'),
-                        where('authorId', '==', targetId),
-                        orderBy('createdAt', 'desc'),
-                        limit(20)
-                    );
-                    const postsSnap = await getDocs(userPostsQuery);
-                    if (isMountedRef.current) {
-                        // Filter to only show posts where:
-                        // 1. showInProfile is true, OR
-                        // 2. showInProfile is undefined (old posts), OR
-                        // 3. collectionId is null (not in a collection)
-                        const filteredPosts = postsSnap.docs
-                            .map(d => ({ id: d.id, ...d.data() }))
-                            .filter(post => {
-                                // If showInProfile is explicitly false, hide it
-                                if (post.showInProfile === false) return false;
-                                // Otherwise show it (true, undefined, or null)
-                                return true;
-                            });
-                        setPosts(filteredPosts);
-                    }
-                }
-
-                // Shop
-                if (activeTab === 'shop' && shopItems.length === 0) {
-                    const shopQuery = query(
-                        collection(db, 'shopItems'),
-                        where('userId', '==', targetId),
-                        orderBy('createdAt', 'desc'),
-                        limit(20)
-                    );
-                    const shopSnap = await getDocs(shopQuery);
-                    if (isMountedRef.current) {
-                        setShopItems(shopSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-                    }
-                }
-
-                // Cards
-                if (activeTab === 'cards' && spaceCards.length === 0) {
-                    const userCards = await SpaceCardService.getOwnedCards(targetId);
-                    if (isMountedRef.current) {
-                        setSpaceCards(userCards);
-                    }
-                }
-
-                // Badges (fetch if tab is badges OR if we need them for header showcase)
-                // Note: We might want to always fetch badges for the header, but let's lazy load for now
-                // Actually, header shows badges. So we should fetch badges on mount?
-                // The original code fetched everything.
-                // Let's fetch badges on mount because they are in the header.
-            } catch (err) {
-                console.error(`Error fetching ${activeTab} data:`, err);
-            }
-        };
-
-        fetchTabData();
-    }, [activeTab, user, targetId]);
-
-    // Fetch badges separately since they are shown in header
-    useEffect(() => {
-        const fetchBadges = async () => {
-            if (!user || !targetId || badges.length > 0) return;
-            try {
-                const badgesQuery = query(
-                    collection(db, 'users', targetId, 'badges'),
-                    orderBy('earnedAt', 'desc'),
-                    limit(20)
-                );
-                const badgesSnap = await getDocs(badgesQuery);
-                if (isMountedRef.current) {
-                    setBadges(badgesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-                }
-            } catch (err) {
-                console.error('Error fetching badges:', err);
-            }
-        };
-        fetchBadges();
-    }, [user, targetId]);
-
-    // Check follow status
-    useEffect(() => {
-        const checkFollowStatus = async () => {
-            if (!currentUser || !targetId || currentUser.uid === targetId) {
-                return;
-            }
-
-            try {
-                const q = query(
-                    collection(db, 'follows'),
-                    where('followerId', '==', currentUser.uid),
-                    where('followingId', '==', targetId)
-                );
-                const snapshot = await getDocs(q);
-
-                if (!snapshot.empty) {
-                    setIsFollowing(true);
-                    setFollowDocId(snapshot.docs[0].id);
-                } else {
-                    setIsFollowing(false);
-                    setFollowDocId(null);
-                }
-            } catch (error) {
-                console.error('Error checking follow status:', error);
-            }
-        };
-
-        checkFollowStatus();
-    }, [targetId, currentUser?.uid]);
+    // Use the new useProfile hook
+    const {
+        user,
+        posts,
+        shopItems,
+        spaceCards,
+        badges,
+        loading,
+        isFollowing,
+        followDocId,
+        setIsFollowing,
+        setFollowDocId
+    } = useProfile(targetId, currentUser, activeTab);
 
     const handleFollow = async () => {
         if (!currentUser || followLoading) return;

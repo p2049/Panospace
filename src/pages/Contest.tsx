@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCountdown } from '../hooks/useCountdown';
 import { getContestStats, getAllWinners } from '../services/contestService';
 import type { ContestStats, MonthlyWinner } from '../types/contest';
 import { FaTrophy, FaCrown, FaFire, FaInfoCircle, FaPlus } from 'react-icons/fa';
@@ -59,6 +60,11 @@ const Contest = () => {
 
     const monthName = new Date(2024, (stats?.currentMonth || 1) - 1).toLocaleDateString('en-US', { month: 'long' });
 
+    // Countdown for current month
+    const targetDate = stats ? new Date(stats.currentYear, stats.currentMonth, 0) : null;
+    const { total } = useCountdown(targetDate);
+    const daysRemaining = Math.ceil(total / (1000 * 60 * 60 * 24));
+
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem' }}>
             {/* Hero Section */}
@@ -108,7 +114,7 @@ const Contest = () => {
                 {stats && (
                     <div style={{ marginTop: '2rem', padding: '1rem 2rem', background: 'rgba(127, 255, 212, 0.1)', border: '1px solid #7FFFD4', borderRadius: '12px', display: 'inline-block' }}>
                         <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#7FFFD4' }}>
-                            {stats.daysRemaining}
+                            {daysRemaining}
                         </div>
                         <div style={{ fontSize: '0.9rem', color: '#888' }}>
                             days left in {monthName}
