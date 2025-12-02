@@ -6,7 +6,6 @@ import { storage } from '../firebase';
 import { useCreateCollection } from '../hooks/useCollections';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { FaUniversity, FaBook } from 'react-icons/fa';
 import exifr from 'exifr';
 import { PRINT_SIZES, PRINT_TIERS } from '../utils/printPricing';
 import { calculateBundlePricing } from '../utils/printPricing';
@@ -19,6 +18,9 @@ import CollectionModePanel from '../components/create-collection/CollectionModeP
 import GalleryModePanel from '../components/create-collection/GalleryModePanel';
 import PageHeader from '../components/PageHeader';
 import PSButton from '../components/PSButton';
+import ModeSelector from '../components/create-collection/ModeSelector';
+import CollectionFields from '../components/create-collection/CollectionFields';
+import SubmitBar from '../components/create-collection/SubmitBar';
 
 
 const CreateCollection = () => {
@@ -366,91 +368,10 @@ const CreateCollection = () => {
             />
 
 
-            {/* Collection/Gallery/Museum Toggle */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 2rem 0 2rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <button
-                        type="button"
-                        onClick={() => setCreationMode('collection')}
-                        style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            background: creationMode === 'collection' ? '#7FFFD4' : '#111',
-                            border: creationMode === 'collection' ? '1px solid #7FFFD4' : '1px solid #333',
-                            borderRadius: '8px',
-                            color: creationMode === 'collection' ? '#000' : '#888',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            fontSize: '1rem',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Collection
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => navigate('/gallery/create')}
-                        style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#888',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            fontSize: '1rem',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Gallery
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setCreationMode('museum')}
-                        style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            background: creationMode === 'museum' ? '#7FFFD4' : '#111',
-                            border: creationMode === 'museum' ? '1px solid #7FFFD4' : '1px solid #333',
-                            borderRadius: '8px',
-                            color: creationMode === 'museum' ? '#000' : '#888',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            fontSize: '1rem',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <FaUniversity /> Museum
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setCreationMode('magazine')}
-                        style={{
-                            flex: 1,
-                            padding: '0.75rem',
-                            background: creationMode === 'magazine' ? '#7FFFD4' : '#111',
-                            border: creationMode === 'magazine' ? '1px solid #7FFFD4' : '1px solid #333',
-                            borderRadius: '8px',
-                            color: creationMode === 'magazine' ? '#000' : '#888',
-                            cursor: 'pointer',
-                            fontWeight: '600',
-                            fontSize: '1rem',
-                            transition: 'all 0.2s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <FaBook /> Magazine
-                    </button>
-                </div>
-            </div>
+            <ModeSelector
+                creationMode={creationMode}
+                setCreationMode={setCreationMode}
+            />
 
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem' }}>
@@ -467,26 +388,11 @@ const CreateCollection = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc', fontWeight: '600' }}>
-                                {creationMode === 'museum' ? 'Museum' : creationMode === 'gallery' ? 'Gallery' : 'Collection'} Title *
-                            </label>
-                            <input
-                                type="text"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder={creationMode === 'museum' ? 'e.g., Street Photography Museum' : creationMode === 'gallery' ? 'e.g., Summer 2024 Gallery' : 'e.g., Summer 2024 Collection'}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: '#111',
-                                    border: '1px solid #333',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem'
-                                }}
-                            />
-                        </div>
+                        <CollectionFields
+                            creationMode={creationMode}
+                            title={title}
+                            setTitle={setTitle}
+                        />
 
                         {creationMode === 'magazine' && (
                             <MagazineModePanel
@@ -559,26 +465,10 @@ const CreateCollection = () => {
                         )}
                     </div>
 
-                    <div style={{
-                        padding: '1rem',
-                        background: images.length > 0 ? 'rgba(127, 255, 212, 0.1)' : 'rgba(255, 68, 68, 0.1)',
-                        border: `1px solid ${images.length > 0 ? 'rgba(127, 255, 212, 0.3)' : 'rgba(255, 68, 68, 0.3)'}`,
-                        borderRadius: '8px',
-                        color: images.length > 0 ? '#7FFFD4' : '#ff4444',
-                        fontSize: '0.9rem'
-                    }}>
-                        {creationMode === 'museum' ? (
-                            <div>
-                                <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Ready to Create Museum</div>
-                                <div style={{ fontSize: '0.85rem' }}>Museums can contain galleries and profiles</div>
-                            </div>
-                        ) : (
-                            <>
-                                {images.length} / 10 images added
-                                {images.length === 0 && <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>Add at least 1 image to create {creationMode}</div>}
-                            </>
-                        )}
-                    </div>
+                    <SubmitBar
+                        creationMode={creationMode}
+                        images={images}
+                    />
                 </div>
             </div>
         </div >

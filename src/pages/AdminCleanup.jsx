@@ -5,6 +5,7 @@ import { cleanupOrphanedPosts, cleanupOrphanedShopItems, cleanupOrphanedUserImag
 import { FaTrash, FaArrowLeft, FaExclamationTriangle, FaUser, FaBug } from 'react-icons/fa';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import AsyncButton from '../components/AsyncButton';
 
 const AdminCleanup = () => {
     const { currentUser } = useAuth();
@@ -169,22 +170,14 @@ const AdminCleanup = () => {
                             <strong>Warning:</strong> This action cannot be undone. Make sure you've backed up any important data.
                         </div>
                     </div>
-                    <button
+                    <AsyncButton
                         onClick={handleCleanupPosts}
-                        disabled={loading}
-                        style={{
-                            background: loading ? '#333' : '#ff6b6b',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '8px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            fontWeight: '600',
-                            opacity: loading ? 0.6 : 1
-                        }}
+                        loading={loading}
+                        loadingText="Cleaning up..."
+                        style={{ background: '#ff6b6b', color: '#fff' }}
                     >
-                        {loading ? 'Cleaning up...' : 'Run Posts Cleanup'}
-                    </button>
+                        Run Posts Cleanup
+                    </AsyncButton>
                 </div>
 
                 {/* Shop Items Cleanup */}
@@ -200,22 +193,14 @@ const AdminCleanup = () => {
                     <p style={{ color: '#888', marginBottom: '1rem', fontSize: '0.9rem' }}>
                         Deletes all shop item documents whose images no longer exist in Firebase Storage.
                     </p>
-                    <button
+                    <AsyncButton
                         onClick={handleCleanupShop}
-                        disabled={loading}
-                        style={{
-                            background: loading ? '#333' : '#ffa94d',
-                            color: '#000',
-                            border: 'none',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '8px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            fontWeight: '600',
-                            opacity: loading ? 0.6 : 1
-                        }}
+                        loading={loading}
+                        loadingText="Cleaning up..."
+                        style={{ background: '#ffa94d', color: '#000' }}
                     >
-                        {loading ? 'Cleaning up...' : 'Run Shop Cleanup'}
-                    </button>
+                        Run Shop Cleanup
+                    </AsyncButton>
                 </div>
 
                 {/* Users Cleanup */}
@@ -231,22 +216,14 @@ const AdminCleanup = () => {
                     <p style={{ color: '#888', marginBottom: '1rem', fontSize: '0.9rem' }}>
                         Removes profile photo references for users whose images no longer exist in Firebase Storage.
                     </p>
-                    <button
+                    <AsyncButton
                         onClick={handleCleanupUsers}
-                        disabled={loading}
-                        style={{
-                            background: loading ? '#333' : '#4dabf7',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '8px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            fontWeight: '600',
-                            opacity: loading ? 0.6 : 1
-                        }}
+                        loading={loading}
+                        loadingText="Cleaning up..."
+                        style={{ background: '#4dabf7', color: '#fff' }}
                     >
-                        {loading ? 'Cleaning up...' : 'Run User Cleanup'}
-                    </button>
+                        Run User Cleanup
+                    </AsyncButton>
                 </div>
 
                 {/* Results */}

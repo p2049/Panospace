@@ -1,11 +1,11 @@
 import React from 'react';
 
 /**
- * ErrorBoundary Component (Enhanced Global Version)
+ * GlobalErrorBoundary Component
  * Catches runtime errors and displays a themed fallback UI
  * Prevents white-screen errors and provides recovery options
  */
-class ErrorBoundary extends React.Component {
+class GlobalErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -23,7 +23,7 @@ class ErrorBoundary extends React.Component {
 
     componentDidCatch(error, errorInfo) {
         // Log error details for debugging
-        console.error('ErrorBoundary caught an error:', error, errorInfo);
+        console.error('GlobalErrorBoundary caught an error:', error, errorInfo);
 
         this.setState(prevState => ({
             error,
@@ -263,4 +263,4 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-export default ErrorBoundary;
+export default GlobalErrorBoundary;
