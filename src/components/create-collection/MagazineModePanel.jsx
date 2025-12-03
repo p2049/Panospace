@@ -132,13 +132,13 @@ const MagazineModePanel = ({
             {/* Gallery Link (Optional) */}
             <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc', fontWeight: '600' }}>
-                    Link to Gallery (Optional)
+                    Link to Studio (Optional)
                 </label>
                 <input
                     type="text"
                     value={linkedGalleryId}
                     onChange={(e) => setLinkedGalleryId(e.target.value)}
-                    placeholder="Enter Gallery ID to link..."
+                    placeholder="Enter Studio ID to link..."
                     style={{
                         width: '100%',
                         padding: '0.75rem',
@@ -150,7 +150,7 @@ const MagazineModePanel = ({
                     }}
                 />
                 <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
-                    Linking a gallery allows contributors to submit photos to your magazine issues.
+                    Linking a studio allows contributors to submit photos to your magazine issues.
                 </div>
             </div>
 

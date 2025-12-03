@@ -115,7 +115,7 @@ const EventPage = () => {
                         border: '1px dashed #333'
                     }}>
                         <FaLock style={{ fontSize: '3rem', color: '#333', marginBottom: '1rem' }} />
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Gallery Locked</h3>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Studio Locked</h3>
                         <p style={{ color: '#888' }}>Submissions will be revealed when the drop goes live.</p>
                         <div style={{
                             marginTop: '1.5rem',

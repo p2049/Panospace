@@ -9,8 +9,8 @@ import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/
 import { extractExifData } from '../utils/exifUtils';
 import { formatPrice } from '../utils/helpers';
 import { PhotoDexService } from '../services/PhotoDexService';
-import { AccountTypeService } from '../services/AccountTypeService';
-import { generateSearchKeywords } from '../utils/searchKeywords';
+import { AccountTypeService } from '../services/AccountTypeService'; \nimport { generateSearchKeywords } from '../utils/searchKeywords';
+import { extractDominantColor } from '../utils/colorExtraction';
 
 
 
@@ -171,6 +171,15 @@ export const useCreatePost = () => {
 
                         const printSizeIds = bestFitSizes.map((s) => s.id);
 
+                        // Extract dominant color
+                        let dominantColor = null;
+                        try {
+                            const colorData = await extractDominantColor(url);
+                            dominantColor = colorData.hex;
+                        } catch (e) {
+                            console.warn('Failed to extract dominant color', e);
+                        }
+
                         return {
                             type: 'image',
                             url,
@@ -186,6 +195,7 @@ export const useCreatePost = () => {
                             height,
                             aspectRatio: imgRatio,
                             allowCropped: slide.allowCropped || false,
+                            dominantColor,
                             // Limited Edition Fields
                             isLimitedEdition: slide.isLimitedEdition || false,
                             editionSize: slide.editionSize || 10,
@@ -258,6 +268,7 @@ export const useCreatePost = () => {
                 hasSlides: items.length > 1,
                 hasItems: items.length > 0,
                 hasImages: imageUrls.length > 0,
+                dominantColor: items.find(i => i.dominantColor)?.dominantColor || null,
 
                 // Account Type (for dual feed system)
                 authorAccountType, // 'art' or 'social'

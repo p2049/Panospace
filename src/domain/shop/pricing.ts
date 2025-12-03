@@ -1,29 +1,29 @@
 import type { PrintSize, Earnings } from '../../types';
 import {
-    PRINT_SIZES as JS_PRINT_SIZES,
-    ESTIMATED_BASE_COSTS as JS_COSTS,
-    calculateEarnings as jsCalculateEarnings
-} from '../../utils/printPricing';
+    getPrintifyProducts,
+    calculatePrintifyEarnings
+} from '../../utils/printifyPricing';
 
-// Re-export values from the single source of truth (JS file)
-// We cast to 'any' first to avoid TS errors, then to the correct type
-export const PRINT_SIZES: PrintSize[] = JS_PRINT_SIZES as any;
+// Re-export values from the single source of truth
+export const PRINT_SIZES: PrintSize[] = getPrintifyProducts() as any;
 
-export const ESTIMATED_BASE_COSTS: Record<string, number> = JS_COSTS;
+export const ESTIMATED_BASE_COSTS: Record<string, number> = getPrintifyProducts().reduce((acc, p) => {
+    acc[p.id] = p.baseCostCents;
+    return acc;
+}, {} as Record<string, number>);
 
 /**
  * Calculate earnings for a given retail price
  * Wraps the JS implementation
  */
 export function calculateEarnings(retailPriceDollars: number, sizeId?: string, isUltra: boolean = false): Earnings {
-    // The JS function signature is (retailPrice, sizeIdOrBaseCost, isUltra)
-    // We pass sizeId as the second argument
-    const result = (jsCalculateEarnings as any)(retailPriceDollars, sizeId, isUltra);
+    // The JS function signature is (retailPrice, sizeId, isUltra)
+    const result = calculatePrintifyEarnings(retailPriceDollars, sizeId || '8x10', isUltra);
 
     return {
-        artistEarningsCents: result.artistEarningsCents,
-        platformCutCents: result.platformCutCents,
-        totalCents: result.totalCents
+        artistEarningsCents: Math.round(result.artistEarnings * 100),
+        platformCutCents: Math.round(result.platformEarnings * 100),
+        totalCents: Math.round(retailPriceDollars * 100)
     };
 }
 

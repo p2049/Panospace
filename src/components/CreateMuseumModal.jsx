@@ -213,7 +213,7 @@ const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
                                     gap: '0.5rem'
                                 }}
                             >
-                                <FaImage /> Galleries
+                                <FaImage /> Studios
                             </button>
                             <button
                                 onClick={() => setSearchType('profiles')}
@@ -243,7 +243,7 @@ const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
                                 type="text"
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                placeholder={`Search ${searchType}...`}
+                                placeholder={`Search ${searchType === 'galleries' ? 'studios' : searchType}...`}
                                 style={{ width: '100%', padding: '0.75rem 0.75rem 0.75rem 2.5rem', background: '#222', border: '1px solid #333', borderRadius: '8px', color: '#fff' }}
                             />
                         </div>

@@ -6,13 +6,15 @@ import { useAuth } from '../context/AuthContext';
 import { FaArrowLeft, FaTag, FaInfoCircle, FaEdit, FaSave, FaCheck, FaTimes } from 'react-icons/fa';
 import CheckoutButton from '../components/CheckoutButton';
 import {
-    PRINT_SIZES,
+    getPrintifyProducts,
     PRINT_TIERS,
-    STICKER_SIZES,
-    calculateTieredPricing,
-    calculateStickerPricing,
-    getValidSizesForImage
-} from '../utils/printPricing';
+    STICKER_PRODUCTS,
+    calculatePrintifyEarnings,
+    getValidSizesForImage,
+    getRetailPrice
+} from '../utils/printifyPricing';
+
+const PRINT_SIZES = getPrintifyProducts();
 import { formatPrice } from '../utils/helpers';
 
 const ShopItemDetail = () => {
@@ -101,28 +103,31 @@ const ShopItemDetail = () => {
             const newPrintSizes = potentialSizes
                 .filter(size => enabledSizes[size.id])
                 .map(size => {
-                    const pricing = calculateTieredPricing(size.id, productTier);
+                    const retailPrice = getRetailPrice(size.id, productTier);
+                    const pricing = calculatePrintifyEarnings(retailPrice, size.id);
                     return {
                         id: size.id,
                         label: size.label,
-                        price: Number(pricing.finalPrice.toFixed(2)),
-                        artistEarningsCents: Math.round(pricing.artistProfit * 100),
-                        platformFeeCents: Math.round(pricing.platformProfit * 100),
+                        price: Number(retailPrice.toFixed(2)),
+                        artistEarningsCents: Math.round(pricing.artistEarnings * 100),
+                        platformFeeCents: Math.round(pricing.platformEarnings * 100),
                         tier: productTier
                     };
                 });
 
             // Add stickers if enabled and profitable
             if (includeStickers) {
-                STICKER_SIZES.forEach(sticker => {
-                    const pricing = calculateStickerPricing(sticker.id);
+                STICKER_PRODUCTS.forEach(sticker => {
+                    const retailPrice = sticker.price;
+                    const pricing = calculatePrintifyEarnings(retailPrice, sticker.id);
+
                     if (pricing) {
                         newPrintSizes.push({
                             id: sticker.id,
                             label: sticker.label,
-                            price: Number(pricing.finalPrice.toFixed(2)),
-                            artistEarningsCents: Math.round(pricing.artistProfit * 100),
-                            platformFeeCents: Math.round(pricing.platformProfit * 100),
+                            price: Number(retailPrice.toFixed(2)),
+                            artistEarningsCents: Math.round(pricing.artistEarnings * 100),
+                            platformFeeCents: Math.round(pricing.platformEarnings * 100),
                             tier: 'sticker'
                         });
                     }

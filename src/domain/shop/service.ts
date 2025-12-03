@@ -19,7 +19,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import type { ShopItem, Post, PostItem, PrintSize, Earnings } from '../../types';
-import { PRINT_SIZES } from '../../utils/printPricing';
+import { getPrintifyProducts } from '../../utils/printifyPricing';
+const PRINT_SIZES = getPrintifyProducts();
 import { calculateEarnings } from './pricing';
 
 const SHOP_ITEMS_COLLECTION = 'shopItems';

@@ -4,7 +4,7 @@ import { FaUniversity, FaBook } from 'react-icons/fa';
 
 /**
  * ModeSelector Component
- * Renders the Collection/Gallery/Museum/Magazine toggle buttons
+ * Renders the Collection/Studio/Museum/Magazine toggle buttons
  */
 const ModeSelector = ({ creationMode, setCreationMode }) => {
     const navigate = useNavigate();
@@ -45,7 +45,7 @@ const ModeSelector = ({ creationMode, setCreationMode }) => {
                     onClick={() => navigate('/gallery/create')}
                     style={buttonStyle(false)}
                 >
-                    Gallery
+                    Studio
                 </button>
                 <button
                     type="button"

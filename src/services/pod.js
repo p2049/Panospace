@@ -1,10 +1,7 @@
-import {
-    PRINT_SIZES as SOURCE_SIZES,
-    calculateEarnings as sourceCalc
-} from '../utils/printPricing';
+import { getPrintifyProducts, calculatePrintifyEarnings } from '../utils/printifyPricing';
 
 // Re-export from single source of truth
-export const PRINT_SIZES = SOURCE_SIZES;
+export const PRINT_SIZES = getPrintifyProducts();
 
 // Adapter for calculatePrice to match old signature if needed, 
 // or just use calculateEarnings logic

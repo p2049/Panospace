@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { FaArrowLeft, FaMapMarkerAlt, FaCalendar, FaImage, FaUser } from 'react-icons/fa';
+import { FaArrowLeft, FaMapMarkerAlt, FaCalendar, FaImage, FaUser, FaClock } from 'react-icons/fa';
 import GridPostCard from '../components/GridPostCard';
 
 const MuseumPage = () => {
     const { museumId } = useParams();
     const navigate = useNavigate();
     const [museum, setMuseum] = useState(null);
-    const [galleries, setGalleries] = useState([]);
+    const [studios, setStudios] = useState([]); // Renamed from galleries
     const [profiles, setProfiles] = useState([]);
+    const [exhibits, setExhibits] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -31,19 +32,19 @@ const MuseumPage = () => {
                 const data = museumDoc.data();
                 setMuseum({ id: museumDoc.id, ...data });
 
-                // Fetch referenced galleries
+                // Fetch referenced studios (formerly galleries)
                 if (data.galleryIds && data.galleryIds.length > 0) {
-                    const galleryPromises = data.galleryIds.map(id =>
+                    const studioPromises = data.galleryIds.map(id =>
                         getDoc(doc(db, 'collections', id))
                     );
-                    const galleryDocs = await Promise.all(galleryPromises);
-                    const fetchedGalleries = galleryDocs
+                    const studioDocs = await Promise.all(studioPromises);
+                    const fetchedStudios = studioDocs
                         .filter(d => d.exists())
                         .map(d => ({ id: d.id, ...d.data() }));
-                    setGalleries(fetchedGalleries);
+                    setStudios(fetchedStudios);
                 } else if (data.galleries && Array.isArray(data.galleries)) {
                     // Handle legacy structure where galleries might be embedded
-                    setGalleries(data.galleries);
+                    setStudios(data.galleries);
                 }
 
                 // Fetch referenced profiles
@@ -56,6 +57,32 @@ const MuseumPage = () => {
                         .filter(d => d.exists())
                         .map(d => ({ id: d.id, ...d.data() }));
                     setProfiles(fetchedProfiles);
+                }
+
+                // Fetch Exhibits
+                if (data.exhibits && Array.isArray(data.exhibits)) {
+                    const now = new Date();
+                    const activeExhibits = data.exhibits.filter(exhibit => {
+                        if (!exhibit.expiresAt) return true; // Keep if no expiry (safety)
+                        const expiresAt = exhibit.expiresAt.toDate ? exhibit.expiresAt.toDate() : new Date(exhibit.expiresAt);
+                        return expiresAt > now;
+                    });
+
+                    // Fetch studio details for active exhibits
+                    const exhibitPromises = activeExhibits.map(async (exhibit) => {
+                        if (!exhibit.studioId) return null;
+                        const studioDoc = await getDoc(doc(db, 'collections', exhibit.studioId));
+                        if (studioDoc.exists()) {
+                            return {
+                                ...exhibit,
+                                studio: { id: studioDoc.id, ...studioDoc.data() }
+                            };
+                        }
+                        return null;
+                    });
+
+                    const fetchedExhibits = (await Promise.all(exhibitPromises)).filter(Boolean);
+                    setExhibits(fetchedExhibits);
                 }
             }
         } catch (error) {
@@ -152,21 +179,86 @@ const MuseumPage = () => {
             {/* Content */}
             <div className="container-md">
 
-                {/* Galleries Section */}
-                {galleries.length > 0 && (
+                {/* Exhibits Section (Timed) */}
+                {exhibits.length > 0 && (
                     <div style={{ marginBottom: '3rem' }}>
                         <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FaImage style={{ color: '#7FFFD4' }} />
-                            Galleries
+                            <FaClock style={{ color: '#ff6b6b' }} />
+                            Current Exhibits
                         </h2>
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                             gap: '1.5rem'
                         }}>
-                            {galleries.map((gallery) => (
+                            {exhibits.map((exhibit, index) => (
                                 <div
-                                    key={gallery.id}
+                                    key={index}
+                                    style={{
+                                        background: '#1a1a1a',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        border: '1px solid #ff6b6b',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s',
+                                        position: 'relative'
+                                    }}
+                                    onClick={() => navigate(`/collection/${exhibit.studio.id}`)}
+                                    onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    <div style={{ height: '180px', background: '#222', position: 'relative' }}>
+                                        {exhibit.studio.coverImage ? (
+                                            <img src={exhibit.studio.coverImage} alt={exhibit.studio.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
+                                                <FaImage size={32} />
+                                            </div>
+                                        )}
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '0.5rem',
+                                            right: '0.5rem',
+                                            background: '#ff6b6b',
+                                            color: '#fff',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '4px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            EXHIBIT
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '1rem' }}>
+                                        <h3 style={{ color: '#fff', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
+                                            {exhibit.studio.title}
+                                        </h3 >
+                                        <div style={{ color: '#888', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                            <FaClock size={12} />
+                                            Ends: {exhibit.expiresAt?.toDate ? exhibit.expiresAt.toDate().toLocaleDateString() : new Date(exhibit.expiresAt).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Studios Section (Formerly Galleries) */}
+                {studios.length > 0 && (
+                    <div style={{ marginBottom: '3rem' }}>
+                        <h2 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaImage style={{ color: '#7FFFD4' }} />
+                            Studios
+                        </h2>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                            gap: '1.5rem'
+                        }}>
+                            {studios.map((studio) => (
+                                <div
+                                    key={studio.id}
                                     style={{
                                         background: '#1a1a1a',
                                         borderRadius: '12px',
@@ -175,13 +267,13 @@ const MuseumPage = () => {
                                         cursor: 'pointer',
                                         transition: 'transform 0.2s'
                                     }}
-                                    onClick={() => navigate(`/collection/${gallery.id}`)}
+                                    onClick={() => navigate(`/collection/${studio.id}`)}
                                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
                                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                                 >
                                     <div style={{ height: '180px', background: '#222', position: 'relative' }}>
-                                        {gallery.coverImage ? (
-                                            <img src={gallery.coverImage} alt={gallery.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        {studio.coverImage ? (
+                                            <img src={studio.coverImage} alt={studio.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
                                                 <FaImage size={32} />
@@ -190,10 +282,10 @@ const MuseumPage = () => {
                                     </div>
                                     <div style={{ padding: '1rem' }}>
                                         <h3 style={{ color: '#fff', margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>
-                                            {gallery.title || gallery.name}
+                                            {studio.title || studio.name}
                                         </h3 >
                                         <p style={{ color: '#888', fontSize: '0.9rem', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                            {gallery.description || 'No description'}
+                                            {studio.description || 'No description'}
                                         </p>
                                     </div>
                                 </div>
@@ -252,11 +344,11 @@ const MuseumPage = () => {
                 )}
 
                 {/* Empty State */}
-                {galleries.length === 0 && profiles.length === 0 && (
+                {studios.length === 0 && profiles.length === 0 && exhibits.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '4rem', color: '#666', border: '1px dashed #333', borderRadius: '12px' }}>
                         <FaUniversity size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
                         <h3>This museum is empty</h3>
-                        <p>No galleries or profiles have been added yet.</p>
+                        <p>No studios, exhibits, or profiles have been added yet.</p>
                     </div>
                 )}
             </div>

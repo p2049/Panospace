@@ -21,15 +21,19 @@ import Post from '../components/Post';
 import InviteMembersModal from '../components/galleries/InviteMembersModal';
 import MagazineSubmissionBox from '../components/MagazineSubmissionBox';
 import { getMagazinesByGallery, getMagazineIssues } from '../services/magazineService';
+import { useStudioProjects } from '../hooks/useProjects';
+import CreateProjectModal from '../components/CreateProjectModal';
+import ProjectCard from '../components/ProjectCard';
+import { FaBriefcase } from 'react-icons/fa';
 import '../styles/gallery-page.css';
 
-const GalleryPage = () => {
+const StudioPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
 
-    // Use custom hook for gallery data
-    const { gallery, loading, error: galleryError } = useGallery(id);
+    // Use custom hook for studio data
+    const { gallery: studio, loading, error: studioError } = useGallery(id);
 
     const [activeTab, setActiveTab] = useState('posts');
     const [posts, setPosts] = useState([]);
@@ -39,18 +43,22 @@ const GalleryPage = () => {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [magazine, setMagazine] = useState(null);
     const [nextIssue, setNextIssue] = useState(null);
+    const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+
+    // Fetch projects for this studio
+    const { projects, loading: projectsLoading, refetch: refetchProjects } = useStudioProjects(id);
 
     // Check if current user is owner
-    const isOwner = currentUser && gallery && gallery.ownerId === currentUser.uid;
-    const isMember = currentUser && gallery && gallery.members?.includes(currentUser.uid);
+    const isOwner = currentUser && studio && studio.ownerId === currentUser.uid;
+    const isMember = currentUser && studio && studio.members?.includes(currentUser.uid);
 
     // Load magazine data when gallery loads
     useEffect(() => {
         const loadMagazineData = async () => {
-            if (!gallery) return;
+            if (!studio) return;
 
             try {
-                // Check if this gallery has a linked magazine
+                // Check if this studio has a linked magazine
                 const magazines = await getMagazinesByGallery(id);
                 if (magazines.length > 0) {
                     const mag = magazines[0];
@@ -71,10 +79,10 @@ const GalleryPage = () => {
     }, [gallery, id]);
 
     useEffect(() => {
-        if (gallery) {
+        if (studio) {
             loadContent();
         }
-    }, [activeTab, gallery]);
+    }, [activeTab, studio]);
 
     const loadContent = async () => {
         setContentLoading(true);
@@ -195,10 +203,10 @@ const GalleryPage = () => {
         return <PageSkeleton />;
     }
 
-    if (!gallery) {
+    if (!studio) {
         return (
             <div className="gallery-error">
-                <h2>Gallery Not Found</h2>
+                <h2>Studio Not Found</h2>
                 <button onClick={() => navigate('/')}>Go Home</button>
             </div>
         );
@@ -206,10 +214,10 @@ const GalleryPage = () => {
 
     return (
         <div className="gallery-page">
-            {gallery.coverImage && (
+            {studio.coverImage && (
                 <div
                     className="gallery-cover"
-                    style={{ backgroundImage: `url(${gallery.coverImage})` }}
+                    style={{ backgroundImage: `url(${studio.coverImage})` }}
                 >
                     <div className="cover-overlay" />
                 </div>
@@ -223,34 +231,34 @@ const GalleryPage = () => {
                 <div className="gallery-info">
                     <div className="gallery-meta">
                         <span className="visibility-badge">
-                            {gallery.isPublic ? <FaGlobe /> : <FaLock />}
-                            {gallery.isPublic ? 'Public' : 'Private'}
+                            {studio.isPublic ? <FaGlobe /> : <FaLock />}
+                            {studio.isPublic ? 'Public' : 'Private'}
                         </span>
                         <span className="content-type-badge">
-                            {gallery.contentType === 'posts' && 'Posts Only'}
-                            {gallery.contentType === 'collections' && 'Collections Only'}
-                            {gallery.contentType === 'both' && 'Posts & Collections'}
+                            {studio.contentType === 'posts' && 'Posts Only'}
+                            {studio.contentType === 'collections' && 'Collections Only'}
+                            {studio.contentType === 'both' && 'Posts & Collections'}
                         </span>
                     </div>
 
-                    <h1>{gallery.title}</h1>
+                    <h1>{studio.title}</h1>
 
-                    {gallery.description && (
-                        <p className="gallery-description">{gallery.description}</p>
+                    {studio.description && (
+                        <p className="gallery-description">{studio.description}</p>
                     )}
 
                     <div className="gallery-stats">
-                        <span>by @{gallery.ownerUsername}</span>
+                        <span>by @{studio.ownerUsername}</span>
                         <span>•</span>
-                        <span>{gallery.postsCount || 0} posts</span>
+                        <span>{studio.postsCount || 0} posts</span>
                         <span>•</span>
-                        <span>{gallery.membersCount || 0} members</span>
+                        <span>{studio.membersCount || 0} members</span>
                     </div>
 
-                    {gallery.requiredTags && gallery.requiredTags.length > 0 && (
+                    {studio.requiredTags && studio.requiredTags.length > 0 && (
                         <div className="required-tags">
                             <strong>Required tags:</strong>
-                            {gallery.requiredTags.map(tag => (
+                            {studio.requiredTags.map(tag => (
                                 <span key={tag} className="tag-badge">{tag}</span>
                             ))}
                         </div>
@@ -269,19 +277,25 @@ const GalleryPage = () => {
                     className={`tab ${activeTab === 'posts' ? 'active' : ''}`}
                     onClick={() => setActiveTab('posts')}
                 >
-                    <FaImage /> Posts ({gallery.postsCount || 0})
+                    <FaImage /> Posts ({studio.postsCount || 0})
                 </button>
                 <button
                     className={`tab ${activeTab === 'collections' ? 'active' : ''}`}
                     onClick={() => setActiveTab('collections')}
                 >
-                    <FaFolderOpen /> Collections ({gallery.collectionsCount || 0})
+                    <FaFolderOpen /> Collections ({studio.collectionsCount || 0})
                 </button>
                 <button
                     className={`tab ${activeTab === 'members' ? 'active' : ''}`}
                     onClick={() => setActiveTab('members')}
                 >
-                    <FaUsers /> Members ({gallery.membersCount || 0})
+                    <FaUsers /> Members ({studio.membersCount || 0})
+                </button>
+                <button
+                    className={`tab ${activeTab === 'projects' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('projects')}
+                >
+                    <FaBriefcase /> Projects ({projects?.length || 0})
                 </button>
             </div>
 
@@ -290,7 +304,7 @@ const GalleryPage = () => {
                 {isMember && magazine && nextIssue && (
                     <MagazineSubmissionBox
                         magazine={magazine}
-                        gallery={gallery}
+                        gallery={studio}
                         nextIssue={nextIssue}
                     />
                 )}
@@ -364,11 +378,62 @@ const GalleryPage = () => {
                                                 <strong>{member.displayName || member.username}</strong>
                                                 <span>@{member.username}</span>
                                             </div>
-                                            {member.id === gallery.ownerId && (
+                                            {member.id === studio.ownerId && (
                                                 <span className="owner-badge">Owner</span>
                                             )}
                                         </div>
                                     ))
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'projects' && (
+                            <div className="projects-grid">
+                                {isOwner && (
+                                    <div style={{
+                                        marginBottom: '1.5rem',
+                                        display: 'flex',
+                                        justifyContent: 'flex-end'
+                                    }}>
+                                        <button
+                                            onClick={() => setShowCreateProjectModal(true)}
+                                            style={{
+                                                padding: '0.75rem 1.5rem',
+                                                background: '#7FFFD4',
+                                                color: '#000',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
+                                            }}
+                                        >
+                                            <FaBriefcase /> New Project
+                                        </button>
+                                    </div>
+                                )}
+                                {projectsLoading ? (
+                                    <div className="empty-state">
+                                        <p>Loading projects...</p>
+                                    </div>
+                                ) : projects.length === 0 ? (
+                                    <div className="empty-state">
+                                        <FaBriefcase size={48} />
+                                        <p>No projects yet</p>
+                                        {isOwner && <span>Create your first collaborative project!</span>}
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                        gap: '1.5rem'
+                                    }}>
+                                        {projects.map(project => (
+                                            <ProjectCard key={project.id} project={project} studioId={id} />
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -379,8 +444,8 @@ const GalleryPage = () => {
             {showInviteModal && (
                 <InviteMembersModal
                     galleryId={id}
-                    existingMembers={gallery.members || []}
-                    pendingInvites={gallery.pendingInvites || []}
+                    existingMembers={studio.members || []}
+                    pendingInvites={studio.pendingInvites || []}
                     onClose={(invitesSent) => {
                         setShowInviteModal(false);
                         if (invitesSent) {
@@ -389,8 +454,20 @@ const GalleryPage = () => {
                     }}
                 />
             )}
+
+            {showCreateProjectModal && (
+                <CreateProjectModal
+                    isOpen={showCreateProjectModal}
+                    onClose={() => setShowCreateProjectModal(false)}
+                    studioId={id}
+                    onSuccess={(newProject) => {
+                        refetchProjects();
+                        navigate(`/project/${id}/${newProject.id}`);
+                    }}
+                />
+            )}
         </div>
     );
 };
 
-export default GalleryPage;
+export default StudioPage;

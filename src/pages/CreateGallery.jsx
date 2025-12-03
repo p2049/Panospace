@@ -18,7 +18,7 @@ const POPULAR_TAGS = [
 // TESTING MODE - Set to true to bypass premium check
 const TESTING_MODE = true;
 
-const CreateGallery = () => {
+const CreateStudio = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { showError, showSuccess, showWarning } = useToast();
@@ -70,7 +70,7 @@ const CreateGallery = () => {
             <div className="create-gallery-container">
                 <div className="premium-required">
                     <h2>Premium Feature</h2>
-                    <p>Galleries are a premium feature. Upgrade to create collaborative spaces!</p>
+                    <p>Studios are a premium feature. Upgrade to create collaborative spaces!</p>
                     <button onClick={() => navigate('/ultra')} className="upgrade-btn">
                         Upgrade to Premium
                     </button>
@@ -115,10 +115,10 @@ const CreateGallery = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Starting gallery creation...');
+        console.log('Starting studio creation...');
 
         if (!title.trim()) {
-            showError('Please enter a gallery title');
+            showError('Please enter a studio title');
             return;
         }
 
@@ -131,7 +131,7 @@ const CreateGallery = () => {
         setLoading(true);
 
         try {
-            const galleryData = {
+            const studioData = {
                 title: title.trim(),
                 description: description.trim(),
                 contentType,
@@ -141,27 +141,27 @@ const CreateGallery = () => {
                 moderationEnabled
             };
 
-            console.log('Sending gallery data:', galleryData);
+            console.log('Sending studio data:', studioData);
 
-            const gallery = await createGallery(
-                galleryData,
+            const studio = await createGallery(
+                studioData,
                 coverImage,
                 currentUser.uid,
                 userProfile
             );
 
-            console.log('Gallery created successfully:', gallery);
+            console.log('Studio created successfully:', studio);
 
-            if (gallery && gallery.id) {
-                console.log('Navigating to:', `/gallery/${gallery.id}`);
-                navigate(`/gallery/${gallery.id}`);
+            if (studio && studio.id) {
+                console.log('Navigating to:', `/gallery/${studio.id}`);
+                navigate(`/gallery/${studio.id}`);
             } else {
-                console.error('Gallery created but no ID returned:', gallery);
-                showWarning('Gallery created but ID missing. Check console.');
+                console.error('Studio created but no ID returned:', studio);
+                showWarning('Studio created but ID missing. Check console.');
             }
         } catch (error) {
-            console.error('Error creating gallery:', error);
-            showError(`Failed to create gallery: ${error.message}`);
+            console.error('Error creating studio:', error);
+            showError(`Failed to create studio: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -178,7 +178,7 @@ const CreateGallery = () => {
                 <button onClick={() => navigate(-1)} className="back-btn">
                     <FaArrowLeft /> Back
                 </button>
-                <h1>Create Gallery</h1>
+                <h1>Create Studio</h1>
                 <p className="subtitle">Create a collaborative space for sharing content</p>
             </div>
 
@@ -214,188 +214,190 @@ const CreateGallery = () => {
                 <div className="form-section">
                     <h3>Basic Information</h3>
                     <div className="form-field">
-                        <label>Gallery Title *</label>
+                        <label>Studio Title *</label>
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g., Urban Photography Collective"
+                    <h3>Basic Information</h3>
+                        <div className="form-field">
+                            <label>Studio Title *</label>
                             maxLength={100}
                             required
                         />
-                    </div>
-                    <div className="form-field">
-                        <label>Description</label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Describe what this gallery is about..."
-                            rows={4}
-                            maxLength={500}
-                        />
-                    </div>
-                </div>
-
-                {/* Content Type */}
-                <div className="form-section">
-                    <h3>Content Type</h3>
-                    <p className="field-hint">What can members add to this gallery?</p>
-                    <div className="content-type-options">
-                        <label className={`content-type-option ${contentType === 'posts' ? 'active' : ''}`}>
-                            <input
-                                type="radio"
-                                value="posts"
-                                checked={contentType === 'posts'}
-                                onChange={(e) => setContentType(e.target.value)}
+                        </div>
+                        <div className="form-field">
+                            <label>Description</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Describe what this studio is about..."
+                                rows={4}
+                                maxLength={500}
                             />
-                            <div>
-                                <strong>Posts Only</strong>
-                                <span>Individual photos and images</span>
-                            </div>
-                        </label>
-                        <label className={`content-type-option ${contentType === 'collections' ? 'active' : ''}`}>
-                            <input
-                                type="radio"
-                                value="collections"
-                                checked={contentType === 'collections'}
-                                onChange={(e) => setContentType(e.target.value)}
-                            />
-                            <div>
-                                <strong>Collections Only</strong>
-                                <span>Curated collections of posts</span>
-                            </div>
-                        </label>
-                        <label className={`content-type-option ${contentType === 'both' ? 'active' : ''}`}>
-                            <input
-                                type="radio"
-                                value="both"
-                                checked={contentType === 'both'}
-                                onChange={(e) => setContentType(e.target.value)}
-                            />
-                            <div>
-                                <strong>Both</strong>
-                                <span>Posts and collections</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                {/* Required Tags */}
-                <div className="form-section">
-                    <h3><FaTags /> Gallery Tags (Optional)</h3>
-                    <p className="field-hint">Tags help users discover your gallery through search</p>
-
-                    <div className="tag-selector">
-                        {POPULAR_TAGS.map(tag => (
-                            <button
-                                key={tag}
-                                type="button"
-                                className={`tag-btn ${requiredTags.includes(tag) ? 'active' : ''}`}
-                                onClick={() => handleTagToggle(tag)}
-                            >
-                                {tag}
-                            </button>
-                        ))}
+                        </div>
                     </div>
 
-                    <div className="custom-tag-input">
-                        <input
-                            type="text"
-                            value={customTag}
-                            onChange={(e) => setCustomTag(e.target.value)}
-                            placeholder="Add custom tag..."
-                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
-                        />
-                        <button type="button" onClick={handleAddCustomTag}>Add</button>
+                    {/* Content Type */}
+                    <div className="form-section">
+                        <h3>Content Type</h3>
+                        <p className="field-hint">What can members add to this studio?</p>
+                        <div className="content-type-options">
+                            <label className={`content-type-option ${contentType === 'posts' ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    value="posts"
+                                    checked={contentType === 'posts'}
+                                    onChange={(e) => setContentType(e.target.value)}
+                                />
+                                <div>
+                                    <strong>Posts Only</strong>
+                                    <span>Individual photos and images</span>
+                                </div>
+                            </label>
+                            <label className={`content-type-option ${contentType === 'collections' ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    value="collections"
+                                    checked={contentType === 'collections'}
+                                    onChange={(e) => setContentType(e.target.value)}
+                                />
+                                <div>
+                                    <strong>Collections Only</strong>
+                                    <span>Curated collections of posts</span>
+                                </div>
+                            </label>
+                            <label className={`content-type-option ${contentType === 'both' ? 'active' : ''}`}>
+                                <input
+                                    type="radio"
+                                    value="both"
+                                    checked={contentType === 'both'}
+                                    onChange={(e) => setContentType(e.target.value)}
+                                />
+                                <div>
+                                    <strong>Both</strong>
+                                    <span>Posts and collections</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
-                    {requiredTags.length > 0 && (
-                        <div className="selected-tags">
-                            <strong>Gallery tags:</strong>
-                            {requiredTags.map(tag => (
-                                <span key={tag} className="selected-tag">
+                    {/* Required Tags */}
+                    <div className="form-section">
+                        <h3><FaTags /> Studio Tags (Optional)</h3>
+                        <p className="field-hint">Tags help users discover your studio through search</p>
+
+                        <div className="tag-selector">
+                            {POPULAR_TAGS.map(tag => (
+                                <button
+                                    key={tag}
+                                    type="button"
+                                    className={`tag-btn ${requiredTags.includes(tag) ? 'active' : ''}`}
+                                    onClick={() => handleTagToggle(tag)}
+                                >
                                     {tag}
-                                    <button type="button" onClick={() => handleTagToggle(tag)}>×</button>
-                                </span>
+                                </button>
                             ))}
                         </div>
-                    )}
-                </div>
 
-                {/* Required Locations */}
-                <div className="form-section">
-                    <h3><FaMapMarkerAlt /> Location Focus (Optional)</h3>
-                    <p className="field-hint">Specify locations this gallery focuses on</p>
+                        <div className="custom-tag-input">
+                            <input
+                                type="text"
+                                value={customTag}
+                                onChange={(e) => setCustomTag(e.target.value)}
+                                placeholder="Add custom tag..."
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
+                            />
+                            <button type="button" onClick={handleAddCustomTag}>Add</button>
+                        </div>
 
-                    <div className="location-input">
-                        <input
-                            type="text"
-                            value={locationInput}
-                            onChange={(e) => setLocationInput(e.target.value)}
-                            placeholder="e.g., New York, Tokyo, Paris..."
-                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocation())}
-                        />
-                        <button type="button" onClick={handleAddLocation}>Add</button>
+                        {requiredTags.length > 0 && (
+                            <div className="selected-tags">
+                                <strong>Studio tags:</strong>
+                                {requiredTags.map(tag => (
+                                    <span key={tag} className="selected-tag">
+                                        {tag}
+                                        <button type="button" onClick={() => handleTagToggle(tag)}>×</button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {requiredLocations.length > 0 && (
-                        <div className="selected-locations">
-                            {requiredLocations.map(loc => (
-                                <span key={loc} className="selected-location">
-                                    {loc}
-                                    <button
-                                        type="button"
-                                        onClick={() => setRequiredLocations(prev => prev.filter(l => l !== loc))}
-                                    >
-                                        ×
-                                    </button>
-                                </span>
-                            ))}
+                    {/* Required Locations */}
+                    <div className="form-section">
+                        <h3><FaMapMarkerAlt /> Location Focus (Optional)</h3>
+                        <p className="field-hint">Specify locations this studio focuses on</p>
+
+                        <div className="location-input">
+                            <input
+                                type="text"
+                                value={locationInput}
+                                onChange={(e) => setLocationInput(e.target.value)}
+                                placeholder="e.g., New York, Tokyo, Paris..."
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocation())}
+                            />
+                            <button type="button" onClick={handleAddLocation}>Add</button>
                         </div>
-                    )}
-                </div>
 
-                {/* Settings */}
-                <div className="form-section">
-                    <h3>Gallery Settings</h3>
+                        {requiredLocations.length > 0 && (
+                            <div className="selected-locations">
+                                {requiredLocations.map(loc => (
+                                    <span key={loc} className="selected-location">
+                                        {loc}
+                                        <button
+                                            type="button"
+                                            onClick={() => setRequiredLocations(prev => prev.filter(l => l !== loc))}
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                    <label className="toggle-option">
-                        <input
-                            type="checkbox"
-                            checked={isPublic}
-                            onChange={(e) => setIsPublic(e.target.checked)}
-                        />
-                        <div>
-                            <strong>{isPublic ? <FaGlobe /> : <FaLock />} {isPublic ? 'Public' : 'Private'}</strong>
-                            <span>{isPublic ? 'Anyone can view this gallery' : 'Only members can view'}</span>
-                        </div>
-                    </label>
+                    {/* Settings */}
+                    <div className="form-section">
+                        <h3>Studio Settings</h3>
 
-                    <label className="toggle-option">
-                        <input
-                            type="checkbox"
-                            checked={moderationEnabled}
-                            onChange={(e) => setModerationEnabled(e.target.checked)}
-                        />
-                        <div>
-                            <strong>Require Approval</strong>
-                            <span>You must approve content before it appears</span>
-                        </div>
-                    </label>
-                </div>
+                        <label className="toggle-option">
+                            <input
+                                type="checkbox"
+                                checked={isPublic}
+                                onChange={(e) => setIsPublic(e.target.checked)}
+                            />
+                            <div>
+                                <strong>{isPublic ? <FaGlobe /> : <FaLock />} {isPublic ? 'Public' : 'Private'}</strong>
+                                <span>{isPublic ? 'Anyone can view this studio' : 'Only members can view'}</span>
+                            </div>
+                        </label>
 
-                {/* Submit */}
-                <div className="form-actions">
-                    <button type="button" onClick={() => navigate(-1)} className="cancel-btn">
-                        Cancel
-                    </button>
-                    <button type="submit" disabled={loading} className="create-btn">
-                        {loading ? 'Creating...' : 'Create Gallery'}
-                    </button>
-                </div>
+                        <label className="toggle-option">
+                            <input
+                                type="checkbox"
+                                checked={moderationEnabled}
+                                onChange={(e) => setModerationEnabled(e.target.checked)}
+                            />
+                            <div>
+                                <strong>Require Approval</strong>
+                                <span>You must approve content before it appears</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    {/* Submit */}
+                    <div className="form-actions">
+                        <button type="button" onClick={() => navigate(-1)} className="cancel-btn">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={loading} className="create-btn">
+                            {loading ? 'Creating...' : 'Create Studio'}
+                        </button>
+                    </div>
             </form>
         </div>
     );
 };
 
-export default CreateGallery;
+export default CreateStudio;

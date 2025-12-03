@@ -6,4 +6,4 @@ export {
     calculateBundlePricing,
     calculateCollectionBundlePricing,
     validateBundlePricing
-} from './printPricing';
+} from './printifyPricing';

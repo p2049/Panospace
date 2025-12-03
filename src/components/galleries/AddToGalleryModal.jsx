@@ -71,7 +71,7 @@ const AddToGalleryModal = ({ contentId, contentType, content, onClose }) => {
         <div className="add-to-gallery-overlay" onClick={onClose}>
             <div className="add-to-gallery-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>Add to Gallery</h2>
+                    <h2>Add to Studio</h2>
                     <button onClick={onClose} className="close-btn">
                         <FaTimes />
                     </button>
@@ -81,12 +81,12 @@ const AddToGalleryModal = ({ contentId, contentType, content, onClose }) => {
                     {loading ? (
                         <div className="loading-state">
                             <div className="spinner"></div>
-                            <p>Loading your galleries...</p>
+                            <p>Loading your studios...</p>
                         </div>
                     ) : galleries.length === 0 ? (
                         <div className="empty-state">
-                            <p>You're not a member of any galleries yet</p>
-                            <span>Join or create a gallery to add {contentType}s</span>
+                            <p>You're not a member of any studios yet</p>
+                            <span>Join or create a studio to add {contentType}s</span>
                         </div>
                     ) : (
                         <div className="galleries-list">
@@ -146,7 +146,7 @@ const AddToGalleryModal = ({ contentId, contentType, content, onClose }) => {
                         disabled={!selectedGallery || adding}
                         className="add-btn"
                     >
-                        {adding ? 'Adding...' : 'Add to Gallery'}
+                        {adding ? 'Adding...' : 'Add to Studio'}
                     </button>
                 </div>
             </div>

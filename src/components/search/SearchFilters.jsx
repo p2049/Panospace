@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { FaSortAmountDown, FaTh, FaList } from 'react-icons/fa';
 import { SORT_OPTIONS } from '../../constants/searchFilters';
 import PSButton from '../PSButton';
+import ColorWheelSearch from './ColorWheelSearch';
 
 const SearchFilters = ({
     sortBy,
@@ -9,7 +10,10 @@ const SearchFilters = ({
     viewMode,
     setViewMode,
     isSortDropdownOpen,
-    setIsSortDropdownOpen
+    setIsSortDropdownOpen,
+    selectedColor,
+    onColorSelect,
+    onColorClear
 }) => {
     const sortDropdownRef = useRef(null);
 
@@ -92,6 +96,13 @@ const SearchFilters = ({
                     </div>
                 )}
             </div>
+
+            {/* Color Search */}
+            <ColorWheelSearch
+                selectedColor={selectedColor}
+                onColorSelect={onColorSelect}
+                onClear={onColorClear}
+            />
 
             <PSButton
                 variant="mint"

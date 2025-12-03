@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCreatePost } from '../hooks/useCreatePost';
 import { useCollections } from '../hooks/useCollections';
-import { PRINT_TIERS } from '../utils/printPricing';
+import { PRINT_TIERS } from '../utils/printifyPricing';
 
 import ThumbnailStrip from '../components/create-post/ThumbnailStrip';
 import ImageCarousel from '../components/create-post/ImageCarousel';

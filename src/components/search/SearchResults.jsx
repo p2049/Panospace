@@ -68,7 +68,7 @@ const SearchResults = ({
                             <UserCard key={user.id} user={user} />
                         ))}
                         {currentMode === 'galleries' && results.galleries.map(gallery => (
-                            <GalleryCard key={gallery.id} gallery={gallery} />
+                            <GalleryCard key={gallery.id} studio={gallery} />
                         ))}
                         {currentMode === 'collections' && results.collections.map(collection => (
                             <CollectionCard key={collection.id} collection={collection} />
@@ -146,7 +146,7 @@ const SearchResults = ({
                                 marginBottom: '1.5rem',
                                 lineHeight: '1.5'
                             }}>
-                                No results found for {currentMode}. Try adjusting your filters.
+                                No results found for {currentMode === 'galleries' ? 'studios' : currentMode}. Try adjusting your filters.
                             </p>
                             <PSButton
                                 variant="glass"

@@ -86,7 +86,7 @@ const ImageUploadPanel = ({
                     <FaImage style={{ fontSize: '3rem', color: '#666' }} />
                     <div style={{ color: '#888', textAlign: 'center' }}>
                         <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                            Add Images to {creationMode === 'gallery' ? 'Gallery' : 'Collection'}
+                            Add Images to {creationMode === 'gallery' ? 'Studio' : 'Collection'}
                         </div>
                         <div style={{ fontSize: '0.9rem' }}>1-10 images required</div>
                     </div>

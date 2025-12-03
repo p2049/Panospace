@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, increment, collection, query, orderBy, getDocs, where, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useCollection } from '../hooks/useCollections';
@@ -8,6 +8,8 @@ import { FaArrowLeft, FaUniversity, FaImage, FaUser, FaPlus, FaCheck, FaSearch }
 import SEO from '../components/SEO';
 import GalleryCard from '../components/ui/cards/GalleryCard';
 import StarBackground from '../components/StarBackground';
+import CreateExhibitModal from '../components/museums/CreateExhibitModal';
+import { FaClock } from 'react-icons/fa';
 
 const MuseumView = () => {
     const { id } = useParams();
@@ -15,10 +17,12 @@ const MuseumView = () => {
     const { currentUser } = useAuth();
     const { collection: museum, loading: museumLoading, error: museumError } = useCollection(id);
 
-    const [galleries, setGalleries] = useState([]);
+    const [studios, setStudios] = useState([]);
+    const [exhibits, setExhibits] = useState([]);
     const [profiles, setProfiles] = useState([]);
     const [contentLoading, setContentLoading] = useState(true);
     const [joining, setJoining] = useState(false);
+    const [showCreateExhibitModal, setShowCreateExhibitModal] = useState(false);
 
     const isMember = museum?.members?.includes(currentUser?.uid);
     const isOwner = museum?.ownerId === currentUser?.uid;
@@ -29,13 +33,13 @@ const MuseumView = () => {
 
             setContentLoading(true);
             try {
-                // Fetch Galleries
-                const galleryPromises = (museum.galleryIds || []).map(gId => getDoc(doc(db, 'galleries', gId)));
-                const gallerySnaps = await Promise.all(galleryPromises);
-                const fetchedGalleries = gallerySnaps
+                // Fetch Studios
+                const studioPromises = (museum.galleryIds || []).map(gId => getDoc(doc(db, 'galleries', gId)));
+                const studioSnaps = await Promise.all(studioPromises);
+                const fetchedStudios = studioSnaps
                     .filter(snap => snap.exists())
                     .map(snap => ({ id: snap.id, ...snap.data() }));
-                setGalleries(fetchedGalleries);
+                setStudios(fetchedStudios);
 
                 // Fetch Profiles
                 const profilePromises = (museum.profileIds || []).map(pId => getDoc(doc(db, 'users', pId)));
@@ -43,7 +47,19 @@ const MuseumView = () => {
                 const fetchedProfiles = profileSnaps
                     .filter(snap => snap.exists())
                     .map(snap => ({ id: snap.id, ...snap.data() }));
-                setProfiles(fetchedProfiles);
+                setStudios(fetchedStudios);
+
+                // Fetch Exhibits
+                const exhibitsRef = collection(db, 'museums', id, 'exhibits');
+                const q = query(exhibitsRef, orderBy('createdAt', 'desc'));
+                const exhibitsSnap = await getDocs(q);
+                const now = new Date();
+                const fetchedExhibits = exhibitsSnap.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(exhibit => exhibit.expiresAt?.toDate() > now);
+                setExhibits(fetchedExhibits);
+
+                // Fetch Profiles
 
             } catch (err) {
                 console.error("Error fetching museum content:", err);
@@ -155,6 +171,28 @@ const MuseumView = () => {
                             {isMember ? 'Member' : joining ? 'Joining...' : 'Join Museum'}
                         </button>
                     )}
+
+                    {isOwner && (
+                        <button
+                            onClick={() => setShowCreateExhibitModal(true)}
+                            style={{
+                                background: '#7FFFD4',
+                                color: '#000',
+                                border: 'none',
+                                padding: '0.5rem 1.5rem',
+                                borderRadius: '20px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                backdropFilter: 'blur(4px)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <FaPlus /> Add Exhibit
+                        </button>
+                    )}
                 </div>
 
                 <div className="container-md" style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
@@ -168,7 +206,7 @@ const MuseumView = () => {
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '0.5rem 1rem', borderRadius: '20px', backdropFilter: 'blur(4px)' }}>
                             <FaImage style={{ color: '#7FFFD4' }} />
-                            <span>{galleries.length} Galleries</span>
+                            <span>{studios.length} Studios</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.1)', padding: '0.5rem 1rem', borderRadius: '20px', backdropFilter: 'blur(4px)' }}>
                             <FaUser style={{ color: '#7FFFD4' }} />
@@ -181,15 +219,58 @@ const MuseumView = () => {
             {/* Content Section */}
             <div className="container-md" style={{ padding: '2rem 1rem' }}>
 
-                {/* Galleries */}
-                {galleries.length > 0 && (
+                {/* Exhibits */}
+                {exhibits.length > 0 && (
                     <div style={{ marginBottom: '4rem' }}>
                         <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
-                            <FaImage style={{ color: '#7FFFD4' }} /> Featured Galleries
+                            <FaClock style={{ color: '#7FFFD4' }} /> Current Exhibits
                         </h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                            {galleries.map(gallery => (
-                                <GalleryCard key={gallery.id} gallery={gallery} />
+                            {exhibits.map(exhibit => (
+                                <div key={exhibit.id} style={{
+                                    background: '#111',
+                                    borderRadius: '12px',
+                                    overflow: 'hidden',
+                                    border: '1px solid #222'
+                                }}>
+                                    <div style={{ aspectRatio: '16/9', position: 'relative' }}>
+                                        <img src={exhibit.imageUrl} alt={exhibit.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: '0.5rem',
+                                            right: '0.5rem',
+                                            background: 'rgba(0,0,0,0.7)',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: '4px',
+                                            fontSize: '0.75rem',
+                                            color: '#7FFFD4',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem'
+                                        }}>
+                                            <FaClock size={10} />
+                                            {Math.ceil((exhibit.expiresAt?.toDate() - new Date()) / (1000 * 60 * 60))}h left
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '1rem' }}>
+                                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{exhibit.title}</h3>
+                                        <p style={{ margin: 0, color: '#888', fontSize: '0.9rem', lineHeight: '1.5' }}>{exhibit.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Studios */}
+                {studios.length > 0 && (
+                    <div style={{ marginBottom: '4rem' }}>
+                        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
+                            <FaImage style={{ color: '#7FFFD4' }} /> Featured Studios
+                        </h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                            {studios.map(studio => (
+                                <GalleryCard key={studio.id} studio={studio} />
                             ))}
                         </div>
                     </div>
@@ -247,6 +328,19 @@ const MuseumView = () => {
                     </div>
                 )}
             </div>
+
+            <CreateExhibitModal
+                isOpen={showCreateExhibitModal}
+                onClose={(shouldRefresh) => {
+                    setShowCreateExhibitModal(false);
+                    if (shouldRefresh) {
+                        // Trigger refresh logic (e.g. by forcing re-mount or refetching)
+                        // For simplicity, we can reload the page or add a refetch function to useEffect dependency
+                        window.location.reload();
+                    }
+                }}
+                museumId={id}
+            />
         </div>
     );
 };

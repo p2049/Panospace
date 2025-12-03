@@ -1,8 +1,8 @@
 import React from 'react';
 import CollectionModePanel from './CollectionModePanel';
 
-const GalleryModePanel = (props) => {
+const StudioModePanel = (props) => {
     return <CollectionModePanel {...props} />;
 };
 
-export default GalleryModePanel;
+export default StudioModePanel;

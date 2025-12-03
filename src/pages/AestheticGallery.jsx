@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { FaArrowLeft } from 'react-icons/fa';
 import InfiniteGrid from '../components/InfiniteGrid';
 
-const AestheticGallery = () => {
+const AestheticStudio = () => {
     const { type, tag } = useParams();
     const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
@@ -22,7 +22,7 @@ const AestheticGallery = () => {
                 if (type === 'season') fieldName = 'seasonalTags';
                 if (type === 'time') fieldName = 'timeOfDayTags';
 
-                console.log("AestheticGallery Params:", { type, tag, fieldName });
+                console.log("AestheticStudio Params:", { type, tag, fieldName });
                 const q = query(
                     collection(db, 'posts'),
                     where(fieldName, 'array-contains', tag)
@@ -31,14 +31,14 @@ const AestheticGallery = () => {
                 );
 
                 const snapshot = await getDocs(q);
-                console.log("AestheticGallery Snapshot Size:", snapshot.size);
+                console.log("AestheticStudio Snapshot Size:", snapshot.size);
                 const fetchedPosts = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
                 setPosts(fetchedPosts);
             } catch (error) {
-                console.error("Error fetching aesthetic gallery:", error);
+                console.error("Error fetching aesthetic studio:", error);
             } finally {
                 setLoading(false);
             }
@@ -51,20 +51,20 @@ const AestheticGallery = () => {
 
     // Format title
     const formatTitle = () => {
-        if (!tag) return 'Gallery';
+        if (!tag) return 'Studio';
         return `${tag} ${type === 'time' ? '' : 'Aesthetic'}`;
     };
 
     return (
-        <div className="aesthetic-gallery-page">
-            <div className="gallery-header">
+        <div className="aesthetic-studio-page">
+            <div className="studio-header">
                 <button onClick={() => navigate(-1)} className="back-btn">
                     <FaArrowLeft />
                 </button>
                 <h1>{formatTitle()}</h1>
             </div>
 
-            <div className="gallery-content">
+            <div className="studio-content">
                 {loading ? (
                     <div className="loading-state">Loading...</div>
                 ) : posts.length === 0 ? (
@@ -92,13 +92,13 @@ const AestheticGallery = () => {
             </div>
 
             <style>{`
-                .aesthetic-gallery-page {
+                .aesthetic-studio-page {
                     min-height: 100vh;
                     background: #000;
                     color: #fff;
                     padding-bottom: 80px;
                 }
-                .gallery-header {
+                .studio-header {
                     padding: 1rem 2rem;
                     display: flex;
                     align-items: center;
@@ -109,7 +109,7 @@ const AestheticGallery = () => {
                     z-index: 10;
                     border-bottom: 1px solid #333;
                 }
-                .gallery-header h1 {
+                .studio-header h1 {
                     font-size: 1.5rem;
                     font-weight: 700;
                     text-transform: capitalize;
@@ -129,7 +129,7 @@ const AestheticGallery = () => {
                     align-items: center;
                     justify-content: center;
                 }
-                .gallery-content {
+                .studio-content {
                     padding: 1rem;
                     max-width: 1200px;
                     margin: 0 auto;
@@ -171,4 +171,4 @@ const AestheticGallery = () => {
     );
 };
 
-export default AestheticGallery;
+export default AestheticStudio;

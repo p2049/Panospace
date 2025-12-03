@@ -17,7 +17,8 @@ import CreateCardModal from '../components/CreateCardModal';
 import BusinessCardModal from '../components/BusinessCardModal';
 import CommissionModal from '../components/monetization/CommissionModal';
 import { getUnreadCount } from '../services/notificationService';
-import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus } from 'react-icons/fa';
+import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus, FaImage } from 'react-icons/fa';
+import { getDocs, query, where, orderBy } from 'firebase/firestore';
 
 
 const Profile = () => {
@@ -37,6 +38,7 @@ const Profile = () => {
     const [showMenu, setShowMenu] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
+    const [orders, setOrders] = useState([]);
     const { collections, loading: collectionsLoading } = useCollections(targetId);
 
     // Use the new useProfile hook
@@ -52,6 +54,26 @@ const Profile = () => {
         setIsFollowing,
         setFollowDocId
     } = useProfile(targetId, currentUser, activeTab);
+
+    // Fetch orders for Gallery tab
+    React.useEffect(() => {
+        const fetchOrders = async () => {
+            if (activeTab === 'gallery' && targetId) {
+                try {
+                    const q = query(
+                        collection(db, 'orders'),
+                        where('userId', '==', targetId),
+                        orderBy('createdAt', 'desc')
+                    );
+                    const snapshot = await getDocs(q);
+                    setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (error) {
+                    console.error('Error fetching orders:', error);
+                }
+            }
+        };
+        fetchOrders();
+    }, [activeTab, targetId]);
 
     const handleFollow = async () => {
         if (!currentUser || followLoading) return;
@@ -384,6 +406,7 @@ const Profile = () => {
                         { id: 'posts', label: 'Posts', icon: FaTh },
                         { id: 'shop', label: 'Shop', icon: FaShoppingBag },
                         { id: 'collections', label: 'Collections', icon: FaLayerGroup },
+                        { id: 'gallery', label: 'Gallery', icon: FaImage },
                         { id: 'cards', label: 'Cards', icon: FaRocket },
                         { id: 'badges', label: 'Badges', icon: FaCheck }
                     ].map(tab => {
@@ -694,6 +717,144 @@ const Profile = () => {
                             </div>
                         )}
                     />
+                )}
+
+                {activeTab === 'gallery' && (
+                    <>
+                        {/* Purchased Prints Section */}
+                        <div style={{ marginBottom: '3rem' }}>
+                            <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FaShoppingBag style={{ color: '#7FFFD4' }} />
+                                Purchased Prints
+                            </h3>
+                            {orders.length > 0 ? (
+                                <InfiniteGrid
+                                    items={orders}
+                                    columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                                    gap="1rem"
+                                    renderItem={(order) => (
+                                        <div style={{
+                                            background: '#111',
+                                            borderRadius: '8px',
+                                            overflow: 'hidden',
+                                            border: '1px solid #333'
+                                        }}>
+                                            <div style={{ aspectRatio: '1', background: '#222', position: 'relative' }}>
+                                                <img src={order.items?.[0]?.imageUrl} alt="Print" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                            <div style={{ padding: '0.75rem' }}>
+                                                <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.9rem' }}>Order #{order.id.slice(0, 8)}</div>
+                                                <div style={{ color: '#888', fontSize: '0.8rem' }}>{new Date(order.createdAt?.toDate()).toLocaleDateString()}</div>
+                                            </div>
+                                        </div>
+                                    )}
+                                />
+                            ) : (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: '#666', background: '#111', borderRadius: '8px' }}>
+                                    No purchased prints yet.
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Owned Cards Section */}
+                        <div>
+                            <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FaRocket style={{ color: '#e0b3ff' }} />
+                                Marketplace Cards
+                            </h3>
+                            {spaceCards.length > 0 ? (
+                                <InfiniteGrid
+                                    items={spaceCards}
+                                    columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                                    gap="1rem"
+                                    renderItem={(card) => {
+                                        const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
+                                        return (
+                                            <div style={{
+                                                position: 'relative',
+                                                aspectRatio: '2/3',
+                                                borderRadius: '12px',
+                                                overflow: 'visible'
+                                            }}>
+                                                {/* Iridescent border for high rarity cards */}
+                                                {isHighRarity && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        inset: '-3px',
+                                                        borderRadius: '12px',
+                                                        background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
+                                                        backgroundSize: '300% 300%',
+                                                        animation: 'iridescent-border 6s ease infinite',
+                                                        zIndex: 0
+                                                    }} />
+                                                )}
+
+                                                {/* Card content */}
+                                                <div style={{
+                                                    position: 'relative',
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    background: '#000',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    border: isHighRarity ? 'none' : '2px solid #7FFFD4',
+                                                    boxShadow: isHighRarity
+                                                        ? '0 0 30px rgba(224, 179, 255, 0.4), 0 8px 32px rgba(0,0,0,0.5)'
+                                                        : '0 0 20px rgba(127, 255, 212, 0.3), 0 8px 24px rgba(0,0,0,0.4)',
+                                                    zIndex: 1
+                                                }}>
+                                                    {(card.images?.front || card.imageUrl) && (
+                                                        <img
+                                                            src={card.images?.front || card.imageUrl}
+                                                            alt={card.title || card.name}
+                                                            loading="lazy"
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'cover'
+                                                            }}
+                                                        />
+                                                    )}
+
+                                                    {/* Card title overlay */}
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        bottom: 0,
+                                                        left: 0,
+                                                        right: 0,
+                                                        background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
+                                                        padding: '1.5rem 0.75rem 0.75rem',
+                                                        color: '#fff'
+                                                    }}>
+                                                        <div style={{
+                                                            fontSize: '0.9rem',
+                                                            fontWeight: '600',
+                                                            marginBottom: '0.25rem'
+                                                        }}>
+                                                            {card.title || card.name}
+                                                        </div>
+                                                        {card.rarity && (
+                                                            <div style={{
+                                                                fontSize: '0.75rem',
+                                                                color: isHighRarity ? '#e0b3ff' : '#7FFFD4',
+                                                                fontWeight: '500'
+                                                            }}>
+                                                                {card.rarity}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: '#666', background: '#111', borderRadius: '8px' }}>
+                                    No marketplace cards owned.
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
 
                 {/* Empty States */}

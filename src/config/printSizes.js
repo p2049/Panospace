@@ -6,11 +6,21 @@
  */
 
 import {
-    PRINT_SIZES as SOURCE_SIZES,
-    calculateEarnings as sourceCalc,
+    getPrintifyProducts,
+    calculatePrintifyEarnings,
     getAspectRatioCategory as sourceGetRatio,
     getValidSizesForImage as sourceGetValidSizes
-} from '../utils/printPricing';
+} from '../utils/printifyPricing';
+
+const SOURCE_SIZES = getPrintifyProducts();
+const sourceCalc = (retailPrice, sizeId, isUltra) => {
+    const res = calculatePrintifyEarnings(retailPrice, sizeId, isUltra);
+    return {
+        artistEarningsCents: Math.round(res.artistEarnings * 100),
+        platformCutCents: Math.round(res.platformEarnings * 100),
+        totalCents: Math.round(retailPrice * 100)
+    };
+};
 
 // Platform revenue share
 export const PLATFORM_CUT_PERCENTAGE = 0.50; // 50%
@@ -32,20 +42,24 @@ export function formatCents(cents) {
     return `$${((cents || 0) / 100).toFixed(2)}`;
 }
 
+import { printifyApi } from '../services/printifyApi';
+
 export const mockPrintfulAPI = {
     async createProduct(imageUrl, title, sizes) {
-        console.log('[MOCK] Creating Printful product:', { imageUrl, title, sizes });
+        console.log('[Adapter] Creating Printify product via mockPrintfulAPI:', { imageUrl, title, sizes });
+        const result = await printifyApi.syncProduct({ imageUrl, title, variants: sizes.map(s => s.id) });
         return {
-            productId: `mock_prod_${Date.now()}`,
+            productId: result.printifyId,
             syncVariantIds: sizes.map(s => `mock_var_${s.id}_${Date.now()}`)
         };
     },
 
     async createOrder(variantId, quantity, shippingAddress) {
-        console.log('[MOCK] Creating Printful order:', { variantId, quantity });
+        console.log('[Adapter] Creating Printify order via mockPrintfulAPI:', { variantId, quantity });
+        const result = await printifyApi.submitOrder({ variantId, quantity, address: shippingAddress });
         return {
-            orderId: `mock_order_${Date.now()}`,
-            status: 'pending',
+            orderId: result.orderId,
+            status: result.status,
             estimatedShippingDays: 7
         };
     }

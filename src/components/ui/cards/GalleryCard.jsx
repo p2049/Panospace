@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const GalleryCard = ({ gallery }) => {
+const StudioCard = ({ studio }) => {
     const navigate = useNavigate();
     return (
         <div
-            onClick={() => navigate(`/gallery/${gallery.id}`)}
+            onClick={() => navigate(`/gallery/${studio.id}`)}
             style={{
                 background: 'rgba(255,255,255,0.03)',
                 borderRadius: '12px',
@@ -19,16 +19,16 @@ const GalleryCard = ({ gallery }) => {
         >
             <div style={{ aspectRatio: '16/9', background: '#111', position: 'relative' }}>
                 <img
-                    src={gallery.coverImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'}
-                    alt={gallery.title}
+                    src={studio.coverImage || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'}
+                    alt={studio.title}
                     style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
-                        opacity: gallery.coverImage ? 1 : 0.6
+                        opacity: studio.coverImage ? 1 : 0.6
                     }}
                 />
-                {!gallery.coverImage && (
+                {!studio.coverImage && (
                     <div style={{
                         position: 'absolute',
                         top: 0,
@@ -45,11 +45,11 @@ const GalleryCard = ({ gallery }) => {
                 )}
             </div>
             <div style={{ padding: '1rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '1rem' }}>{gallery.title || 'Untitled Gallery'}</h4>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>{gallery.postCount || 0} posts</p>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff', fontSize: '1rem' }}>{studio.title || 'Untitled Studio'}</h4>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>{studio.postCount || 0} posts</p>
             </div>
         </div>
     );
 };
 
-export default GalleryCard;
+export default StudioCard;

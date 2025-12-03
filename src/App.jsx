@@ -49,6 +49,7 @@ const CreateMagazineIssue = lazy(() => import('./pages/CreateMagazineIssue'));
 const MagazineCuration = lazy(() => import('./pages/MagazineCuration'));
 const CommissionsPage = lazy(() => import('./pages/CommissionsPage'));
 const CreateMuseumPage = lazy(() => import('./pages/CreateMuseumPage'));
+const ProjectPage = lazy(() => import('./pages/ProjectPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const AdminCleanup = lazy(() => import('./pages/AdminCleanup'));
@@ -228,6 +229,11 @@ const AnimatedRoutes = () => {
         <Route path="/museum/create" element={
           <PrivateRoute>
             <MotionWrapper><CreateMuseumPage /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/project/:studioId/:projectId" element={
+          <PrivateRoute>
+            <MotionWrapper><ProjectPage /></MotionWrapper>
           </PrivateRoute>
         } />
 

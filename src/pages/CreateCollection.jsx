@@ -8,15 +8,15 @@ import { useCreateCollection } from '../hooks/useCollections';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import exifr from 'exifr';
-import { PRINT_SIZES, PRINT_TIERS } from '../utils/printPricing';
-import { calculateBundlePricing } from '../utils/printPricing';
+import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '../utils/printifyPricing';
+const PRINT_SIZES = getPrintifyProducts();
 
 import { createMagazine, calculateNextReleaseDate } from '../services/magazineService';
 import ImageUploadPanel from '../components/create-collection/ImageUploadPanel';
 import MagazineModePanel from '../components/create-collection/MagazineModePanel';
 import MuseumModePanel from '../components/create-collection/MuseumModePanel';
 import CollectionModePanel from '../components/create-collection/CollectionModePanel';
-import GalleryModePanel from '../components/create-collection/GalleryModePanel';
+import StudioModePanel from '../components/create-collection/GalleryModePanel';
 import PageHeader from '../components/PageHeader';
 import PSButton from '../components/PSButton';
 import ModeSelector from '../components/create-collection/ModeSelector';
@@ -341,7 +341,7 @@ const CreateCollection = () => {
 
             <PageHeader
                 title={
-                    creationMode === 'gallery' ? 'Create Gallery' :
+                    creationMode === 'gallery' ? 'Create Studio' :
                         creationMode === 'museum' ? 'Create Museum' :
                             creationMode === 'magazine' ? 'Create Magazine' :
                                 'Create Collection'
@@ -447,7 +447,7 @@ const CreateCollection = () => {
                         )}
 
                         {creationMode === 'gallery' && (
-                            <GalleryModePanel
+                            <StudioModePanel
                                 description={description}
                                 setDescription={setDescription}
                                 visibility={visibility}

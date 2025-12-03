@@ -15,7 +15,7 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
         }}>
             {[
                 { key: 'posts', icon: FaCamera, label: 'Posts' },
-                { key: 'galleries', icon: FaImage, label: 'Galleries' },
+                { key: 'galleries', icon: FaImage, label: 'Studios' },
                 { key: 'collections', icon: FaLayerGroup, label: 'Collections' },
                 { key: 'museums', icon: FaUniversity, label: 'Museums' },
                 { key: 'contests', icon: FaTrophy, label: 'Contests' },

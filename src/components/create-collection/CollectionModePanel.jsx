@@ -1,6 +1,8 @@
 import React from 'react';
 import { FaGlobe, FaUsers, FaLock, FaStore, FaTag } from 'react-icons/fa';
-import { PRINT_SIZES, PRINT_TIERS, calculateBundlePricing } from '../../utils/printPricing';
+import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '../../utils/printifyPricing';
+
+const PRINT_SIZES = getPrintifyProducts();
 
 const CollectionModePanel = ({
     description,

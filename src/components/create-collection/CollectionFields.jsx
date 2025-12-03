@@ -14,7 +14,7 @@ const CollectionFields = ({
             case 'museum':
                 return 'e.g., Street Photography Museum';
             case 'gallery':
-                return 'e.g., Summer 2024 Gallery';
+                return 'e.g., Summer 2024 Studio';
             case 'magazine':
                 return 'e.g., Monthly Photography Magazine';
             default:
@@ -27,7 +27,7 @@ const CollectionFields = ({
             case 'museum':
                 return 'Museum Title *';
             case 'gallery':
-                return 'Gallery Title *';
+                return 'Studio Title *';
             case 'magazine':
                 return 'Magazine Title *';
             default:

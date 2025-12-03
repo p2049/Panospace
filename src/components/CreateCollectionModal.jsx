@@ -191,125 +191,24 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
                         </label>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             {[
-                                { value: 'public', icon: FaGlobe, label: 'Public' },
-                                { value: 'followers', icon: FaUsers, label: 'Followers Only' },
-                                { value: 'private', icon: FaLock, label: 'Private' }
-                            ].map(({ value, icon: Icon, label }) => (
-                                <button
-                                    key={value}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, visibility: value })}
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.75rem',
-                                        background: formData.visibility === value ? 'rgba(127, 255, 212, 0.2)' : '#222',
-                                        border: formData.visibility === value ? '1px solid #7FFFD4' : '1px solid #333',
-                                        borderRadius: '8px',
-                                        color: formData.visibility === value ? '#7FFFD4' : '#888',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem',
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <Icon /> {label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                                <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+                                    Leave empty to sell items individually
+                                </div>
 
-                    {/* Collection Type (Gallery Toggle) */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', background: '#222', borderRadius: '8px', border: '1px solid #333' }}>
-                            <input
-                                type="checkbox"
-                                checked={formData.isGallery}
-                                onChange={(e) => setFormData({ ...formData, isGallery: e.target.checked })}
-                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                            />
-                            <FaImage style={{ color: '#7FFFD4' }} />
-                            <div>
-                                <div style={{ color: '#fff', fontWeight: '600' }}>Create as Gallery</div>
-                                <div style={{ color: '#666', fontSize: '0.85rem' }}>Public, followable collection for curating specific themes</div>
-                            </div>
-                        </label>
-                    </div>
-
-                    {/* Feed & Store Options */}
-                    <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', background: '#222', borderRadius: '8px', border: '1px solid #333' }}>
-                            <input
-                                type="checkbox"
-                                checked={formData.showInFeed}
-                                onChange={(e) => setFormData({ ...formData, showInFeed: e.target.checked })}
-                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                            />
-                            <FaRss style={{ color: '#7FFFD4' }} />
-                            <div>
-                                <div style={{ color: '#fff', fontWeight: '600' }}>Show in Feed</div>
-                                <div style={{ color: '#666', fontSize: '0.85rem' }}>Announce this collection to followers</div>
-                            </div>
-                        </label>
-
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.75rem', background: '#222', borderRadius: '8px', border: '1px solid #333' }}>
-                            <input
-                                type="checkbox"
-                                checked={formData.showInStore}
-                                onChange={(e) => setFormData({ ...formData, showInStore: e.target.checked })}
-                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                            />
-                            <FaStore style={{ color: '#7FFFD4' }} />
-                            <div>
-                                <div style={{ color: '#fff', fontWeight: '600' }}>Show in Store</div>
-                                <div style={{ color: '#666', fontSize: '0.85rem' }}>Display in your shop section</div>
-                            </div>
-                        </label>
-                    </div>
-
-                    {/* Bundle Price (Optional) */}
-                    {formData.showInStore && (
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc', fontWeight: '600' }}>
-                                Bundle Price (Optional)
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={formData.bundlePrice}
-                                onChange={(e) => setFormData({ ...formData, bundlePrice: e.target.value })}
-                                placeholder="e.g., 99.99"
-                                style={{
-                                    width: '100%',
+                            {/* Copyright Warning for Store Items */ }
+                                < div style = {{
+                                    marginTop: '0.75rem',
                                     padding: '0.75rem',
-                                    background: '#222',
-                                    border: '1px solid #333',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem'
-                                }}
-                            />
-                            <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
-                                Leave empty to sell items individually
-                            </div>
-
-                            {/* Copyright Warning for Store Items */}
-                            <div style={{
-                                marginTop: '0.75rem',
-                                padding: '0.75rem',
-                                background: 'rgba(255, 165, 0, 0.1)',
-                                border: '1px solid rgba(255, 165, 0, 0.3)',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                color: '#ffb84d',
-                                lineHeight: '1.4'
-                            }}>
-                                ⚠️ <strong>Copyright Notice:</strong> By listing this item, you certify that you own all rights to this content. Unauthorized sale of copyrighted material is prohibited.
-                            </div>
+                                    background: 'rgba(255, 165, 0, 0.1)',
+                                    border: '1px solid rgba(255, 165, 0, 0.3)',
+                                    borderRadius: '6px',
+                                    fontSize: '0.75rem',
+                                    color: '#ffb84d',
+                                    lineHeight: '1.4'
+                                }}>
+                            ⚠️ <strong>Copyright Notice:</strong> By listing this item, you certify that you own all rights to this content. Unauthorized sale of copyrighted material is prohibited.
                         </div>
+                    </div>
                     )}
 
                     {/* Scheduled Drop Date */}
