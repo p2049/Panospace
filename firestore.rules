@@ -730,6 +730,30 @@ service cloud.firestore {
     }
 
     // ============================================
+    // NOTIFICATIONS COLLECTION
+    // ============================================
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // System can create notifications (via Cloud Functions or client)
+      allow create: if request.auth != null &&
+                     request.resource.data.keys().hasAll(['userId', 'type', 'createdAt', 'read']) &&
+                     request.resource.data.userId is string &&
+                     request.resource.data.type is string &&
+                     request.resource.data.createdAt is timestamp &&
+                     request.resource.data.read is bool;
+      
+      // Users can update their own notifications (mark as read)
+      allow update: if request.auth != null && 
+                     resource.data.userId == request.auth.uid &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      
+      // Users can delete their own notifications
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // ============================================
     // PANODEX ENTRIES COLLECTION
     // ============================================
     match /panodex_entries/{entryId} {

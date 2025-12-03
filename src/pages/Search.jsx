@@ -93,7 +93,7 @@ const initialSearchState = {
     hasMoreCollections: true,
     hasMoreContests: true,
     hasMoreEvents: true,
-    hasMoreEvents: true,
+
     hasMoreSpaceCards: true,
     hasMoreMuseums: true,
 };

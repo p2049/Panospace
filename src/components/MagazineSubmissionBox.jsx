@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { FaImage, FaTimes, FaCalendar, FaClock, FaUpload, FaCheck } from 'react-icons/fa';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage, db } from '../../firebase';
+import { storage, db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../../context/AuthContext';
-import { getSubmissionLimit } from '../../constants/magazineConfig';
-import { notifyNewSubmission } from '../../services/notificationService';
+import { useAuth } from '../context/AuthContext';
+import { getSubmissionLimit } from '../constants/magazineConfig';
+import { notifyNewSubmission } from '../services/notificationService';
 
 const MagazineSubmissionBox = ({ magazine, gallery, nextIssue }) => {
     const { currentUser } = useAuth();

@@ -16,6 +16,7 @@ import ReportModal from '../components/ReportModal';
 import CreateCardModal from '../components/CreateCardModal';
 import BusinessCardModal from '../components/BusinessCardModal';
 import CommissionModal from '../components/monetization/CommissionModal';
+import { getUnreadCount } from '../services/notificationService';
 import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus } from 'react-icons/fa';
 
 
@@ -35,6 +36,7 @@ const Profile = () => {
     const [showCommissionModal, setShowCommissionModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
     const { collections, loading: collectionsLoading } = useCollections(targetId);
 
     // Use the new useProfile hook
@@ -92,6 +94,25 @@ const Profile = () => {
         }
     };
 
+    // Fetch unread notification count
+    React.useEffect(() => {
+        const loadUnreadCount = async () => {
+            if (currentUser && targetId === currentUser.uid) {
+                try {
+                    const count = await getUnreadCount(currentUser.uid);
+                    setUnreadNotifications(count);
+                } catch (err) {
+                    console.error('Error loading unread count:', err);
+                }
+            }
+        };
+
+        loadUnreadCount();
+        // Poll every 30 seconds
+        const interval = setInterval(loadUnreadCount, 30000);
+        return () => clearInterval(interval);
+    }, [currentUser, targetId]);
+
     if (loading) return <div className="ps-loading">Loading...</div>;
 
     if (!user) {
@@ -138,11 +159,33 @@ const Profile = () => {
                 }}>
                     {/* Profile Image + Username - Left */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#333', overflow: 'hidden', border: '2px solid rgba(127, 255, 212, 0.3)', flexShrink: 0 }}>
-                            {user.photoURL ? (
-                                <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: '#888' }}>{user.displayName?.[0]?.toUpperCase() || '?'}</div>
+                        <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', background: '#333', overflow: 'visible', flexShrink: 0 }}>
+                            <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(127, 255, 212, 0.3)' }}>
+                                {user.photoURL ? (
+                                    <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: '#888' }}>{user.displayName?.[0]?.toUpperCase() || '?'}</div>
+                                )}
+                            </div>
+                            {/* Notification Badge - Top Right */}
+                            {isOwnProfile && unreadNotifications > 0 && (
+                                <div
+                                    onClick={() => navigate('/notifications')}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '0px',
+                                        right: '0px',
+                                        width: '18px',
+                                        height: '18px',
+                                        background: '#00ff00',
+                                        borderRadius: '50%',
+                                        border: '2px solid #000',
+                                        boxShadow: '0 0 8px rgba(0, 255, 0, 0.8)',
+                                        cursor: 'pointer',
+                                        zIndex: 10,
+                                        animation: 'pulse 2s infinite'
+                                    }}
+                                />
                             )}
                         </div>
 
@@ -225,6 +268,7 @@ const Profile = () => {
                         {isOwnProfile ? (
                             <>
                                 <WalletDisplay userId={currentUser.uid} />
+
                                 <button
                                     onClick={() => navigate('/edit-profile')}
                                     className="floating-nav-button"
@@ -271,12 +315,14 @@ const Profile = () => {
                                         top: '100%',
                                         right: 0,
                                         marginTop: '0.5rem',
-                                        background: '#1a1a1a',
-                                        border: '1px solid #333',
+                                        background: 'linear-gradient(135deg, rgba(26,26,26,0.95), rgba(15,15,15,0.98))',
+                                        backdropFilter: 'blur(20px)',
+                                        border: '1px solid rgba(127, 255, 212, 0.15)',
                                         borderRadius: '8px',
                                         overflow: 'hidden',
                                         zIndex: 1000,
-                                        minWidth: '150px'
+                                        minWidth: '150px',
+                                        boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(127, 255, 212, 0.05)'
                                     }}>
                                         <button
                                             onClick={() => {
@@ -737,6 +783,15 @@ const Profile = () => {
                     50% { background-position: 100% 50%; }
                     75% { background-position: 50% 0%; }
                     100% { background-position: 0% 50%; }
+                }
+                
+                @keyframes pulse {
+                    0%, 100% {
+                        box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+                    }
+                    50% {
+                        box-shadow: 0 0 16px rgba(0, 255, 0, 1);
+                    }
                 }
             `}</style>
         </div>

@@ -5,44 +5,14 @@ import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc, de
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import exifr from 'exifr';
 import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printPricing';
+import { extractExifData } from '../utils/exifUtils';
 import { formatPrice } from '../utils/helpers';
 import { PhotoDexService } from '../services/PhotoDexService';
 import { AccountTypeService } from '../services/AccountTypeService';
 import { generateSearchKeywords } from '../utils/searchKeywords';
 
-// ---------------------------------------------------------------------------
-// Helper: extract EXIF from a File
-// ---------------------------------------------------------------------------
-const extractExif = async (file) => {
-    try {
-        const data = await exifr.parse(file, [
-            'Make',
-            'Model',
-            'LensModel',
-            'FocalLength',
-            'FNumber',
-            'ISO',
-            'ExposureTime',
-            'DateTimeOriginal',
-        ]);
-        if (!data) return null;
-        return {
-            make: data.Make,
-            model: data.Model,
-            lens: data.LensModel,
-            focalLength: data.FocalLength ? `${data.FocalLength}mm` : null,
-            aperture: data.FNumber,
-            iso: data.ISO,
-            shutterSpeed: data.ExposureTime,
-            date: data.DateTimeOriginal ? new Date(data.DateTimeOriginal).toLocaleDateString() : null,
-        };
-    } catch (err) {
-        console.warn('EXIF extraction failed', err);
-        return null;
-    }
-};
+
 
 // ---------------------------------------------------------------------------
 // Hook: useCreatePost
@@ -178,7 +148,7 @@ export const useCreatePost = () => {
                         // EXIF (manual overrides allowed)
                         let extractedExif = null;
                         try {
-                            extractedExif = await extractExif(slide.file);
+                            extractedExif = await extractExifData(slide.file);
                         } catch (e) {
                             console.warn('EXIF extraction failed', e);
                         }
@@ -431,7 +401,7 @@ export const useCreatePost = () => {
                     // Add stickers if enabled
                     if (item.includeStickers) {
                         // Import STICKER_SIZES
-                        const { STICKER_SIZES } = await import('../utils/printfulApi');
+                        const { STICKER_SIZES } = await import('../utils/printPricing');
                         STICKER_SIZES.forEach(sticker => {
                             const pricing = calculateStickerPricing(sticker.id);
                             if (pricing) {

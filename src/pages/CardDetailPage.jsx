@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaStar, FaShoppingCart, FaUser, FaClock, FaChartLine } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useSpaceCard } from '../hooks/useSpaceCard';
 import { SpaceCardService, RARITY_TIERS } from '../services/SpaceCardService';
 import SpaceCardComponent from '../components/SpaceCardComponent';
@@ -11,6 +12,7 @@ const CardDetailPage = () => {
     const { cardId } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const { showError, showSuccess, showWarning } = useToast();
 
     // Use custom hook for card data
     const { card, listings, loading, error } = useSpaceCard(cardId);
@@ -19,7 +21,7 @@ const CardDetailPage = () => {
 
     const handleMint = async () => {
         if (!currentUser) {
-            alert('Please log in to mint cards');
+            showWarning('Please log in to mint cards');
             return;
         }
 
@@ -30,13 +32,13 @@ const CardDetailPage = () => {
                 currentUser.uid,
                 currentUser.displayName || currentUser.email
             );
-            alert('Card minted successfully!');
+            showSuccess('Card minted successfully!');
             // Refresh card data
             const updatedCard = await SpaceCardService.getCard(cardId);
             setCard(updatedCard);
         } catch (error) {
             console.error('Error minting card:', error);
-            alert('Failed to mint card: ' + error.message);
+            showError('Failed to mint card: ' + error.message);
         } finally {
             setMinting(false);
         }
@@ -44,7 +46,7 @@ const CardDetailPage = () => {
 
     const handlePurchase = async (listingId) => {
         if (!currentUser) {
-            alert('Please log in to purchase cards');
+            showWarning('Please log in to purchase cards');
             return;
         }
 
@@ -54,11 +56,11 @@ const CardDetailPage = () => {
                 currentUser.uid,
                 currentUser.displayName || currentUser.email
             );
-            alert('Card purchased successfully!');
+            showSuccess('Card purchased successfully!');
             navigate('/profile/me');
         } catch (error) {
             console.error('Error purchasing card:', error);
-            alert('Failed to purchase card: ' + error.message);
+            showError('Failed to purchase card: ' + error.message);
         }
     };
 

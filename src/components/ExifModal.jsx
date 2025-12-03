@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTimes, FaCamera } from 'react-icons/fa';
+import { formatAperture, formatExifDate } from '../utils/exifUtils';
 
 const ExifModal = ({ exifData, onClose }) => {
     if (!exifData) return null;
@@ -9,10 +10,10 @@ const ExifModal = ({ exifData, onClose }) => {
         { label: 'Model', key: 'model', format: (val) => val },
         { label: 'Lens', key: 'lens', format: (val) => val },
         { label: 'Focal Length', key: 'focalLength', format: (val) => val },
-        { label: 'Aperture', key: 'aperture', format: (val) => `f/${val}` },
+        { label: 'Aperture', key: 'aperture', format: formatAperture },
         { label: 'ISO', key: 'iso', format: (val) => val },
         { label: 'Shutter Speed', key: 'shutterSpeed', format: (val) => val },
-        { label: 'Date Taken', key: 'date', format: (val) => new Date(val).toLocaleDateString() }
+        { label: 'Date Taken', key: 'date', format: formatExifDate }
     ];
 
     const availableFields = exifFields.filter(field => exifData[field.key]);

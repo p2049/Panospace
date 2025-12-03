@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaCamera } from 'react-icons/fa';
 import ManualExifForm from '../ManualExifForm';
+import { formatCameraModel } from '../../utils/exifUtils';
 
 /**
  * ManualExifEditor Component
@@ -39,8 +40,9 @@ const ManualExifEditor = ({
 
             {hasExif && !showManualExif[activeSlideIndex] && (
                 <div className="exif-display">
-                    {(activeSlide.exif?.make || activeSlide.manualExif?.make) && (
-                        <div>{activeSlide.exif?.make || activeSlide.manualExif?.make} {activeSlide.exif?.model || activeSlide.manualExif?.model}</div>
+                    {formatCameraModel(
+                        activeSlide.exif?.make || activeSlide.manualExif?.make,
+                        activeSlide.exif?.model || activeSlide.manualExif?.model
                     )}
                 </div>
             )}

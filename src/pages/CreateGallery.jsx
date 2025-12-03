@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { createGallery } from '../services/galleryService';
 import { FaImage, FaTags, FaMapMarkerAlt, FaLock, FaGlobe, FaArrowLeft } from 'react-icons/fa';
 import { doc, getDoc } from 'firebase/firestore';
@@ -20,6 +21,7 @@ const TESTING_MODE = true;
 const CreateGallery = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const { showError, showSuccess, showWarning } = useToast();
     const [userProfile, setUserProfile] = useState(null);
     const [fetchingProfile, setFetchingProfile] = useState(true);
     const fileInputRef = useRef(null);
@@ -116,13 +118,13 @@ const CreateGallery = () => {
         console.log('Starting gallery creation...');
 
         if (!title.trim()) {
-            alert('Please enter a gallery title');
+            showError('Please enter a gallery title');
             return;
         }
 
         if (!currentUser || !userProfile) {
             console.error('Missing user data:', { currentUser, userProfile });
-            alert('User data missing. Please try refreshing the page.');
+            showError('User data missing. Please try refreshing the page.');
             return;
         }
 
@@ -155,11 +157,11 @@ const CreateGallery = () => {
                 navigate(`/gallery/${gallery.id}`);
             } else {
                 console.error('Gallery created but no ID returned:', gallery);
-                alert('Gallery created but ID missing. Check console.');
+                showWarning('Gallery created but ID missing. Check console.');
             }
         } catch (error) {
             console.error('Error creating gallery:', error);
-            alert(`Failed to create gallery: ${error.message}`);
+            showError(`Failed to create gallery: ${error.message}`);
         } finally {
             setLoading(false);
         }

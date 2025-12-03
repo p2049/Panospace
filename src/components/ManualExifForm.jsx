@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCamera, FaTimes } from 'react-icons/fa';
+import { validateExifData } from '../utils/exifUtils';
 
 /**
  * Manual EXIF Input Form
@@ -51,11 +52,6 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
     if (formData.dateTime) exifData.dateTime = formData.dateTime;
 
     onSave(exifData);
-  };
-
-  const isValid = () => {
-    // At least one field should be filled
-    return Object.values(formData).some(val => val && val.toString().trim() !== '');
   };
 
   return (
@@ -190,7 +186,7 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
         <button
           onClick={handleSave}
           className="exif-btn-primary"
-          disabled={!isValid()}
+          disabled={!validateExifData(formData)}
         >
           Save Camera Data
         </button>

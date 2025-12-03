@@ -1,12 +1,16 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { AnimatePresence } from 'framer-motion';
 import OrientationGuard from './components/OrientationGuard';
 import MobileNavigation from './components/MobileNavigation';
 import ErrorBoundary from './components/ErrorBoundary';
+import MotionWrapper from './components/MotionWrapper';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserCacheProvider } from './context/UserCacheContext';
 import { UIProvider } from './context/UIContext';
+import { ToastProvider } from './context/ToastContext';
+import ToastManager from './components/ToastManager';
 
 // Lazy load pages for performance optimization
 const Login = lazy(() => import('./pages/Login'));
@@ -74,194 +78,209 @@ const PrivateRoute = ({ children }) => {
   return currentUser ? children : <Navigate to="/login" />;
 };
 
+// Animated Routes Component
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/login" element={<MotionWrapper><Login /></MotionWrapper>} />
+        <Route path="/signup" element={<MotionWrapper><Signup /></MotionWrapper>} />
+        <Route path="/legal" element={<MotionWrapper><Legal /></MotionWrapper>} />
+        <Route path="/" element={
+          <PrivateRoute>
+            <MotionWrapper><Feed /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/search" element={
+          <PrivateRoute>
+            <MotionWrapper><Search /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/create" element={
+          <PrivateRoute>
+            <MotionWrapper><CreatePost /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/profile/:id" element={
+          <PrivateRoute>
+            <MotionWrapper><Profile /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/profile" element={<Navigate to="/profile/me" replace />} />
+        <Route path="/edit-profile" element={
+          <PrivateRoute>
+            <MotionWrapper><EditProfile /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/edit-post/:id" element={
+          <PrivateRoute>
+            <MotionWrapper><EditPost /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/post/:id" element={
+          <PrivateRoute>
+            <MotionWrapper><PostDetail /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/success" element={
+          <PrivateRoute>
+            <MotionWrapper><CheckoutSuccess /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/shop" element={
+          <PrivateRoute>
+            <MotionWrapper><Shop /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/shop/setup" element={
+          <PrivateRoute>
+            <MotionWrapper><ShopSetup /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/shop/drafts" element={
+          <PrivateRoute>
+            <MotionWrapper><ShopDrafts /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/shop/:id" element={
+          <PrivateRoute>
+            <MotionWrapper><ShopItemDetail /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/contest" element={
+          <PrivateRoute>
+            <MotionWrapper><Contest /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/collection/:id" element={
+          <PrivateRoute>
+            <MotionWrapper><CollectionDetail /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/create-collection" element={
+          <PrivateRoute>
+            <MotionWrapper><CreateCollection /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/calendar" element={
+          <PrivateRoute>
+            <MotionWrapper><Calendar /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/event/create" element={
+          <PrivateRoute>
+            <MotionWrapper><EventCreator /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/gallery/:type/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
+        <Route path="/gallery/create" element={
+          <PrivateRoute>
+            <MotionWrapper><CreateGallery /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/gallery/:id" element={<MotionWrapper><GalleryDetail /></MotionWrapper>} />
+        <Route path="/parks" element={
+          <PrivateRoute>
+            <MotionWrapper><Parks /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/park/:parkId" element={
+          <PrivateRoute>
+            <MotionWrapper><ParkGallery /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/debug" element={<MotionWrapper><Debug /></MotionWrapper>} />
+        <Route path="/cards/:cardId" element={<MotionWrapper><CardDetailPage /></MotionWrapper>} />
+        <Route path="/marketplace" element={<MotionWrapper><CardMarketplace /></MotionWrapper>} />
+        <Route path="/photodex" element={<MotionWrapper><PhotoDexPage /></MotionWrapper>} />
+        <Route path="/ultra" element={
+          <PrivateRoute>
+            <MotionWrapper><UltraPage /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/museums/:museumId" element={
+          <PrivateRoute>
+            <MotionWrapper><MuseumPage /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/magazine/:id" element={
+          <PrivateRoute>
+            <MotionWrapper><MagazineView /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/magazine/:id/create-issue" element={
+          <PrivateRoute>
+            <MotionWrapper><CreateMagazineIssue /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/magazine/:magazineId/issue/:issueId/curate" element={
+          <PrivateRoute>
+            <MotionWrapper><MagazineCuration /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/commissions" element={
+          <PrivateRoute>
+            <MotionWrapper><CommissionsPage /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/museum/create" element={
+          <PrivateRoute>
+            <MotionWrapper><CreateMuseumPage /></MotionWrapper>
+          </PrivateRoute>
+        } />
+
+        <Route path="/settings" element={
+          <PrivateRoute>
+            <MotionWrapper><Settings /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/notifications" element={
+          <PrivateRoute>
+            <MotionWrapper><Notifications /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/admin/cleanup" element={<PrivateRoute><MotionWrapper><AdminCleanup /></MotionWrapper></PrivateRoute>} />
+        <Route path="/admin" element={<PrivateRoute><MotionWrapper><AdminModeration /></MotionWrapper></PrivateRoute>} />
+        <Route path="/campus" element={<PrivateRoute><MotionWrapper><CampusHub /></MotionWrapper></PrivateRoute>} />
+
+
+        <Route path="/migrate-dates" element={<PrivateRoute><MotionWrapper><MigrateDates /></MotionWrapper></PrivateRoute>} />
+        <Route path="*" element={<MotionWrapper><NotFound /></MotionWrapper>} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
         <UserCacheProvider>
           <UIProvider>
-            <HelmetProvider>
-              <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <OrientationGuard>
-                  <div className="app-container">
-                    <Suspense fallback={<Loading />}>
-                      <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/signup" element={<Signup />} />
-                        <Route path="/legal" element={<Legal />} />
-                        <Route path="/" element={
-                          <PrivateRoute>
-                            <Feed />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/search" element={
-                          <PrivateRoute>
-                            <Search />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/create" element={
-                          <PrivateRoute>
-                            <CreatePost />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/profile/:id" element={
-                          <PrivateRoute>
-                            <Profile />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/profile" element={<Navigate to="/profile/me" replace />} />
-                        <Route path="/edit-profile" element={
-                          <PrivateRoute>
-                            <EditProfile />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/edit-post/:id" element={
-                          <PrivateRoute>
-                            <EditPost />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/post/:id" element={
-                          <PrivateRoute>
-                            <PostDetail />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/success" element={
-                          <PrivateRoute>
-                            <CheckoutSuccess />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/shop" element={
-                          <PrivateRoute>
-                            <Shop />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/shop/setup" element={
-                          <PrivateRoute>
-                            <ShopSetup />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/shop/drafts" element={
-                          <PrivateRoute>
-                            <ShopDrafts />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/shop/:id" element={
-                          <PrivateRoute>
-                            <ShopItemDetail />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/contest" element={
-                          <PrivateRoute>
-                            <Contest />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/collection/:id" element={
-                          <PrivateRoute>
-                            <CollectionDetail />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/create-collection" element={
-                          <PrivateRoute>
-                            <CreateCollection />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/calendar" element={
-                          <PrivateRoute>
-                            <Calendar />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/event/create" element={
-                          <PrivateRoute>
-                            <EventCreator />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/gallery/:type/:tag" element={<AestheticGallery />} />
-                        <Route path="/gallery/create" element={
-                          <PrivateRoute>
-                            <CreateGallery />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/gallery/:id" element={<GalleryDetail />} />
-                        <Route path="/parks" element={
-                          <PrivateRoute>
-                            <Parks />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/park/:parkId" element={
-                          <PrivateRoute>
-                            <ParkGallery />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/debug" element={<Debug />} />
-                        <Route path="/cards/:cardId" element={<CardDetailPage />} />
-                        <Route path="/marketplace" element={<CardMarketplace />} />
-                        <Route path="/photodex" element={<PhotoDexPage />} />
-                        <Route path="/ultra" element={
-                          <PrivateRoute>
-                            <UltraPage />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/museums/:museumId" element={
-                          <PrivateRoute>
-                            <MuseumPage />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/magazine/:id" element={
-                          <PrivateRoute>
-                            <MagazineView />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/magazine/:id/create-issue" element={
-                          <PrivateRoute>
-                            <CreateMagazineIssue />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/magazine/:magazineId/issue/:issueId/curate" element={
-                          <PrivateRoute>
-                            <MagazineCuration />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/commissions" element={
-                          <PrivateRoute>
-                            <CommissionsPage />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/museum/create" element={
-                          <PrivateRoute>
-                            <CreateMuseumPage />
-                          </PrivateRoute>
-                        } />
+            <ToastProvider>
+              <HelmetProvider>
+                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <OrientationGuard>
+                    <div className="app-container">
+                      <Suspense fallback={<Loading />}>
+                        <AnimatedRoutes />
+                      </Suspense>
 
-                        <Route path="/settings" element={
-                          <PrivateRoute>
-                            <Settings />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/notifications" element={
-                          <PrivateRoute>
-                            <Notifications />
-                          </PrivateRoute>
-                        } />
-                        <Route path="/admin/cleanup" element={<PrivateRoute><AdminCleanup /></PrivateRoute>} />
-                        <Route path="/admin" element={<PrivateRoute><AdminModeration /></PrivateRoute>} />
-                        <Route path="/campus" element={<PrivateRoute><CampusHub /></PrivateRoute>} />
-
-
-                        <Route path="/migrate-dates" element={<PrivateRoute><MigrateDates /></PrivateRoute>} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-
-                    <MobileNavigation />
-                  </div>
-                </OrientationGuard>
-              </Router>
-            </HelmetProvider>
+                      <MobileNavigation />
+                    </div>
+                  </OrientationGuard>
+                </Router>
+                <ToastManager />
+              </HelmetProvider>
+            </ToastProvider>
           </UIProvider>
         </UserCacheProvider>
       </AuthProvider>
     </ErrorBoundary>
   );
 }
+
 
 export default App;

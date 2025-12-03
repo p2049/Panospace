@@ -1,5 +1,6 @@
 import { db } from '../firebase';
 import { doc, getDoc, getDocs, addDoc, updateDoc, collection, query, where, orderBy, limit, serverTimestamp } from 'firebase/firestore';
+import { PANODEX_CATEGORIES, PANODEX_UNLOCK_TYPES } from '../constants/tagConfig';
 
 export const PanoDexService = {
     /**
@@ -22,11 +23,11 @@ export const PanoDexService = {
             }
 
             const entryDoc = {
-                type, // 'location', 'challenge', 'audio', 'landmark', 'style'
+                type, // PANODEX_CATEGORIES: 'location', 'challenge', 'audio', 'landmark', 'style'
                 title,
                 imageUrl: imageUrl || null,
                 description: description || '',
-                unlockType: unlockType || 'visit', // 'visit', 'photo', 'audio', 'challenge'
+                unlockType: unlockType || PANODEX_UNLOCK_TYPES.VISIT, // PANODEX_UNLOCK_TYPES: 'visit', 'photo', 'audio', 'challenge'
                 relatedCardId: relatedCardId || null,
                 requirements: requirements || [],
                 createdAt: serverTimestamp(),

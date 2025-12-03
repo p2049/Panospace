@@ -153,15 +153,10 @@ const MobileNavigation = () => {
                     <div onClick={() => handleNavClick('/create')} style={location.pathname === '/create' ? activeNavItemStyle : navItemStyle}>
                         <FaPlusSquare size={20} />
                     </div>
-                    <div
-                        onClick={() => handleNavClick('/notifications')}
-                        style={{
-                            ...navItemStyle,
-                            ...(location.pathname === '/notifications' ? { opacity: 1, color: 'var(--ice-mint, #7FFFD4)', transform: 'scale(1.1)' } : {})
-                        }}
-                    >
-                        <NotificationBadge size={28} />
+                    <div onClick={() => handleNavClick('/profile')} style={location.pathname.startsWith('/profile') ? activeNavItemStyle : navItemStyle}>
+                        <FaUser size={20} />
                     </div>
+
                     <div onClick={() => handleNavClick('/calendar')} style={location.pathname === '/calendar' ? activeNavItemStyle : navItemStyle}>
                         <FaCalendar size={20} />
                     </div>

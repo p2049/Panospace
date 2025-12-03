@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCreatePost } from '../hooks/useCreatePost';
 import { useCollections } from '../hooks/useCollections';
+import { PRINT_TIERS } from '../utils/printPricing';
 
 import ThumbnailStrip from '../components/create-post/ThumbnailStrip';
 import ImageCarousel from '../components/create-post/ImageCarousel';
@@ -16,6 +17,7 @@ import { collection, query, where, orderBy, limit, getDocs } from 'firebase/fire
 import { db } from '../firebase';
 import { SpaceCardService } from '../services/SpaceCardService';
 import PageHeader from '../components/PageHeader';
+import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 
 
 
@@ -388,7 +390,6 @@ const CreatePost = () => {
                             editionSize: spaceCardData.editionSize,
                             linkedPostId: newPostId,
                             basePrice: spaceCardData.price,
-                            basePrice: spaceCardData.price,
                             soundTag: null,
                             isAudioCard: false
                         };
@@ -402,7 +403,7 @@ const CreatePost = () => {
                 }
             }
 
-            alert('Post created successfully!');
+            // Navigate directly to feed without alert
             navigate('/');
         } catch (err) {
             console.error('Error creating post:', err);

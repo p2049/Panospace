@@ -14,8 +14,12 @@ import SoundTagBadge from './SoundTagBadge';
 import { useUI } from '../context/UIContext';
 import '../styles/Post.css';
 
+import { formatExifForDisplay } from '../utils/exifUtils';
+
 const ExifDisplay = ({ exif }) => {
-    if (!exif) return null;
+    const displayData = formatExifForDisplay(exif);
+    if (!displayData) return null;
+
     return (
         <div style={{
             position: 'absolute',
@@ -37,15 +41,14 @@ const ExifDisplay = ({ exif }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 'bold', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
                 <FaCamera /> Photography Data
             </div>
-            {exif.make && <div><strong>Camera:</strong> {exif.make} {exif.model}</div>}
-            {exif.lens && <div><strong>Lens:</strong> {exif.lens}</div>}
+            {displayData.camera && <div><strong>Camera:</strong> {displayData.camera}</div>}
+            {displayData.lens && <div><strong>Lens:</strong> {displayData.lens}</div>}
             <div style={{ display: 'flex', gap: '1rem' }}>
-                {exif.focalLength && <div>{exif.focalLength}</div>}
-                {exif.aperture && <div>f/{exif.aperture}</div>}
-                {exif.iso && <div>ISO {exif.iso}</div>}
-                {exif.shutterSpeed && <div>{exif.shutterSpeed}s</div>}
+                {displayData.specs.map((spec, i) => (
+                    <div key={i}>{spec}</div>
+                ))}
             </div>
-            {exif.date && <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>{exif.date}</div>}
+            {displayData.date && <div style={{ fontSize: '0.7rem', opacity: 0.7 }}>{displayData.date}</div>}
         </div>
     );
 };
@@ -206,15 +209,13 @@ const Post = ({ post }) => {
                 /* SINGLE IMAGE VIEW - NO FILM STRIP */
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', position: 'relative' }}>
                     {items[0].url || (typeof items[0] === 'string' && items[0].match(/^http/)) ? (
-                        <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                             <img
                                 src={items[0].url || items[0]}
                                 alt="Post content"
                                 style={{
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
-                                    width: 'auto',
-                                    height: 'auto',
+                                    width: '100%',
+                                    height: '100%',
                                     objectFit: 'contain',
                                     display: 'block'
                                 }}
@@ -247,15 +248,13 @@ const Post = ({ post }) => {
 
                     {/* Current slide image */}
                     {items[currentSlide].url || (typeof items[currentSlide] === 'string' && items[currentSlide].match(/^http/)) ? (
-                        <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', maxHeight: '100%' }}>
+                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                             <img
                                 src={items[currentSlide].url || items[currentSlide]}
                                 alt={`Slide ${currentSlide + 1}`}
                                 style={{
-                                    maxWidth: '100%',
-                                    maxHeight: '100%',
-                                    width: 'auto',
-                                    height: 'auto',
+                                    width: '100%',
+                                    height: '100%',
                                     objectFit: 'contain',
                                     display: 'block'
                                 }}

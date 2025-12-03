@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useEventSystem } from '../hooks/useEventSystem';
 import { FaCalendarAlt, FaClock, FaTrophy, FaLock, FaGlobe, FaInfoCircle, FaDollarSign, FaGem, FaHashtag, FaTimes } from 'react-icons/fa';
 
@@ -8,6 +9,7 @@ const EventCreator = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const { showError, showWarning } = useToast();
     const { createEvent, generateUniqueTagSet, loading } = useEventSystem();
 
     // Generate stars once and memoize them
@@ -105,7 +107,7 @@ const EventCreator = () => {
             setRequiredTags(uniqueTags);
             setTagInput('');
         } catch (error) {
-            alert("Error checking tag availability");
+            showError("Error checking tag availability");
         } finally {
             setIsGeneratingTag(false);
         }
@@ -117,11 +119,11 @@ const EventCreator = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title || !startTime) return alert("Title and Start Time are required.");
-        if (!expiresAt) return alert("End Time is required.");
-        if (isTimedDrop && !dropTime) return alert("Drop Time is required for Timed Drops.");
-        if (isPayToEnter && entryFee < 1) return alert("Entry fee must be at least $1.");
-        if (requiredTags.length === 0) return alert("At least one unique event tag is required.");
+        if (!title || !startTime) { showError("Title and Start Time are required."); return; }
+        if (!expiresAt) { showError("End Time is required."); return; }
+        if (isTimedDrop && !dropTime) { showError("Drop Time is required for Timed Drops."); return; }
+        if (isPayToEnter && entryFee < 1) { showError("Entry fee must be at least $1."); return; }
+        if (requiredTags.length === 0) { showError("At least one unique event tag is required."); return; }
 
         try {
             const eventData = {
@@ -162,7 +164,7 @@ const EventCreator = () => {
             const result = await createEvent(eventData, currentUser);
             navigate(`/events/${result.id}`);
         } catch (err) {
-            alert("Failed to create event: " + err.message);
+            showError("Failed to create event: " + err.message);
         }
     };
 
@@ -228,10 +230,6 @@ const EventCreator = () => {
                                     padding: '1rem',
                                     background: eventType === 'contest' ? 'rgba(127, 255, 212, 0.1)' : '#111',
                                     border: eventType === 'contest' ? '1px solid #7FFFD4' : '1px solid #333',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    background: eventType === 'prompt' ? 'rgba(127, 255, 212, 0.1)' : '#111',
-                                    border: eventType === 'prompt' ? '1px solid #7FFFD4' : '1px solid #333',
                                     borderRadius: '8px',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s'

@@ -373,7 +373,8 @@ const CollectionDetail = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.9)',
+                    background: 'rgba(0, 0, 0, 0.92)',
+                    backdropFilter: 'blur(8px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -381,14 +382,16 @@ const CollectionDetail = () => {
                     padding: '1rem'
                 }}>
                     <div style={{
-                        background: '#111',
+                        background: 'linear-gradient(135deg, rgba(17,17,17,0.98), rgba(10,10,10,0.99))',
+                        backdropFilter: 'blur(20px)',
                         borderRadius: '12px',
                         maxWidth: '600px',
                         width: '100%',
                         maxHeight: '80vh',
                         overflow: 'auto',
-                        border: '1px solid #333',
-                        padding: '2rem'
+                        border: '1px solid rgba(127, 255, 212, 0.15)',
+                        padding: '2rem',
+                        boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(127, 255, 212, 0.1)'
                     }}>
                         <h2 style={{ marginBottom: '1.5rem' }}>Add Post to Collection</h2>
 

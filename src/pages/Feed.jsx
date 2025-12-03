@@ -48,7 +48,7 @@ const Feed = () => {
                 pointerEvents: 'auto',
                 display: 'flex',
                 alignItems: 'center',
-                height: '40px' // Ensure consistent height container
+                height: '40px', // Ensure consistent height container
             }}>
                 <svg
                     width="40"

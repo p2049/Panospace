@@ -15,7 +15,7 @@ service firebase.storage {
                      request.resource.contentType.matches('image/.*');
     }
     
-    // Profile photos - AUTH REQUIRED TO READ (user privacy)
+    // Profile photos - PUBLIC READ
     match /profile_photos/{userId}/{allPaths=**} {
       // Public read for profile photos (avatars are public identity)
       allow read: if true;
@@ -26,6 +26,80 @@ service firebase.storage {
                      request.auth.uid == userId &&
                      request.resource.size < 5 * 1024 * 1024 &&  // 5MB limit
                      request.resource.contentType.matches('image/.*');
+    }
+    
+    // Space Cards - PUBLIC READ
+    match /spacecards/{userId}/{allPaths=**} {
+      // Public read for space cards
+      allow read: if true;
+      
+      // Users can only upload their own space cards
+      // Validate file size (max 10MB) and type (images only)
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Shop Items - PUBLIC READ
+    match /shopItems/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Banners - PUBLIC READ
+    match /banners/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Badges - PUBLIC READ
+    match /badges/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 5 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Collections - PUBLIC READ
+    match /collections/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Magazines - PUBLIC READ
+    match /magazines/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // Museums - PUBLIC READ
+    match /museums/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+    
+    // TEMPORARY: Catch-all rule for debugging
+    // TODO: Remove this once the issue is resolved
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }

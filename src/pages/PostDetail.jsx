@@ -127,8 +127,9 @@ const PostDetail = () => {
                     top: '20px',
                     left: '20px',
                     zIndex: 50,
-                    background: 'rgba(0,0,0,0.5)',
-                    border: 'none',
+                    background: 'linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.5))',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(127, 255, 212, 0.2)',
                     borderRadius: '50%',
                     width: '40px',
                     height: '40px',
@@ -137,7 +138,7 @@ const PostDetail = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    backdropFilter: 'blur(5px)'
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4), 0 0 0 1px rgba(127, 255, 212, 0.1)'
                 }}
             >
                 <FaArrowLeft />

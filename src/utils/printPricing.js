@@ -30,6 +30,8 @@ export const PRINT_SIZES = [
         label: '5" × 7"',
         tier: 'small',
         ratio: 1.4, // 7/5
+        price: 12.00,
+        baseCostCents: 500,
         economy: {
             baseCost: 5.00, // Estimated based on 8x10 ratio
             redbubblePrice: 12.00
@@ -44,6 +46,8 @@ export const PRINT_SIZES = [
         label: '8" × 10"',
         tier: 'small',
         ratio: 1.25,
+        price: 14.40,
+        baseCostCents: 650,
         economy: {
             baseCost: 6.50,
             redbubblePrice: 16.00
@@ -58,6 +62,8 @@ export const PRINT_SIZES = [
         label: '11" × 14"',
         tier: 'small',
         ratio: 1.27,
+        price: 19.80,
+        baseCostCents: 850,
         economy: {
             baseCost: 8.50,
             redbubblePrice: 22.00
@@ -72,6 +78,8 @@ export const PRINT_SIZES = [
         label: '12" × 18"',
         tier: 'medium',
         ratio: 1.5,
+        price: 25.20,
+        baseCostCents: 1000,
         economy: {
             baseCost: 10.00,
             redbubblePrice: 28.00
@@ -86,6 +94,8 @@ export const PRINT_SIZES = [
         label: '16" × 20"',
         tier: 'medium',
         ratio: 1.25,
+        price: 28.80,
+        baseCostCents: 1200,
         economy: {
             baseCost: 12.00,
             redbubblePrice: 32.00
@@ -100,6 +110,8 @@ export const PRINT_SIZES = [
         label: '18" × 24"',
         tier: 'medium',
         ratio: 1.33,
+        price: 37.80,
+        baseCostCents: 1450,
         economy: {
             baseCost: 14.50,
             redbubblePrice: 42.00
@@ -114,6 +126,8 @@ export const PRINT_SIZES = [
         label: '24" × 36"',
         tier: 'large',
         ratio: 1.5,
+        price: 52.20,
+        baseCostCents: 2200,
         economy: {
             baseCost: 22.00,
             redbubblePrice: 58.00
@@ -122,6 +136,147 @@ export const PRINT_SIZES = [
             baseCost: 42.00,
             redbubblePrice: 95.00
         }
+    },
+    // Merged from config/printSizes.js
+    {
+        id: '4x6',
+        label: '4" × 6"',
+        tier: 'small',
+        ratio: 1.5,
+        price: 14.99,
+        baseCostCents: 800,
+        economy: { baseCost: 8.00, redbubblePrice: 16.65 },
+        premium: { baseCost: 12.00, redbubblePrice: 24.00 }
+    },
+    {
+        id: '8x12',
+        label: '8" × 12"',
+        tier: 'small',
+        ratio: 1.5,
+        price: 26.99,
+        baseCostCents: 1400,
+        economy: { baseCost: 14.00, redbubblePrice: 29.99 },
+        premium: { baseCost: 18.00, redbubblePrice: 39.99 }
+    },
+    {
+        id: '20x30',
+        label: '20" × 30"',
+        tier: 'large',
+        ratio: 1.5,
+        price: 74.99,
+        baseCostCents: 3200,
+        economy: { baseCost: 32.00, redbubblePrice: 83.32 },
+        premium: { baseCost: 48.00, redbubblePrice: 110.00 }
+    },
+    {
+        id: '6x8',
+        label: '6" × 8"',
+        tier: 'small',
+        ratio: 1.33,
+        price: 19.99,
+        baseCostCents: 1000,
+        economy: { baseCost: 10.00, redbubblePrice: 22.21 },
+        premium: { baseCost: 15.00, redbubblePrice: 30.00 }
+    },
+    {
+        id: '9x12',
+        label: '9" × 12"',
+        tier: 'small',
+        ratio: 1.33,
+        price: 29.99,
+        baseCostCents: 1500,
+        economy: { baseCost: 15.00, redbubblePrice: 33.32 },
+        premium: { baseCost: 20.00, redbubblePrice: 45.00 }
+    },
+    {
+        id: '12x16',
+        label: '12" × 16"',
+        tier: 'medium',
+        ratio: 1.33,
+        price: 39.99,
+        baseCostCents: 1900,
+        economy: { baseCost: 19.00, redbubblePrice: 44.43 },
+        premium: { baseCost: 28.00, redbubblePrice: 60.00 }
+    },
+    {
+        id: '8x8',
+        label: '8" × 8"',
+        tier: 'small',
+        ratio: 1.0,
+        price: 22.99,
+        baseCostCents: 1100,
+        economy: { baseCost: 11.00, redbubblePrice: 25.54 },
+        premium: { baseCost: 16.00, redbubblePrice: 35.00 }
+    },
+    {
+        id: '10x10',
+        label: '10" × 10"',
+        tier: 'small',
+        ratio: 1.0,
+        price: 26.99,
+        baseCostCents: 1300,
+        economy: { baseCost: 13.00, redbubblePrice: 29.99 },
+        premium: { baseCost: 19.00, redbubblePrice: 40.00 }
+    },
+    {
+        id: '12x12',
+        label: '12" × 12"',
+        tier: 'medium',
+        ratio: 1.0,
+        price: 34.99,
+        baseCostCents: 1700,
+        economy: { baseCost: 17.00, redbubblePrice: 38.88 },
+        premium: { baseCost: 25.00, redbubblePrice: 55.00 }
+    },
+    {
+        id: '16x16',
+        label: '16" × 16"',
+        tier: 'medium',
+        ratio: 1.0,
+        price: 49.99,
+        baseCostCents: 2300,
+        economy: { baseCost: 23.00, redbubblePrice: 55.54 },
+        premium: { baseCost: 34.00, redbubblePrice: 75.00 }
+    },
+    {
+        id: '20x20',
+        label: '20" × 20"',
+        tier: 'large',
+        ratio: 1.0,
+        price: 64.99,
+        baseCostCents: 3000,
+        economy: { baseCost: 30.00, redbubblePrice: 72.21 },
+        premium: { baseCost: 45.00, redbubblePrice: 95.00 }
+    },
+    {
+        id: '8x14',
+        label: '8" × 14"',
+        tier: 'small',
+        ratio: 1.78,
+        price: 29.99,
+        baseCostCents: 1500,
+        economy: { baseCost: 15.00, redbubblePrice: 33.32 },
+        premium: { baseCost: 22.00, redbubblePrice: 45.00 }
+    },
+    {
+        id: '12x21',
+        label: '12" × 21"',
+        tier: 'medium',
+        ratio: 1.78,
+        price: 46.99,
+        baseCostCents: 2100,
+        economy: { baseCost: 21.00, redbubblePrice: 52.21 },
+        premium: { baseCost: 31.00, redbubblePrice: 70.00 }
+    },
+    {
+        id: '16x28',
+        label: '16" × 28"',
+        tier: 'large',
+        ratio: 1.78,
+        price: 64.99,
+        baseCostCents: 2900,
+        economy: { baseCost: 29.00, redbubblePrice: 72.21 },
+        premium: { baseCost: 43.00, redbubblePrice: 95.00 }
     }
 ];
 
@@ -451,13 +606,43 @@ export const applyPrintifyMargins = (baseCost) => {
 export const centsToDollars = (cents) => Number((cents || 0) / 100);
 export const dollarsToCents = (dollars) => Math.round(dollars * 100);
 
-// Legacy compatibility wrapper
-export const calculateEarnings = (retailPrice, baseCost = 0) => {
+/**
+ * Calculate earnings split for a given retail price
+ * Supports legacy (price, baseCost) and new (price, sizeId, isUltra) signatures
+ */
+export const calculateEarnings = (retailPrice, sizeIdOrBaseCost = null, isUltra = false) => {
+    const totalCents = Math.round(Number(retailPrice || 0) * 100);
+    let baseCostCents = 1500; // Default fallback
+
+    if (typeof sizeIdOrBaseCost === 'number') {
+        // Legacy: second arg is baseCost in dollars
+        baseCostCents = Math.round(sizeIdOrBaseCost * 100);
+    } else if (typeof sizeIdOrBaseCost === 'string') {
+        // New: second arg is sizeId
+        const size = PRINT_SIZES.find(s => s.id === sizeIdOrBaseCost);
+        if (size) {
+            if (size.baseCostCents) {
+                baseCostCents = size.baseCostCents;
+            } else if (size.economy && size.economy.baseCost) {
+                baseCostCents = Math.round(size.economy.baseCost * 100);
+            }
+        }
+    }
+
+    const profitCents = Math.max(0, totalCents - baseCostCents);
+    const artistShare = isUltra ? 0.75 : 0.60;
+    const platformShare = 1 - artistShare;
+
+    const artistEarningsCents = Math.round(profitCents * artistShare);
+    const platformCutCents = Math.round(profitCents * platformShare);
+
     return {
-        artistEarnings: 0,
-        platformEarnings: 0,
-        artistEarningsCents: 0,
-        platformCutCents: 0
+        artistEarningsCents,
+        platformCutCents,
+        totalCents,
+        // Legacy compatibility
+        artistEarnings: artistEarningsCents / 100,
+        platformEarnings: platformCutCents / 100
     };
 };
 
@@ -499,3 +684,8 @@ export const getValidSizesForImage = (width, height, allowCropped = false) => {
 
     return validSizes.length > 0 ? validSizes : PRINT_SIZES;
 };
+
+export const ESTIMATED_BASE_COSTS = PRINT_SIZES.reduce((acc, size) => {
+    acc[size.id] = size.baseCostCents;
+    return acc;
+}, {});

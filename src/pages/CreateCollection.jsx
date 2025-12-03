@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { useCreateCollection } from '../hooks/useCollections';
@@ -26,6 +27,7 @@ import SubmitBar from '../components/create-collection/SubmitBar';
 const CreateCollection = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
+    const { showError, showSuccess } = useToast();
     const { createCollection, loading: creating } = useCreateCollection();
     const fileInputRef = useRef(null);
 
@@ -125,7 +127,7 @@ const CreateCollection = () => {
         console.log('[CreateCollection] handleSubmit called');
 
         if (!title.trim()) {
-            alert(`Please enter a ${creationMode} title`);
+            showError(`Please enter a ${creationMode} title`);
             return;
         }
 
@@ -171,7 +173,7 @@ const CreateCollection = () => {
                 return;
             } catch (err) {
                 console.error('[CreateCollection] Error creating magazine:', err);
-                alert(`Failed to create magazine: ${err.message}`);
+                showError(`Failed to create magazine: ${err.message}`);
             } finally {
                 setUploading(false);
             }
@@ -218,7 +220,7 @@ const CreateCollection = () => {
                 return;
             } catch (err) {
                 console.error('[CreateCollection] Error creating museum:', err);
-                alert(`Failed to create museum: ${err.message}`);
+                showError(`Failed to create museum: ${err.message}`);
             } finally {
                 setUploading(false);
             }
@@ -227,7 +229,7 @@ const CreateCollection = () => {
 
         // Collection/Gallery mode - images required
         if (images.length === 0) {
-            alert('Please add at least 1 image to your collection (max 10)');
+            showError('Please add at least 1 image to your collection (max 10)');
             return;
         }
 
@@ -291,7 +293,7 @@ const CreateCollection = () => {
             navigate(`/collection/${newCollection.id}`);
         } catch (err) {
             console.error('[CreateCollection] Error:', err);
-            alert(`Failed to create collection: ${err.message}`);
+            showError(`Failed to create collection: ${err.message}`);
         } finally {
             setUploading(false);
         }

@@ -62,36 +62,69 @@ const CreateMagazineIssue = () => {
         const remainingSlots = maxSlides - slides.length;
         const filesToAdd = files.slice(0, remainingSlots);
 
-        const newSlides = await Promise.all(
-            filesToAdd.map(async (file) => {
-                const preview = URL.createObjectURL(file);
+        const validSlides = [];
+        const errors = [];
 
-                // Check aspect ratio
-                const img = new Image();
-                img.src = preview;
-                await new Promise(resolve => { img.onload = resolve; });
+        for (const file of filesToAdd) {
+            const preview = URL.createObjectURL(file);
 
-                const aspectRatio = img.width / img.height;
-                const expectedRatio = MAGAZINE_CONFIG.ASPECT_RATIO;
-                const tolerance = 0.05;
+            // Check aspect ratio
+            const img = new Image();
+            img.src = preview;
+            await new Promise(resolve => { img.onload = resolve; });
 
-                if (Math.abs(aspectRatio - expectedRatio) > tolerance) {
-                    console.warn(`Image ${file.name} has incorrect aspect ratio: ${aspectRatio.toFixed(2)} (expected ${expectedRatio.toFixed(2)})`);
-                }
+            const aspectRatio = img.width / img.height;
+            const expectedRatio = MAGAZINE_CONFIG.ASPECT_RATIO;
+            const tolerance = 0.05;
 
-                return {
-                    file,
-                    preview,
-                    caption: '',
-                    aspectRatio,
-                    width: img.width,
-                    height: img.height,
-                    order: slides.length + filesToAdd.indexOf(file)
-                };
-            })
-        );
+            // VALIDATION: Block submission if aspect ratio is incorrect beyond tolerance
+            if (Math.abs(aspectRatio - expectedRatio) > tolerance) {
+                errors.push(`"${file.name}" has incorrect aspect ratio ${aspectRatio.toFixed(2)} (expected ${expectedRatio.toFixed(2)} ± ${tolerance})`);
+                URL.revokeObjectURL(preview);
+                continue;
+            }
 
-        setSlides(prev => [...prev, ...newSlides]);
+            // VALIDATION: Prevent submitting identical slide twice (check file name and size)
+            const isDuplicate = slides.some(existingSlide =>
+                existingSlide.file.name === file.name &&
+                existingSlide.file.size === file.size
+            );
+
+            if (isDuplicate) {
+                errors.push(`"${file.name}" is already added to this issue`);
+                URL.revokeObjectURL(preview);
+                continue;
+            }
+
+            // VALIDATION: Add preview dimension warnings
+            const warnings = [];
+            if (img.width < 2550 || img.height < 3300) {
+                warnings.push(`Low resolution (${img.width}×${img.height}px). Recommended: 2550×3300px or higher for print quality`);
+            }
+            if (img.width > 8500 || img.height > 11000) {
+                warnings.push(`Very large file (${img.width}×${img.height}px). May cause slow upload`);
+            }
+
+            validSlides.push({
+                file,
+                preview,
+                caption: '',
+                aspectRatio,
+                width: img.width,
+                height: img.height,
+                order: slides.length + validSlides.length,
+                warnings
+            });
+        }
+
+        // Show specific error toasts
+        if (errors.length > 0) {
+            alert(`Could not add ${errors.length} file(s):\n\n${errors.join('\n')}`);
+        }
+
+        if (validSlides.length > 0) {
+            setSlides(prev => [...prev, ...validSlides]);
+        }
     };
 
     const removeSlide = (index) => {
@@ -105,12 +138,19 @@ const CreateMagazineIssue = () => {
     const handleDragEnd = (result) => {
         if (!result.destination) return;
 
+        // SAFETY: Ensure drag-drop reordering updates order correctly
+        if (result.source.index === result.destination.index) return;
+
         const items = Array.from(slides);
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
 
-        // Update order
-        const reorderedSlides = items.map((slide, index) => ({ ...slide, order: index }));
+        // SAFETY: Explicitly update order property to match new index
+        const reorderedSlides = items.map((slide, index) => ({
+            ...slide,
+            order: index
+        }));
+
         setSlides(reorderedSlides);
     };
 
@@ -120,13 +160,42 @@ const CreateMagazineIssue = () => {
         const minSlides = includeCover ? MAGAZINE_CONFIG.MIN_SLIDES + 1 : MAGAZINE_CONFIG.MIN_SLIDES;
         const maxSlides = includeCover ? MAGAZINE_CONFIG.MAX_SLIDES + 1 : MAGAZINE_CONFIG.MAX_SLIDES;
 
+        // VALIDATION: More specific error messages
         if (slides.length < minSlides) {
-            alert(`Please add at least ${minSlides} slides (including ${includeCover ? 'cover' : 'no cover'})`);
+            alert(`❌ Not enough slides\n\nYou have ${slides.length} slide${slides.length !== 1 ? 's' : ''}, but need at least ${minSlides} slides${includeCover ? ' (including cover)' : ''}.\n\nPlease add ${minSlides - slides.length} more slide${minSlides - slides.length !== 1 ? 's' : ''}.`);
             return;
         }
 
         if (slides.length > maxSlides) {
-            alert(`Maximum ${maxSlides} slides allowed (including ${includeCover ? 'cover' : 'no cover'})`);
+            alert(`❌ Too many slides\n\nYou have ${slides.length} slides, but the maximum is ${maxSlides} slides${includeCover ? ' (including cover)' : ''}.\n\nPlease remove ${slides.length - maxSlides} slide${slides.length - maxSlides !== 1 ? 's' : ''}.`);
+            return;
+        }
+
+        // VALIDATION: Final aspect ratio check before submission
+        const expectedRatio = MAGAZINE_CONFIG.ASPECT_RATIO;
+        const tolerance = 0.05;
+        const invalidSlides = slides.filter(slide =>
+            Math.abs(slide.aspectRatio - expectedRatio) > tolerance
+        );
+
+        if (invalidSlides.length > 0) {
+            alert(`❌ Invalid aspect ratios detected\n\n${invalidSlides.length} slide${invalidSlides.length !== 1 ? 's have' : ' has'} incorrect aspect ratio.\n\nExpected: ${expectedRatio.toFixed(2)} (8.5" × 11")\nTolerance: ±${tolerance}\n\nPlease remove or replace the invalid slide${invalidSlides.length !== 1 ? 's' : ''}.`);
+            return;
+        }
+
+        // VALIDATION: Check for duplicate slides before submission
+        const duplicates = [];
+        for (let i = 0; i < slides.length; i++) {
+            for (let j = i + 1; j < slides.length; j++) {
+                if (slides[i].file.name === slides[j].file.name &&
+                    slides[i].file.size === slides[j].file.size) {
+                    duplicates.push(slides[i].file.name);
+                }
+            }
+        }
+
+        if (duplicates.length > 0) {
+            alert(`❌ Duplicate slides detected\n\nThe following file${duplicates.length !== 1 ? 's are' : ' is'} added multiple times:\n\n${duplicates.join('\n')}\n\nPlease remove duplicate${duplicates.length !== 1 ? 's' : ''}.`);
             return;
         }
 
@@ -175,7 +244,16 @@ const CreateMagazineIssue = () => {
             navigate(`/magazine/${magazineId}`);
         } catch (err) {
             console.error('Error creating issue:', err);
-            alert(`Failed to create issue: ${err.message}`);
+            // More specific error toast
+            const errorMessage = err.code === 'storage/unauthorized'
+                ? 'Upload failed: Permission denied. Please check your authentication.'
+                : err.code === 'storage/quota-exceeded'
+                    ? 'Upload failed: Storage quota exceeded. Please contact support.'
+                    : err.code === 'storage/canceled'
+                        ? 'Upload canceled by user.'
+                        : `Failed to create issue: ${err.message || 'Unknown error occurred'}`;
+
+            alert(`❌ ${errorMessage}`);
         } finally {
             setUploading(false);
         }
@@ -368,6 +446,24 @@ const CreateMagazineIssue = () => {
                                                                 fontSize: '0.9rem'
                                                             }}
                                                         />
+                                                        {/* VALIDATION: Display dimension warnings */}
+                                                        {slide.warnings && slide.warnings.length > 0 && (
+                                                            <div style={{ marginTop: '0.5rem' }}>
+                                                                {slide.warnings.map((warning, wIndex) => (
+                                                                    <div key={wIndex} style={{
+                                                                        fontSize: '0.75rem',
+                                                                        color: '#ffa500',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.25rem',
+                                                                        marginTop: '0.25rem'
+                                                                    }}>
+                                                                        <span>⚠️</span>
+                                                                        <span>{warning}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     <button

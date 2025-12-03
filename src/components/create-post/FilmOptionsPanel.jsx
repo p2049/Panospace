@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaMagic } from 'react-icons/fa';
 import { FILM_STOCKS, FILM_FORMATS, COMMON_FILM_ISOS } from '../../constants/filmStocks';
+import { generateQuartzDateString, QUARTZ_DATE_FORMATS } from '../../utils/exifUtils';
 
 /**
  * FilmOptionsPanel Component
@@ -196,36 +197,23 @@ const FilmOptionsPanel = ({
                                         </div>
                                         <div style={{ marginTop: '0.5rem' }}>
                                             <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '0.25rem' }}>Date Format:</label>
+
+
                                             <select
                                                 value={quartzDateFormat}
                                                 onChange={(e) => {
                                                     const newFormat = e.target.value;
                                                     setQuartzDateFormat(newFormat);
                                                     // Auto-update the text string based on format
-                                                    const today = new Date();
-                                                    const d = String(today.getDate()).padStart(2, '0');
-                                                    const m = String(today.getMonth() + 1).padStart(2, '0');
-                                                    const y = String(today.getFullYear()).slice(2);
-
-                                                    let newText = '';
-                                                    if (newFormat === 'YY.MM.DD') newText = `${y}.${m}.${d}`;
-                                                    else if (newFormat === 'MM.DD.YY') newText = `${m}.${d}.${y}`;
-                                                    else if (newFormat === 'DD.MM.YY') newText = `${d}.${m}.${y}`;
-                                                    else if (newFormat === "DD MM 'YY") newText = `${today.getDate()} ${today.getMonth() + 1} '${y}`;
-                                                    else if (newFormat === "MM DD 'YY") newText = `${today.getMonth() + 1} ${today.getDate()} '${y}`;
-                                                    else if (newFormat === "YY MM DD") newText = `${y} ${m} ${d}`;
-
+                                                    const newText = generateQuartzDateString(newFormat);
                                                     setQuartzDateString(newText);
                                                 }}
                                                 className="form-input"
                                                 style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%' }}
                                             >
-                                                <option value="MM DD 'YY">MM DD 'YY (US Classic - Default)</option>
-                                                <option value="YY.MM.DD">YY.MM.DD</option>
-                                                <option value="MM.DD.YY">MM.DD.YY (US)</option>
-                                                <option value="DD.MM.YY">DD.MM.YY (EU)</option>
-                                                <option value="DD MM 'YY">DD MM 'YY (Classic)</option>
-                                                <option value="YY MM DD">YY MM DD (Classic)</option>
+                                                {QUARTZ_DATE_FORMATS.map(fmt => (
+                                                    <option key={fmt.value} value={fmt.value}>{fmt.label}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>

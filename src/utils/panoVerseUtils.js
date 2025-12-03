@@ -3,6 +3,8 @@
  * Rarity calculation, value scoring, and card management
  */
 
+import { ANIMAL_KEYWORDS } from '../constants/tagConfig';
+
 /**
  * Calculate rarity based on edition size and value score
  */
@@ -73,7 +75,7 @@ export function getCategoryTags(post) {
 
     // Check tags for animals/nature
     const tags = (post.tags || []).map(t => t.toLowerCase());
-    const animalKeywords = ['animal', 'wildlife', 'bird', 'deer', 'bear', 'fox', 'wolf'];
+    const animalKeywords = ANIMAL_KEYWORDS.map(kw => kw.toLowerCase());
     const natureKeywords = ['nature', 'landscape', 'mountain', 'forest', 'ocean', 'lake'];
 
     if (tags.some(tag => animalKeywords.some(kw => tag.includes(kw)))) {

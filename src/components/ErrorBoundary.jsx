@@ -108,20 +108,43 @@ class ErrorBoundary extends React.Component {
                         zIndex: 1
                     }}>
                         {/* Error Icon */}
+                        {/* Error Icon - Red Planet */}
                         <div style={{
                             width: '120px',
                             height: '120px',
                             margin: '0 auto 2rem',
-                            background: 'rgba(255, 68, 68, 0.1)',
-                            border: '2px solid rgba(255, 68, 68, 0.3)',
-                            borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '4rem',
-                            animation: 'pulse 2s ease-in-out infinite'
+                            animation: 'pulse 3s ease-in-out infinite'
                         }}>
-                            ⚠️
+                            <svg
+                                width="120"
+                                height="120"
+                                viewBox="-5 -5 34 34"
+                                style={{
+                                    filter: 'drop-shadow(0 0 15px rgba(255, 68, 68, 0.4))',
+                                    overflow: 'visible'
+                                }}
+                            >
+                                <defs>
+                                    <radialGradient id="errorPlanetGradient" cx="40%" cy="40%">
+                                        <stop offset="0%" style={{ stopColor: '#FF4444', stopOpacity: 1 }} />
+                                        <stop offset="100%" style={{ stopColor: '#CC0000', stopOpacity: 1 }} />
+                                    </radialGradient>
+                                    <filter id="errorPlanetGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                        <feMerge>
+                                            <feMergeNode in="coloredBlur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke="#FF4444" strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
+                                <circle cx="12" cy="12" r="7" fill="url(#errorPlanetGradient)" opacity="0.95" filter="url(#errorPlanetGlow)" />
+                                <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke="#FF4444" strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
+                                <circle cx="12" cy="12" r="7" fill="none" stroke="#FF4444" strokeWidth="0.5" opacity="0.3" />
+                            </svg>
                         </div>
                         <style>{`
                             @keyframes pulse {

@@ -1,33 +1,36 @@
-import { aestheticTags, styleTags, subjectTags, locationTags, natureTypeTags, technicalTags, gearTags, eventTags, filmTags } from '../data/defaultTags';
+/**
+ * Tag Categories Configuration
+ * Re-exports and extends centralized tagConfig.js
+ */
+
+import {
+    aestheticTags,
+    styleTags,
+    subjectTags,
+    locationTags,
+    natureTypeTags,
+    technicalTags,
+    gearTags,
+    eventTags,
+    filmTags,
+    ALL_TAGS,
+    tagCategories
+} from './tagConfig';
 
 // Export individual tag arrays for direct use
-export { aestheticTags, styleTags, subjectTags, locationTags, natureTypeTags, technicalTags, gearTags, eventTags, filmTags };
-
-// Tag categories object mapping
-export const tagCategories = {
-    aesthetic: aestheticTags,
-    style: styleTags,
-    subject: subjectTags,
-    location: locationTags,
-    nature: natureTypeTags,
-    technical: technicalTags,
-    gear: gearTags,
-    events: eventTags,
-    film: filmTags
+export {
+    aestheticTags,
+    styleTags,
+    subjectTags,
+    locationTags,
+    natureTypeTags,
+    technicalTags,
+    gearTags,
+    eventTags,
+    filmTags,
+    ALL_TAGS,
+    tagCategories
 };
-
-// All tags combined
-export const ALL_TAGS = [
-    ...aestheticTags,
-    ...styleTags,
-    ...subjectTags,
-    ...locationTags,
-    ...natureTypeTags,
-    ...technicalTags,
-    ...gearTags,
-    ...eventTags,
-    ...filmTags
-];
 
 // TAG_CATEGORIES for Search UI (with metadata)
 export const TAG_CATEGORIES = {

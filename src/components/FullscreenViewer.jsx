@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaInfoCircle, FaCamera } from 'react-icons/fa';
+import { formatExifForDisplay } from '../utils/exifUtils';
 
 const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -77,6 +78,7 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
     const currentItem = items[currentSlide] || {};
     const imageUrl = currentItem.url || post?.images?.[0]?.url || post.imageUrl || post.shopImageUrl || '';
     const exif = currentItem.exif;
+    const displayExif = exif ? formatExifForDisplay(exif) : null;
 
     return (
         <div
@@ -150,48 +152,30 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
                     )}
 
                     {/* EXIF Data */}
-                    {exif && (
+                    {displayExif && (
                         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#fff', fontWeight: 'bold' }}>
                                 <FaCamera /> Photo Details
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                                {exif.make && exif.model && (
+                                {displayExif.camera && (
                                     <div style={{ gridColumn: '1 / -1' }}>
                                         <div style={{ color: '#888', fontSize: '0.7rem' }}>Camera</div>
-                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{exif.make} {exif.model}</div>
+                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{displayExif.camera}</div>
                                     </div>
                                 )}
-                                {exif.lens && (
+                                {displayExif.lens && (
                                     <div style={{ gridColumn: '1 / -1' }}>
                                         <div style={{ color: '#888', fontSize: '0.7rem' }}>Lens</div>
-                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{exif.lens}</div>
+                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{displayExif.lens}</div>
                                     </div>
                                 )}
-                                {exif.focalLength && (
-                                    <div>
-                                        <div style={{ color: '#888', fontSize: '0.7rem' }}>Focal Length</div>
-                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{exif.focalLength}</div>
+                                {displayExif.specs.map((spec, i) => (
+                                    <div key={i}>
+                                        <div style={{ color: '#888', fontSize: '0.7rem' }}>Spec</div>
+                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{spec}</div>
                                     </div>
-                                )}
-                                {exif.aperture && (
-                                    <div>
-                                        <div style={{ color: '#888', fontSize: '0.7rem' }}>Aperture</div>
-                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>f/{exif.aperture}</div>
-                                    </div>
-                                )}
-                                {exif.shutterSpeed && (
-                                    <div>
-                                        <div style={{ color: '#888', fontSize: '0.7rem' }}>Shutter</div>
-                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{exif.shutterSpeed}s</div>
-                                    </div>
-                                )}
-                                {exif.iso && (
-                                    <div>
-                                        <div style={{ color: '#888', fontSize: '0.7rem' }}>ISO</div>
-                                        <div style={{ color: '#fff', fontSize: '0.9rem' }}>{exif.iso}</div>
-                                    </div>
-                                )}
+                                ))}
                             </div>
                         </div>
                     )}
@@ -203,7 +187,7 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
                     )}
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 
