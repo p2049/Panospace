@@ -138,6 +138,7 @@ const Search = () => {
     const [selectedOrientation, setSelectedOrientation] = useState(null);
     const [selectedAspectRatio, setSelectedAspectRatio] = useState(null);
     const [sortBy, setSortBy] = useState('newest');
+    const [selectedColor, setSelectedColor] = useState(null);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'
     const [isSearching, setIsSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
@@ -575,7 +576,16 @@ const Search = () => {
             newParams.delete('museumId');
             navigate({ search: newParams.toString() });
         }
+        setSelectedColor(null);
         dispatch({ type: 'RESET_RESULTS' });
+    };
+
+    const handleColorSelect = (color) => {
+        setSelectedColor(color);
+    };
+
+    const handleColorClear = () => {
+        setSelectedColor(null);
     };
 
     return (
@@ -654,10 +664,20 @@ const Search = () => {
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 currentMode={currentMode}
+                setCurrentMode={setCurrentMode}
                 followingOnly={followingOnly}
                 setFollowingOnly={setFollowingOnly}
                 selectedTags={selectedTags}
                 setIsMobileFiltersOpen={setIsMobileFiltersOpen}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                isSortDropdownOpen={isSortDropdownOpen}
+                setIsSortDropdownOpen={setIsSortDropdownOpen}
+                selectedColor={selectedColor}
+                onColorSelect={handleColorSelect}
+                onColorClear={handleColorClear}
             />
 
             <div style={{
@@ -665,20 +685,11 @@ const Search = () => {
                 position: 'relative',
                 zIndex: 1
             }}>
-                <SearchModeTabs
-                    currentMode={currentMode}
-                    setCurrentMode={setCurrentMode}
-                    isMobile={isMobile}
-                />
-
-                {(!isMobile) && (
-                    <SearchFilters
-                        sortBy={sortBy}
-                        setSortBy={setSortBy}
-                        viewMode={viewMode}
-                        setViewMode={setViewMode}
-                        isSortDropdownOpen={isSortDropdownOpen}
-                        setIsSortDropdownOpen={setIsSortDropdownOpen}
+                {isMobile && (
+                    <SearchModeTabs
+                        currentMode={currentMode}
+                        setCurrentMode={setCurrentMode}
+                        isMobile={isMobile}
                     />
                 )}
             </div>

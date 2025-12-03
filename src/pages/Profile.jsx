@@ -17,7 +17,7 @@ import CreateCardModal from '../components/CreateCardModal';
 import BusinessCardModal from '../components/BusinessCardModal';
 import CommissionModal from '../components/monetization/CommissionModal';
 import { getUnreadCount } from '../services/notificationService';
-import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus, FaImage } from 'react-icons/fa';
+import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet } from 'react-icons/fa';
 import { getDocs, query, where, orderBy } from 'firebase/firestore';
 
 
@@ -36,6 +36,7 @@ const Profile = () => {
     const [showCreateCardModal, setShowCreateCardModal] = useState(false);
     const [showCommissionModal, setShowCommissionModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [showAddFunds, setShowAddFunds] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
     const [orders, setOrders] = useState([]);
@@ -159,7 +160,7 @@ const Profile = () => {
             {/* Header with Space Theme */}
             <div style={{
                 background: '#000',
-                padding: '1.5rem 2rem',
+                padding: window.innerWidth < 768 ? '0.75rem 1rem' : '1.5rem 2rem',
                 borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
                 width: '100%',
                 boxSizing: 'border-box',
@@ -172,16 +173,15 @@ const Profile = () => {
                 {/* Content Layer */}
                 <div style={{
                     width: '100%',
-                    display: 'grid',
-                    gridTemplateColumns: 'auto 1fr auto',
-                    alignItems: 'center',
-                    gap: '1.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
                     position: 'relative',
                     zIndex: 1
                 }}>
-                    {/* Profile Image + Username - Left */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '50%', background: '#333', overflow: 'visible', flexShrink: 0 }}>
+                    {/* Profile Image + Username */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: window.innerWidth < 768 ? '1rem' : '1.5rem' }}>
+                        <div style={{ position: 'relative', width: window.innerWidth < 768 ? '60px' : '80px', height: window.innerWidth < 768 ? '60px' : '80px', borderRadius: '50%', background: '#333', overflow: 'visible', flexShrink: 0 }}>
                             <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(127, 255, 212, 0.3)' }}>
                                 {user.photoURL ? (
                                     <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -211,8 +211,8 @@ const Profile = () => {
                             )}
                         </div>
 
-                        <div style={{ minWidth: 0 }}>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.25rem', margin: 0, fontFamily: 'var(--font-family-heading)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{user.displayName}</h1>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                            <h1 style={{ fontSize: window.innerWidth < 768 ? '1.2rem' : '1.5rem', fontWeight: '700', marginBottom: '0.25rem', margin: 0, fontFamily: 'var(--font-family-heading)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{user.displayName}</h1>
                             <p style={{ color: '#ccc', margin: 0, fontSize: '0.9rem' }}>{user.bio || 'No bio yet.'}</p>
 
                             {/* Badge Showcase Row */}
@@ -234,7 +234,7 @@ const Profile = () => {
                             )}
 
                             {!isOwnProfile && (
-                                <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                                <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     <button
                                         onClick={handleFollow}
                                         disabled={followLoading}
@@ -282,41 +282,56 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {/* Spacer - Middle */}
-                    <div></div>
+                    {/* Action buttons - Fixed position in top right on mobile, below hamburger */}
+                    {isOwnProfile && window.innerWidth < 768 && (
+                        <div style={{
+                            position: 'fixed',
+                            top: '60px',
+                            right: '1rem',
+                            display: 'flex',
+                            gap: '0.5rem',
+                            alignItems: 'center',
+                            zIndex: 9998,
+                            flexDirection: 'column'
+                        }}>
+                            {/* Compact Wallet Icon Button */}
+                            <button
+                                onClick={() => setShowAddFunds(true)}
+                                className="floating-nav-button"
+                                style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    cursor: 'pointer',
+                                    color: '#7FFFD4'
+                                }}
+                                title="Wallet"
+                            >
+                                <FaWallet size={18} />
+                            </button>
 
-                    {/* Settings + Business Card - Right */}
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifySelf: 'end' }}>
-                        {isOwnProfile ? (
-                            <>
-                                <WalletDisplay userId={currentUser.uid} />
+                            {/* Business Card Button */}
+                            <button
+                                onClick={() => setShowBusinessCard(true)}
+                                className="floating-nav-button"
+                                style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    cursor: 'pointer',
+                                    color: '#fff'
+                                }}
+                            >
+                                <FaIdBadge size={18} />
+                            </button>
+                        </div>
+                    )}
 
-                                <button
-                                    onClick={() => navigate('/edit-profile')}
-                                    className="floating-nav-button"
-                                    style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        cursor: 'pointer',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    <FaCog size={18} />
-                                </button>
-                                <button
-                                    onClick={() => setShowBusinessCard(true)}
-                                    className="floating-nav-button"
-                                    style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        cursor: 'pointer',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    <FaIdBadge size={18} />
-                                </button>
-                            </>
-                        ) : (
+                    {!isOwnProfile && window.innerWidth < 768 && (
+                        <div style={{
+                            position: 'fixed',
+                            top: '60px',
+                            right: '1rem',
+                            zIndex: 9998
+                        }}>
                             <div style={{ position: 'relative' }}>
                                 <button
                                     onClick={() => setShowMenu(!showMenu)}
@@ -389,18 +404,138 @@ const Profile = () => {
                                     </div>
                                 )}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
+
+                    {/* Desktop: Action buttons on the right */}
+                    {isOwnProfile && window.innerWidth >= 768 && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            display: 'flex',
+                            gap: '0.5rem',
+                            alignItems: 'center'
+                        }}>
+                            <WalletDisplay userId={currentUser.uid} />
+
+                            <button
+                                onClick={() => navigate('/edit-profile')}
+                                className="floating-nav-button"
+                                style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    cursor: 'pointer',
+                                    color: '#fff'
+                                }}
+                            >
+                                <FaCog size={18} />
+                            </button>
+                            <button
+                                onClick={() => setShowBusinessCard(true)}
+                                className="floating-nav-button"
+                                style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    cursor: 'pointer',
+                                    color: '#fff'
+                                }}
+                            >
+                                <FaIdBadge size={18} />
+                            </button>
+                        </div>
+                    )}
+
+                    {!isOwnProfile && window.innerWidth >= 768 && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0
+                        }}>
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => setShowMenu(!showMenu)}
+                                    className="floating-nav-button"
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        cursor: 'pointer',
+                                        color: '#fff',
+                                        position: 'relative'
+                                    }}
+                                >
+                                    <FaEllipsisV size={16} />
+                                </button>
+                                {showMenu && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        marginTop: '0.5rem',
+                                        background: 'linear-gradient(135deg, rgba(26,26,26,0.95), rgba(15,15,15,0.98))',
+                                        backdropFilter: 'blur(20px)',
+                                        border: '1px solid rgba(127, 255, 212, 0.15)',
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        zIndex: 1000,
+                                        minWidth: '150px',
+                                        boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(127, 255, 212, 0.05)'
+                                    }}>
+                                        <button
+                                            onClick={() => {
+                                                setShowMenu(false);
+                                                setShowReportModal(true);
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#fff',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            <FaFlag /> Report
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowMenu(false);
+                                                handleBlock();
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem 1rem',
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: '#ff4444',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            <FaBan /> Block
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Tabs */}
-            <div style={{ borderBottom: '1px solid #222', marginBottom: '2rem', overflowX: 'auto' }}>
+            <div style={{ borderBottom: '1px solid #222', marginBottom: window.innerWidth < 768 ? '0.75rem' : '2rem', overflowX: 'auto' }}>
                 <div style={{
                     display: 'flex',
                     minWidth: 'max-content',
-                    paddingLeft: 'max(1.5rem, env(safe-area-inset-left))', // Moved right to avoid island
-                    paddingRight: 'max(1rem, env(safe-area-inset-right))'
+                    paddingLeft: window.innerWidth < 768 ? '1rem' : 'max(1.5rem, env(safe-area-inset-left))',
+                    paddingRight: window.innerWidth < 768 ? '1rem' : 'max(1rem, env(safe-area-inset-right))'
                 }}>
                     {[
                         { id: 'posts', label: 'Posts', icon: FaTh },
@@ -411,13 +546,14 @@ const Profile = () => {
                         { id: 'badges', label: 'Badges', icon: FaCheck }
                     ].map(tab => {
                         const Icon = tab.icon;
+                        const isMobile = window.innerWidth < 768;
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 style={{
                                     flex: '0 0 auto',
-                                    padding: '1rem 1.5rem',
+                                    padding: isMobile ? '0.5rem 0.75rem' : '1rem 1.5rem',
                                     background: 'transparent',
                                     border: 'none',
                                     color: activeTab === tab.id ? '#7FFFD4' : '#666',
@@ -426,14 +562,14 @@ const Profile = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.5rem',
-                                    fontSize: '0.9rem',
+                                    fontSize: isMobile ? '0.75rem' : '0.9rem',
                                     fontWeight: activeTab === tab.id ? '700' : '500',
                                     fontFamily: 'var(--font-family-heading)',
                                     letterSpacing: '0.05em',
                                     textTransform: 'uppercase'
                                 }}
                             >
-                                <Icon size={16} /> {tab.label}
+                                <Icon size={isMobile ? 13 : 16} /> {tab.label}
                             </button>
                         );
                     })}

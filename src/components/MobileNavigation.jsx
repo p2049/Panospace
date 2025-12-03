@@ -85,7 +85,7 @@ const MobileNavigation = () => {
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         paddingTop: 'max(1rem, env(safe-area-inset-top))',
         paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
@@ -143,7 +143,7 @@ const MobileNavigation = () => {
                 style={panelStyle}
                 onClick={handleInteraction}
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%', alignItems: 'center', margin: 'auto 0' }}>
                     <div onClick={() => handleNavClick('/')} style={location.pathname === '/' ? activeNavItemStyle : navItemStyle}>
                         <FaHome size={20} />
                     </div>

@@ -6,6 +6,8 @@ import { createGallery } from '../services/galleryService';
 import { FaImage, FaTags, FaMapMarkerAlt, FaLock, FaGlobe, FaArrowLeft } from 'react-icons/fa';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getUserTier, USER_TIERS } from '../services/monetizationService';
+import PaywallModal from '../components/monetization/PaywallModal';
 import '../styles/create-gallery.css';
 import StarBackground from '../components/StarBackground';
 
@@ -15,20 +17,16 @@ const POPULAR_TAGS = [
     'macro', 'night', 'sunset', 'travel', 'documentary'
 ];
 
-// TESTING MODE - Set to true to bypass premium check
-const TESTING_MODE = true;
-
 const CreateStudio = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { showError, showSuccess, showWarning } = useToast();
     const [userProfile, setUserProfile] = useState(null);
     const [fetchingProfile, setFetchingProfile] = useState(true);
+    const [userTier, setUserTier] = useState(null);
     const fileInputRef = useRef(null);
 
-
-
-    // Fetch user profile
+    // Fetch user profile and tier
     useEffect(() => {
         const fetchProfile = async () => {
             if (!currentUser) return;
@@ -37,6 +35,8 @@ const CreateStudio = () => {
                 if (userDoc.exists()) {
                     setUserProfile(userDoc.data());
                 }
+                const tier = await getUserTier(currentUser.uid);
+                setUserTier(tier);
             } catch (error) {
                 console.error('Error fetching user profile:', error);
             } finally {
@@ -64,18 +64,15 @@ const CreateStudio = () => {
         return <div className="loading-spinner">Loading profile...</div>;
     }
 
-    // Check if user is premium (bypass in testing mode)
-    if (!TESTING_MODE && !userProfile?.isPremium) {
+    // Check if user is Ultra-tier Space Creator
+    if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
         return (
-            <div className="create-gallery-container">
-                <div className="premium-required">
-                    <h2>Premium Feature</h2>
-                    <p>Studios are a premium feature. Upgrade to create collaborative spaces!</p>
-                    <button onClick={() => navigate('/ultra')} className="upgrade-btn">
-                        Upgrade to Premium
-                    </button>
-                </div>
-            </div>
+            <>
+                <PaywallModal
+                    featureName="Studios"
+                    onClose={() => navigate(-1)}
+                />
+            </>
         );
     }
 

@@ -9,6 +9,8 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import exifr from 'exifr';
 import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '../utils/printifyPricing';
+import { getUserTier, USER_TIERS } from '../services/monetizationService';
+import PaywallModal from '../components/monetization/PaywallModal';
 const PRINT_SIZES = getPrintifyProducts();
 
 import { createMagazine, calculateNextReleaseDate } from '../services/magazineService';
@@ -47,6 +49,8 @@ const CreateCollection = () => {
     }, []);
 
     const [creationMode, setCreationMode] = useState('collection'); // 'collection', 'gallery', 'museum', or 'magazine'
+    const [userTier, setUserTier] = useState(null);
+    const [fetchingTier, setFetchingTier] = useState(true);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [visibility, setVisibility] = useState('public');
@@ -65,6 +69,25 @@ const CreateCollection = () => {
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+
+    // Fetch user tier
+    React.useEffect(() => {
+        const fetchTier = async () => {
+            if (!currentUser) {
+                setFetchingTier(false);
+                return;
+            }
+            try {
+                const tier = await getUserTier(currentUser.uid);
+                setUserTier(tier);
+            } catch (error) {
+                console.error('Error fetching user tier:', error);
+            } finally {
+                setFetchingTier(false);
+            }
+        };
+        fetchTier();
+    }, [currentUser]);
 
     const handleFileSelect = async (e) => {
         const files = Array.from(e.target.files);
@@ -182,6 +205,12 @@ const CreateCollection = () => {
 
         // Museum mode
         if (creationMode === 'museum') {
+            // Check if user is Ultra-tier Space Creator
+            if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+                showError('Museums are exclusive to Space Creator members. Please upgrade to continue.');
+                return;
+            }
+
             try {
                 setUploading(true);
 
@@ -230,6 +259,12 @@ const CreateCollection = () => {
         // Collection/Gallery mode - images required
         if (images.length === 0) {
             showError('Please add at least 1 image to your collection (max 10)');
+            return;
+        }
+
+        // Check if user is Ultra-tier Space Creator for Studio creation
+        if (creationMode === 'gallery' && userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+            showError('Studios are exclusive to Space Creator members. Please upgrade to continue.');
             return;
         }
 

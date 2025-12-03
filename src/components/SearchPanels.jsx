@@ -7,7 +7,7 @@ import { TAG_CATEGORIES } from '../constants/tagCategories';
 import { PARKS_DATA } from '../constants/parksData';
 import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '../constants/searchFilters';
 import { formatDateForDisplay, formatDateForInput } from '../utils/dateHelpers';
-import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 const SearchPanels = ({
     selectedTags,
@@ -48,31 +48,9 @@ const SearchPanels = ({
     });
 
     const [parkType, setParkType] = useState('national'); // Track national vs state parks
-
-    // Touch gesture handling for swipe-to-close
-    const touchStartX = useRef(0);
-    const touchEndX = useRef(0);
     const sidebarRef = useRef(null);
 
-    const handleTouchStart = (e) => {
-        touchStartX.current = e.touches[0].clientX;
-        touchEndX.current = e.touches[0].clientX; // Reset end position to start position
-    };
 
-    const handleTouchMove = (e) => {
-        touchEndX.current = e.touches[0].clientX;
-    };
-
-    const handleTouchEnd = () => {
-        const swipeDistance = touchStartX.current - touchEndX.current;
-        const minSwipeDistance = 50;
-
-        // Only handle swipe left-to-right (negative distance) to open the panel
-        // Don't close on swipe when panel is open (users need to swipe through filter tags)
-        if (swipeDistance < -minSwipeDistance && !isMobileFiltersOpen) {
-            onMobileFilterToggle(true);
-        }
-    };
 
     const togglePanel = (panelId) => {
         setExpandedPanels(prev => ({
@@ -226,57 +204,55 @@ const SearchPanels = ({
                     {/* Date Filter Panel - Show for Posts and Events */}
                     {(currentMode === 'posts' || currentMode === 'events') && (
                         <div style={{ marginBottom: '0.8rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {/* Date Input with Calendar Icon Inside - Premium Pill Style */}
-                                <div style={{ position: 'relative' }}>
-                                    <input
-                                        ref={(el) => { if (el) el.dataset.dateInput = 'true'; }}
-                                        type="date"
-                                        value={selectedDate ? formatDateForInput(selectedDate) : ''}
-                                        onChange={(e) => {
-                                            if (e.target.value) {
-                                                onDateSelect(new Date(e.target.value + 'T00:00:00'));
-                                            } else {
-                                                onDateSelect(null);
-                                            }
-                                        }}
-                                        style={{
-                                            padding: '0.7rem 1.8rem 0.7rem 0.8rem',
-                                            background: 'rgba(0, 0, 0, 0.4)',
-                                            border: '1px solid rgba(127, 255, 212, 0.3)',
-                                            borderRadius: '24px',
-                                            color: '#fff',
-                                            fontSize: '0.85rem',
-                                            width: '100%',
-                                            maxWidth: '100%',
-                                            boxSizing: 'border-box',
-                                            boxShadow: 'inset 0 0 15px rgba(127, 255, 212, 0.1), 0 0 10px rgba(127, 255, 212, 0.05)',
-                                            fontFamily: 'var(--font-family-mono)',
-                                            letterSpacing: '0.05em',
-                                            transition: 'all 0.3s ease',
-                                            backdropFilter: 'blur(5px)'
-                                        }}
-                                        className="custom-date-input"
-                                    />
-                                    {/* Calendar Icon Inside Input - Clickable */}
-                                    <div
-                                        onClick={(e) => {
-                                            const input = e.currentTarget.previousElementSibling;
-                                            if (input) input.showPicker?.();
-                                        }}
-                                        style={{
-                                            position: 'absolute',
-                                            right: '0.75rem',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            cursor: 'pointer',
-                                            pointerEvents: 'auto',
-                                            filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.6))'
-                                        }}
-                                    >
-                                        <ModernIcon icon={FaCalendar} size={14} glow={true} />
-                                    </div>
+                            <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
+                                {/* Calendar Icon on Left - Clickable */}
+                                <div
+                                    onClick={(e) => {
+                                        const input = e.currentTarget.nextElementSibling;
+                                        if (input) input.showPicker?.();
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        left: '0.75rem',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        cursor: 'pointer',
+                                        pointerEvents: 'auto',
+                                        filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.6))',
+                                        zIndex: 1
+                                    }}
+                                >
+                                    <ModernIcon icon={FaCalendar} size={14} glow={true} />
                                 </div>
+                                <input
+                                    ref={(el) => { if (el) el.dataset.dateInput = 'true'; }}
+                                    type="date"
+                                    value={selectedDate ? formatDateForInput(selectedDate) : ''}
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            onDateSelect(new Date(e.target.value + 'T00:00:00'));
+                                        } else {
+                                            onDateSelect(null);
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '0.7rem 0.8rem 0.7rem 2.5rem',
+                                        background: 'rgba(0, 0, 0, 0.4)',
+                                        border: '1px solid rgba(127, 255, 212, 0.3)',
+                                        borderRadius: '16px',
+                                        color: '#fff',
+                                        fontSize: '0.85rem',
+                                        width: '100%',
+                                        boxSizing: 'border-box',
+                                        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(127, 255, 212, 0.05)',
+                                        fontFamily: 'var(--font-family-mono)',
+                                        letterSpacing: '0.05em',
+                                        transition: 'all 0.3s ease',
+                                        backdropFilter: 'blur(12px)',
+                                        WebkitBackdropFilter: 'blur(12px)'
+                                    }}
+                                    className="custom-date-input"
+                                />
                             </div>
                         </div>
                     )}
@@ -308,7 +284,8 @@ const SearchPanels = ({
                                     <ModernIcon icon={FaMountain} size={14} />
                                     <span style={{ fontWeight: 700, color: '#fff', fontFamily: 'var(--font-family-heading)', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', textShadow: '0 0 10px rgba(255, 255, 255, 0.1)' }}>Parks</span>
                                 </div>
-                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.8rem' }}>{expandedPanels.parks ? '▼' : '▶'}</span>
+                                <FaChevronDown size={10} color="rgba(255, 255, 255, 0.3)" style={{ display: expandedPanels.parks ? 'none' : 'block' }} />
+                                <FaChevronUp size={10} color="var(--ice-mint)" style={{ display: expandedPanels.parks ? 'block' : 'none' }} />
                             </div>
                             {expandedPanels.parks && (
                                 <div style={{ padding: '0.5rem 1.2rem 1rem 1.2rem' }}>
@@ -460,7 +437,8 @@ const SearchPanels = ({
                                     <ModernIcon icon={FaCamera} size={14} />
                                     <span style={{ fontWeight: 700, color: '#fff', fontFamily: 'var(--font-family-heading)', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', textShadow: '0 0 10px rgba(255, 255, 255, 0.1)' }}>Gear & Film</span>
                                 </div>
-                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.8rem' }}>{expandedPanels.gear ? '▼' : '▶'}</span>
+                                <FaChevronDown size={10} color="rgba(255, 255, 255, 0.3)" style={{ display: expandedPanels.gear ? 'none' : 'block' }} />
+                                <FaChevronUp size={10} color="var(--ice-mint)" style={{ display: expandedPanels.gear ? 'block' : 'none' }} />
                             </div>
                             {expandedPanels.gear && (
                                 <div style={{ padding: '0.5rem 1.2rem 1rem 1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -517,7 +495,8 @@ const SearchPanels = ({
                                     <ModernIcon icon={FaCrop} size={14} />
                                     <span style={{ fontWeight: 700, color: '#fff', fontFamily: 'var(--font-family-heading)', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.85rem', textShadow: '0 0 10px rgba(255, 255, 255, 0.1)' }}>Composition</span>
                                 </div>
-                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.8rem' }}>{expandedPanels.composition ? '▼' : '▶'}</span>
+                                <FaChevronDown size={10} color="rgba(255, 255, 255, 0.3)" style={{ display: expandedPanels.composition ? 'none' : 'block' }} />
+                                <FaChevronUp size={10} color="var(--ice-mint)" style={{ display: expandedPanels.composition ? 'block' : 'none' }} />
                             </div>
                             {expandedPanels.composition && (
                                 <div style={{ padding: '0.5rem 1.2rem 1rem 1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -636,9 +615,7 @@ const SearchPanels = ({
                 <div
                     style={{ flex: 1, overflowY: 'auto', padding: '0' }}
                     onScroll={onScroll}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
+
                 >
                     {children}
                 </div>
@@ -667,12 +644,9 @@ const SearchPanels = ({
 
                 /* Hide native date picker icon */
                 .custom-date-input::-webkit-calendar-picker-indicator {
+                    display: none;
                     opacity: 0;
-                    cursor: pointer;
-                    position: absolute;
-                    right: 0;
-                    width: 100%;
-                    height: 100%;
+                    pointer-events: none;
                 }
                 
                 
@@ -698,6 +672,13 @@ const SearchPanels = ({
                     color: #fff;
                     font-family: var(--font-family-mono);
                     letter-spacing: 0.05em;
+                }
+
+                @media (max-width: 768px) {
+                    .custom-date-input {
+                        max-width: 100% !important;
+                        width: calc(100% - 3.4rem) !important;
+                    }
                 }
 
                 @media (max-width: 768px) {

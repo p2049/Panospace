@@ -28,10 +28,10 @@ const SearchFilters = ({
             <div ref={sortDropdownRef} style={{ position: 'relative', marginRight: '0.5rem' }}>
                 <PSButton
                     variant="mint"
-                    size="md"
+                    size="sm"
                     active={isSortDropdownOpen}
                     onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                    style={{ minWidth: '140px', justifyContent: 'space-between' }}
+                    style={{ minWidth: '140px', justifyContent: 'space-between', height: '32px' }}
                 >
                     <span>{SORT_OPTIONS.find(opt => opt.id === sortBy)?.label || 'Sort By'}</span>
                     <FaSortAmountDown style={{ fontSize: '0.8rem', opacity: 0.8 }} />
@@ -106,19 +106,19 @@ const SearchFilters = ({
 
             <PSButton
                 variant="mint"
-                size="md"
+                size="sm"
                 active={viewMode === 'grid'}
                 onClick={() => setViewMode('grid')}
                 icon={<FaTh />}
-                style={{ padding: '0.6rem' }}
+                style={{ padding: '0.6rem', height: '32px' }}
             />
             <PSButton
                 variant="mint"
-                size="md"
+                size="sm"
                 active={viewMode === 'feed'}
                 onClick={() => setViewMode('feed')}
                 icon={<FaList />}
-                style={{ padding: '0.6rem' }}
+                style={{ padding: '0.6rem', height: '32px' }}
             />
         </div>
     );

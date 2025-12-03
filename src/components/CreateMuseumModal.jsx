@@ -3,11 +3,17 @@ import { FaTimes, FaSearch, FaUniversity, FaUser, FaImage, FaPlus, FaTrash } fro
 import { useAuth } from '../context/AuthContext';
 import { useCreateCollection } from '../hooks/useCollections';
 import { useSearch } from '../hooks/useSearch';
+import { getUserTier, USER_TIERS } from '../services/monetizationService';
+import { useToast } from '../context/ToastContext';
 
 const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
     const { currentUser } = useAuth();
     const { createCollection, loading, error } = useCreateCollection();
     const { searchUsers, searchGalleries } = useSearch();
+    const { showError } = useToast();
+
+    const [userTier, setUserTier] = useState(null);
+    const [fetchingTier, setFetchingTier] = useState(true);
 
     const [formData, setFormData] = useState({
         title: '',
@@ -23,6 +29,25 @@ const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
     const [searchType, setSearchType] = useState('galleries'); // 'galleries' or 'profiles'
     const [isSearching, setIsSearching] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]); // Array of full objects for display
+
+    // Fetch user tier
+    useEffect(() => {
+        const fetchTier = async () => {
+            if (!currentUser) {
+                setFetchingTier(false);
+                return;
+            }
+            try {
+                const tier = await getUserTier(currentUser.uid);
+                setUserTier(tier);
+            } catch (err) {
+                console.error('Error fetching user tier:', err);
+            } finally {
+                setFetchingTier(false);
+            }
+        };
+        fetchTier();
+    }, [currentUser]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -94,6 +119,13 @@ const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.title.trim()) return;
+
+        // Check if user is Ultra-tier Space Creator
+        if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+            showError('Museums are exclusive to Space Creator members. Please upgrade to continue.');
+            onClose();
+            return;
+        }
 
         try {
             const museumData = {

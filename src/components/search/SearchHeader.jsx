@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaFilter } from 'react-icons/fa';
+import SearchFilters from './SearchFilters';
+import SearchModeTabs from './SearchModeTabs';
 
 const SearchHeader = ({
     isMobile,
@@ -8,10 +10,21 @@ const SearchHeader = ({
     searchTerm,
     setSearchTerm,
     currentMode,
+    setCurrentMode,
     followingOnly,
     setFollowingOnly,
     selectedTags,
-    setIsMobileFiltersOpen
+    setIsMobileFiltersOpen,
+    // Filter props
+    sortBy,
+    setSortBy,
+    viewMode,
+    setViewMode,
+    isSortDropdownOpen,
+    setIsSortDropdownOpen,
+    selectedColor,
+    onColorSelect,
+    onColorClear
 }) => {
     const navigate = useNavigate();
 
@@ -30,6 +43,16 @@ const SearchHeader = ({
             transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)'
         }}>
             {/* Animated Stars Background - Optimized for Performance */}
+            <style>{`
+                @media (max-width: 1024px) and (orientation: landscape) {
+                    .search-header {
+                        padding: 0.3rem 0.5rem !important;
+                    }
+                    .search-bar-container {
+                        gap: 0.4rem !important;
+                    }
+                }
+            `}</style>
             <div style={{
                 position: 'absolute',
                 top: 0,
@@ -62,12 +85,12 @@ const SearchHeader = ({
 
             {/* Content Layer */}
             <div style={{ position: 'relative', zIndex: 1 }}>
-                {/* Panospace Logo */}
+                {/* Panospace Logo & Categories Row */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.6rem',
-                    marginBottom: isMobile ? '0.2rem' : '1rem',
+                    gap: '2rem',
+                    marginBottom: isMobile ? '0.2rem' : '0.5rem',
                     justifyContent: isMobile ? 'space-between' : 'flex-start'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -132,7 +155,6 @@ const SearchHeader = ({
                                 PANOSPACE
                             </h1>
                             <span
-                                onClick={() => isMobile && setIsMobileFiltersOpen(true)}
                                 style={{
                                     fontSize: '0.95rem',
                                     fontWeight: '800',
@@ -145,86 +167,212 @@ const SearchHeader = ({
                                     backgroundClip: 'text',
                                     color: 'transparent',
                                     filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))',
-                                    cursor: 'pointer',
+                                    cursor: 'default',
                                     userSelect: 'none'
                                 }}>EXPLORE {isMobile && selectedTags.length > 0 && <span style={{ fontSize: '0.8em', verticalAlign: 'top', color: '#7FFFD4', WebkitTextFillColor: '#7FFFD4' }}>•</span>}</span>
                         </div>
                     </div>
-                </div>
 
-                {/* Desktop Search Bar (Hidden on Mobile) */}
-                {(!isMobile) && (
-                    <div className="search-bar-container" style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        marginBottom: '0',
-                        position: 'relative',
-                        zIndex: 10
-                    }}>
-                        <div style={{ position: 'relative', flex: 1 }}>
-                            <FaSearch style={{
-                                position: 'absolute',
-                                left: '1.2rem',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                color: 'var(--ice-mint)',
-                                fontSize: '1rem',
-                                opacity: 0.8,
-                                filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))'
-                            }} />
-                            <input
-                                type="text"
-                                placeholder={`Search for ${currentMode}...`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem 1rem 0.5rem 3.2rem',
-                                    background: 'rgba(0, 0, 0, 0.6)',
-                                    border: '1px solid rgba(127, 255, 212, 0.3)',
-                                    borderRadius: '12px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
-                                    outline: 'none',
-                                    fontFamily: 'var(--font-family-mono)',
-                                    letterSpacing: '0.02em',
-                                    boxShadow: '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)',
-                                    backdropFilter: 'blur(10px)',
-                                    transition: 'all 0.3s ease'
-                                }}
-                                onFocus={(e) => {
-                                    e.target.style.borderColor = 'var(--ice-mint)';
-                                    e.target.style.boxShadow = '0 0 25px rgba(127, 255, 212, 0.15), inset 0 0 15px rgba(127, 255, 212, 0.1)';
-                                    e.target.style.background = 'rgba(0, 0, 0, 0.8)';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.borderColor = 'rgba(127, 255, 212, 0.3)';
-                                    e.target.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)';
-                                    e.target.style.background = 'rgba(0, 0, 0, 0.6)';
-                                }}
+                    {/* Category Tabs - Desktop */}
+                    {!isMobile && (
+                        <div style={{ flex: 1, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                            <SearchModeTabs
+                                currentMode={currentMode}
+                                setCurrentMode={setCurrentMode}
+                                isMobile={isMobile}
                             />
                         </div>
+                    )}
+                </div>
+
+                {/* Desktop Layout (and Mobile Search Bar Row) */}
+                <div className="search-bar-container" style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    marginBottom: '0',
+                    position: 'relative',
+                    zIndex: 10
+                }}>
+                    {/* Search Bar - Narrower */}
+                    <div style={{ position: 'relative', maxWidth: isMobile ? '140px' : '320px', minWidth: isMobile ? '100px' : '280px', flexShrink: 0 }}>
+                        <FaSearch style={{
+                            position: 'absolute',
+                            left: '1rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: 'var(--ice-mint)',
+                            fontSize: '0.9rem',
+                            opacity: 0.8,
+                            filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))'
+                        }} />
+                        <input
+                            type="text"
+                            placeholder={`Search ${currentMode}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.45rem 1rem 0.45rem 2.8rem',
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                border: '1px solid rgba(127, 255, 212, 0.3)',
+                                borderRadius: '10px',
+                                color: '#fff',
+                                fontSize: '0.9rem',
+                                outline: 'none',
+                                fontFamily: 'var(--font-family-mono)',
+                                letterSpacing: '0.02em',
+                                boxShadow: '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)',
+                                backdropFilter: 'blur(10px)',
+                                transition: 'all 0.3s ease',
+                                height: '32px'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = 'var(--ice-mint)';
+                                e.target.style.boxShadow = '0 0 25px rgba(127, 255, 212, 0.15), inset 0 0 15px rgba(127, 255, 212, 0.1)';
+                                e.target.style.background = 'rgba(0, 0, 0, 0.8)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = 'rgba(127, 255, 212, 0.3)';
+                                e.target.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)';
+                                e.target.style.background = 'rgba(0, 0, 0, 0.6)';
+                            }}
+                        />
+                    </div>
+
+                    {/* Mobile: Filter button next to Search Bar */}
+                    {isMobile && (
+                        <button
+                            onClick={() => setIsMobileFiltersOpen(true)}
+                            style={{
+                                background: 'rgba(127, 255, 212, 0.1)',
+                                border: '1px solid var(--ice-mint)',
+                                borderRadius: '8px',
+                                width: '32px',
+                                height: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--ice-mint)',
+                                cursor: 'pointer',
+                                flexShrink: 0
+                            }}
+                        >
+                            <FaFilter size={14} />
+                        </button>
+                    )}
+
+                    {/* Mobile: Compact Filter Controls */}
+                    {isMobile && (
+                        <>
+                            {/* Following Toggle - Icon Only */}
+                            <button
+                                onClick={() => setFollowingOnly(!followingOnly)}
+                                style={{
+                                    background: followingOnly ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                    border: followingOnly ? '1px solid var(--ice-mint)' : '1px solid rgba(255, 255, 255, 0.2)',
+                                    borderRadius: '8px',
+                                    width: '32px',
+                                    height: '32px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: followingOnly ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.6)',
+                                    cursor: 'pointer',
+                                    flexShrink: 0,
+                                    fontSize: '14px'
+                                }}
+                                title="Following Only"
+                            >
+                                👥
+                            </button>
+
+                            {/* Sort Dropdown - Compact */}
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                style={{
+                                    background: 'rgba(0, 0, 0, 0.6)',
+                                    border: '1px solid rgba(127, 255, 212, 0.3)',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    height: '32px',
+                                    padding: '0 0.5rem',
+                                    fontSize: '0.7rem',
+                                    cursor: 'pointer',
+                                    flexShrink: 0,
+                                    minWidth: '60px'
+                                }}
+                            >
+                                <option value="recent">New</option>
+                                <option value="popular">Pop</option>
+                                <option value="trending">Hot</option>
+                            </select>
+
+                            {/* View Mode Toggle - Icons Only */}
+                            <button
+                                onClick={() => setViewMode(viewMode === 'grid' ? 'feed' : 'grid')}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                                    borderRadius: '8px',
+                                    width: '32px',
+                                    height: '32px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--ice-mint)',
+                                    cursor: 'pointer',
+                                    flexShrink: 0,
+                                    fontSize: '18px'
+                                }}
+                                title={viewMode === 'grid' ? 'Grid View' : 'Feed View'}
+                            >
+                                {viewMode === 'grid' ? '⊞' : '☰'}
+                            </button>
+
+                            {/* Color Search - Compact */}
+                            {selectedColor && (
+                                <div
+                                    style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        borderRadius: '8px',
+                                        background: selectedColor,
+                                        border: '2px solid var(--ice-mint)',
+                                        cursor: 'pointer',
+                                        flexShrink: 0
+                                    }}
+                                    onClick={onColorClear}
+                                    title="Clear color filter"
+                                />
+                            )}
+                        </>
+                    )}
+
+                    {/* Desktop: Buttons Row */}
+                    {!isMobile && (
                         <div style={{
                             display: 'flex',
                             gap: '0.5rem',
                             alignItems: 'center',
+                            flex: 1,
                             flexWrap: 'wrap'
                         }}>
-                            {/* Following Toggle */}
+                            {/* Following Toggle - Compact */}
                             <label style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.6rem',
-                                padding: '0.6rem 1.2rem',
+                                gap: '0.5rem',
+                                padding: '0.45rem 1rem',
                                 background: followingOnly ? 'rgba(127, 255, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
                                 border: followingOnly ? '1px solid var(--ice-mint)' : '1px solid rgba(255, 255, 255, 0.08)',
                                 borderRadius: '8px',
                                 cursor: 'pointer',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 whiteSpace: 'nowrap',
-                                height: '100%',
+                                height: '32px',
                                 boxShadow: followingOnly ? '0 0 15px rgba(127, 255, 212, 0.15)' : 'none',
                                 backdropFilter: 'blur(10px)'
                             }}>
@@ -233,8 +381,8 @@ const SearchHeader = ({
                                     checked={followingOnly}
                                     onChange={(e) => setFollowingOnly(e.target.checked)}
                                     style={{
-                                        width: '16px',
-                                        height: '16px',
+                                        width: '14px',
+                                        height: '14px',
                                         cursor: 'pointer',
                                         appearance: 'none',
                                         WebkitAppearance: 'none',
@@ -246,21 +394,34 @@ const SearchHeader = ({
                                     }}
                                 />
                                 <span style={{
-                                    fontSize: '0.85rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: followingOnly ? '700' : '500',
                                     color: followingOnly ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.7)',
                                     fontFamily: "'Rajdhani', 'Orbitron', sans-serif",
                                     letterSpacing: '0.05em',
                                     textTransform: 'uppercase'
                                 }}>
-                                    Following Only
+                                    Following
                                 </span>
                             </label>
+
+                            {/* Search Filters - Integrated */}
+                            <SearchFilters
+                                sortBy={sortBy}
+                                setSortBy={setSortBy}
+                                viewMode={viewMode}
+                                setViewMode={setViewMode}
+                                isSortDropdownOpen={isSortDropdownOpen}
+                                setIsSortDropdownOpen={setIsSortDropdownOpen}
+                                selectedColor={selectedColor}
+                                onColorSelect={onColorSelect}
+                                onColorClear={onColorClear}
+                            />
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
-        </div>
+        </div >
     );
 };
 

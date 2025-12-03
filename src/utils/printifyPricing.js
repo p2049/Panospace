@@ -567,3 +567,41 @@ export const getValidSizesForImage = (width, height, allowCropped = false) => {
 
     return validSizes.length > 0 ? validSizes : PRINTIFY_PRODUCTS;
 };
+
+// ============================================================================
+// 5. COMPATIBILITY EXPORTS (Added for backward compatibility)
+// ============================================================================
+
+export const PRINT_SIZES = PRINTIFY_PRODUCTS;
+export const STICKER_SIZES = STICKER_PRODUCTS;
+
+export const calculateEarnings = calculatePrintifyEarnings;
+
+export const calculateTieredPricing = (sizeId, tier = 'economy', isUltra = false) => {
+    const retailPrice = getRetailPrice(sizeId, tier);
+    const earnings = calculatePrintifyEarnings(retailPrice, sizeId, isUltra);
+    return {
+        finalPrice: retailPrice,
+        artistProfit: earnings.artistEarnings,
+        platformProfit: earnings.platformEarnings,
+        baseCost: earnings.baseCost
+    };
+};
+
+export const calculateStickerPricing = (stickerId) => {
+    const sticker = STICKER_PRODUCTS.find(s => s.id === stickerId);
+    if (!sticker) return null;
+
+    // Simple sticker pricing logic
+    const retailPrice = sticker.price;
+    const baseCost = sticker.baseCost;
+    const profit = Math.max(0, retailPrice - baseCost);
+    const artistShare = 0.60; // Fixed share for stickers for now
+
+    return {
+        finalPrice: retailPrice,
+        artistProfit: profit * artistShare,
+        platformProfit: profit * (1 - artistShare),
+        baseCost: baseCost
+    };
+};

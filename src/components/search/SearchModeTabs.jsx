@@ -7,12 +7,25 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
     return (
         <div className="search-mode-switcher" style={{
             display: 'flex',
-            gap: '0.5rem',
-            marginBottom: isMobile ? '0' : '1rem',
+            gap: isMobile ? '0.15rem' : '0.5rem',
+            marginBottom: isMobile ? '0' : '0.25rem',
             overflowX: 'auto',
             scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
+            msOverflowStyle: 'none',
+            justifyContent: isMobile ? 'space-between' : 'flex-start'
         }}>
+            <style>{`
+                @media (max-width: 1024px) {
+                    .tab-label {
+                        display: none !important;
+                    }
+                    .search-mode-switcher button {
+                        background: transparent !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                    }
+                }
+            `}</style>
             {[
                 { key: 'posts', icon: FaCamera, label: 'Posts' },
                 { key: 'galleries', icon: FaImage, label: 'Studios' },
@@ -26,12 +39,19 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
                 <PSButton
                     key={mode.key}
                     variant="mint"
-                    size={isMobile ? 'sm' : 'md'}
+                    size="sm"
                     active={currentMode === mode.key}
                     onClick={() => setCurrentMode(mode.key)}
+                    style={{
+                        height: '32px',
+                        padding: isMobile ? '0 0.2rem' : undefined,
+                        flex: isMobile ? '1' : undefined,
+                        justifyContent: 'center',
+                        minWidth: isMobile ? '28px' : undefined
+                    }}
                     icon={<ModernIcon icon={mode.icon} size={14} glow={currentMode === mode.key} />}
                 >
-                    {!isMobile && mode.label}
+                    <span className="tab-label">{!isMobile && mode.label}</span>
                 </PSButton>
             ))}
         </div>

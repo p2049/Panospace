@@ -5,11 +5,12 @@ import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc, de
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printPricing';
+import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printifyPricing';
 import { extractExifData } from '../utils/exifUtils';
 import { formatPrice } from '../utils/helpers';
 import { PhotoDexService } from '../services/PhotoDexService';
-import { AccountTypeService } from '../services/AccountTypeService'; \nimport { generateSearchKeywords } from '../utils/searchKeywords';
+import { AccountTypeService } from '../services/AccountTypeService';
+import { generateSearchKeywords } from '../utils/searchKeywords';
 import { extractDominantColor } from '../utils/colorExtraction';
 
 
@@ -392,7 +393,7 @@ export const useCreatePost = () => {
                     // (Assuming top-level import was updated in previous step or we rely on existing imports)
                     // Wait, I need to update the imports in this file too!
 
-                    const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES } = await import('../utils/printPricing');
+                    const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES } = await import('../utils/printifyPricing');
 
                     let printSizesConfig = PRINT_SIZES.filter((size) =>
                         item.printSizes.includes(size.id)
@@ -412,7 +413,7 @@ export const useCreatePost = () => {
                     // Add stickers if enabled
                     if (item.includeStickers) {
                         // Import STICKER_SIZES
-                        const { STICKER_SIZES } = await import('../utils/printPricing');
+                        const { STICKER_SIZES } = await import('../utils/printifyPricing');
                         STICKER_SIZES.forEach(sticker => {
                             const pricing = calculateStickerPricing(sticker.id);
                             if (pricing) {

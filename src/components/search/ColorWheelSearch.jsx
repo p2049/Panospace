@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaPalette, FaTimes } from 'react-icons/fa';
-import { COLOR_PALETTE, colorSimilarity } from '../../utils/colorExtraction';
+
 
 const ColorWheelSearch = ({ onColorSelect, selectedColor, onClear }) => {
     const [showPalette, setShowPalette] = useState(false);
@@ -8,10 +8,7 @@ const ColorWheelSearch = ({ onColorSelect, selectedColor, onClear }) => {
     const [saturation, setSaturation] = useState(100);
     const [lightness, setLightness] = useState(50);
 
-    const handleColorClick = (color) => {
-        onColorSelect(color.hex);
-        setShowPalette(false);
-    };
+
 
     const handleCustomColor = () => {
         const h = hueValue;
@@ -58,7 +55,8 @@ const ColorWheelSearch = ({ onColorSelect, selectedColor, onClear }) => {
             <button
                 onClick={() => setShowPalette(!showPalette)}
                 style={{
-                    padding: '0.5rem 1rem',
+                    padding: '0 1rem',
+                    height: '32px',
                     background: selectedColor || '#222',
                     color: selectedColor ? '#fff' : '#888',
                     border: selectedColor ? `2px solid ${selectedColor}` : '1px solid #333',
@@ -147,49 +145,7 @@ const ColorWheelSearch = ({ onColorSelect, selectedColor, onClear }) => {
                         </button>
                     </div>
 
-                    {/* Preset Colors */}
-                    <div style={{ marginBottom: '1rem' }}>
-                        <div style={{
-                            fontSize: '0.85rem',
-                            color: '#888',
-                            marginBottom: '0.5rem'
-                        }}>
-                            Quick Select
-                        </div>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(6, 1fr)',
-                            gap: '0.5rem'
-                        }}>
-                            {COLOR_PALETTE.map((color, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handleColorClick(color)}
-                                    title={color.name}
-                                    style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '8px',
-                                        background: color.hex,
-                                        border: selectedColor === color.hex
-                                            ? '3px solid #7FFFD4'
-                                            : '2px solid #222',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.currentTarget.style.transform = 'scale(1.1)';
-                                        e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.5)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.transform = 'scale(1)';
-                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </div>
+
 
                     {/* Custom Color Sliders */}
                     <div style={{
