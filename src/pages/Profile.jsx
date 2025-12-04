@@ -165,7 +165,10 @@ const Profile = () => {
             {/* Header with Space Theme */}
             <div style={{
                 background: '#000',
-                padding: window.innerWidth < 768 ? '0.75rem 1rem' : '1.5rem 2rem',
+                paddingTop: window.innerWidth < 768 ? 'max(0.75rem, env(safe-area-inset-top))' : '1.5rem',
+                paddingBottom: window.innerWidth < 768 ? '0.75rem' : '1.5rem',
+                paddingLeft: window.innerWidth < 768 ? 'max(1rem, env(safe-area-inset-left))' : '2rem',
+                paddingRight: window.innerWidth < 768 ? 'max(1rem, env(safe-area-inset-right))' : '2rem',
                 borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
                 width: '100%',
                 boxSizing: 'border-box',
@@ -216,7 +219,7 @@ const Profile = () => {
                             )}
                         </div>
 
-                        <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ minWidth: 0, flex: 1, paddingRight: window.innerWidth < 768 ? '3.5rem' : '0' }}>
                             <h1 style={{ fontSize: window.innerWidth < 768 ? '1.2rem' : '1.5rem', fontWeight: '700', marginBottom: '0.25rem', margin: 0, fontFamily: 'var(--font-family-heading)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{user.displayName}</h1>
                             <p style={{ color: '#ccc', margin: 0, fontSize: '0.9rem' }}>{user.bio || 'No bio yet.'}</p>
 
@@ -290,13 +293,13 @@ const Profile = () => {
                     {/* Action buttons - Fixed position in top right on mobile, below hamburger */}
                     {isOwnProfile && window.innerWidth < 768 && (
                         <div style={{
-                            position: 'fixed',
-                            top: 'calc(max(0.75rem, env(safe-area-inset-top)) + 48px)',
-                            right: '1rem',
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
                             display: 'flex',
                             gap: '0.5rem',
                             alignItems: 'center',
-                            zIndex: 9998,
+                            zIndex: 10,
                             flexDirection: 'column'
                         }}>
                             {/* Compact Wallet Icon Button */}
@@ -334,10 +337,10 @@ const Profile = () => {
 
                     {!isOwnProfile && window.innerWidth < 768 && (
                         <div style={{
-                            position: 'fixed',
-                            top: 'calc(max(0.75rem, env(safe-area-inset-top)) + 48px)',
-                            right: '1rem',
-                            zIndex: 9998
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            zIndex: 10
                         }}>
                             <div style={{ position: 'relative' }}>
                                 <button

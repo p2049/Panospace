@@ -40,19 +40,43 @@ const CollectionSelector = ({
                 )}
             </div>
 
-            <select
-                value={selectedCollectionId}
-                onChange={(e) => setSelectedCollectionId(e.target.value)}
-                className="form-input"
-                style={{ width: '100%', padding: '0.4rem', fontSize: '0.9rem' }}
-            >
-                <option value="">Select a collection (optional)...</option>
-                {collections.map(collection => (
-                    <option key={collection.id} value={collection.id}>
-                        {collection.title}
-                    </option>
-                ))}
-            </select>
+            <div style={{ position: 'relative' }}>
+                <select
+                    value={selectedCollectionId}
+                    onChange={(e) => setSelectedCollectionId(e.target.value)}
+                    className="form-input"
+                    style={{
+                        width: '100%',
+                        padding: '0.6rem',
+                        fontSize: '0.9rem',
+                        appearance: 'none',
+                        background: 'transparent',
+                        border: '1px solid rgba(127, 255, 212, 0.3)',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <option value="" style={{ background: '#000' }}>Select a collection (optional)...</option>
+                    {collections.map(collection => (
+                        <option key={collection.id} value={collection.id} style={{ background: '#000' }}>
+                            {collection.title}
+                        </option>
+                    ))}
+                    <option value="new" style={{ background: '#000', color: 'var(--ice-mint)' }}>+ Create New Collection</option>
+                </select>
+                <div style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                    color: 'var(--ice-mint)',
+                    fontSize: '0.7rem'
+                }}>
+                    ▼
+                </div>
+            </div>
 
             {selectedCollectionId && (() => {
                 const selectedCollection = collections.find(c => c.id === selectedCollectionId);

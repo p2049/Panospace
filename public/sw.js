@@ -1,4 +1,4 @@
-// Simple service worker for PWA functionality
+// Service worker - completely disabled
 self.addEventListener('install', (event) => {
     console.log('Service Worker installing.');
     self.skipWaiting();
@@ -9,7 +9,5 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(clients.claim());
 });
 
-// Basic fetch handler - just pass through to network
-self.addEventListener('fetch', (event) => {
-    event.respondWith(fetch(event.request));
-});
+// DO NOT intercept fetch requests - let them pass through normally
+// No fetch handler = no interference

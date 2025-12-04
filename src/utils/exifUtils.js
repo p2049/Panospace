@@ -23,6 +23,8 @@ import exifr from 'exifr';
 export async function extractExifData(file) {
     try {
         const data = await exifr.parse(file, {
+            // Only read the first 64KB - EXIF is always at the start
+            firstChunkSize: 65536,
             pick: [
                 'Make',
                 'Model',

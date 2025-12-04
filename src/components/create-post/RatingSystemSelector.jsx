@@ -15,7 +15,7 @@ const RatingSystemSelector = ({
     setEnableRatings
 }) => {
     return (
-        <div className="form-section" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="form-section" style={{ padding: '0.75rem 0.75rem 0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>Rating System</span>
                 <span style={{ fontSize: '0.75rem', color: '#888' }}>

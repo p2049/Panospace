@@ -336,74 +336,80 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                 position: 'relative',
                 zIndex: 1
             }}>
-                {/* Header */}
+                {/* Header & Tabs Unified */}
                 <div style={{
-                    padding: '1.5rem',
-                    borderBottom: '1px solid rgba(127, 255, 212, 0.1)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(255, 255, 255, 0.02)'
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    borderBottom: '1px solid rgba(127, 255, 212, 0.1)'
                 }}>
-                    <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600' }}>Create SpaceCard</h2>
-                    <button onClick={onClose} style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
+                    {/* Top Bar: Title & Close */}
+                    <div style={{
+                        padding: '1.5rem 1.5rem 0.5rem 1.5rem',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '1.25rem',
-                        transition: 'all 0.2s',
-                    }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                            e.currentTarget.style.transform = 'scale(1.05)';
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600' }}>Create SpaceCard</h2>
+                        <button onClick={onClose} style={{
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '50%',
+                            width: '36px',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            fontSize: '1.25rem',
+                            transition: 'all 0.2s',
                         }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                            e.currentTarget.style.transform = 'scale(1)';
-                        }}>
-                        <FaTimes />
-                    </button>
-                </div>
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                e.currentTarget.style.transform = 'scale(1)';
+                            }}>
+                            <FaTimes />
+                        </button>
+                    </div>
 
-                {/* Step Indicator */}
-                <div style={{
-                    display: 'flex',
-                    padding: '1rem 1.5rem',
-                    gap: '1rem',
-                    borderBottom: '1px solid rgba(127, 255, 212, 0.1)',
-                    background: 'rgba(255, 255, 255, 0.01)'
-                }}>
-                    {['Select Image', 'Card Details', 'Preview'].map((label, idx) => (
-                        <div key={idx} style={{
-                            flex: 1,
-                            textAlign: 'center',
-                            padding: '0.75rem',
-                            borderRadius: '12px',
-                            background: step === idx + 1
-                                ? 'rgba(127, 255, 212, 0.15)'
-                                : 'rgba(255, 255, 255, 0.03)',
-                            backdropFilter: step === idx + 1 ? 'blur(10px)' : 'none',
-                            color: step === idx + 1 ? '#7FFFD4' : '#888',
-                            fontWeight: step === idx + 1 ? '600' : '400',
-                            border: step === idx + 1
-                                ? '1px solid rgba(127, 255, 212, 0.3)'
-                                : '1px solid rgba(255, 255, 255, 0.05)',
-                            transition: 'all 0.3s ease',
-                            boxShadow: step === idx + 1
-                                ? '0 4px 12px rgba(127, 255, 212, 0.2)'
-                                : 'none'
-                        }}>
-                            {idx + 1}. {label}
-                        </div>
-                    ))}
+                    {/* Step Indicator (Tabs) - Centered */}
+                    <div style={{
+                        display: 'flex',
+                        padding: '0.5rem 1.5rem 1.5rem 1.5rem',
+                        gap: '1rem',
+                        justifyContent: 'center',
+                        flexWrap: 'wrap'
+                    }}>
+                        {['Select Image', 'Card Details', 'Preview'].map((label, idx) => (
+                            <div key={idx} style={{
+                                flex: '0 1 auto',
+                                minWidth: '120px',
+                                textAlign: 'center',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '12px',
+                                background: step === idx + 1
+                                    ? 'rgba(127, 255, 212, 0.15)'
+                                    : 'rgba(255, 255, 255, 0.03)',
+                                backdropFilter: step === idx + 1 ? 'blur(10px)' : 'none',
+                                color: step === idx + 1 ? '#7FFFD4' : '#888',
+                                fontWeight: step === idx + 1 ? '600' : '400',
+                                border: step === idx + 1
+                                    ? '1px solid rgba(127, 255, 212, 0.3)'
+                                    : '1px solid rgba(255, 255, 255, 0.05)',
+                                transition: 'all 0.3s ease',
+                                boxShadow: step === idx + 1
+                                    ? '0 4px 12px rgba(127, 255, 212, 0.2)'
+                                    : 'none',
+                                cursor: 'default'
+                            }}>
+                                {idx + 1}. {label}
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Content */}
@@ -1256,7 +1262,7 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                     padding: '1.5rem',
                     borderTop: '1px solid #333',
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: 'center',
                     gap: '1rem'
                 }}>
                     {step > 1 && (
@@ -1275,7 +1281,7 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                             Back
                         </button>
                     )}
-                    <div style={{ flex: 1 }} />
+
                     {step < 3 ? (
                         <button
                             onClick={() => setStep(step + 1)}

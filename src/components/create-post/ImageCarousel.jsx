@@ -47,9 +47,33 @@ const ImageCarousel = ({
     if (slides.length === 0) {
         return (
             <div className="empty-state" onClick={onAddMoreClick}>
-                <FaImage size={48} />
-                <p>Click to select images</p>
-                <span>Up to 10 images</span>
+                {/* Subtle floating elements */}
+                <div style={{ position: 'absolute', top: '15%', left: '15%', width: '3px', height: '3px', background: 'var(--ice-mint)', borderRadius: '50%', boxShadow: '0 0 8px rgba(127, 255, 212, 0.6)', animation: 'float 3s infinite ease-in-out', opacity: 0.6 }}></div>
+                <div style={{ position: 'absolute', top: '25%', right: '20%', width: '2px', height: '2px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 4px #fff', animation: 'float 4s infinite ease-in-out', animationDelay: '1s', opacity: 0.4 }}></div>
+                <div style={{ position: 'absolute', bottom: '20%', left: '25%', width: '2px', height: '2px', background: 'var(--ice-mint)', borderRadius: '50%', boxShadow: '0 0 6px rgba(127, 255, 212, 0.5)', animation: 'pulse 2s infinite', opacity: 0.5 }}></div>
+
+                <FaPlus size={32} color="var(--ice-mint)" style={{ filter: 'drop-shadow(0 0 10px rgba(127, 255, 212, 0.5))' }} />
+                <p style={{ color: 'var(--ice-mint)', marginTop: '1rem', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Add Photos</p>
+                <span style={{ fontSize: '0.8rem', color: 'rgba(127, 255, 212, 0.6)', marginTop: '0.5rem' }}>
+                    or drag and drop
+                </span>
+                <div style={{
+                    marginTop: '1.5rem',
+                    fontSize: '0.65rem',
+                    color: 'rgba(255,255,255,0.4)',
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    paddingTop: '0.8rem',
+                    display: 'flex',
+                    gap: '0.8rem',
+                    fontFamily: 'var(--font-family-mono)',
+                    letterSpacing: '0.05em'
+                }}>
+                    <span>300 DPI RECOMMENDED</span>
+                    <span>•</span>
+                    <span>RAW SUPPORTED</span>
+                    <span>•</span>
+                    <span>UP TO 10 SLIDES</span>
+                </div>
             </div>
         );
     }

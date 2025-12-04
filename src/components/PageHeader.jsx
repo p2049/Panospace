@@ -17,40 +17,98 @@ const PageHeader = ({
     borderBottom = true,
     children = null,
     style = {},
-    contentStyle = {}
+    contentStyle = {},
+    bottomSlot = null,
+    bottomSlotStyle = {}
 }) => {
     return (
         <>
-            <div style={{
-                padding: '1rem 2rem',
-                borderBottom: borderBottom ? '1px solid #333' : 'none',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                position: sticky ? 'sticky' : 'relative',
-                top: sticky ? 0 : 'auto',
-                background: '#000',
-                zIndex: 100,
-                ...style
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    width: '100%',
-                    ...contentStyle
-                }}>
+            <style>{`
+                .page-header-container {
+                    padding: 1rem 2rem;
+                    border-bottom: 1px solid #333;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    position: sticky;
+                    top: 0;
+                    background: #000;
+                    z-index: 100;
+                    padding-top: max(1rem, env(safe-area-inset-top));
+                    padding-left: max(2rem, env(safe-area-inset-left));
+                    padding-right: max(2rem, env(safe-area-inset-right));
+                }
+                .page-header-content {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                }
+                .page-header-title {
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                    margin: 0;
+                    text-align: center;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                @media (max-width: 768px) {
+                    .page-header-container {
+                        padding: 0.75rem 1rem;
+                        padding-top: max(0.75rem, env(safe-area-inset-top));
+                        padding-left: max(1rem, env(safe-area-inset-left));
+                        padding-right: max(1rem, env(safe-area-inset-right));
+                        width: 100%;
+                        max-width: 100vw;
+                        box-sizing: border-box;
+                        overflow-x: hidden;
+                    }
+                    .page-header-content {
+                        width: 100%;
+                        max-width: 100%;
+                        box-sizing: border-box;
+                        gap: 0.5rem;
+                    }
+                    .page-header-title {
+                        font-size: 1rem;
+                        min-width: 0;
+                    }
+                }
+                @media (max-width: 480px) {
+                    .page-header-container {
+                        padding: 0.5rem 0.75rem;
+                        padding-top: max(0.5rem, env(safe-area-inset-top));
+                    }
+                    .page-header-title {
+                        font-size: 0.9rem;
+                    }
+                }
+            `}</style>
+            <div
+                className="page-header-container"
+                style={{
+                    borderBottom: borderBottom ? '1px solid #333' : 'none',
+                    position: sticky ? 'sticky' : 'relative',
+                    top: sticky ? 0 : 'auto',
+                    ...style
+                }}
+            >
+                <div
+                    className="page-header-content"
+                    style={contentStyle}
+                >
                     {/* Left Action (e.g., Cancel button) */}
                     {leftAction && <div>{leftAction}</div>}
 
                     {/* Title */}
-                    <h1 style={{
-                        fontSize: '1.2rem',
-                        fontWeight: 'bold',
-                        margin: 0,
-                        flex: leftAction && rightAction ? 1 : 'none',
-                        textAlign: leftAction && rightAction ? 'center' : 'left'
-                    }}>
+                    <h1
+                        className="page-header-title"
+                        style={{
+                            flex: leftAction && rightAction ? 1 : 'none',
+                            textAlign: leftAction && rightAction ? 'center' : 'left'
+                        }}
+                    >
                         {title}
                     </h1>
 
@@ -60,6 +118,17 @@ const PageHeader = ({
                     {/* Custom children (for complex headers) */}
                     {children}
                 </div>
+
+                {/* Bottom Slot (for tabs/filters inside sticky header) */}
+                {bottomSlot && (
+                    <div style={{
+                        width: '100%',
+                        marginTop: '1rem',
+                        ...bottomSlotStyle
+                    }}>
+                        {bottomSlot}
+                    </div>
+                )}
             </div>
 
             {/* Progress Bar */}
@@ -78,7 +147,7 @@ const PageHeader = ({
 };
 
 PageHeader.propTypes = {
-    title: PropTypes.node.isRequired,
+    title: PropTypes.string.isRequired,
     leftAction: PropTypes.node,
     rightAction: PropTypes.node,
     showProgress: PropTypes.bool,
@@ -87,7 +156,9 @@ PageHeader.propTypes = {
     borderBottom: PropTypes.bool,
     children: PropTypes.node,
     style: PropTypes.object,
-    contentStyle: PropTypes.object
+    contentStyle: PropTypes.object,
+    bottomSlot: PropTypes.node,
+    bottomSlotStyle: PropTypes.object
 };
 
 export default PageHeader;

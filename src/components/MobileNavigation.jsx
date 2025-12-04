@@ -4,6 +4,7 @@ import { FaHome, FaSearch, FaUser, FaPlusSquare, FaCog, FaSignOutAlt, FaCalendar
 import { useAuth } from '../context/AuthContext';
 import NotificationBadge from './NotificationBadge';
 
+// Mobile Navigation Component
 const MobileNavigation = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [lastActivity, setLastActivity] = useState(Date.now());
@@ -26,8 +27,13 @@ const MobileNavigation = () => {
         return () => clearInterval(inactivityTimerRef.current);
     }, [lastActivity]);
 
-    // Don't show on login/signup
-    if (['/login', '/signup'].includes(location.pathname)) {
+    // Don't show on login/signup or specific creation pages
+    const hiddenPaths = ['/login', '/signup', '/create-collection', '/edit-profile', '/gallery/create', '/event/create', '/museum/create'];
+    if (hiddenPaths.includes(location.pathname) ||
+        location.pathname.startsWith('/edit-post/') ||
+        location.pathname.includes('/create-issue') ||
+        location.pathname.includes('/curate')
+    ) {
         return null;
     }
 
@@ -62,7 +68,7 @@ const MobileNavigation = () => {
         transition: 'all 0.2s',
         opacity: 0.7,
         width: '100%',
-        minHeight: '44px', // Minimum tap target
+        minHeight: '44px',
         minWidth: '44px'
     };
 
@@ -107,15 +113,16 @@ const MobileNavigation = () => {
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
         color: '#7FFFD4',
         background: 'transparent',
-        width: '44px', // Minimum tap target
+        width: '44px',
         height: '44px',
         minWidth: '44px',
         minHeight: '44px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '10px', // Increased padding for better touch area
-        WebkitTapHighlightColor: 'transparent'
+        padding: '10px',
+        WebkitTapHighlightColor: 'transparent',
+        filter: 'drop-shadow(0 0 4px rgba(127, 255, 212, 0.4))'
     };
 
     return (
@@ -135,7 +142,6 @@ const MobileNavigation = () => {
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.8))' }} // Slight shadow
                 >
                     <line x1="3" y1="12" x2="21" y2="12"></line>
                     <line x1="3" y1="6" x2="21" y2="6"></line>

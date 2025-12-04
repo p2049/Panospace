@@ -107,19 +107,16 @@ const SearchResults = ({
                                             currentMode === 'spacecards' ? results.spacecards.length === 0 : true
                 ) && hasSearched && (
                     <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        width: '100vw',
-                        height: '100dvh', // Use dvh for better mobile support
-                        zIndex: 5,
+                        width: '100%',
+                        minHeight: '60vh',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: 'radial-gradient(circle at 50% 50%, #0b0b0b 0%, #000000 100%)',
-                        padding: '0 1.5rem', // Add side padding for mobile
-                        textAlign: 'center' // Ensure text is centered
+                        background: 'transparent',
+                        padding: '2rem 1.5rem',
+                        textAlign: 'center',
+                        position: 'relative'
                     }}>
                         {/* Star Background */}
                         <StarBackground />

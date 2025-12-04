@@ -43,7 +43,7 @@ const FilmOptionsPanel = ({
     return (
         <div className="form-section">
             {/* Master Toggle */}
-            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: filmMetadata.isFilm ? '1rem' : 0 }}>
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: filmMetadata.isFilm ? '0.75rem' : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <FaMagic style={{ color: '#7FFFD4' }} />
                     <span style={{ fontWeight: '600', fontSize: '1rem' }}>Film Photography</span>
@@ -76,28 +76,28 @@ const FilmOptionsPanel = ({
                             value={filmMetadata.stock}
                             onChange={(e) => setFilmMetadata({ ...filmMetadata, stock: e.target.value })}
                             className="form-input"
-                            style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            style={{ padding: '0.4rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                         >
-                            <option value="">Stock...</option>
-                            {FILM_STOCKS.map(stock => <option key={stock} value={stock}>{stock}</option>)}
+                            <option value="" style={{ background: '#000' }}>Stock...</option>
+                            {FILM_STOCKS.map(stock => <option key={stock} value={stock} style={{ background: '#000' }}>{stock}</option>)}
                         </select>
                         <select
                             value={filmMetadata.format}
                             onChange={(e) => setFilmMetadata({ ...filmMetadata, format: e.target.value })}
                             className="form-input"
-                            style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            style={{ padding: '0.4rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                         >
-                            <option value="">Format...</option>
-                            {FILM_FORMATS.map(fmt => <option key={fmt} value={fmt}>{fmt}</option>)}
+                            <option value="" style={{ background: '#000' }}>Format...</option>
+                            {FILM_FORMATS.map(fmt => <option key={fmt} value={fmt} style={{ background: '#000' }}>{fmt}</option>)}
                         </select>
                         <select
                             value={filmMetadata.iso}
                             onChange={(e) => setFilmMetadata({ ...filmMetadata, iso: e.target.value })}
                             className="form-input"
-                            style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            style={{ padding: '0.4rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                         >
-                            <option value="">ISO...</option>
-                            {COMMON_FILM_ISOS.map(iso => <option key={iso} value={iso}>{iso}</option>)}
+                            <option value="" style={{ background: '#000' }}>ISO...</option>
+                            {COMMON_FILM_ISOS.map(iso => <option key={iso} value={iso} style={{ background: '#000' }}>{iso}</option>)}
                         </select>
                     </div>
 
@@ -109,7 +109,7 @@ const FilmOptionsPanel = ({
                             value={filmMetadata.cameraOverride}
                             onChange={(e) => setFilmMetadata({ ...filmMetadata, cameraOverride: e.target.value })}
                             className="form-input"
-                            style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            style={{ padding: '0.4rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                         />
                         <input
                             type="text"
@@ -117,27 +117,27 @@ const FilmOptionsPanel = ({
                             value={filmMetadata.lensOverride}
                             onChange={(e) => setFilmMetadata({ ...filmMetadata, lensOverride: e.target.value })}
                             className="form-input"
-                            style={{ padding: '0.4rem', fontSize: '0.85rem' }}
+                            style={{ padding: '0.4rem', fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                         />
                     </div>
 
                     {/* Visuals Subsection */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#888', marginBottom: '0.5rem' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(127, 255, 212, 0.2)' }}>
+                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--ice-mint)', marginBottom: '0.5rem', opacity: 0.8 }}>
                             Visuals
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                             {/* Date Stamp Toggle */}
                             <div style={{ flex: 1, minWidth: '140px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', lineHeight: '1' }}>
                                     <input
                                         type="checkbox"
                                         checked={enableQuartzDate}
                                         onChange={(e) => setEnableQuartzDate(e.target.checked)}
-                                        style={{ width: '16px', height: '16px' }}
+                                        style={{ width: '18px', height: '18px', margin: 0, flexShrink: 0 }}
                                     />
-                                    Quartz Date Stamp
+                                    <span style={{ marginTop: '1px' }}>Quartz Date Stamp</span>
                                 </label>
 
                                 {enableQuartzDate && (
@@ -148,7 +148,7 @@ const FilmOptionsPanel = ({
                                             onChange={(e) => setQuartzDateString(e.target.value)}
                                             className="form-input"
                                             placeholder="D M 'Y"
-                                            style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%', marginBottom: '0.5rem' }}
+                                            style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%', marginBottom: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                                         />
                                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                             <span style={{ fontSize: '0.75rem', color: '#888' }}>Color:</span>
@@ -209,10 +209,10 @@ const FilmOptionsPanel = ({
                                                     setQuartzDateString(newText);
                                                 }}
                                                 className="form-input"
-                                                style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%' }}
+                                                style={{ padding: '0.3rem', fontSize: '0.8rem', width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(127, 255, 212, 0.3)', color: '#fff' }}
                                             >
                                                 {QUARTZ_DATE_FORMATS.map(fmt => (
-                                                    <option key={fmt.value} value={fmt.value}>{fmt.label}</option>
+                                                    <option key={fmt.value} value={fmt.value} style={{ background: '#000' }}>{fmt.label}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -222,14 +222,14 @@ const FilmOptionsPanel = ({
 
                             {/* Film Border Toggle */}
                             <div style={{ flex: 1, minWidth: '140px' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', lineHeight: '1' }}>
                                     <input
                                         type="checkbox"
                                         checked={enableSprocketOverlay}
                                         onChange={(e) => setEnableSprocketOverlay(e.target.checked)}
-                                        style={{ width: '16px', height: '16px' }}
+                                        style={{ width: '18px', height: '18px', margin: 0, flexShrink: 0 }}
                                     />
-                                    Film Strip Border
+                                    <span style={{ marginTop: '1px' }}>Film Strip Border</span>
                                 </label>
                             </div>
                         </div>

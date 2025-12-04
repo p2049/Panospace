@@ -57,6 +57,7 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
     const { trackLike } = usePreferenceLearning();
 
     const handleStarClick = async (rating) => {
+        setHoveredStar(0); // Fix for sticky hover on mobile
         if (!currentUser) {
             alert('Please log in to rate posts');
             return;

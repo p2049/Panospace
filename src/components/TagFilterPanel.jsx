@@ -31,13 +31,15 @@ const TagFilterPanel = ({
             <div className="tag-filter-panel" style={{
                 marginBottom: '0.8rem',
                 background: 'rgba(0, 0, 0, 0.4)',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 border: '1px solid rgba(127, 255, 212, 0.3)',
                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(127, 255, 212, 0.05)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
                 overflow: 'hidden',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                width: '100%',
+                boxSizing: 'border-box'
             }}>
                 <div
                     className="panel-header"
@@ -49,36 +51,43 @@ const TagFilterPanel = ({
                         alignItems: 'center',
                         cursor: 'pointer',
                         userSelect: 'none',
-                        borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.03)' : 'none'
+                        borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.03)' : 'none',
+                        boxSizing: 'border-box'
                     }}
                 >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1 }}>
                         <span style={{
                             fontWeight: 700,
-                            color: '#fff',
+                            color: 'var(--ice-mint)',
                             fontFamily: 'var(--font-family-heading)',
-                            letterSpacing: '0.08em',
+                            letterSpacing: '0.15em',
                             textTransform: 'uppercase',
-                            fontSize: '0.85rem',
-                            textShadow: '0 0 10px rgba(255, 255, 255, 0.1)'
+                            fontSize: '0.75rem',
+                            textShadow: '0 0 10px rgba(127, 255, 212, 0.2)',
+                            marginBottom: '0.2rem'
                         }}>
                             {category.label}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)', letterSpacing: '0.02em' }}>{category.description}</span>
                     </div>
                     {isExpanded ?
-                        <FaChevronUp size={10} color="var(--ice-mint)" style={{ opacity: 0.8, filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))' }} /> :
-                        <FaChevronDown size={10} color="rgba(255, 255, 255, 0.3)" />
+                        <FaChevronUp size={10} color="var(--ice-mint)" style={{ opacity: 0.8, filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))', flexShrink: 0, marginLeft: '0.5rem' }} /> :
+                        <FaChevronDown size={10} color="rgba(255, 255, 255, 0.3)" style={{ flexShrink: 0, marginLeft: '0.5rem' }} />
                     }
                 </div>
 
                 {isExpanded && (
-                    <div className="panel-content" style={{ padding: '0.5rem 1.2rem 1rem 1.2rem' }}>
+                    <div className="panel-content" style={{
+                        padding: '0.5rem 1.2rem 1rem 1.2rem',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        overflow: 'hidden'
+                    }}>
                         <div className="tags-grid" style={{
                             display: 'grid',
                             gridTemplateRows: 'repeat(2, min-content)',
                             gridAutoFlow: 'column',
-                            gridAutoColumns: 'max-content', // Ensure columns fit content
+                            gridAutoColumns: 'max-content',
                             gap: '0.4rem',
                             rowGap: '0.5rem',
                             width: '100%',
@@ -87,7 +96,8 @@ const TagFilterPanel = ({
                             paddingBottom: '0.5rem',
                             scrollbarWidth: 'thin',
                             scrollbarColor: 'rgba(127, 255, 212, 0.3) rgba(255, 255, 255, 0.02)',
-                            touchAction: 'auto' // Allow both horizontal and vertical scrolling
+                            touchAction: 'pan-y pan-x',
+                            WebkitOverflowScrolling: 'touch'
                         }}>
                             {category.examples.map(tag => {
                                 const isSelected = selectedTags.includes(tag);

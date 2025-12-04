@@ -33,9 +33,17 @@ export const useCreatePost = () => {
         for (let i = 0; i < retries; i++) {
             try {
                 const uploadTask = uploadBytesResumable(storageRef, file, metadata);
-                await new Promise((resolve, reject) => {
+
+                // Add timeout protection (60 seconds per upload)
+                const uploadPromise = new Promise((resolve, reject) => {
                     uploadTask.on('state_changed', null, reject, resolve);
                 });
+
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Upload timeout - please check your connection')), 60000)
+                );
+
+                await Promise.race([uploadPromise, timeoutPromise]);
                 return await getDownloadURL(storageRef);
             } catch (err) {
                 console.warn(`Upload attempt ${i + 1} failed:`, err);
@@ -50,12 +58,21 @@ export const useCreatePost = () => {
     // status: 'published' (default) | 'draft'
     // -----------------------------------------------------------------------
     const createPost = async (postData, slides, status = 'published') => {
+        console.log('🚀 CREATE POST STARTED');
+        console.log('📊 Slides count:', slides.length);
+        console.log('📝 Post data:', postData);
+
         setLoading(true);
         setError(null);
         setProgress(0);
+        console.log('✅ Loading state set to true, progress set to 0');
 
         try {
-            if (!currentUser) throw new Error('Must be logged in');
+            if (!currentUser) {
+                console.error('❌ No current user!');
+                throw new Error('Must be logged in');
+            }
+            console.log('✅ User authenticated:', currentUser.uid);
 
             // 🔐 SECURITY: Enforce rate limiting
             const now = Date.now();
@@ -121,11 +138,31 @@ export const useCreatePost = () => {
             // Process slides sequentially to prevent memory/network overload
             for (let i = 0; i < totalSlides; i++) {
                 const slide = slides[i];
+                console.log(`🖼️ Processing slide ${i + 1}/${totalSlides}...`);
+
+                // Update progress at start of each slide
+                const baseProgress = (i / totalSlides) * 100;
+                setProgress(Math.round(baseProgress));
 
                 if (slide.type === 'image') {
                     try {
+                        console.log(`  📸 Generating thumbnails for slide ${i + 1}...`);
+                        setProgress(Math.round(baseProgress + (1 / totalSlides) * 10)); // +10% for thumbnail gen
+
                         // 1. Generate Thumbnails Client-Side
-                        const { l0, l1, l2 } = await generateAllThumbnails(slide.file);
+                        let l0, l1, l2;
+                        try {
+                            const thumbs = await generateAllThumbnails(slide.file);
+                            l0 = thumbs.l0;
+                            l1 = thumbs.l1;
+                            l2 = thumbs.l2;
+                            console.log(`  ✅ Thumbnails generated for slide ${i + 1}`);
+                        } catch (genError) {
+                            console.warn(`  ⚠️ Thumbnail generation failed for slide ${i + 1}, using original:`, genError);
+                            l0 = slide.file;
+                            l1 = slide.file;
+                            l2 = slide.file;
+                        }
 
                         // 2. Define Paths
                         const timestamp = Date.now();
@@ -136,24 +173,33 @@ export const useCreatePost = () => {
                         const l0Ref = ref(storage, `posts/${currentUser.uid}/thumbnails/${baseFilename}_l0.jpg`);
 
                         // 3. Upload All Versions with fallback
+                        console.log(`  ⬆️ Uploading original image ${i + 1}...`);
+                        setProgress(Math.round(baseProgress + (1 / totalSlides) * 20)); // +20% for upload start
+
                         // We upload L2 (Original) first to ensure we have the main asset
                         const urlL2 = await uploadWithRetry(l2Ref, l2);
+                        console.log(`  ✅ Original uploaded for slide ${i + 1}`);
+                        setProgress(Math.round(baseProgress + (1 / totalSlides) * 50)); // +50% after main upload
 
                         // Upload thumbnails with fallback to original if generation failed
                         let urlL1 = urlL2; // Fallback
                         let urlL0 = urlL2; // Fallback
 
                         try {
+                            console.log(`  ⬆️ Uploading thumbnails for slide ${i + 1}...`);
                             [urlL1, urlL0] = await Promise.all([
                                 uploadWithRetry(l1Ref, l1),
                                 uploadWithRetry(l0Ref, l0)
                             ]);
+                            console.log(`  ✅ Thumbnails uploaded for slide ${i + 1}`);
+                            setProgress(Math.round(baseProgress + (1 / totalSlides) * 70)); // +70% after thumbnails
                         } catch (thumbError) {
                             console.warn('Thumbnail upload failed, using original:', thumbError);
                             // Fallback already set above
                         }
 
                         // 4. Get Dimensions
+                        console.log(`  📐 Getting dimensions for slide ${i + 1}...`);
                         let width = null;
                         let height = null;
                         try {
@@ -165,29 +211,40 @@ export const useCreatePost = () => {
                             });
                             width = img.naturalWidth;
                             height = img.naturalHeight;
+                            console.log(`  ✅ Dimensions: ${width}x${height}`);
                         } catch (e) {
                             console.warn('Failed to get image dimensions', e);
                         }
 
                         // 5. EXIF - Enhanced with retry
+                        console.log(`  📷 Extracting EXIF for slide ${i + 1}...`);
                         let extractedExif = null;
-                        let exifAttempts = 0;
-                        const maxExifAttempts = 2;
 
-                        while (!extractedExif && exifAttempts < maxExifAttempts) {
+                        // Only attempt EXIF extraction for JPEG/TIFF
+                        const isExifSupported = slide.file.type === 'image/jpeg' ||
+                            slide.file.type === 'image/jpg' ||
+                            slide.file.type === 'image/tiff';
+
+                        if (!isExifSupported) {
+                            console.log('  ⏭️ Skipping EXIF for non-JPEG/TIFF file');
+                        } else {
                             try {
-                                extractedExif = await extractExifData(slide.file);
-                                if (extractedExif) break;
+                                // ONE SHOT ONLY - 300ms timeout
+                                // If it takes longer than 300ms, it likely doesn't have EXIF or is too big to parse quickly.
+                                const exifPromise = extractExifData(slide.file);
+                                const timeoutPromise = new Promise((_, reject) =>
+                                    setTimeout(() => reject(new Error('EXIF timeout')), 300)
+                                );
+
+                                extractedExif = await Promise.race([exifPromise, timeoutPromise]);
                             } catch (e) {
-                                exifAttempts++;
-                                console.warn(`EXIF extraction attempt ${exifAttempts} failed:`, e);
-                                if (exifAttempts < maxExifAttempts) {
-                                    await new Promise(r => setTimeout(r, 500)); // Wait before retry
-                                }
+                                // Silently fail or log debug only - don't stop, don't retry
+                                console.log('  ⏭️ No EXIF data found or extraction timed out (skipping)');
                             }
                         }
 
                         const finalExif = slide.manualExif || extractedExif;
+                        console.log(`  ✅ EXIF extracted for slide ${i + 1}`);
 
                         // 6. Print Sizes
                         const validSizes = getValidSizesForImage(width, height);
@@ -201,10 +258,17 @@ export const useCreatePost = () => {
                         const printSizeIds = bestFitSizes.map((s) => s.id);
 
                         // 7. Dominant Color
+                        console.log(`  🎨 Extracting color for slide ${i + 1}...`);
                         let dominantColor = null;
                         try {
-                            const colorData = await extractDominantColor(urlL1 || urlL2); // Use L1 for speed if available
+                            // Add timeout for color extraction (3 seconds)
+                            const colorPromise = extractDominantColor(urlL1 || urlL2);
+                            const colorTimeout = new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('Color extraction timeout')), 3000)
+                            );
+                            const colorData = await Promise.race([colorPromise, colorTimeout]);
                             dominantColor = colorData.hex;
+                            console.log(`  ✅ Color extracted: ${dominantColor}`);
                         } catch (e) {
                             console.warn('Failed to extract dominant color', e);
                         }

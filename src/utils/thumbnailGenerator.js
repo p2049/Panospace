@@ -19,7 +19,13 @@ export const generateThumbnail = async (file, maxWidth, quality = 0.8, blur = fa
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
+        // Add timeout protection (10 seconds for thumbnail generation)
+        const timeout = setTimeout(() => {
+            reject(new Error('Thumbnail generation timeout'));
+        }, 10000);
+
         img.onload = () => {
+            clearTimeout(timeout);
             // Calculate dimensions maintaining aspect ratio
             let width = img.width;
             let height = img.height;
@@ -54,7 +60,10 @@ export const generateThumbnail = async (file, maxWidth, quality = 0.8, blur = fa
             );
         };
 
-        img.onerror = () => reject(new Error('Failed to load image'));
+        img.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error('Failed to load image'));
+        };
         img.src = URL.createObjectURL(file);
     });
 };

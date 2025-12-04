@@ -19,7 +19,9 @@ import { collection, query, where, orderBy, limit, getDocs } from 'firebase/fire
 import { db } from '../firebase';
 import { SpaceCardService } from '../services/SpaceCardService';
 import PageHeader from '../components/PageHeader';
-import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle } from 'react-icons/fa';
+
+
 
 
 
@@ -119,6 +121,12 @@ const CreatePost = () => {
     const handleFileSelect = (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
+
+        // Enforce 10 image limit
+        if (slides.length + files.length > 10) {
+            alert('You can only upload up to 10 images per post.');
+            return;
+        }
 
         // Get ALL EXIF from first slide to auto-fill new slides
         const firstSlideExif = slides.length > 0 ? (slides[0].manualExif || slides[0].exif) : null;
@@ -333,16 +341,19 @@ const CreatePost = () => {
         }
 
         try {
+            console.log('🚀 Starting post creation...');
             // Get collection's postToFeed setting if a collection is selected
             const selectedCollection = selectedCollectionId
                 ? collections.find(c => c.id === selectedCollectionId)
                 : null;
 
+            console.log('📝 Processing slides...', slides.length);
             // Apply shared title logic
             const processedSlides = shareTitleAcrossImages
                 ? slides.map(slide => ({ ...slide, title: title }))
                 : slides;
 
+            console.log('📤 Calling createPost...');
             await createPost({
                 title,
                 tags,
@@ -419,7 +430,7 @@ const CreatePost = () => {
             navigate('/');
         } catch (err) {
             console.error('Error creating post:', err);
-            alert('Failed to create post. Please try again.');
+            alert(`Failed to create post: ${err.message}`);
         } finally {
             submittingRef.current = false;
         }
@@ -428,28 +439,94 @@ const CreatePost = () => {
     const activeSlide = slides[activeSlideIndex];
     const hasExif = activeSlide?.exif || activeSlide?.manualExif;
 
+    const getPublishButtonState = () => {
+        if (loading) return { text: "Publishing...", disabled: true };
+        if (slides.length === 0) return { text: "Add Images", action: () => fileInputRef.current?.click(), disabled: false };
+        if (!title.trim()) return { text: "Add Title", action: () => document.querySelector('input[placeholder="Write a title..."]')?.focus(), disabled: false };
+        return { text: "Publish", action: handleSubmit, disabled: false };
+    };
+
     return (
         <div className="create-post-container">
             <PageHeader
                 title="CREATE POST"
                 leftAction={
                     <button onClick={() => navigate(-1)} className="header-btn">
-                        <FaTimes /> Cancel
+                        <FaTimes /> <span className="cancel-text">Cancel</span>
                     </button>
                 }
                 rightAction={
                     <button
-                        onClick={handleSubmit}
-                        disabled={loading || slides.length === 0}
-                        className="header-btn-primary"
+                        onClick={() => {
+                            const state = getPublishButtonState();
+                            if (!state.disabled && state.action) state.action();
+                        }}
+                        disabled={getPublishButtonState().disabled}
+                        className="publish-btn-premium desktop-publish"
                     >
-                        {loading ? `Uploading ${progress}%` : 'Publish'}
+                        {loading ? (
+                            <span>{Math.round(progress)}%</span>
+                        ) : (
+                            <>
+                                {getPublishButtonState().text === 'Publish' && <FaRocket size={14} />}
+                                {getPublishButtonState().text}
+                            </>
+                        )}
                     </button>
                 }
                 showProgress={loading}
                 progress={progress}
-                style={{ marginTop: '60px' }}
+                style={{ zIndex: 2000 }}
+                bottomSlot={
+                    slides.length > 0 && (
+                        <div style={{
+                            width: '100%',
+                            padding: '0.5rem 1rem',
+                            background: 'rgba(0,0,0,0.8)',
+                            backdropFilter: 'blur(10px)',
+                            borderBottom: '1px solid rgba(255,255,255,0.1)'
+                        }}>
+                            <ThumbnailStrip
+                                slides={slides}
+                                activeSlideIndex={activeSlideIndex}
+                                setActiveSlideIndex={setActiveSlideIndex}
+                                handleDragStart={handleDragStart}
+                                handleDragOver={handleDragOver}
+                                handleDrop={handleDrop}
+                                moveSlide={moveSlide}
+                            />
+                        </div>
+                    )
+                }
             />
+
+            {/* Progress Dots (Desktop Fixed) */}
+            <div className="progress-dots-container">
+                <div className={`progress-dot ${slides.length > 0 ? 'completed' : 'active'}`} title="Add Images">
+                    <div className="dot-icon"><FaImages size={12} /></div>
+                    <div className="dot-line"></div>
+                </div>
+                <div className={`progress-dot ${slides.length > 0 ? (title.trim().length > 0 ? 'completed' : 'active') : ''}`} title="Add Title">
+                    <div className="dot-icon"><FaPen size={12} /></div>
+                    <div className="dot-line"></div>
+                </div>
+                <div className={`progress-dot ${title.trim().length > 0 ? 'active' : ''}`} title="Ready">
+                    <div className="dot-icon"><FaCheckCircle size={12} /></div>
+                </div>
+            </div>
+
+            {/* Mobile Publish Button - Positioned via CSS */}
+            <button
+                onClick={() => {
+                    const state = getPublishButtonState();
+                    if (!state.disabled && state.action) state.action();
+                }}
+                disabled={getPublishButtonState().disabled}
+                className="mobile-publish-btn"
+            >
+                {loading ? `Uploading ${Math.round(progress)}%` : getPublishButtonState().text}
+            </button>
+
 
 
             <div className="create-post-layout">
@@ -491,11 +568,20 @@ const CreatePost = () => {
 
                 {/* RIGHT COLUMN: Post Details & Settings */}
                 <div className="right-column">
-                    <div className="form-section" style={{ padding: '0.75rem' }}>
+                    <div className="form-section" style={{
+                        padding: '0.75rem 0.75rem 0.75rem',
+                        border: '1px solid rgba(127, 255, 212, 0.15)',
+                        boxShadow: '0 0 8px rgba(127, 255, 212, 0.08)'
+                    }}>
+                        <style>{`
+                            input::placeholder {
+                                color: rgba(255, 255, 255, 0.45);
+                            }
+                        `}</style>
                         <div style={{ marginBottom: '0.5rem' }}>
                             <input
                                 type="text"
-                                placeholder="Write a title..."
+                                placeholder="Title your post"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 className="form-input"
@@ -506,7 +592,9 @@ const CreatePost = () => {
                                     borderBottom: '1px solid #333',
                                     borderRadius: 0,
                                     padding: '0.5rem 0',
-                                    background: 'transparent'
+                                    background: 'transparent',
+                                    transition: 'all 110ms ease-out',
+                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
                                 }}
                             />
                         </div>
@@ -514,6 +602,11 @@ const CreatePost = () => {
                         {/* Share Title Toggle */}
                         <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#aaa' }}>
+                                <style>{`
+                                    input::placeholder {
+                                        color: rgba(255, 255, 255, 0.45);
+                                    }
+                                `}</style>
                                 <div style={{ position: 'relative', width: '36px', height: '18px' }}>
                                     <input
                                         type="checkbox"
@@ -532,35 +625,41 @@ const CreatePost = () => {
                                         borderRadius: '50%', transition: '0.3s'
                                     }}></div>
                                 </div>
-                                Share title across all images
+                                Use one title for all photos
                             </label>
                         </div>
 
                         <div className="location-grid" style={{ gap: '0.5rem' }}>
-                            <input
-                                type="text"
-                                placeholder="City"
-                                value={location.city}
-                                onChange={(e) => setLocation({ ...location, city: e.target.value })}
-                                className="form-input"
-                                style={{ padding: '0.4rem', fontSize: '0.9rem' }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="State"
-                                value={location.state}
-                                onChange={(e) => setLocation({ ...location, state: e.target.value })}
-                                className="form-input"
-                                style={{ padding: '0.4rem', fontSize: '0.9rem' }}
-                            />
-                            <input
-                                type="text"
-                                placeholder="Country"
-                                value={location.country}
-                                onChange={(e) => setLocation({ ...location, country: e.target.value })}
-                                className="form-input"
-                                style={{ padding: '0.4rem', fontSize: '0.9rem' }}
-                            />
+                            <div className="location-input-wrapper">
+                                <FaMapMarkerAlt className="location-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="City"
+                                    value={location.city}
+                                    onChange={(e) => setLocation({ ...location, city: e.target.value })}
+                                    className="form-input location-input"
+                                />
+                            </div>
+                            <div className="location-input-wrapper">
+                                <FaMapMarkerAlt className="location-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="State"
+                                    value={location.state}
+                                    onChange={(e) => setLocation({ ...location, state: e.target.value })}
+                                    className="form-input location-input"
+                                />
+                            </div>
+                            <div className="location-input-wrapper">
+                                <FaMapMarkerAlt className="location-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Country"
+                                    value={location.country}
+                                    onChange={(e) => setLocation({ ...location, country: e.target.value })}
+                                    className="form-input location-input"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -627,8 +726,6 @@ const CreatePost = () => {
 
 
 
-                            // ... existing code ...
-
                             {/* Shop Configuration */}
                             {/* Shop Configuration */}
                             {isFeatureEnabled('SHOP') && (
@@ -643,10 +740,10 @@ const CreatePost = () => {
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
 
             {/* Animated Stars Background */}
-            <div style={{
+            < div style={{
                 position: 'fixed',
                 top: 0,
                 left: 0,
@@ -655,31 +752,39 @@ const CreatePost = () => {
                 pointerEvents: 'none',
                 zIndex: 0
             }}>
-                {stars.map((star) => (
-                    <div
-                        key={star.id}
-                        style={{
-                            position: 'absolute',
-                            width: star.width + 'px',
-                            height: star.height + 'px',
-                            background: '#7FFFD4',
-                            borderRadius: '50%',
-                            top: star.top + '%',
-                            left: star.left + '%',
-                            opacity: star.opacity,
-                            animation: `twinkle ${star.duration}s ease-in-out infinite`,
-                            animationDelay: `${star.delay}s`,
-                            boxShadow: `0 0 ${star.glow}px #7FFFD4`
-                        }}
-                    />
-                ))}
-            </div>
+                {
+                    stars.map((star) => (
+                        <div
+                            key={star.id}
+                            style={{
+                                position: 'absolute',
+                                width: star.width + 'px',
+                                height: star.height + 'px',
+                                background: '#7FFFD4',
+                                borderRadius: '50%',
+                                top: star.top + '%',
+                                left: star.left + '%',
+                                opacity: star.opacity,
+                                animation: `twinkle ${star.duration}s ease-in-out infinite`,
+                                animationDelay: `${star.delay}s`,
+                                boxShadow: `0 0 ${star.glow}px #7FFFD4`
+                            }}
+                        />
+                    ))
+                }
+            </div >
 
             <style>{`
                 @keyframes twinkle {
                     0%, 100% { opacity: 0.3; transform: scale(1); }
                     50% { opacity: 1; transform: scale(1.2); }
                 }
+                
+                body {
+                    overflow-x: hidden;
+                    max-width: 100vw;
+                }
+                
                 .create-post-container * { box-sizing: border-box; }
                 .create-post-container {
                     min-height: 100dvh;
@@ -689,21 +794,11 @@ const CreatePost = () => {
                     display: flex;
                     flex-direction: column;
                     position: relative;
-                    overflow: hidden;
+                    overflow-x: hidden;
+                    overflow-x: hidden;
+                    width: 100%;
+                    max-width: 100vw;
                 }
-                .create-post-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 1rem 2rem;
-                    background: var(--graphite);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                    position: sticky;
-                    top: 0;
-                    z-index: 100;
-                    height: 70px;
-                }
-                .create-post-header h2 { font-size: 1.2rem; font-weight: 700; margin: 0; fontFamily: var(--font-family-heading); letter-spacing: 0.05em; text-transform: uppercase; }
                 .header-btn, .header-btn-primary {
                     padding: 0.6rem 1.2rem;
                     border-radius: 8px;
@@ -713,21 +808,54 @@ const CreatePost = () => {
                     align-items: center;
                     gap: 0.5rem;
                     border: none;
+                    line-height: 1;
+                    transition: all 0.2s ease;
                 }
-                .header-btn { background: transparent; color: var(--slate); }
+                .header-btn { 
+                    background: transparent; 
+                    color: rgba(255, 255, 255, 0.85);
+                    font-weight: 650;
+                    letter-spacing: 0.02em;
+                }
+                .header-btn:hover {
+                    background: rgba(255, 255, 255, 0.05);
+                    color: rgba(255, 255, 255, 0.95);
+                    box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);
+                }
+                .header-btn svg {
+                    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.3));
+                }
                 .header-btn-primary { background: var(--ice-mint); color: var(--black); }
                 .header-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+                
+                /* Mobile publish button - hidden by default */
+                .mobile-publish-btn {
+                    display: none;
+                }
+
+                /* Desktop: Make space for hamburger menu */
+                @media (min-width: 901px) {
+                    .page-header-container {
+                        padding-left: 80px !important;
+                        padding-right: 80px !important;
+                    }
+                    .page-header-content {
+                        justify-content: space-between !important;
+                    }
+                }
 
                 .create-post-layout {
                     display: grid;
-                    grid-template-columns: 400px 1fr; /* Left (Images/Tags) fixed, Right (Details) flexible */
-                    gap: 2rem;
+                    grid-template-columns: 480px 1fr;
+                    gap: 2.75rem;
                     max-width: 1400px;
                     margin: 0 auto;
+                    margin-top: 1rem;
                     padding: 2rem;
                     width: 100%;
                     height: calc(100dvh - 70px);
                     overflow: hidden;
+                    overflow-y: hidden;
                     position: relative;
                     z-index: 1;
                 }
@@ -738,25 +866,56 @@ const CreatePost = () => {
                     display: flex;
                     flex-direction: column;
                     gap: 1rem;
-                    padding-right: 0.5rem; /* Space for scrollbar */
+                    padding-right: 0.5rem;
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
                 }
 
                 .right-column {
                     height: 100%;
                     overflow-y: auto;
-                    padding-right: 0.5rem; /* Space for scrollbar */
+                    padding-right: 0.5rem;
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
                 }
 
                 .form-section {
                     background: var(--graphite);
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     border-radius: 12px;
-                    padding: 1.5rem;
+                    padding: 1.25rem 1.5rem;
                     margin-bottom: 1.5rem;
                     position: relative;
                     z-index: 1;
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
                 }
                 .form-section h3 { margin-top: 0; color: var(--ice-mint); font-size: 1.1rem; margin-bottom: 1.5rem; }
+                
+                .form-input, .form-textarea {
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                    transition: all 110ms ease-out;
+                }
+                .form-input:focus, .form-textarea:focus {
+                    outline: none;
+                    border-color: rgba(127, 255, 212, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(127, 255, 212, 0.2), inset 0 1px 3px rgba(0,0,0,0.15);
+                    background: radial-gradient(circle at center, rgba(127, 255, 212, 0.02), transparent 70%) !important;
+                }
+
+                .location-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 0.5rem;
+                    width: 100%;
+                    max-width: 100%;
+                    box-sizing: border-box;
+                }
                 
                 .collectible-section {
                     background: rgba(0, 255, 157, 0.05);
@@ -800,249 +959,431 @@ const CreatePost = () => {
                     max-height: 200px;
                     overflow-y: auto;
                     z-index: 10;
+                    margin-top: 0.5rem;
                 }
 
                 .sound-result-item {
-                    padding: 0.5rem;
+                    padding: 0.75rem;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     gap: 0.5rem;
+                    border-bottom: 1px solid #333;
                 }
                 .sound-result-item:hover { background: #333; }
 
-                .form-field { margin-bottom: 1.5rem; }
-                .form-field label { display: block; margin-bottom: 0.5rem; color: var(--slate); font-size: 0.9rem; }
-                .form-input {
-                    width: 100%;
-                    background: rgba(0, 0, 0, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 8px;
-                    padding: 0.75rem;
-                    color: #fff;
+                /* Carousel & Thumbnails */
+                .carousel-container { width: 100%; position: relative; z-index: 1; background: var(--black); }
+                .carousel-track { display: flex; width: 100%; }
+                .carousel-slide { 
+                    min-width: 100%; 
+                    aspect-ratio: 1; 
+                    background: var(--graphite); 
+                    border-radius: 12px; 
+                    overflow: hidden; 
+                    position: relative; 
+                    border: 2px solid rgba(255, 255, 255, 0.1); 
                 }
-                .location-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-
-                /* Carousel Styles */
-                .carousel-container {
-                    width: 100%;
-                    position: relative;
-                    z-index: 1;
-                    background: var(--black);
-                }
-
-                .carousel-track {
-                    display: flex;
-                    width: 100%;
-                }
-
-                .carousel-slide {
-                    min-width: 100%;
-                    aspect-ratio: 1;
-                    background: var(--graphite);
-                    border-radius: 12px;
-                    overflow: hidden;
-                    position: relative;
-                    border: 2px solid rgba(255, 255, 255, 0.1);
-                }
-
-                .carousel-slide img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: contain;
-                    user-select: none;
-                    -webkit-user-drag: none;
-                }
-
-                .carousel-overlay {
-                    position: absolute;
-                    inset: 0;
-                    pointer-events: none;
-                }
+                .carousel-slide img { width: 100%; height: 100%; object-fit: contain; user-select: none; }
+                .carousel-overlay { position: absolute; inset: 0; pointer-events: none; }
                 .carousel-overlay button, .carousel-overlay label { pointer-events: auto; }
+                
+                .carousel-dots { display: flex; justify-content: center; gap: 0.5rem; padding: 1rem 0; }
+                .carousel-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.3); border: none; cursor: pointer; padding: 0; transition: all 0.2s; }
+                .carousel-dots .dot.active { background: var(--ice-mint); width: 24px; border-radius: 4px; }
 
-                .carousel-dots {
-                    display: flex;
-                    justify-content: center;
-                    gap: 0.5rem;
-                    padding: 1rem 0;
-                }
+                .thumbnail-scrollbar { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.5rem 0; margin: 0.5rem 0; }
+                .thumbnail-scrollbar::-webkit-scrollbar { height: 8px; }
+                .thumbnail-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 4px; }
+                .thumbnail-scrollbar::-webkit-scrollbar-thumb { background: rgba(127, 255, 212, 0.6); border-radius: 4px; }
+                .thumbnail { min-width: 40px; height: 40px; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; border: 2px solid rgba(255, 255, 255, 0.2); transition: all 0.2s; }
+                .thumbnail:hover { border-color: var(--ice-mint); transform: scale(1.05); }
+                .thumbnail.active { border-color: var(--ice-mint); box-shadow: 0 0 10px rgba(127, 255, 212, 0.3); }
 
-                .carousel-dots .dot {
-                    width: 8px;
-                    height: 8px;
-                    border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.3);
-                    border: none;
-                    cursor: pointer;
-                    padding: 0;
-                    transition: all 0.2s;
-                }
-
-                .carousel-dots .dot.active {
-                    background: var(--ice-mint);
-                    width: 24px;
-                    border-radius: 4px;
-                }
-
-                .thumbnail-scrollbar {
-                    display: flex;
-                    gap: 0.5rem;
-                    overflow-x: auto;
-                    padding: 0.5rem 0;
-                    margin: 0.5rem 0;
-                }
-
-                .thumbnail-scrollbar::-webkit-scrollbar {
-                    height: 8px;
-                }
-
-                .thumbnail-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.05);
-                    border-radius: 4px;
-                }
-
-                .thumbnail-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(127, 255, 212, 0.6);
-                    border-radius: 4px;
-                }
-
-                .thumbnail-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(127, 255, 212, 0.8);
-                }
-
-                .thumbnail {
-                    min-width: 40px;
-                    height: 40px;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    cursor: pointer;
-                    position: relative;
-                    border: 2px solid rgba(255, 255, 255, 0.2);
-                    transition: all 0.2s;
-                }
-
-                .thumbnail:hover {
-                    border-color: var(--ice-mint);
-                    transform: scale(1.05);
-                }
-
-                .thumbnail.active {
-                    justify-content: center;
-                    gap: 0.5rem;
-                    margin-top: 1rem;
-                }
-
-                .slide-remove-btn {
-                    position: absolute;
-                    top: 10px;
-                    right: 10px;
-                    background: rgba(0,0,0,0.6);
-                    border: none;
-                    color: #fff;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                }
-
-                .overlay-bottom-bar {
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    background: linear-gradient(transparent, rgba(0,0,0,0.9));
-                    padding: 1rem;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
+                .slide-remove-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+                .overlay-bottom-bar { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.9)); padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+                
                 .shop-toggle-small { display: flex; align-items: center; gap: 0.5rem; color: #fff; cursor: pointer; font-size: 0.8rem; }
                 .exif-badge { background: var(--ice-mint); color: #000; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; }
+                
+                .empty-state { 
+                    padding: 3rem; 
+                    text-align: center; 
+                    color: var(--slate); 
+                    border: 1px solid var(--ice-mint); 
+                    box-shadow: 0 0 12px rgba(127, 255, 212, 0.12), inset 0 0 15px rgba(127, 255, 212, 0.04), 0 4px 12px rgba(0, 0, 0, 0.2);
+                    border-radius: 12px; 
+                    cursor: pointer;
+                    aspect-ratio: auto;
+                    min-height: 282px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 110ms ease-out;
+                }
+                .empty-state:hover {
+                    box-shadow: 0 0 18px rgba(127, 255, 212, 0.18), inset 0 0 20px rgba(127, 255, 212, 0.06), 0 6px 16px rgba(0, 0, 0, 0.25);
+                    transform: translateY(-2px);
+                }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); opacity: 0.5; }
+                    50% { transform: scale(1.5); opacity: 1; }
+                }
+                
+                .add-more-carousel-btn {
+                    width: 100%;
+                    padding: 0.75rem;
+                    margin-top: 0.5rem;
+                    background: rgba(127, 255, 212, 0.1);
+                    border: 1px dashed var(--ice-mint);
+                    color: var(--ice-mint);
+                    border-radius: 8px;
+                    cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     gap: 0.5rem;
+                    font-size: 0.9rem;
+                    transition: all 0.2s;
+                }
+                .add-more-carousel-btn:hover {
+                    background: rgba(127, 255, 212, 0.2);
                 }
 
-                .empty-state {
-                    padding: 3rem;
-                    text-align: center;
-                    color: var(--slate);
-                    border: 2px dashed rgba(255,255,255,0.2);
-                    border-radius: 12px;
-                    cursor: pointer;
-                }
+                .sprocket-overlay { position: absolute; inset: 0; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="sprocket" x="0" y="0" width="10" height="100" patternUnits="userSpaceOnUse"><rect x="2" y="0" width="6" height="4" fill="rgba(0,0,0,0.85)" /><rect x="2" y="96" width="6" height="4" fill="rgba(0,0,0,0.85)" /></pattern></defs><rect width="100" height="100" fill="url(%23sprocket)" /></svg>'); background-size: 100% 100%; background-repeat: no-repeat; pointer-events: none; z-index: 5; }
+                .quartz-date-stamp { position: absolute; bottom: 12px; right: 12px; font-family: 'Courier New', 'Courier', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 4px rgba(0,0,0,0.9), 1px 1px 2px rgba(0,0,0,0.8); pointer-events: none; z-index: 6; padding: 4px 6px; background: rgba(0,0,0,0.3); border-radius: 2px; }
 
-                /* Film UI Overlays */
-                .sprocket-overlay {
-                    position: absolute;
-                    inset: 0;
-                    /* Sprockets on TOP and BOTTOM */
-                    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="sprocket" x="0" y="0" width="10" height="100" patternUnits="userSpaceOnUse"><rect x="2" y="0" width="6" height="4" fill="rgba(0,0,0,0.85)"/><rect x="2" y="96" width="6" height="4" fill="rgba(0,0,0,0.85)"/></pattern></defs><rect width="100" height="100" fill="url(%23sprocket)"/></svg>');
-                    background-size: 100% 100%;
-                    background-repeat: no-repeat;
-                    pointer-events: none;
-                    z-index: 5;
-                }
-
-                .quartz-date-stamp {
-                    position: absolute;
-                    bottom: 12px;
-                    right: 12px;
-                    font-family: 'Courier New', 'Courier', monospace;
-                    font-size: 16px;
-                    font-weight: bold;
-                    letter-spacing: 2px;
-                    text-shadow: 
-                        0 0 4px rgba(0,0,0,0.9),
-                        1px 1px 2px rgba(0,0,0,0.8);
-                    pointer-events: none;
-                    z-index: 6;
-                    padding: 4px 6px;
-                    background: rgba(0,0,0,0.3);
-                    border-radius: 2px;
-                }
-
-                /* Scrollbars */
-                ::-webkit-scrollbar { width: 6px; }
-                ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-                ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-
-                @media (max-width: 768px) {
-                    .create-post-header {
-                        padding: 1rem;
-                    }
+                /* 🔹 UNIVERSAL RESPONSIVE ALGORITHM - MOBILE IMPLEMENTATION */
+                @media (max-width: 900px) and (orientation: landscape) {
                     .create-post-layout {
-                        grid-template-columns: 1fr;
-                        height: auto;
+                        display: grid !important;
+                        grid-template-columns: 300px 1fr !important;
+                        padding: 1rem !important;
+                        gap: 1rem !important;
+                        height: 100dvh !important;
+                        overflow: hidden !important;
+                    }
+                    .left-column, .right-column {
+                        height: 100% !important;
+                        overflow-y: auto !important;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                    }
+                    .desktop-publish { display: flex !important; }
+                    .mobile-publish-btn { display: none !important; }
+                    
+                    /* Ensure tags scroll in landscape too */
+                    .tags-grid {
+                        display: grid !important;
+                        grid-auto-flow: column !important;
+                        overflow-x: auto !important;
+                        max-width: 100% !important;
+                        gap: 0.5rem !important;
+                    }
+                    .tag-filter-panel, .panel-content {
+                        max-width: 100% !important;
+                        overflow: hidden !important;
+                    }
+                }
+
+                @media (max-width: 900px) and (orientation: portrait) {
+                    .create-post-layout {
+                        display: flex !important;
+                        flex-direction: column !important;
+                        height: auto !important;
                         overflow: visible;
-                        padding: 1rem;
-                        gap: 1rem;
+                        /* Rule: horizontal padding = 4vw */
+                        padding: 4vw; 
+                        padding-top: max(4vw, env(safe-area-inset-top));
+                        padding-bottom: max(4vw, env(safe-area-inset-bottom));
+                        gap: 4vw;
+                        max-width: 100vw;
+                        box-sizing: border-box;
                     }
                     .left-column, .right-column {
                         height: auto;
                         overflow: visible;
                         padding-right: 0;
+                        width: 100%;
+                        max-width: 100%;
                     }
-                    .location-grid {
+                    .create-post-container {
+                        overflow-x: hidden;
+                        overflow-y: auto;
+                        height: auto;
+                        min-height: 100dvh;
+                        padding-bottom: 2rem;
+                    }
+                    
+                    /* Carousel Sizing - 16:9 Aspect Ratio */
+                    .carousel-slide { 
+                        aspect-ratio: 16/9;
+                        max-height: 35vh;
+                    }
+                    .empty-state {
+                        aspect-ratio: auto;
+                        min-height: 30vh;
+                        height: auto;
+                        padding: 6vw 4vw;
+                    }
+                    .empty-state svg {
+                        /* Rule: icon-size = max(4vw, 18px) - scaled up slightly for main icon */
+                        width: max(8vw, 32px);
+                        height: max(8vw, 32px);
+                    }
+                    .empty-state p {
+                        /* Rule: font-size = max(3.5vw, 14px) */
+                        font-size: max(3.5vw, 14px);
+                        margin: 0.5rem 0 0 0;
+                    }
+                    .empty-state span {
+                        font-size: max(3vw, 12px);
+                    }
+                    
+                    .form-section {
+                        /* Rule: horizontal padding = 4vw */
+                        padding: 4vw;
+                        margin-left: 0;
+                        margin-right: 0;
+                        margin-bottom: 4vw;
+                        width: 100%;
+                    }
+                    
+                    /* Hide desktop publish, show mobile publish */
+                    .desktop-publish {
+                        display: none !important;
+                    }
+                    .mobile-publish-btn {
+                        display: block !important;
+                        position: static !important;
+                        transform: none !important;
+                        width: 100% !important;
+                        min-width: auto !important;
+                        margin-top: 4vw !important;
+                        margin-bottom: 4vw !important;
+                        left: auto !important;
+                        bottom: auto !important;
+                        
+                        /* Rule: height = 12vw (capped at 60px) */
+                        height: min(12vw, 60px);
+                        /* Rule: font-size = max(3.5vw, 14px) */
+                        font-size: max(3.5vw, 14px);
+                        
+                        background: var(--ice-mint);
+                        color: #000;
+                        border: none;
+                        border-radius: 12px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                    }
+                    
+                    /* Hide Cancel text, keep icon */
+                    .cancel-text {
+                        display: none;
+                    }
+                    
+                    /* Adjust header title alignment */
+                    .page-header-title {
+                        text-align: left !important;
+                        font-size: max(3.5vw, 14px) !important;
+                    }
+                    
+                    /* Tag Panels - Compact & Scaled */
+                    .tag-filter-panel {
+                        margin-bottom: 2vw !important;
+                        border-radius: 12px !important;
+                        max-width: 100% !important;
+                        overflow: hidden !important;
+                    }
+                    .panel-header {
+                        padding: 3vw 4vw !important;
+                    }
+                    .panel-header span:first-child {
+                        font-size: max(3vw, 12px) !important;
+                    }
+                    .panel-header span:last-child {
+                        font-size: max(2.5vw, 10px) !important;
+                    }
+                    .panel-content {
+                        padding: 2vw 4vw 3vw !important;
+                        max-width: 100% !important;
+                        overflow: hidden !important;
+                    }
+                    .tags-grid {
+                        display: grid !important;
+                        grid-auto-flow: column !important;
+                        overflow-x: auto !important;
+                        max-width: 100% !important;
+                        gap: 1.5vw !important;
+                    }
+                    .tags-grid button {
+                        padding: 1.5vw 2.5vw !important;
+                        font-size: max(2.5vw, 10px) !important;
+                        border-radius: 5px !important;
+                    }
+                    
+                    .location-grid { 
                         grid-template-columns: 1fr;
+                        gap: 2vw;
                     }
-                    .carousel-slide {
-                        aspect-ratio: 4/3;
+                    
+                    .add-more-carousel-btn {
+                        padding: 3vw;
+                        font-size: max(3vw, 12px);
                     }
                 }
-                
-                /* Tablet breakpoint */
-                @media (min-width: 769px) and (max-width: 1024px) {
-                    .create-post-layout {
-                        grid-template-columns: 350px 1fr;
-                        padding: 1.5rem;
+
+                @media (max-width: 480px) {
+                    /* Additional tweaks for very small screens if needed, 
+                       but the vw-unit scaling should handle most of it automatically! */
+                    
+                    /* Ensure carousel doesn't get too tall on very wide/short phones */
+                    .carousel-slide {
+                        max-height: 30vh;
                     }
+                    .empty-state {
+                        max-height: 30vh;
+                    }
+                }
+                /* Premium Publish Button */
+                .publish-btn-premium {
+                    background: linear-gradient(135deg, #7FFFD4, #40E0D0);
+                    color: #000;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 0.6rem 1.5rem;
+                    font-weight: 700;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+                    box-shadow: 0 0 6px rgba(127, 255, 212, 0.18), 0 4px 12px rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    line-height: 1;
+                    height: fit-content;
+                }
+                .publish-btn-premium:hover {
+                    transform: translateY(-2px) scale(1.02);
+                    box-shadow: 0 0 12px rgba(127, 255, 212, 0.3), 0 6px 20px rgba(0, 0, 0, 0.4);
+                }
+                .publish-btn-premium:active {
+                    transform: translateY(0px) scale(0.98);
+                    transition: all 70ms ease-out;
+                }
+                .publish-btn-premium::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+                    animation: shimmer 3s infinite;
+                }
+                @keyframes shimmer {
+                    0% { left: -100%; }
+                    20% { left: 100%; }
+                    100% { left: 100%; }
+                }
+
+                /* Progress Dots */
+                .progress-dots-container {
+                    position: fixed;
+                    right: 20px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 0.5rem;
+                    z-index: 100;
+                }
+                .progress-dot {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: rgba(255,255,255,0.1);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: rgba(255,255,255,0.3);
+                    transition: all 0.3s ease;
+                    position: relative;
+                }
+                .progress-dot.active {
+                    background: rgba(127, 255, 212, 0.2);
+                    color: var(--ice-mint);
+                    box-shadow: 0 0 10px rgba(127, 255, 212, 0.2);
+                }
+                .progress-dot.completed {
+                    background: var(--ice-mint);
+                    color: #000;
+                    box-shadow: 0 0 15px rgba(127, 255, 212, 0.4);
+                }
+                .dot-line {
+                    position: absolute;
+                    bottom: -10px;
+                    width: 2px;
+                    height: 10px;
+                    background: rgba(255,255,255,0.1);
+                }
+                .progress-dot.completed .dot-line {
+                    background: var(--ice-mint);
+                }
+                @media (max-width: 900px) {
+                    .progress-dots-container { display: none; }
+                }
+
+                /* Location Inputs */
+                .location-input-wrapper {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    background: rgba(255,255,255,0.03);
+                    border-radius: 8px;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    transition: all 0.2s;
+                }
+                .location-input-wrapper:focus-within {
+                    border-color: var(--ice-mint);
+                    box-shadow: 0 0 10px rgba(127, 255, 212, 0.1);
+                }
+                .location-icon {
+                    margin-left: 0.8rem;
+                    color: var(--ice-mint);
+                    opacity: 0.7;
+                }
+                .location-input {
+                    background: transparent !important;
+                    border: none !important;
+                    padding: 0.6rem !important;
+                    color: #fff !important;
+                    width: 100%;
+                }
+                .location-input:focus {
+                    outline: none;
+                }
+
+                /* Mobile Publish Button Style Update */
+                .mobile-publish-btn {
+                    background: linear-gradient(135deg, #7FFFD4, #40E0D0) !important;
+                    color: #000 !important;
+                    box-shadow: 0 4px 20px rgba(127, 255, 212, 0.3) !important;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
                 }
             `}</style>
         </div >

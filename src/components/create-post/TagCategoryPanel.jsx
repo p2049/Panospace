@@ -22,13 +22,19 @@ const TagCategoryPanel = ({
     toggleCategory
 }) => {
     return (
-        <div className="form-section" style={{ marginTop: '1.5rem' }}>
+        <div className="form-section" style={{ marginTop: '2rem' }}>
             <h3>Tags & Categories</h3>
-            <p className="field-hint" style={{ marginBottom: '1rem' }}>
+            <p className="field-hint" style={{ marginBottom: '0.5rem' }}>
                 Select tags to help people find your work.
             </p>
 
-            <div className="tags-container">
+            <div className="tags-container" style={{
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+            }}>
+
                 {Object.values(TAG_CATEGORIES).map(category => (
                     <TagFilterPanel
                         key={category.id}
