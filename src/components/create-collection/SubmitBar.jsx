@@ -25,7 +25,7 @@ const SubmitBar = ({ creationMode, images }) => {
                         Ready to Create Museum
                     </div>
                     <div style={{ fontSize: '0.85rem' }}>
-                        Museums can contain galleries and profiles
+                        Museums can contain studios and profiles
                     </div>
                 </div>
             ) : isMagazine ? (
@@ -42,7 +42,7 @@ const SubmitBar = ({ creationMode, images }) => {
                     {images.length} / 10 images added
                     {images.length === 0 && (
                         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                            Add at least 1 image to create {creationMode}
+                            Add at least 1 image to create {creationMode === 'gallery' ? 'studio' : creationMode}
                         </div>
                     )}
                 </>

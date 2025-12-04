@@ -35,7 +35,7 @@ const SearchResults = ({
     return (
         <>
             {/* Results Area */}
-            <div style={{ padding: isMobile ? '0.25rem 0.8rem 1.5rem 0.8rem' : '1.5rem' }}>
+            <div style={{ padding: isMobile ? '0.8rem 0.8rem 1.5rem 0.8rem' : '1.5rem' }}>
                 {viewMode === 'grid' ? (
                     <div
                         key={`${currentMode}-${results[currentMode]?.length || 0}-${sortBy}`}

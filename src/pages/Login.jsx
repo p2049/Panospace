@@ -363,15 +363,19 @@ const Login = () => {
                     zIndex: -1
                 }}></div>
 
-                <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '1rem', width: '100%', overflow: 'hidden' }}>
                     <h2 className="login-title" style={{
-                        fontSize: 'clamp(2rem, 8vw, 2.5rem)',
+                        fontSize: 'clamp(1.75rem, 6vw, 2.5rem)',
                         fontWeight: '800',
                         margin: 0,
                         background: 'linear-gradient(135deg, #fff 0%, #aaa 100%)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
-                        letterSpacing: 'clamp(-1px, -0.3vw, 0px)'
+                        letterSpacing: 'clamp(0px, 0.5vw, 2px)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        width: '100%'
                     }}>
                         PANOSPACE
                     </h2>

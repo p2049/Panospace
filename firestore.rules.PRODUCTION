@@ -1,0 +1,497 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+    
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Validate string length
+    function validStringLength(field, maxLength) {
+      return !request.resource.data.keys().hasAny([field]) ||
+             (request.resource.data[field] is string && 
+              request.resource.data[field].size() > 0 &&
+              request.resource.data[field].size() <= maxLength);
+    }
+    
+    // Validate Firebase Storage URL
+    function isFirebaseStorageUrl(url) {
+      return url.matches('.*firebasestorage\\.googleapis\\.com.*');
+    }
+    
+    // 🔒 PAGINATION ENFORCEMENT: Limit query size
+    function isValidQuery() {
+      return request.query.limit <= 50;
+    }
+    
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // 🔒 PAGINATION: Limit bulk reads
+      allow list: if isValidQuery();
+      
+      // Public read for individual user profiles
+      allow get: if true;
+      
+      // Users can only create/update their own profile
+      allow create: if isOwner(userId) &&
+                      request.resource.data.keys().hasAll(['uid', 'email', 'displayName']) &&
+                      request.resource.data.uid == userId &&
+                      validStringLength('displayName', 50) &&
+                      validStringLength('bio', 500);
+      
+      allow update: if isOwner(userId) &&
+                      // 🔒 PREVENT MANIPULATION: Can't change uid or email
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid', 'email']) &&
+                      validStringLength('displayName', 50) &&
+                      validStringLength('bio', 500);
+      
+      // Users can't delete their own profile (use account deletion flow)
+      allow delete: if false;
+      
+      // Blocked users subcollection
+      match /blockedUsers/{blockId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Purchases subcollection (read-only)
+      match /purchases/{purchaseId} {
+        allow read: if true;
+        allow write: if false; // Backend only
+      }
+      
+      // Badges subcollection (read-only)
+      match /badges/{badgeId} {
+        allow read: if true;
+        allow write: if false; // Backend only
+      }
+    }
+    
+    // ============================================
+    // POSTS COLLECTION
+    // ============================================
+    match /posts/{postId} {
+      // 🔒 PAGINATION: Limit bulk reads
+      allow list: if isValidQuery();
+      
+      // Public read for individual posts
+      allow get: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create posts
+      allow create: if isAuthenticated() &&
+                      (request.resource.data.userId == request.auth.uid ||
+                       request.resource.data.authorId == request.auth.uid) &&
+                      request.resource.data.keys().hasAll(['createdAt', 'imageUrls', 'tags']) &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.imageUrls is list &&
+                      request.resource.data.imageUrls.size() > 0 &&
+                      request.resource.data.imageUrls.size() <= 10 &&
+                      request.resource.data.tags is list &&
+                      request.resource.data.tags.size() <= 20 &&
+                      validStringLength('title', 200) &&
+                      validStringLength('description', 2000) &&
+                      // 🔒 SECURITY: Validate images are from Firebase Storage
+                      isFirebaseStorageUrl(request.resource.data.imageUrls[0]) &&
+                      // 🔒 VALIDATE STATUS
+                      (!request.resource.data.keys().hasAny(['status']) ||
+                       request.resource.data.status in ['published', 'draft']);
+      
+      // Users can update/delete only their own posts
+      allow update, delete: if isAuthenticated() &&
+                                (resource.data.userId == request.auth.uid ||
+                                 resource.data.authorId == request.auth.uid);
+      
+      // 🔒 PREVENT MANIPULATION: Can't change engagement metrics
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['likeCount', 'commentCount', 'viewCount', 'userId', 'authorId']);
+      
+      // 🔒 VALIDATE UPDATES: Schema enforcement
+      allow update: if validStringLength('title', 200) &&
+                      validStringLength('description', 2000) &&
+                      (!request.resource.data.keys().hasAny(['tags']) ||
+                       (request.resource.data.tags is list && request.resource.data.tags.size() <= 20));
+      
+      // Comments subcollection
+      match /comments/{commentId} {
+        // 🔒 PAGINATION: Limit bulk reads
+        allow list: if isValidQuery();
+        allow get: if true;
+        
+        // 🔒 SCHEMA VALIDATION: Users can create comments
+        allow create: if isAuthenticated() &&
+                        request.resource.data.userId == request.auth.uid &&
+                        request.resource.data.keys().hasAll(['userId', 'text', 'createdAt']) &&
+                        request.resource.data.text is string &&
+                        request.resource.data.text.size() > 0 &&
+                        request.resource.data.text.size() <= 500 &&
+                        request.resource.data.createdAt is timestamp;
+        
+        // Users can update/delete only their own comments
+        allow update, delete: if isOwner(resource.data.userId);
+        
+        // 🔒 PREVENT MANIPULATION: Can't change userId
+        allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId']);
+      }
+    }
+    
+    // ============================================
+    // COLLECTIONS
+    // ============================================
+    match /collections/{collectionId} {
+      // 🔒 PAGINATION: Limit bulk reads
+      allow list: if isValidQuery();
+      
+      // Read based on visibility
+      allow get: if resource.data.visibility == 'public' ||
+                   isOwner(resource.data.ownerId) ||
+                   (isAuthenticated() && resource.data.visibility == 'followers');
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create collections
+      allow create: if isAuthenticated() &&
+                      request.resource.data.ownerId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['title', 'ownerId', 'createdAt', 'visibility']) &&
+                      validStringLength('title', 100) &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.visibility in ['public', 'followers', 'private'] &&
+                      (!request.resource.data.keys().hasAny(['items']) ||
+                       (request.resource.data.items is list && request.resource.data.items.size() <= 10)) &&
+                      (!request.resource.data.keys().hasAny(['postRefs']) ||
+                       request.resource.data.postRefs is list);
+      
+      // Users can update/delete only their own collections
+      allow update, delete: if isOwner(resource.data.ownerId);
+      
+      // 🔒 PREVENT MANIPULATION: Can't change ownerId
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerId']) &&
+                      validStringLength('title', 100);
+    }
+    
+    // ============================================
+    // GALLERIES
+    // ============================================
+    match /galleries/{galleryId} {
+      // 🔒 PAGINATION: Limit bulk reads
+      allow list: if isValidQuery();
+      allow get: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create galleries
+      allow create: if isAuthenticated() &&
+                      request.resource.data.ownerId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['title', 'ownerId', 'createdAt', 'contentType']) &&
+                      validStringLength('title', 100) &&
+                      request.resource.data.contentType in ['posts', 'collections', 'both'] &&
+                      (!request.resource.data.keys().hasAny(['requiredTags']) ||
+                       (request.resource.data.requiredTags is list && request.resource.data.requiredTags.size() <= 20));
+      
+      // Only owner can update/delete
+      allow update, delete: if isOwner(resource.data.ownerId);
+      
+      // 🔒 PREVENT MANIPULATION: Can't change ownerId
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['ownerId']);
+      
+      // Gallery posts subcollection
+      match /posts/{postId} {
+        allow read: if true;
+        allow create: if isAuthenticated() &&
+                        request.auth.uid in get(/databases/$(database)/documents/galleries/$(galleryId)).data.members &&
+                        request.resource.data.addedBy == request.auth.uid;
+        allow delete: if isAuthenticated() &&
+                        (request.auth.uid == resource.data.addedBy ||
+                         request.auth.uid == get(/databases/$(database)/documents/galleries/$(galleryId)).data.ownerId);
+      }
+      
+      // Gallery invites subcollection
+      match /invites/{inviteId} {
+        allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        allow create: if isAuthenticated() &&
+                        get(/databases/$(database)/documents/galleries/$(galleryId)).data.ownerId == request.auth.uid;
+        allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+    }
+    
+    // ============================================
+    // SHOP ITEMS
+    // ============================================
+    match /shopItems/{itemId} {
+      // 🔒 PAGINATION: Limit bulk reads
+      allow list: if isValidQuery();
+      allow get: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create shop items
+      allow create: if isAuthenticated() &&
+                      (request.resource.data.userId == request.auth.uid ||
+                       request.resource.data.authorId == request.auth.uid) &&
+                      request.resource.data.keys().hasAll(['title', 'createdAt']) &&
+                      validStringLength('title', 200) &&
+                      request.resource.data.createdAt is timestamp;
+      
+      // Users can update/delete only their own shop items
+      allow update, delete: if isAuthenticated() &&
+                                (resource.data.userId == request.auth.uid ||
+                                 resource.data.authorId == request.auth.uid);
+    }
+    
+    // ============================================
+    // FOLLOWS
+    // ============================================
+    match /follows/{followId} {
+      allow read: if true;
+      
+      // 🔒 SECURE FOLLOW: Users can only create follows for themselves
+      allow create: if isAuthenticated() &&
+                      request.resource.data.followerId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['followerId', 'followingId', 'createdAt']) &&
+                      request.resource.data.followerId is string &&
+                      request.resource.data.followingId is string &&
+                      request.resource.data.followerId != request.resource.data.followingId && // Can't follow self
+                      request.resource.data.createdAt is timestamp;
+      
+      // 🔒 SECURE UNFOLLOW: Users can only delete their own follows
+      allow delete: if isOwner(resource.data.followerId);
+      
+      // No updates allowed
+      allow update: if false;
+    }
+    
+    // ============================================
+    // LIKES
+    // ============================================
+    match /likes/{likeId} {
+      allow read: if true;
+      
+      // 🔒 SECURE LIKE: Users can only create likes for themselves
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['userId', 'postId', 'createdAt']) &&
+                      request.resource.data.createdAt is timestamp;
+      
+      // 🔒 SECURE UNLIKE: Users can only delete their own likes
+      allow delete: if isOwner(resource.data.userId);
+      
+      // No updates allowed
+      allow update: if false;
+    }
+    
+    // ============================================
+    // EVENTS
+    // ============================================
+    match /events/{eventId} {
+      allow read: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create events
+      allow create: if isAuthenticated() &&
+                      request.resource.data.creatorId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['creatorId', 'title', 'eventDate', 'createdAt']) &&
+                      validStringLength('title', 100) &&
+                      request.resource.data.eventDate is timestamp &&
+                      request.resource.data.createdAt is timestamp &&
+                      (!request.resource.data.keys().hasAny(['eventType']) ||
+                       request.resource.data.eventType in ['contest', 'seasonal', 'drop', 'user', 'scheduled_post', 'scheduled_collection']);
+      
+      // Users can update/delete only their own events
+      allow update, delete: if isOwner(resource.data.creatorId);
+    }
+    
+    // ============================================
+    // CONTESTS
+    // ============================================
+    match /contests/{contestId} {
+      allow read: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create contests
+      allow create: if isAuthenticated() &&
+                      request.resource.data.creatorUid == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['title', 'startAt', 'endAt', 'entryType', 'status', 'createdAt']) &&
+                      request.resource.data.entryType in ['free', 'paid'] &&
+                      request.resource.data.status in ['upcoming', 'active', 'closed'];
+      
+      // Only creator can update/delete
+      allow update, delete: if isOwner(resource.data.creatorUid);
+      
+      // Contest entries subcollection
+      match /entries/{entryId} {
+        allow read: if true;
+        allow create: if isAuthenticated() &&
+                        request.resource.data.userId == request.auth.uid &&
+                        request.resource.data.keys().hasAll(['userId', 'postId', 'submittedAt']) &&
+                        request.resource.data.submittedAt is timestamp;
+        allow delete: if isOwner(resource.data.userId);
+      }
+    }
+    
+    // ============================================
+    // SPACE CARDS
+    // ============================================
+    match /spaceCards/{cardId} {
+      allow read: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create cards
+      allow create: if isAuthenticated() &&
+                      request.resource.data.creatorUid == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['creatorUid', 'creatorName', 'images', 'title', 'rarity', 'editionType', 'createdAt']) &&
+                      request.resource.data.images is map &&
+                      request.resource.data.images.front is string &&
+                      validStringLength('title', 100);
+      
+      // Creator can update OR stats-only updates allowed
+      allow update: if isAuthenticated() &&
+                      (resource.data.creatorUid == request.auth.uid ||
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mintedCount', 'stats', 'updatedAt']));
+    }
+    
+    match /spaceCardOwnership/{ownershipId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthenticated() &&
+                      (resource.data.ownerId == request.auth.uid ||
+                       (request.resource.data.ownerId == request.auth.uid && resource.data.forSale == true));
+    }
+    
+    // ============================================
+    // SOUNDTAGS
+    // ============================================
+    match /soundtags/{soundtagId} {
+      allow read: if true;
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create soundtags
+      allow create: if isAuthenticated() &&
+                      request.resource.data.artistId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['artistId', 'title', 'audioUrl', 'createdAt']) &&
+                      validStringLength('title', 100) &&
+                      isFirebaseStorageUrl(request.resource.data.audioUrl);
+      
+      // Artists can update/delete their own soundtags
+      allow update, delete: if isOwner(resource.data.artistId);
+    }
+    
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isOwner(resource.data.userId);
+      
+      // System can create notifications
+      allow create: if isAuthenticated() &&
+                      request.resource.data.keys().hasAll(['userId', 'type', 'createdAt', 'read']) &&
+                      request.resource.data.createdAt is timestamp &&
+                      request.resource.data.read is bool;
+      
+      // Users can update their own notifications (mark as read)
+      allow update: if isOwner(resource.data.userId) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      
+      // Users can delete their own notifications
+      allow delete: if isOwner(resource.data.userId);
+    }
+    
+    // ============================================
+    // COMMISSIONS
+    // ============================================
+    match /commissions/{commissionId} {
+      // Users can read commissions they're involved in
+      allow read: if isAuthenticated() &&
+                    (resource.data.buyerId == request.auth.uid ||
+                     resource.data.editorId == request.auth.uid);
+      
+      // 🔒 SCHEMA VALIDATION: Authenticated users can create commissions
+      allow create: if isAuthenticated() &&
+                      request.resource.data.buyerId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['buyerId', 'editorId', 'price', 'status', 'createdAt']) &&
+                      request.resource.data.price is number &&
+                      request.resource.data.price > 0;
+      
+      // Only involved parties can update
+      allow update: if isAuthenticated() &&
+                      (resource.data.buyerId == request.auth.uid ||
+                       resource.data.editorId == request.auth.uid);
+    }
+    
+    // ============================================
+    // REPORTS (Trust & Safety)
+    // ============================================
+    match /reports/{reportId} {
+      // 🔒 SCHEMA VALIDATION: Authenticated users can report
+      allow create: if isAuthenticated() &&
+                      request.resource.data.keys().hasAll(['type', 'reason', 'targetId', 'reportedBy', 'createdAt']) &&
+                      request.resource.data.reportedBy == request.auth.uid;
+      
+      // 🔒 ADMIN ONLY: Read/Update/Delete
+      allow read, update, delete: if isAdmin();
+    }
+    
+    // ============================================
+    // ADMIN-ONLY COLLECTIONS
+    // ============================================
+    
+    // Orders (Backend only)
+    match /orders/{orderId} {
+      allow read: if isOwner(resource.data.userId);
+      allow write: if false; // Backend only
+    }
+    
+    // User Integrity Scores (Backend only)
+    match /userIntegrity/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false; // Backend only
+    }
+    
+    // Monthly Winners (Backend only)
+    match /monthlyWinners/{winnerId} {
+      allow read: if true;
+      allow write: if false; // Backend only
+    }
+    
+    // Institutions (Backend only)
+    match /institutions/{institutionId} {
+      allow read: if true;
+      allow write: if false; // Backend only
+    }
+    
+    // Panodex Entries (Backend only)
+    match /panodex_entries/{entryId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                      request.resource.data.keys().hasAll(['type', 'title', 'createdAt']) &&
+                      request.resource.data.type in ['location', 'challenge', 'audio', 'landmark', 'style'];
+      allow update, delete: if false; // Backend only
+    }
+    
+    // User SpaceCards (Immutable)
+    match /user_spacecards/{docId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.keys().hasAll(['userId', 'spacecardId', 'acquiredAt', 'method']) &&
+                      request.resource.data.method in ['purchase', 'reward', 'free', 'challenge', 'event', 'soundtag-license'];
+      allow update, delete: if false; // Immutable
+    }
+    
+    // Weekly Likes Tracking
+    match /weeklyLikes/{docId} {
+      allow read: if isAuthenticated() && docId.matches(request.auth.uid + '_.*');
+      allow create, update: if isAuthenticated() &&
+                              docId.matches(request.auth.uid + '_.*') &&
+                              request.resource.data.userId == request.auth.uid &&
+                              request.resource.data.keys().hasAll(['userId', 'weekStartTimestamp', 'likeCount']) &&
+                              request.resource.data.likeCount is int &&
+                              request.resource.data.likeCount >= 0;
+    }
+  }
+}

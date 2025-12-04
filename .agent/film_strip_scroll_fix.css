@@ -1,0 +1,33 @@
+/* ✅ FILM STRIP SCROLL FIX - Add to film-strip-post.css */
+
+/* Add these properties to .cyber-film-strip-wrapper (line 17) */
+.cyber-film-strip-wrapper {
+    /* ... existing styles ... */
+
+    /* ✅ TOUCH GESTURE FIX */
+    touch-action: pan-x;
+    /* Allow horizontal scroll only */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Add these properties to .cyber-film-strip-scroll-container (line 29) */
+.cyber-film-strip-scroll-container {
+    /* ... existing styles ... */
+
+    /* ✅ SCROLL LOCK FIX */
+    touch-action: pan-x;
+    /* Horizontal scroll only */
+    overscroll-behavior-x: contain;
+    /* Prevent scroll chaining */
+    overscroll-behavior-y: none;
+    /* Block vertical scroll */
+}
+
+/* ✅ PREVENT TEXT SELECTION DURING SWIPE */
+.cyber-frame-unit {
+    /* ... existing styles ... */
+
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}

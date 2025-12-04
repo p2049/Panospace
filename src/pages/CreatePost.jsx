@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCreatePost } from '../hooks/useCreatePost';
 import { useCollections } from '../hooks/useCollections';
 import { PRINT_TIERS } from '../utils/printifyPricing';
+import { isFeatureEnabled } from '../config/featureFlags';
+import { useDraftSaving } from '../hooks/useDraftSaving';
 
 import ThumbnailStrip from '../components/create-post/ThumbnailStrip';
 import ImageCarousel from '../components/create-post/ImageCarousel';
@@ -26,9 +28,11 @@ const CreatePost = () => {
     const navigate = useNavigate();
     const { createPost, loading, error, progress } = useCreatePost();
     const { collections } = useCollections(currentUser?.uid);
+    const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSaving();
     const [selectedCollectionId, setSelectedCollectionId] = useState('');
     const fileInputRef = useRef(null);
     const submittingRef = useRef(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Generate stars once and memoize them
     const stars = useMemo(() => {
@@ -285,7 +289,11 @@ const CreatePost = () => {
 
     // Handle form submission
     const handleSubmit = async () => {
-        if (submittingRef.current || loading) return;
+        // 🔒 DOUBLE-POST PREVENTION
+        if (submittingRef.current || loading) {
+            console.warn('Submit blocked: already submitting');
+            return;
+        }
         submittingRef.current = true;
 
         if (slides.length === 0) {
@@ -395,13 +403,17 @@ const CreatePost = () => {
                         };
 
                         await SpaceCardService.createCard(cardData);
-                        console.log("SpaceCard created successfully");
+                        // console.log("SpaceCard created successfully");
                     }
                 } catch (cardError) {
                     console.error("Error creating SpaceCard:", cardError);
                     alert("Post created, but SpaceCard creation failed: " + cardError.message);
                 }
             }
+
+            // ✅ Clear draft on successful post
+            clearDraft();
+            setHasUnsavedChanges(false);
 
             // Navigate directly to feed without alert
             navigate('/');
@@ -618,13 +630,16 @@ const CreatePost = () => {
                             // ... existing code ...
 
                             {/* Shop Configuration */}
-                            <ShopConfiguration
-                                activeSlide={activeSlide}
-                                activeSlideIndex={activeSlideIndex}
-                                slides={slides}
-                                updateSlide={updateSlide}
-                                handleAddAllToShop={handleAddAllToShop}
-                            />
+                            {/* Shop Configuration */}
+                            {isFeatureEnabled('SHOP') && (
+                                <ShopConfiguration
+                                    activeSlide={activeSlide}
+                                    activeSlideIndex={activeSlideIndex}
+                                    slides={slides}
+                                    updateSlide={updateSlide}
+                                    handleAddAllToShop={handleAddAllToShop}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

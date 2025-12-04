@@ -16,6 +16,7 @@ import {
 
 const PRINT_SIZES = getPrintifyProducts();
 import { formatPrice } from '../utils/helpers';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 const ShopItemDetail = () => {
     const { id } = useParams();
@@ -472,7 +473,7 @@ const ShopItemDetail = () => {
 
                 {isOwner && (
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        {item.isLimitedEdition && (
+                        {item.isLimitedEdition && isFeatureEnabled('SPACECARDS_TRADING') && (
                             <button
                                 onClick={() => alert("Resale feature coming soon!")} // Placeholder for Resale Modal
                                 style={{

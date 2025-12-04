@@ -4,7 +4,7 @@ import './styles/ui-framework.css'
 // import './styles/viewport-scaling.css' // Temporarily disabled - causing black screen on mobile
 import App from './App.jsx'
 
-import ErrorBoundary from './components/ErrorBoundary';
+import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import { db, auth } from './firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -16,7 +16,7 @@ window.addDoc = addDoc;
 window.serverTimestamp = serverTimestamp;
 
 createRoot(document.getElementById('root')).render(
-  <ErrorBoundary>
+  <GlobalErrorBoundary>
     <App />
-  </ErrorBoundary>
+  </GlobalErrorBoundary>
 )

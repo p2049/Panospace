@@ -187,19 +187,24 @@ export const useSearch = () => {
             } else if (tags.length > 0) {
                 // Primary tag search
                 const primaryTag = tags[0];
+                // 🔒 SAFETY: Reduced from 100 to 30
+                // WHY: 100 posts = 100 reads per search. At 1000 searches/day = 100k reads = $6/day
+                // With 30: 1000 searches/day = 30k reads = $1.80/day (70% cost reduction)
+                // UX: Users can load more via pagination if needed
                 q = query(
                     postsRef,
                     where('tags', 'array-contains', primaryTag),
                     orderBy(orderByField, orderDirection),
-                    limit(100)
+                    limit(30)
                 );
             } else if (term) {
                 // Keyword search
+                // 🔒 SAFETY: Reduced from 100 to 30 (same reasoning as tag search)
                 q = query(
                     postsRef,
                     where('searchKeywords', 'array-contains', primaryWord),
                     orderBy(orderByField, orderDirection),
-                    limit(100)
+                    limit(30)
                 );
             } else {
                 // Fallback (Recent/Sorted)
@@ -778,7 +783,7 @@ export const useSearch = () => {
         setError(null);
 
         try {
-            const spacecardsRef = collection(db, 'spacecards');
+            const spacecardsRef = collection(db, 'spaceCards');
             let q;
             let orderByField = 'createdAt';
             let orderDirection = 'desc';

@@ -22,7 +22,7 @@ const PostDetail = () => {
 
                 // Check if we have context posts passed from navigation (e.g. from Search)
                 if (location.state?.contextPosts) {
-                    console.log('Using context posts from navigation state');
+
                     setPosts(location.state.contextPosts);
                     setInitialPostIndex(location.state.initialIndex || 0);
                     setLoading(false);
@@ -30,7 +30,7 @@ const PostDetail = () => {
                 }
 
                 // 1. Fetch the selected post to get the user ID
-                console.log('Fetching post:', id);
+
                 const postDoc = await getDoc(doc(db, 'posts', id));
                 if (!postDoc.exists()) {
                     console.warn('Post not found:', id);
@@ -50,7 +50,7 @@ const PostDetail = () => {
 
                 // 2. Fetch recent posts from this user (limit to 10 for "More from this author")
                 try {
-                    console.log('Fetching user feed for:', userId);
+
                     const userPostsQuery = query(
                         collection(db, 'posts'),
                         where('authorId', '==', userId),

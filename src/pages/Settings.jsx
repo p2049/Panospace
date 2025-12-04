@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaQuestionCircle, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaLink, FaFlag, FaBan, FaCamera, FaSmile } from 'react-icons/fa';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaQuestionCircle, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaLink, FaFlag, FaBan, FaCamera, FaSmile, FaEnvelope, FaLifeRing } from 'react-icons/fa';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useUI } from '../context/UIContext';
+import ReportModal from '../components/ReportModal';
+import { useBlock } from '../hooks/useBlock';
+import { getUserNSFWPreference, setUserNSFWPreference } from '../constants/nsfwTags';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 const Settings = () => {
     const navigate = useNavigate();
     const { currentUser, logout } = useAuth();
-    const { activePost } = useUI(); // Get active post from context
+    const { activePost } = useUI();
+    const { blockUser, isBlocked } = useBlock();
     const [loading, setLoading] = useState(false);
+
+    // Report Modal State
+    const [showReportModal, setShowReportModal] = useState(false);
 
     // Notification State (Local only for now)
     const [notifications, setNotifications] = useState({
@@ -21,6 +29,15 @@ const Settings = () => {
         mentions: true,
         marketing: false
     });
+
+    // Content Preferences
+    const [showNSFW, setShowNSFW] = useState(getUserNSFWPreference());
+
+    const toggleNSFW = () => {
+        const newValue = !showNSFW;
+        setShowNSFW(newValue);
+        setUserNSFWPreference(newValue);
+    };
 
     // Delete Account State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -311,7 +328,7 @@ const Settings = () => {
                             ) : (
                                 <>
                                     <button
-                                        onClick={() => alert('Reported.')}
+                                        onClick={() => setShowReportModal(true)}
                                         style={{
                                             width: '100%',
                                             display: 'flex',
@@ -329,7 +346,18 @@ const Settings = () => {
                                         <span>Report Post</span>
                                     </button>
                                     <button
-                                        onClick={() => alert('User blocked.')}
+                                        onClick={async () => {
+                                            if (window.confirm(`Block ${activePost.username || 'this user'}? You won't see their posts or comments.`)) {
+                                                try {
+                                                    await blockUser(activePost.authorId, activePost.username);
+                                                    alert('User blocked successfully');
+                                                    navigate('/');
+                                                } catch (error) {
+                                                    console.error('Error blocking user:', error);
+                                                    alert('Failed to block user');
+                                                }
+                                            }
+                                        }}
                                         style={{
                                             width: '100%',
                                             display: 'flex',
@@ -352,42 +380,135 @@ const Settings = () => {
                 )}
 
                 {/* Notifications Section */}
-                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>NOTIFICATIONS</h3>
+                {isFeatureEnabled('NOTIFICATIONS') && (
+                    <>
+                        <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>NOTIFICATIONS</h3>
+                        <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', padding: '0.5rem' }}>
+                            {Object.entries(notifications).map(([key, value]) => (
+                                <div key={key} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.8rem',
+                                    borderBottom: '1px solid #222'
+                                }}>
+                                    <span style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                    <div
+                                        onClick={() => toggleNotification(key)}
+                                        style={{
+                                            width: '40px',
+                                            height: '20px',
+                                            background: value ? 'var(--ice-mint)' : '#333',
+                                            borderRadius: '10px',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            background: '#fff',
+                                            borderRadius: '50%',
+                                            position: 'absolute',
+                                            top: '2px',
+                                            left: value ? '22px' : '2px',
+                                            transition: 'left 0.2s'
+                                        }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+
+                {/* Content Preferences Section */}
+                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>CONTENT PREFERENCES</h3>
                 <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', padding: '0.5rem' }}>
-                    {Object.entries(notifications).map(([key, value]) => (
-                        <div key={key} style={{
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.8rem'
+                    }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>Show Sensitive Content</span>
+                            <span style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>
+                                Automatically reveal NSFW posts
+                            </span>
+                        </div>
+                        <div
+                            onClick={toggleNSFW}
+                            style={{
+                                width: '40px',
+                                height: '20px',
+                                background: showNSFW ? 'var(--ice-mint)' : '#333',
+                                borderRadius: '10px',
+                                position: 'relative',
+                                cursor: 'pointer',
+                                transition: 'background 0.2s'
+                            }}
+                        >
+                            <div style={{
+                                width: '16px',
+                                height: '16px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: showNSFW ? '22px' : '2px',
+                                transition: 'left 0.2s'
+                            }} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Support Section */}
+                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>SUPPORT</h3>
+                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
+                    <a
+                        href="mailto:support@panospace.com"
+                        style={{
+                            width: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            padding: '0.8rem',
-                            borderBottom: '1px solid #222'
-                        }}>
-                            <span style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                            <div
-                                onClick={() => toggleNotification(key)}
-                                style={{
-                                    width: '40px',
-                                    height: '20px',
-                                    background: value ? 'var(--ice-mint)' : '#333',
-                                    borderRadius: '10px',
-                                    position: 'relative',
-                                    cursor: 'pointer',
-                                    transition: 'background 0.2s'
-                                }}
-                            >
-                                <div style={{
-                                    width: '16px',
-                                    height: '16px',
-                                    background: '#fff',
-                                    borderRadius: '50%',
-                                    position: 'absolute',
-                                    top: '2px',
-                                    left: value ? '22px' : '2px',
-                                    transition: 'left 0.2s'
-                                }} />
-                            </div>
+                            padding: '1rem',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid #222',
+                            color: '#fff',
+                            textDecoration: 'none'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <FaEnvelope color="#aaa" />
+                            <span>Contact Support</span>
                         </div>
-                    ))}
+                        <FaChevronRight color="#444" size={12} />
+                    </a>
+                    <a
+                        href="https://panospace.com/help"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '1rem',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#fff',
+                            textDecoration: 'none'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <FaLifeRing color="#aaa" />
+                            <span>Help Center</span>
+                        </div>
+                        <FaChevronRight color="#444" size={12} />
+                    </a>
                 </div>
 
                 {/* Danger Zone */}
@@ -609,6 +730,17 @@ const Settings = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Report Modal */}
+            {showReportModal && activePost && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    targetType="post"
+                    targetId={activePost.id}
+                    targetTitle={activePost.caption || activePost.title || 'Post'}
+                    onClose={() => setShowReportModal(false)}
+                />
             )}
         </div>
     );

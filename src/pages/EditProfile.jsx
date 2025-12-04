@@ -9,6 +9,8 @@ import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 're
 import { ART_DISCIPLINES } from '../constants/artDisciplines';
 import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '../constants/gradients';
 import DisciplineSelector from '../components/DisciplineSelector';
+import { generateUserSearchKeywords } from '../utils/searchKeywords';
+import { sanitizeDisplayName, sanitizeBio } from '../utils/sanitize';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -128,16 +130,27 @@ const EditProfile = () => {
             }
 
             // Update Auth Profile
+            const sanitizedDisplayName = sanitizeDisplayName(displayName);
+            const sanitizedBio = sanitizeBio(bio);
+
             await updateProfile(currentUser, {
-                displayName,
+                displayName: sanitizedDisplayName,
                 photoURL: newPhotoURL
+            });
+
+            // Generate search keywords
+            const searchKeywords = generateUserSearchKeywords({
+                displayName: sanitizedDisplayName,
+                email: currentUser.email,
+                bio: sanitizedBio,
+                artTypes: selectedMain // Map main disciplines to artTypes for search
             });
 
             // Update Firestore Document
             await setDoc(doc(db, 'users', currentUser.uid), {
-                displayName,
+                displayName: sanitizedDisplayName,
                 photoURL: newPhotoURL,
-                bio,
+                bio: sanitizedBio,
                 profileBgColor,
                 disciplines: {
                     main: selectedMain,
@@ -149,6 +162,7 @@ const EditProfile = () => {
                     starColor: starColor
                 },
                 email: currentUser.email,
+                searchKeywords,
                 updatedAt: new Date()
             }, { merge: true });
 

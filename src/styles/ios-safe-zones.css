@@ -1,0 +1,88 @@
+/* iOS Safe Zones & Edge Gesture Protection */
+
+/* ✅ PREVENT iOS BACK GESTURE CONFLICTS */
+@supports (-webkit-touch-callout: none) {
+    /* iOS only */
+
+    /* Add safe padding to main containers */
+    .post-container,
+    .feed-container,
+    .create-post-container,
+    .profile-container {
+        padding-left: max(env(safe-area-inset-left), 8px);
+        padding-right: max(env(safe-area-inset-right), 8px);
+    }
+
+    /* Film strip - extra left padding to prevent edge conflict */
+    .cyber-film-strip-scroll-container {
+        padding-left: max(env(safe-area-inset-left), 24px) !important;
+    }
+
+    /* Swipeable carousels */
+    .image-carousel,
+    .film-strip-images-row {
+        padding-left: 16px;
+        /* Extra padding on left edge */
+    }
+}
+
+/* ✅ PREVENT ACCIDENTAL SWIPE-BACK ON INTERACTIVE ELEMENTS */
+.swipeable-container,
+.carousel-container,
+.film-strip-wrapper {
+    /* Block iOS back gesture on these elements */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* ✅ GLOBAL POINTER-EVENTS FIX */
+/* Prevent invisible elements from blocking touches */
+.overlay-background,
+.star-background,
+.animated-stars,
+.background-decoration {
+    pointer-events: none !important;
+}
+
+.overlay-background>*,
+.modal-content,
+.dropdown-menu {
+    pointer-events: auto;
+}
+
+/* ✅ ENSURE INTERACTIVE ELEMENTS ARE ALWAYS CLICKABLE */
+button,
+a,
+[role="button"],
+[onclick],
+.clickable {
+    position: relative;
+    z-index: 1;
+    /* Above backgrounds */
+    pointer-events: auto;
+}
+
+/* ✅ DROPDOWN SCROLL FIX */
+.dropdown-menu,
+.tag-selector,
+.collection-selector,
+.select-menu {
+    position: absolute;
+    z-index: 1000;
+    touch-action: pan-y;
+    /* Allow vertical scroll */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* ✅ CREATE POST COLUMN SCROLL FIX */
+.left-column,
+.right-column,
+.scrollable-panel {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Prevent scroll chaining */
+    touch-action: pan-y;
+    /* Allow vertical scroll */
+}

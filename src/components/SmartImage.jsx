@@ -77,7 +77,8 @@ const SmartImage = ({
     objectFit = 'cover', // How image fills container
     showDateStamp = false,
     dateStampStyle = 'panospace',
-    date = null
+    date = null,
+    keepLoaded = false // NEW: Prevent unloading for film strips
 }) => {
     const containerRef = useRef(null);
 
@@ -104,9 +105,11 @@ const SmartImage = ({
                         setLoadLevel(prev => Math.max(prev, 1));
                     } else {
                         // Left virtual window -> Unload L1/L2 (Memory Management)
-                        // Revert to L0 to save memory
-                        setLoadLevel(0);
-                        setIsL2Loaded(false);
+                        // Revert to L0 to save memory (unless keepLoaded is true)
+                        if (!keepLoaded) {
+                            setLoadLevel(0);
+                            setIsL2Loaded(false);
+                        }
                     }
                 });
             },

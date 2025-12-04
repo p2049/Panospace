@@ -1,8 +1,16 @@
+/**
+ * LEGACY COMPATIBILITY LAYER
+ * 
+ * Re-exports from the canonical pricing engine.
+ * This file exists for backward compatibility only.
+ * New code should import from '@/core/pricing' instead.
+ */
+
 import type { PrintSize, Earnings } from '../../types';
 import {
     getPrintifyProducts,
     calculatePrintifyEarnings
-} from '../../utils/printifyPricing';
+} from '../../core/pricing';
 
 // Re-export values from the single source of truth
 export const PRINT_SIZES: PrintSize[] = getPrintifyProducts() as any;
@@ -18,7 +26,12 @@ export const ESTIMATED_BASE_COSTS: Record<string, number> = getPrintifyProducts(
  */
 export function calculateEarnings(retailPriceDollars: number, sizeId?: string, isUltra: boolean = false): Earnings {
     // The JS function signature is (retailPrice, sizeId, isUltra)
-    const result = calculatePrintifyEarnings(retailPriceDollars, sizeId || '8x10', isUltra);
+    const result = calculatePrintifyEarnings(retailPriceDollars, sizeId || '8x10', isUltra) as {
+        artistEarnings: number;
+        platformEarnings: number;
+        baseCost: number;
+        retailPrice: number;
+    };
 
     return {
         artistEarningsCents: Math.round(result.artistEarnings * 100),

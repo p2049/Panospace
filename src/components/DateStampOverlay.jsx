@@ -6,7 +6,12 @@ const DateStampOverlay = ({ date, styleName = 'panospace', quartzDate = null }) 
     if (quartzDate) {
         const quartzColor = quartzDate.color || '#00FF55'; // Default green like Fuji film
         // Add spacing around periods for better readability
-        const formattedText = quartzDate.text.replace(/\./g, ' . ');
+        // For default format, pad single digits to align columns and use consistent separators
+        const formattedText = quartzDate.text.includes('.')
+            ? quartzDate.text.replace(/\./g, ' . ')
+            : quartzDate.text.split(' ').filter(Boolean)
+                .map(p => p.length === 1 ? `\u00A0${p}` : p)
+                .join('\u00A0\u00A0');
         return (
             <div
                 className="date-stamp-overlay quartz-date"

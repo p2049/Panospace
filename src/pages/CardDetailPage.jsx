@@ -7,6 +7,7 @@ import { useSpaceCard } from '../hooks/useSpaceCard';
 import { SpaceCardService, RARITY_TIERS } from '../services/SpaceCardService';
 import SpaceCardComponent from '../components/SpaceCardComponent';
 import { PageSkeleton } from '../components/ui/Skeleton';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 const CardDetailPage = () => {
     const { cardId } = useParams();
@@ -152,7 +153,7 @@ const CardDetailPage = () => {
                         </div>
 
                         {/* Mint Button (Primary Sale) */}
-                        {!isSoldOut && card.editionType !== 'unlimited' && (
+                        {!isSoldOut && card.editionType !== 'unlimited' && isFeatureEnabled('SHOP') && (
                             <button
                                 onClick={handleMint}
                                 disabled={minting}
@@ -193,7 +194,7 @@ const CardDetailPage = () => {
                 </div>
 
                 {/* Marketplace Listings */}
-                {listings.length > 0 && (
+                {listings.length > 0 && isFeatureEnabled('SPACECARDS_MARKETPLACE') && (
                     <div>
                         <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FaChartLine /> Marketplace Listings

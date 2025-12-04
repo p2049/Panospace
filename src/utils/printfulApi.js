@@ -1,20 +1,32 @@
-// Re-export from the adapter to maintain compatibility
-export * from '../constants/printSizes';
-import { printifyApi } from '../services/printifyApi';
+/**
+ * LEGACY COMPATIBILITY LAYER
+ * 
+ * Re-exports from the canonical pricing engine.
+ * This file exists for backward compatibility only.
+ * New code should import from '@/core/pricing' instead.
+ */
 
-// Mock POD Integration (kept for compatibility but using Printify service)
+export * from '../constants/printSizes';
+import { createPrintifyProductPayload } from '../core/pricing';
+
+// Mock POD Integration (kept for compatibility but using canonical pricing)
 export const mockPODIntegration = {
     async createProduct(imageUrl, title, selectedSizeIds, selectedPrices) {
-        // Adapter to printifyApi.syncProduct
-        const result = await printifyApi.syncProduct({ imageUrl, title, variants: selectedSizeIds });
+        // Use the canonical pricing adapter
+        const payload = createPrintifyProductPayload({
+            imageUrl,
+            title,
+            sizeIds: selectedSizeIds,
+            prices: selectedPrices
+        });
 
-        // Map result to match expected output if needed
+        // Return mock result for now
         return {
-            productId: result.printifyId,
-            variants: selectedSizeIds.map((sizeId, idx) => ({
-                sizeId,
-                variantId: `${result.printifyId}_size_${sizeId}`,
-                price: Number(selectedPrices[idx] || 0),
+            productId: `mock_${Date.now()}`,
+            variants: payload.variants.map((v, idx) => ({
+                sizeId: v.sizeId,
+                variantId: `variant_${v.sizeId}_${idx}`,
+                price: v.price,
             }))
         };
     },

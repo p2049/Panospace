@@ -1,12 +1,23 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import '../styles/film-strip-post.css';
 import DateStampOverlay from './DateStampOverlay';
+import SmartImage from './SmartImage';
+
+// Static sprockets renderer to avoid re-creation
+const Sprockets = React.memo(() => (
+    <div className="cyber-sprockets">
+        {/* 8 holes per frame is standard for 35mm */}
+        {[...Array(8)].map((_, i) => (
+            <span key={i}></span>
+        ))}
+    </div>
+));
 
 /**
  * FilmStripPost - Authentic 35mm Film Edition
  * Realistic film structure with authentic markings and subtle grain.
  */
-const FilmStripPost = ({ images = [], uiOverlays = null }) => {
+const FilmStripPost = ({ images = [], uiOverlays = null, priority = 'normal' }) => {
     // Generate authentic frame numbers (like real film: 22A, 23, 24A, etc.)
     const getFrameNumber = (index) => {
         const frameNum = index + 1;
@@ -25,16 +36,6 @@ const FilmStripPost = ({ images = [], uiOverlays = null }) => {
         return 'PANOSPACE';
     };
 
-    // Helper to render sprocket holes
-    const renderSprockets = () => (
-        <div className="cyber-sprockets">
-            {/* 8 holes per frame is standard for 35mm */}
-            {[...Array(8)].map((_, i) => (
-                <span key={i}></span>
-            ))}
-        </div>
-    );
-
     return (
         <div className="cyber-film-strip-wrapper">
             <div className="cyber-film-strip-scroll-container">
@@ -48,7 +49,7 @@ const FilmStripPost = ({ images = [], uiOverlays = null }) => {
                         <div className="cyber-track top">
                             <span className="cyber-micro-text">{getStockName()}</span>
                             <span className="cyber-frame-number">{getFrameNumber(index)}</span>
-                            {renderSprockets()}
+                            <Sprockets />
                         </div>
 
                         {/* Main Content Area */}
@@ -59,16 +60,19 @@ const FilmStripPost = ({ images = [], uiOverlays = null }) => {
 
                             <div className="cyber-image-container">
                                 {item.url || (typeof item === 'string' && item.match(/^http/)) ? (
-                                    <>
-                                        <img
+                                    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                        <SmartImage
                                             src={item.url || item}
                                             alt={`Frame ${index + 1}`}
                                             className="cyber-image"
+                                            priority={priority}
+                                            objectFit="cover"
+                                            keepLoaded={true}
                                         />
                                         {uiOverlays?.quartzDate && (
                                             <DateStampOverlay quartzDate={uiOverlays.quartzDate} />
                                         )}
-                                    </>
+                                    </div>
                                 ) : (
                                     <div className="cyber-text-fallback">
                                         {item.content || item.text || (typeof item === 'string' ? item : 'VOID')}
@@ -85,7 +89,7 @@ const FilmStripPost = ({ images = [], uiOverlays = null }) => {
                         {/* Bottom Film Edge */}
                         <div className="cyber-track bottom">
                             <span className="cyber-edge-code">{getEdgeCode(index)}</span>
-                            {renderSprockets()}
+                            <Sprockets />
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'absolute', bottom: '8px', right: '16px' }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
                                     <defs>
@@ -112,4 +116,4 @@ const FilmStripPost = ({ images = [], uiOverlays = null }) => {
     );
 };
 
-export default FilmStripPost;
+export default React.memo(FilmStripPost);

@@ -12,6 +12,7 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
     const [totalVotes, setTotalVotes] = useState(0);
     const [animating, setAnimating] = useState(false);
     const [hoveredStar, setHoveredStar] = useState(0);
+    const [isProcessing, setIsProcessing] = useState(false); // 🔒 Double-tap prevention
 
     // Legacy like system for non-rated posts
     const [liked, setLiked] = useState(initialLiked || false);
@@ -61,6 +62,10 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
             return;
         }
 
+        // 🔒 DOUBLE-TAP PREVENTION
+        if (isProcessing) return;
+        setIsProcessing(true);
+
         setAnimating(true);
         setTimeout(() => setAnimating(false), 400);
 
@@ -96,6 +101,9 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
         } catch (error) {
             console.error('Error updating rating:', error);
             setUserRating(previousRating);
+        } finally {
+            // Re-enable after 500ms
+            setTimeout(() => setIsProcessing(false), 500);
         }
     };
 
@@ -104,6 +112,10 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
             alert('Please log in to like posts');
             return;
         }
+
+        // 🔒 DOUBLE-TAP PREVENTION
+        if (isProcessing) return;
+        setIsProcessing(true);
 
         setAnimating(true);
         setTimeout(() => setAnimating(false), 400);
@@ -141,6 +153,9 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
             console.error('Error updating like:', error);
             setLiked(previousLiked);
             setLikeCount(previousCount);
+        } finally {
+            // Re-enable after 500ms
+            setTimeout(() => setIsProcessing(false), 500);
         }
     };
 
@@ -149,23 +164,28 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
         return (
             <button
                 onClick={handleLegacyLike}
+                disabled={isProcessing}
                 style={{
                     background: 'transparent',
                     border: 'none',
                     padding: '0.5rem',
+                    // ✅ APPLE 44PX TAP TARGET
+                    minWidth: '44px',
+                    minHeight: '44px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    cursor: 'pointer',
+                    cursor: isProcessing ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s ease',
                     transform: animating ? 'scale(1.2)' : 'scale(1)',
                     color: '#fff',
                     fontSize: '1rem',
                     fontWeight: '500',
-                    filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8))'
+                    filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8))',
+                    opacity: isProcessing ? 0.6 : 1
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                onMouseEnter={(e) => !isProcessing && (e.currentTarget.style.transform = 'scale(1.1)')}
+                onMouseLeave={(e) => !isProcessing && (e.currentTarget.style.transform = 'scale(1)')}
             >
                 {liked ? (
                     <FaSmile size={24} style={{ color: '#7fffd4', filter: 'drop-shadow(0 0 6px rgba(127, 255, 212, 0.6))' }} />
@@ -202,11 +222,20 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
                             onClick={() => handleStarClick(star)}
                             onMouseEnter={() => setHoveredStar(star)}
                             style={{
-                                cursor: 'pointer',
+                                cursor: isProcessing ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.2s ease',
                                 transform: animating && star === userRating ? 'scale(1.3) rotate(15deg)' :
                                     hoveredStar === star ? 'scale(1.15)' : 'scale(1)',
-                                filter: isFilled ? 'drop-shadow(0 0 4px rgba(127, 255, 212, 0.6))' : 'none'
+                                filter: isFilled ? 'drop-shadow(0 0 4px rgba(127, 255, 212, 0.6))' : 'none',
+                                // ✅ APPLE 44PX TAP TARGET
+                                minWidth: '44px',
+                                minHeight: '44px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                // Negative margin to maintain visual spacing
+                                margin: '-14px -14px',
+                                opacity: isProcessing ? 0.6 : 1
                             }}
                         >
                             {isFilled ? (

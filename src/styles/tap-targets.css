@@ -1,0 +1,105 @@
+/* Tap Target & Navigation Fixes - Utility Styles */
+
+/* Minimum tap target standards: iOS HIG 44x44px, Android Material 48x48px */
+
+.tap-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.tap-target-large {
+    min-width: 48px;
+    min-height: 48px;
+}
+
+.icon-button {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.back-button {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+}
+
+.safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+.safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+.overlay-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: auto;
+}
+
+.overlay-content {
+    position: relative;
+    z-index: 1001;
+    pointer-events: auto;
+}
+
+body {
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.no-pull-refresh {
+    overscroll-behavior-y: contain;
+}
+
+.tap-target:focus-visible,
+.icon-button:focus-visible,
+.back-button:focus-visible {
+    outline: 2px solid #7FFFD4;
+    outline-offset: 2px;
+}
+
+.tap-target:active,
+.icon-button:active {
+    opacity: 0.7;
+    transform: scale(0.95);
+    transition: all 0.1s ease;
+}

@@ -10,6 +10,7 @@ import { getUserTier, USER_TIERS } from '../services/monetizationService';
 import PaywallModal from '../components/monetization/PaywallModal';
 import '../styles/create-gallery.css';
 import StarBackground from '../components/StarBackground';
+import { sanitizeTitle, sanitizeDescription } from '../utils/sanitize';
 
 const POPULAR_TAGS = [
     'landscape', 'portrait', 'street', 'nature', 'urban', 'film',
@@ -112,7 +113,7 @@ const CreateStudio = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Starting studio creation...');
+
 
         if (!title.trim()) {
             showError('Please enter a studio title');
@@ -129,8 +130,8 @@ const CreateStudio = () => {
 
         try {
             const studioData = {
-                title: title.trim(),
-                description: description.trim(),
+                title: sanitizeTitle(title),
+                description: sanitizeDescription(description),
                 contentType,
                 requiredTags,
                 requiredLocations,
@@ -138,7 +139,7 @@ const CreateStudio = () => {
                 moderationEnabled
             };
 
-            console.log('Sending studio data:', studioData);
+
 
             const studio = await createGallery(
                 studioData,
@@ -147,10 +148,10 @@ const CreateStudio = () => {
                 userProfile
             );
 
-            console.log('Studio created successfully:', studio);
+
 
             if (studio && studio.id) {
-                console.log('Navigating to:', `/gallery/${studio.id}`);
+
                 navigate(`/gallery/${studio.id}`);
             } else {
                 console.error('Studio created but no ID returned:', studio);
@@ -216,182 +217,180 @@ const CreateStudio = () => {
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                    <h3>Basic Information</h3>
-                        <div className="form-field">
-                            <label>Studio Title *</label>
+                            placeholder="e.g., Landscape Photography Studio"
                             maxLength={100}
                             required
                         />
-                        </div>
-                        <div className="form-field">
-                            <label>Description</label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Describe what this studio is about..."
-                                rows={4}
-                                maxLength={500}
+                    </div>
+                    <div className="form-field">
+                        <label>Description</label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Describe what this studio is about..."
+                            rows={4}
+                            maxLength={500}
+                        />
+                    </div>
+                </div>
+
+                {/* Content Type */}
+                <div className="form-section">
+                    <h3>Content Type</h3>
+                    <p className="field-hint">What can members add to this studio?</p>
+                    <div className="content-type-options">
+                        <label className={`content-type-option ${contentType === 'posts' ? 'active' : ''}`}>
+                            <input
+                                type="radio"
+                                value="posts"
+                                checked={contentType === 'posts'}
+                                onChange={(e) => setContentType(e.target.value)}
                             />
-                        </div>
+                            <div>
+                                <strong>Posts Only</strong>
+                                <span>Individual photos and images</span>
+                            </div>
+                        </label>
+                        <label className={`content-type-option ${contentType === 'collections' ? 'active' : ''}`}>
+                            <input
+                                type="radio"
+                                value="collections"
+                                checked={contentType === 'collections'}
+                                onChange={(e) => setContentType(e.target.value)}
+                            />
+                            <div>
+                                <strong>Collections Only</strong>
+                                <span>Curated collections of posts</span>
+                            </div>
+                        </label>
+                        <label className={`content-type-option ${contentType === 'both' ? 'active' : ''}`}>
+                            <input
+                                type="radio"
+                                value="both"
+                                checked={contentType === 'both'}
+                                onChange={(e) => setContentType(e.target.value)}
+                            />
+                            <div>
+                                <strong>Both</strong>
+                                <span>Posts and collections</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {/* Required Tags */}
+                <div className="form-section">
+                    <h3><FaTags /> Studio Tags (Optional)</h3>
+                    <p className="field-hint">Tags help users discover your studio through search</p>
+
+                    <div className="tag-selector">
+                        {POPULAR_TAGS.map(tag => (
+                            <button
+                                key={tag}
+                                type="button"
+                                className={`tag-btn ${requiredTags.includes(tag) ? 'active' : ''}`}
+                                onClick={() => handleTagToggle(tag)}
+                            >
+                                {tag}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Content Type */}
-                    <div className="form-section">
-                        <h3>Content Type</h3>
-                        <p className="field-hint">What can members add to this studio?</p>
-                        <div className="content-type-options">
-                            <label className={`content-type-option ${contentType === 'posts' ? 'active' : ''}`}>
-                                <input
-                                    type="radio"
-                                    value="posts"
-                                    checked={contentType === 'posts'}
-                                    onChange={(e) => setContentType(e.target.value)}
-                                />
-                                <div>
-                                    <strong>Posts Only</strong>
-                                    <span>Individual photos and images</span>
-                                </div>
-                            </label>
-                            <label className={`content-type-option ${contentType === 'collections' ? 'active' : ''}`}>
-                                <input
-                                    type="radio"
-                                    value="collections"
-                                    checked={contentType === 'collections'}
-                                    onChange={(e) => setContentType(e.target.value)}
-                                />
-                                <div>
-                                    <strong>Collections Only</strong>
-                                    <span>Curated collections of posts</span>
-                                </div>
-                            </label>
-                            <label className={`content-type-option ${contentType === 'both' ? 'active' : ''}`}>
-                                <input
-                                    type="radio"
-                                    value="both"
-                                    checked={contentType === 'both'}
-                                    onChange={(e) => setContentType(e.target.value)}
-                                />
-                                <div>
-                                    <strong>Both</strong>
-                                    <span>Posts and collections</span>
-                                </div>
-                            </label>
-                        </div>
+                    <div className="custom-tag-input">
+                        <input
+                            type="text"
+                            value={customTag}
+                            onChange={(e) => setCustomTag(e.target.value)}
+                            placeholder="Add custom tag..."
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
+                        />
+                        <button type="button" onClick={handleAddCustomTag}>Add</button>
                     </div>
 
-                    {/* Required Tags */}
-                    <div className="form-section">
-                        <h3><FaTags /> Studio Tags (Optional)</h3>
-                        <p className="field-hint">Tags help users discover your studio through search</p>
-
-                        <div className="tag-selector">
-                            {POPULAR_TAGS.map(tag => (
-                                <button
-                                    key={tag}
-                                    type="button"
-                                    className={`tag-btn ${requiredTags.includes(tag) ? 'active' : ''}`}
-                                    onClick={() => handleTagToggle(tag)}
-                                >
+                    {requiredTags.length > 0 && (
+                        <div className="selected-tags">
+                            <strong>Studio tags:</strong>
+                            {requiredTags.map(tag => (
+                                <span key={tag} className="selected-tag">
                                     {tag}
-                                </button>
+                                    <button type="button" onClick={() => handleTagToggle(tag)}>×</button>
+                                </span>
                             ))}
                         </div>
+                    )}
+                </div>
 
-                        <div className="custom-tag-input">
-                            <input
-                                type="text"
-                                value={customTag}
-                                onChange={(e) => setCustomTag(e.target.value)}
-                                placeholder="Add custom tag..."
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
-                            />
-                            <button type="button" onClick={handleAddCustomTag}>Add</button>
+                {/* Required Locations */}
+                <div className="form-section">
+                    <h3><FaMapMarkerAlt /> Location Focus (Optional)</h3>
+                    <p className="field-hint">Specify locations this studio focuses on</p>
+
+                    <div className="location-input">
+                        <input
+                            type="text"
+                            value={locationInput}
+                            onChange={(e) => setLocationInput(e.target.value)}
+                            placeholder="e.g., New York, Tokyo, Paris..."
+                            onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocation())}
+                        />
+                        <button type="button" onClick={handleAddLocation}>Add</button>
+                    </div>
+
+                    {requiredLocations.length > 0 && (
+                        <div className="selected-locations">
+                            {requiredLocations.map(loc => (
+                                <span key={loc} className="selected-location">
+                                    {loc}
+                                    <button
+                                        type="button"
+                                        onClick={() => setRequiredLocations(prev => prev.filter(l => l !== loc))}
+                                    >
+                                        ×
+                                    </button>
+                                </span>
+                            ))}
                         </div>
+                    )}
+                </div>
 
-                        {requiredTags.length > 0 && (
-                            <div className="selected-tags">
-                                <strong>Studio tags:</strong>
-                                {requiredTags.map(tag => (
-                                    <span key={tag} className="selected-tag">
-                                        {tag}
-                                        <button type="button" onClick={() => handleTagToggle(tag)}>×</button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                {/* Settings */}
+                <div className="form-section">
+                    <h3>Studio Settings</h3>
 
-                    {/* Required Locations */}
-                    <div className="form-section">
-                        <h3><FaMapMarkerAlt /> Location Focus (Optional)</h3>
-                        <p className="field-hint">Specify locations this studio focuses on</p>
-
-                        <div className="location-input">
-                            <input
-                                type="text"
-                                value={locationInput}
-                                onChange={(e) => setLocationInput(e.target.value)}
-                                placeholder="e.g., New York, Tokyo, Paris..."
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddLocation())}
-                            />
-                            <button type="button" onClick={handleAddLocation}>Add</button>
+                    <label className="toggle-option">
+                        <input
+                            type="checkbox"
+                            checked={isPublic}
+                            onChange={(e) => setIsPublic(e.target.checked)}
+                        />
+                        <div>
+                            <strong>{isPublic ? <FaGlobe /> : <FaLock />} {isPublic ? 'Public' : 'Private'}</strong>
+                            <span>{isPublic ? 'Anyone can view this studio' : 'Only members can view'}</span>
                         </div>
+                    </label>
 
-                        {requiredLocations.length > 0 && (
-                            <div className="selected-locations">
-                                {requiredLocations.map(loc => (
-                                    <span key={loc} className="selected-location">
-                                        {loc}
-                                        <button
-                                            type="button"
-                                            onClick={() => setRequiredLocations(prev => prev.filter(l => l !== loc))}
-                                        >
-                                            ×
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    <label className="toggle-option">
+                        <input
+                            type="checkbox"
+                            checked={moderationEnabled}
+                            onChange={(e) => setModerationEnabled(e.target.checked)}
+                        />
+                        <div>
+                            <strong>Require Approval</strong>
+                            <span>You must approve content before it appears</span>
+                        </div>
+                    </label>
+                </div>
 
-                    {/* Settings */}
-                    <div className="form-section">
-                        <h3>Studio Settings</h3>
-
-                        <label className="toggle-option">
-                            <input
-                                type="checkbox"
-                                checked={isPublic}
-                                onChange={(e) => setIsPublic(e.target.checked)}
-                            />
-                            <div>
-                                <strong>{isPublic ? <FaGlobe /> : <FaLock />} {isPublic ? 'Public' : 'Private'}</strong>
-                                <span>{isPublic ? 'Anyone can view this studio' : 'Only members can view'}</span>
-                            </div>
-                        </label>
-
-                        <label className="toggle-option">
-                            <input
-                                type="checkbox"
-                                checked={moderationEnabled}
-                                onChange={(e) => setModerationEnabled(e.target.checked)}
-                            />
-                            <div>
-                                <strong>Require Approval</strong>
-                                <span>You must approve content before it appears</span>
-                            </div>
-                        </label>
-                    </div>
-
-                    {/* Submit */}
-                    <div className="form-actions">
-                        <button type="button" onClick={() => navigate(-1)} className="cancel-btn">
-                            Cancel
-                        </button>
-                        <button type="submit" disabled={loading} className="create-btn">
-                            {loading ? 'Creating...' : 'Create Studio'}
-                        </button>
-                    </div>
+                {/* Submit */}
+                <div className="form-actions">
+                    <button type="button" onClick={() => navigate(-1)} className="cancel-btn">
+                        Cancel
+                    </button>
+                    <button type="submit" disabled={loading} className="create-btn">
+                        {loading ? 'Creating...' : 'Create Studio'}
+                    </button>
+                </div>
             </form>
         </div>
     );

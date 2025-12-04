@@ -25,6 +25,7 @@
     "deploy:functions": "firebase deploy --only functions",
     "deploy:indexes": "firebase deploy --only firestore:indexes",
     "deploy:rules": "firebase deploy --only firestore:rules",
+    "create-demo-account": "node scripts/createDemoAccount.js",
     "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {
@@ -59,6 +60,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "firebase-admin": "^13.6.0",
     "jsdom": "^23.2.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",

@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePersonalizedFeed } from '../hooks/usePersonalizedFeed';
 import { FaRedo, FaCalendarAlt, FaRocket } from 'react-icons/fa';
 import Post from '../components/Post';
 import { getCurrentTheme } from '../constants/monthlyThemes';
 import { useBlock } from '../hooks/useBlock';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import StarBackground from '../components/StarBackground';
 import { useFeedType } from '../hooks/useFeedType';
@@ -17,6 +17,10 @@ const Feed = () => {
     const { feedType, toggleFeed } = useFeedType();
     const [showIndicator, setShowIndicator] = useState(false);
     const [switchCount, setSwitchCount] = useState(0);
+    const scrollContainerRef = useRef(null);
+    const location = useLocation();
+    const lastScrollPositionRef = useRef(0);
+    const isRestoringScrollRef = useRef(false);
 
     // Pass feedType to hook if dual feeds enabled, otherwise null (show all)
     const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed(
@@ -29,8 +33,43 @@ const Feed = () => {
     const { blockedUsers } = useBlock();
     const navigate = useNavigate();
 
-    // Filter out blocked content
-    const visiblePosts = filterVisiblePosts(posts, blockedUsers);
+    // Filter out blocked content - memoized to prevent re-renders
+    // STABILITY: Ensure posts is always an array
+    const visiblePosts = React.useMemo(() =>
+        filterVisiblePosts(posts || [], blockedUsers),
+        [posts, blockedUsers]
+    );
+
+    // Save scroll position before navigation
+    useEffect(() => {
+        const saveScrollPosition = () => {
+            if (scrollContainerRef.current) {
+                lastScrollPositionRef.current = scrollContainerRef.current.scrollTop;
+                sessionStorage.setItem('feedScrollPosition', lastScrollPositionRef.current.toString());
+            }
+        };
+
+        return () => {
+            saveScrollPosition();
+        };
+    }, []);
+
+    // Restore scroll position on mount
+    useEffect(() => {
+        if (visiblePosts.length > 0 && scrollContainerRef.current) {
+            const savedPosition = sessionStorage.getItem('feedScrollPosition');
+            if (savedPosition && !isRestoringScrollRef.current) {
+                isRestoringScrollRef.current = true;
+                // Use requestAnimationFrame to ensure DOM is ready
+                requestAnimationFrame(() => {
+                    if (scrollContainerRef.current) {
+                        scrollContainerRef.current.scrollTop = parseInt(savedPosition, 10);
+                        isRestoringScrollRef.current = false;
+                    }
+                });
+            }
+        }
+    }, [visiblePosts.length]);
 
     return (
         <div style={{ height: '100vh', width: '100vw', background: '#000', overflow: 'hidden', position: 'relative' }}>
@@ -217,24 +256,37 @@ const Feed = () => {
                         `}
                     </style>
                     <div
+                        ref={scrollContainerRef}
                         className="no-scrollbar"
                         style={{
                             height: '100%',
                             overflowY: 'scroll',
                             scrollSnapType: 'y mandatory',
-                            scrollBehavior: 'smooth'
+                            // Remove smooth scroll behavior to prevent jumping
+                            scrollBehavior: isRestoringScrollRef.current ? 'auto' : 'smooth',
+                            // Hardware acceleration
+                            willChange: 'scroll-position',
+                            WebkitOverflowScrolling: 'touch'
                         }}
                     >
                         {visiblePosts.map((post, index) => (
-                            <div key={`${post.id}-${index}`} style={{ height: '100vh', scrollSnapAlign: 'start' }}>
+                            <div
+                                key={post.id}
+                                style={{
+                                    height: '100vh',
+                                    scrollSnapAlign: 'start',
+                                    scrollSnapStop: 'always'
+                                }}
+                            >
                                 <Post
                                     post={post}
                                     displayMode="feed"
+                                    priority={index < 2 ? 'high' : 'normal'}
                                 />
                             </div>
                         ))}
                         {loading && (
-                            <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', scrollSnapAlign: 'start' }}>
+                            <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', scrollSnapAlign: 'none' }}>
                                 Loading more...
                             </div>
                         )}

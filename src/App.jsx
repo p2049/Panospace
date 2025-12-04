@@ -4,13 +4,16 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AnimatePresence } from 'framer-motion';
 import OrientationGuard from './components/OrientationGuard';
 import MobileNavigation from './components/MobileNavigation';
-import ErrorBoundary from './components/ErrorBoundary';
+import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import MotionWrapper from './components/MotionWrapper';
+import AppLoading from './components/AppLoading';
+import OfflineBanner from './components/OfflineBanner';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserCacheProvider } from './context/UserCacheContext';
 import { UIProvider } from './context/UIContext';
 import { ToastProvider } from './context/ToastContext';
 import ToastManager from './components/ToastManager';
+import './styles/tap-targets.css';
 
 // Lazy load pages for performance optimization
 const Login = lazy(() => import('./pages/Login'));
@@ -37,11 +40,9 @@ const CreateGallery = lazy(() => import('./pages/CreateGallery'));
 const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
 const Parks = lazy(() => import('./pages/Parks'));
 const ParkGallery = lazy(() => import('./pages/ParkGallery'));
-const PanoVerse = lazy(() => import('./pages/PanoVerse'));
 const Debug = lazy(() => import('./pages/Debug'));
 const CardDetailPage = lazy(() => import('./pages/CardDetailPage'));
 const CardMarketplace = lazy(() => import('./pages/CardMarketplace'));
-const PhotoDexPage = lazy(() => import('./pages/PhotoDexPage'));
 const UltraPage = lazy(() => import('./pages/UltraPage'));
 const MuseumPage = lazy(() => import('./pages/MuseumPage'));
 const MagazineView = lazy(() => import('./pages/MagazineView'));
@@ -62,18 +63,11 @@ const ShopDrafts = lazy(() => import('./pages/ShopDrafts'));
 
 const NotFound = lazy(() => import('./pages/NotFound'));
 
-const Loading = () => (
-  <div style={{ height: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#fff' }}>
-    <div className="spinner" style={{ width: '30px', height: '30px', border: '2px solid #333', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-    <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-  </div>
-);
-
 const PrivateRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
 
   if (loading) {
-    return <Loading />;
+    return <AppLoading />;
   }
 
   return currentUser ? children : <Navigate to="/login" />;
@@ -192,10 +186,9 @@ const AnimatedRoutes = () => {
             <MotionWrapper><ParkGallery /></MotionWrapper>
           </PrivateRoute>
         } />
-        <Route path="/debug" element={<MotionWrapper><Debug /></MotionWrapper>} />
+        {/* <Route path="/debug" element={<MotionWrapper><Debug /></MotionWrapper>} /> */}
         <Route path="/cards/:cardId" element={<MotionWrapper><CardDetailPage /></MotionWrapper>} />
         <Route path="/marketplace" element={<MotionWrapper><CardMarketplace /></MotionWrapper>} />
-        <Route path="/photodex" element={<MotionWrapper><PhotoDexPage /></MotionWrapper>} />
         <Route path="/ultra" element={
           <PrivateRoute>
             <MotionWrapper><UltraPage /></MotionWrapper>
@@ -261,7 +254,7 @@ const AnimatedRoutes = () => {
 
 function App() {
   return (
-    <ErrorBoundary>
+    <GlobalErrorBoundary>
       <AuthProvider>
         <UserCacheProvider>
           <UIProvider>
@@ -269,8 +262,11 @@ function App() {
               <HelmetProvider>
                 <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                   <OrientationGuard>
+                    {/* Offline Banner - Global */}
+                    <OfflineBanner />
+
                     <div className="app-container">
-                      <Suspense fallback={<Loading />}>
+                      <Suspense fallback={<AppLoading />}>
                         <AnimatedRoutes />
                       </Suspense>
 
@@ -284,7 +280,7 @@ function App() {
           </UIProvider>
         </UserCacheProvider>
       </AuthProvider>
-    </ErrorBoundary>
+    </GlobalErrorBoundary>
   );
 }
 

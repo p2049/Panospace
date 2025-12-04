@@ -41,13 +41,28 @@ export const BOOST_LEVELS = {
  * @param {string} userId 
  * @returns {Promise<string>} 'free', 'ultra', or 'partner'
  */
+/**
+ * Get the monetization tier of a user
+ * @param {string} userId 
+ * @returns {Promise<string>} 'free', 'ultra', or 'partner'
+ */
 export const getUserTier = async (userId) => {
     if (!userId) return USER_TIERS.FREE;
+
+    // Dev/Demo Accounts - Always grant PARTNER tier for testing
+    const DEV_EMAILS = ['appreview@paxus.app', 'dev@paxus.app', 'admin@paxus.app'];
+
     try {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (!userDoc.exists()) return USER_TIERS.FREE;
 
         const data = userDoc.data();
+
+        // Check if user is a dev account
+        if (data.email && DEV_EMAILS.includes(data.email)) {
+            return USER_TIERS.PARTNER;
+        }
+
         if (data.isPartner) return USER_TIERS.PARTNER;
         if (data.isUltra) return USER_TIERS.ULTRA;
         return USER_TIERS.FREE;

@@ -23,7 +23,9 @@ import PageHeader from '../components/PageHeader';
 import PSButton from '../components/PSButton';
 import ModeSelector from '../components/create-collection/ModeSelector';
 import CollectionFields from '../components/create-collection/CollectionFields';
+
 import SubmitBar from '../components/create-collection/SubmitBar';
+import { sanitizeTitle, sanitizeDescription } from '../utils/sanitize';
 
 
 const CreateCollection = () => {
@@ -147,7 +149,7 @@ const CreateCollection = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('[CreateCollection] handleSubmit called');
+
 
         if (!title.trim()) {
             showError(`Please enter a ${creationMode} title`);
@@ -176,8 +178,8 @@ const CreateCollection = () => {
                 const magazineData = {
                     ownerId: currentUser.uid,
                     ownerName: currentUser.displayName || 'Anonymous',
-                    title: title.trim(),
-                    description: description.trim(),
+                    title: sanitizeTitle(title),
+                    description: sanitizeDescription(description),
                     coverImage: finalCoverImageUrl,
                     releaseFrequency,
                     releaseTime,
@@ -188,10 +190,7 @@ const CreateCollection = () => {
                     visibility
                 };
 
-                console.log('[CreateCollection] Creating magazine...');
                 const newMagazine = await createMagazine(magazineData);
-                console.log('[CreateCollection] Magazine created:', newMagazine.id);
-
                 navigate(`/magazine/${newMagazine.id}`);
                 return;
             } catch (err) {
@@ -229,8 +228,8 @@ const CreateCollection = () => {
                     type: 'museum',
                     ownerId: currentUser.uid,
                     ownerName: currentUser.displayName || 'Anonymous',
-                    title: title.trim(),
-                    description: description.trim(),
+                    title: sanitizeTitle(title),
+                    description: sanitizeDescription(description),
                     coverImage: finalCoverImageUrl,
                     galleryIds: [], // Will be populated when galleries are added
                     profileIds: [], // Will be populated when profiles are added
@@ -241,9 +240,7 @@ const CreateCollection = () => {
                     updatedAt: serverTimestamp()
                 };
 
-                console.log('[CreateCollection] Creating museum...');
                 const docRef = await addDoc(collection(db, 'museums'), museumData);
-                console.log('[CreateCollection] Museum created:', docRef.id);
 
                 navigate(`/museum/${docRef.id}`);
                 return;
@@ -268,7 +265,7 @@ const CreateCollection = () => {
             return;
         }
 
-        console.log('[CreateCollection] Validation passed, starting upload...');
+
 
         try {
             setUploading(true);
@@ -306,8 +303,8 @@ const CreateCollection = () => {
             const collectionData = {
                 type: creationMode, // 'collection' or 'gallery'
                 ownerId: currentUser.uid,
-                title: title.trim(),
-                description: description.trim(),
+                title: sanitizeTitle(title),
+                description: sanitizeDescription(description),
                 coverImage: uploadedItems[0].imageUrl,
                 items: uploadedItems,
                 postRefs: [],
@@ -321,9 +318,7 @@ const CreateCollection = () => {
                 }
             };
 
-            console.log('[CreateCollection] Creating collection...');
             const newCollection = await createCollection(collectionData);
-            console.log('[CreateCollection] Collection created:', newCollection.id);
 
             navigate(`/collection/${newCollection.id}`);
         } catch (err) {

@@ -22,7 +22,7 @@ const AestheticStudio = () => {
                 if (type === 'season') fieldName = 'seasonalTags';
                 if (type === 'time') fieldName = 'timeOfDayTags';
 
-                console.log("AestheticStudio Params:", { type, tag, fieldName });
+
                 const q = query(
                     collection(db, 'posts'),
                     where(fieldName, 'array-contains', tag)
@@ -31,7 +31,7 @@ const AestheticStudio = () => {
                 );
 
                 const snapshot = await getDocs(q);
-                console.log("AestheticStudio Snapshot Size:", snapshot.size);
+
                 const fetchedPosts = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()

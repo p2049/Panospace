@@ -20,6 +20,14 @@
     border: 1px solid #333;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+
+    /* Smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+
+    /* Hardware acceleration */
+    transform: translateZ(0);
+    will-change: scroll-position;
 }
 
 /* Top and bottom film edges */
@@ -39,6 +47,7 @@
     border-top: 1px solid #222;
     border-bottom: 1px solid #222;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .film-edge-top {
@@ -79,6 +88,7 @@
     position: relative;
     overflow: hidden;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .sprocket-track-top {
@@ -98,6 +108,7 @@
     justify-content: center;
     min-width: 300px;
     /* Matches frame width */
+    flex-shrink: 0;
 }
 
 /* Individual sprocket hole */
@@ -108,6 +119,7 @@
     border-radius: 2px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
     border: 1px solid #333;
+    flex-shrink: 0;
 }
 
 /* Film frames container */
@@ -127,6 +139,9 @@
     background: #050505;
     border-left: 1px solid #222;
     border-right: 1px solid #222;
+    flex-shrink: 0;
+    /* Prevent sub-pixel blur */
+    transform: translateZ(0);
 }
 
 /* Frame numbers */
@@ -145,6 +160,7 @@
     background: #111;
     text-transform: uppercase;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .frame-number-left {
@@ -163,6 +179,9 @@
     overflow: hidden;
     background: #000;
     margin: 2px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Actual image */
@@ -173,6 +192,9 @@
     display: block;
     opacity: 0.95;
     transition: opacity 0.3s ease;
+    /* Prevent flicker */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 .frame-image:hover {
@@ -183,6 +205,7 @@
 .frame-separator {
     width: 1px;
     background: #333;
+    flex-shrink: 0;
 }
 
 /* Scrollbar styling */
@@ -213,5 +236,49 @@
         min-width: 260px;
         height: 173px;
         /* Maintain 3:2 ratio approx */
+    }
+
+    .frame-number {
+        width: 16px;
+        font-size: 8px;
+    }
+
+    .sprocket-track {
+        height: 20px;
+    }
+
+    .sprocket-hole {
+        width: 8px;
+        height: 12px;
+    }
+}
+
+/* iPhone SE and smaller */
+@media (max-width: 375px) {
+    .sprocket-group {
+        min-width: 220px;
+        gap: 10px;
+    }
+
+    .film-frame {
+        min-width: 220px;
+        height: 147px;
+    }
+
+    .film-edge {
+        height: 10px;
+        font-size: 7px;
+        padding: 0 8px;
+    }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .film-frame {
+        height: 140px;
+    }
+
+    .sprocket-track {
+        height: 18px;
     }
 }

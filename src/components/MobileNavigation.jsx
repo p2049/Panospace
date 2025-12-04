@@ -61,7 +61,9 @@ const MobileNavigation = () => {
         cursor: 'pointer',
         transition: 'all 0.2s',
         opacity: 0.7,
-        width: '100%'
+        width: '100%',
+        minHeight: '44px', // Minimum tap target
+        minWidth: '44px'
     };
 
     const activeNavItemStyle = {
@@ -104,13 +106,16 @@ const MobileNavigation = () => {
         transition: 'transform 0.2s ease',
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
         color: '#7FFFD4',
-        background: 'transparent', // Removed circle background
-        width: '40px', // Keep touch target size
-        height: '40px',
+        background: 'transparent',
+        width: '44px', // Minimum tap target
+        height: '44px',
+        minWidth: '44px',
+        minHeight: '44px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        // Removed borderRadius and backdropFilter
+        padding: '10px', // Increased padding for better touch area
+        WebkitTapHighlightColor: 'transparent'
     };
 
     return (

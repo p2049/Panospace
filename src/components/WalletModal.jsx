@@ -3,6 +3,7 @@ import { FaWallet, FaHistory, FaArrowUp, FaArrowDown, FaTimes, FaPlus } from 're
 import { useAuth } from '../context/AuthContext';
 import { WalletService } from '../services/WalletService';
 import { formatPrice } from '../utils/helpers';
+import useModalEscape from '../hooks/useModalEscape';
 
 const WalletModal = ({ onClose }) => {
     const { currentUser } = useAuth();
@@ -32,6 +33,9 @@ const WalletModal = ({ onClose }) => {
         fetchData();
     }, [currentUser]);
 
+    // Modal escape handling
+    const { handleBackdropClick } = useModalEscape(true, onClose);
+
     const handleAddFunds = async () => {
         // Mock Deposit
         const amount = 100; // $100
@@ -55,28 +59,33 @@ const WalletModal = ({ onClose }) => {
     if (!currentUser) return null;
 
     return (
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.8)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2000
-        }}>
-            <div style={{
-                background: '#1a1a1a',
-                border: '1px solid #333',
-                borderRadius: '16px',
-                width: '90%',
-                maxWidth: '500px',
-                maxHeight: '80vh',
+        <div
+            onClick={handleBackdropClick}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.8)',
+                backdropFilter: 'blur(8px)',
                 display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-            }}>
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 2000
+            }}
+        >
+            <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    background: '#1a1a1a',
+                    border: '1px solid #333',
+                    borderRadius: '16px',
+                    width: '90%',
+                    maxWidth: '500px',
+                    maxHeight: '80vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                }}>
                 {/* Header */}
                 <div style={{
                     padding: '1.5rem',
@@ -95,8 +104,15 @@ const WalletModal = ({ onClose }) => {
                             border: 'none',
                             color: '#888',
                             cursor: 'pointer',
-                            fontSize: '1.2rem'
+                            fontSize: '1.2rem',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '10px'
                         }}
+                        aria-label="Close wallet"
                     >
                         <FaTimes />
                     </button>

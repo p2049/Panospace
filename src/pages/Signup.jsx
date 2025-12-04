@@ -27,13 +27,19 @@ const Signup = () => {
                 const { doc, setDoc } = await import('firebase/firestore');
                 const { db } = await import('../firebase');
                 await updateProfile(userCredential.user, { displayName: username });
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
+                const userData = {
                     displayName: username,
                     email: email,
                     photoURL: userCredential.user.photoURL || '',
                     createdAt: new Date().toISOString(),
                     bio: 'New Panospace Artist',
-                });
+                };
+
+                // Generate search keywords
+                const { generateUserSearchKeywords } = await import('../utils/searchKeywords');
+                userData.searchKeywords = generateUserSearchKeywords(userData);
+
+                await setDoc(doc(db, 'users', userCredential.user.uid), userData);
             } catch (profileErr) {
                 console.error('Error setting up profile:', profileErr);
             }

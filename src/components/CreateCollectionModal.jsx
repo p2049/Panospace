@@ -189,27 +189,24 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
                         <label style={{ display: 'block', marginBottom: '0.5rem', color: '#ccc', fontWeight: '600' }}>
                             Visibility
                         </label>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {[
-                                <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
-                                    Leave empty to sell items individually
-                                </div>
+                        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.5rem' }}>
+                            Leave empty to sell items individually
+                        </div>
 
-                            {/* Copyright Warning for Store Items */ }
-                                < div style = {{
-                                    marginTop: '0.75rem',
-                                    padding: '0.75rem',
-                                    background: 'rgba(255, 165, 0, 0.1)',
-                                    border: '1px solid rgba(255, 165, 0, 0.3)',
-                                    borderRadius: '6px',
-                                    fontSize: '0.75rem',
-                                    color: '#ffb84d',
-                                    lineHeight: '1.4'
-                                }}>
+                        {/* Copyright Warning for Store Items */}
+                        <div style={{
+                            marginTop: '0.75rem',
+                            padding: '0.75rem',
+                            background: 'rgba(255, 165, 0, 0.1)',
+                            border: '1px solid rgba(255, 165, 0, 0.3)',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            color: '#ffb84d',
+                            lineHeight: '1.4'
+                        }}>
                             ⚠️ <strong>Copyright Notice:</strong> By listing this item, you certify that you own all rights to this content. Unauthorized sale of copyrighted material is prohibited.
                         </div>
                     </div>
-                    )}
 
                     {/* Scheduled Drop Date */}
                     <div style={{ marginBottom: '1.5rem' }}>

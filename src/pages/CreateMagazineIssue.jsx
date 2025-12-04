@@ -7,6 +7,7 @@ import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/fires
 import { FaImage, FaTimes, FaPlus, FaArrowLeft, FaBook, FaCheck, FaGripVertical } from 'react-icons/fa';
 import { MAGAZINE_CONFIG } from '../constants/magazineConfig';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { sanitizeDescription } from '../utils/sanitize';
 
 const CreateMagazineIssue = () => {
     const { id: magazineId } = useParams();
@@ -216,7 +217,7 @@ const CreateMagazineIssue = () => {
                 uploadedSlides.push({
                     imageUrl,
                     storagePath: fileName,
-                    caption: slide.caption,
+                    caption: sanitizeDescription(slide.caption || ''),
                     contributorId: currentUser.uid,
                     order: i
                 });
@@ -238,7 +239,7 @@ const CreateMagazineIssue = () => {
             };
 
             const issueRef = await addDoc(collection(db, 'magazineIssues'), issueData);
-            console.log('Issue created:', issueRef.id);
+
 
             alert('Issue queued successfully! It will be published on the scheduled date.');
             navigate(`/magazine/${magazineId}`);

@@ -18,7 +18,8 @@ import BusinessCardModal from '../components/BusinessCardModal';
 import CommissionModal from '../components/monetization/CommissionModal';
 import { getUnreadCount } from '../services/notificationService';
 import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaEllipsisV, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet } from 'react-icons/fa';
-import { getDocs, query, where, orderBy } from 'firebase/firestore';
+import { getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 
 const Profile = () => {
@@ -61,10 +62,14 @@ const Profile = () => {
         const fetchOrders = async () => {
             if (activeTab === 'gallery' && targetId) {
                 try {
+                    // 🔒 SAFETY: Limit to 30 most recent orders
+                    // WHY: User with 1000 orders = 1000 reads every profile view
+                    // With limit(30): Only 30 reads, can add "Load More" if needed
                     const q = query(
                         collection(db, 'orders'),
                         where('userId', '==', targetId),
-                        orderBy('createdAt', 'desc')
+                        orderBy('createdAt', 'desc'),
+                        limit(30)
                     );
                     const snapshot = await getDocs(q);
                     setOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -286,7 +291,7 @@ const Profile = () => {
                     {isOwnProfile && window.innerWidth < 768 && (
                         <div style={{
                             position: 'fixed',
-                            top: '60px',
+                            top: 'calc(max(0.75rem, env(safe-area-inset-top)) + 48px)',
                             right: '1rem',
                             display: 'flex',
                             gap: '0.5rem',
@@ -301,6 +306,7 @@ const Profile = () => {
                                 style={{
                                     width: '40px',
                                     height: '40px',
+                                    padding: 0,
                                     cursor: 'pointer',
                                     color: '#7FFFD4'
                                 }}
@@ -316,6 +322,7 @@ const Profile = () => {
                                 style={{
                                     width: '40px',
                                     height: '40px',
+                                    padding: 0,
                                     cursor: 'pointer',
                                     color: '#fff'
                                 }}
@@ -328,7 +335,7 @@ const Profile = () => {
                     {!isOwnProfile && window.innerWidth < 768 && (
                         <div style={{
                             position: 'fixed',
-                            top: '60px',
+                            top: 'calc(max(0.75rem, env(safe-area-inset-top)) + 48px)',
                             right: '1rem',
                             zIndex: 9998
                         }}>
@@ -339,6 +346,7 @@ const Profile = () => {
                                     style={{
                                         width: '40px',
                                         height: '40px',
+                                        padding: 0,
                                         cursor: 'pointer',
                                         color: '#fff',
                                         position: 'relative'
@@ -425,6 +433,7 @@ const Profile = () => {
                                 style={{
                                     width: '40px',
                                     height: '40px',
+                                    padding: 0,
                                     cursor: 'pointer',
                                     color: '#fff'
                                 }}
@@ -437,6 +446,7 @@ const Profile = () => {
                                 style={{
                                     width: '40px',
                                     height: '40px',
+                                    padding: 0,
                                     cursor: 'pointer',
                                     color: '#fff'
                                 }}
@@ -459,6 +469,7 @@ const Profile = () => {
                                     style={{
                                         width: '40px',
                                         height: '40px',
+                                        padding: 0,
                                         cursor: 'pointer',
                                         color: '#fff',
                                         position: 'relative'
@@ -538,13 +549,13 @@ const Profile = () => {
                     paddingRight: window.innerWidth < 768 ? '1rem' : 'max(1rem, env(safe-area-inset-right))'
                 }}>
                     {[
-                        { id: 'posts', label: 'Posts', icon: FaTh },
-                        { id: 'shop', label: 'Shop', icon: FaShoppingBag },
-                        { id: 'collections', label: 'Collections', icon: FaLayerGroup },
-                        { id: 'gallery', label: 'Gallery', icon: FaImage },
-                        { id: 'cards', label: 'Cards', icon: FaRocket },
-                        { id: 'badges', label: 'Badges', icon: FaCheck }
-                    ].map(tab => {
+                        { id: 'posts', label: 'Posts', icon: FaTh, enabled: true },
+                        { id: 'shop', label: 'Shop', icon: FaShoppingBag, enabled: isFeatureEnabled('SHOP') },
+                        { id: 'collections', label: 'Collections', icon: FaLayerGroup, enabled: isFeatureEnabled('COLLECTIONS') },
+                        { id: 'gallery', label: 'Gallery', icon: FaImage, enabled: isFeatureEnabled('GALLERIES') },
+                        { id: 'cards', label: 'Cards', icon: FaRocket, enabled: isFeatureEnabled('SPACECARDS_CREATE') },
+                        { id: 'badges', label: 'Badges', icon: FaCheck, enabled: true }
+                    ].filter(tab => tab.enabled).map(tab => {
                         const Icon = tab.icon;
                         const isMobile = window.innerWidth < 768;
                         return (
