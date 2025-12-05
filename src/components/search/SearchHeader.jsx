@@ -21,10 +21,7 @@ const SearchHeader = ({
     viewMode,
     setViewMode,
     isSortDropdownOpen,
-    setIsSortDropdownOpen,
-    selectedColor,
-    onColorSelect,
-    onColorClear
+    setIsSortDropdownOpen
 }) => {
     const navigate = useNavigate();
 
@@ -332,22 +329,7 @@ const SearchHeader = ({
                                 {viewMode === 'grid' ? '⊞' : '☰'}
                             </button>
 
-                            {/* Color Search - Compact */}
-                            {selectedColor && (
-                                <div
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '8px',
-                                        background: selectedColor,
-                                        border: '2px solid var(--ice-mint)',
-                                        cursor: 'pointer',
-                                        flexShrink: 0
-                                    }}
-                                    onClick={onColorClear}
-                                    title="Clear color filter"
-                                />
-                            )}
+
                         </>
                     )}
 
@@ -413,9 +395,6 @@ const SearchHeader = ({
                                 setViewMode={setViewMode}
                                 isSortDropdownOpen={isSortDropdownOpen}
                                 setIsSortDropdownOpen={setIsSortDropdownOpen}
-                                selectedColor={selectedColor}
-                                onColorSelect={onColorSelect}
-                                onColorClear={onColorClear}
                             />
                         </div>
                     )}

@@ -3,7 +3,7 @@
 
 export const FEED_CONFIG = {
     // Feature flags
-    ENABLE_DUAL_FEEDS: false, // Temporarily disabled - posts need authorAccountType field
+    ENABLE_DUAL_FEEDS: true, // ✅ ENABLED - Fixed with fade transition
     ENABLE_LINKED_ACCOUNTS: false, // Phase 2 feature - link art + social accounts
 
     // Default account type for existing users (migration safe)

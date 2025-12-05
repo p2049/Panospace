@@ -10,6 +10,8 @@ import ReportModal from '../components/ReportModal';
 import { useBlock } from '../hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '../constants/nsfwTags';
 import { isFeatureEnabled } from '../config/featureFlags';
+import { AccountTypeService } from '../services/AccountTypeService';
+import { FEED_CONFIG } from '../config/feedConfig';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -32,6 +34,44 @@ const Settings = () => {
 
     // Content Preferences
     const [showNSFW, setShowNSFW] = useState(getUserNSFWPreference());
+
+    // Account Type State
+    const [accountType, setAccountType] = useState(FEED_CONFIG.DEFAULT_ACCOUNT_TYPE);
+    const [loadingAccountType, setLoadingAccountType] = useState(true);
+
+    // Load user's account type on mount
+    React.useEffect(() => {
+        const loadAccountType = async () => {
+            if (currentUser) {
+                try {
+                    const type = await AccountTypeService.getAccountType(currentUser.uid);
+                    setAccountType(type);
+                } catch (error) {
+                    console.error('Error loading account type:', error);
+                } finally {
+                    setLoadingAccountType(false);
+                }
+            }
+        };
+        loadAccountType();
+    }, [currentUser]);
+
+    const toggleAccountType = async () => {
+        if (!currentUser || loadingAccountType) return;
+
+        const newType = accountType === 'art' ? 'social' : 'art';
+        setLoadingAccountType(true);
+
+        try {
+            await AccountTypeService.setAccountType(currentUser.uid, newType);
+            setAccountType(newType);
+        } catch (error) {
+            console.error('Error updating account type:', error);
+            alert('Failed to update account type. Please try again.');
+        } finally {
+            setLoadingAccountType(false);
+        }
+    };
 
     const toggleNSFW = () => {
         const newValue = !showNSFW;
@@ -225,6 +265,74 @@ const Settings = () => {
                         </div>
                         <FaChevronRight color="#444" size={12} />
                     </button>
+                </div>
+
+                {/* Account Type Section */}
+                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>ACCOUNT MODE</h3>
+                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', padding: '0.5rem' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.8rem'
+                    }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                                <span style={{ fontSize: '1.1rem' }}>
+                                    {accountType === 'art' ? '🎨' : '👥'}
+                                </span>
+                                <span style={{ fontWeight: '600' }}>
+                                    {accountType === 'art' ? 'Art Account' : 'Social Account'}
+                                </span>
+                            </div>
+                            <span style={{ fontSize: '0.8rem', color: '#666', lineHeight: '1.4' }}>
+                                {accountType === 'art'
+                                    ? 'Your posts appear in the Art Feed (photography & creative work)'
+                                    : 'Your posts appear in the Social Feed (casual sharing & updates)'}
+                            </span>
+                        </div>
+                        <div
+                            onClick={toggleAccountType}
+                            style={{
+                                width: '50px',
+                                height: '26px',
+                                background: accountType === 'art' ? '#7FFFD4' : '#FF6B9D',
+                                borderRadius: '13px',
+                                position: 'relative',
+                                cursor: loadingAccountType ? 'not-allowed' : 'pointer',
+                                transition: 'background 0.3s',
+                                opacity: loadingAccountType ? 0.5 : 1,
+                                flexShrink: 0,
+                                marginLeft: '1rem'
+                            }}
+                        >
+                            <div style={{
+                                width: '22px',
+                                height: '22px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: accountType === 'art' ? '2px' : '26px',
+                                transition: 'left 0.3s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.7rem'
+                            }}>
+                                {accountType === 'art' ? '🎨' : '👥'}
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{
+                        padding: '0.8rem',
+                        paddingTop: '0',
+                        fontSize: '0.75rem',
+                        color: '#7FFFD4',
+                        lineHeight: '1.5'
+                    }}>
+                        💡 Tip: Tap the planet logo on the home screen to switch between feeds
+                    </div>
                 </div>
 
                 {/* Post Settings Section (Only visible when activePost exists) */}

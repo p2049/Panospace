@@ -35,16 +35,18 @@ const SearchPanels = ({
     const [expandedPanels, setExpandedPanels] = useState({
         date: true,
         parks: false,
-        technical: true,
-        event: true,
-        aesthetic: true,
-        nature: true,
-        subject: true,
-        location: true,
-        style: true,
         gear: false,
         composition: false,
-        film: true
+        art_types: true,
+        environment: true,
+        color: true,
+        aesthetics: true,
+        location: true,
+        objects: true,
+        technique: true,
+        portraits: true,
+        animals: true,
+        time: true
     });
 
     const [parkType, setParkType] = useState('national'); // Track national vs state parks
@@ -542,40 +544,34 @@ const SearchPanels = ({
                         </div>
                     )}
 
+
                     <TagFilterPanel
-                        category={TAG_CATEGORIES.TECHNICAL}
+                        category={TAG_CATEGORIES.ART_TYPES}
                         selectedTags={selectedTags}
                         onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.technical}
-                        onToggleExpand={() => togglePanel('technical')}
+                        isExpanded={expandedPanels.art_types}
+                        onToggleExpand={() => togglePanel('art_types')}
                     />
                     <TagFilterPanel
-                        category={TAG_CATEGORIES.EVENT}
+                        category={TAG_CATEGORIES.ENVIRONMENT}
                         selectedTags={selectedTags}
                         onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.event}
-                        onToggleExpand={() => togglePanel('event')}
+                        isExpanded={expandedPanels.environment}
+                        onToggleExpand={() => togglePanel('environment')}
                     />
                     <TagFilterPanel
-                        category={TAG_CATEGORIES.AESTHETIC}
+                        category={TAG_CATEGORIES.COLOR}
                         selectedTags={selectedTags}
                         onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.aesthetic}
-                        onToggleExpand={() => togglePanel('aesthetic')}
+                        isExpanded={expandedPanels.color}
+                        onToggleExpand={() => togglePanel('color')}
                     />
                     <TagFilterPanel
-                        category={TAG_CATEGORIES.NATURE_TYPE}
+                        category={TAG_CATEGORIES.AESTHETICS}
                         selectedTags={selectedTags}
                         onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.nature}
-                        onToggleExpand={() => togglePanel('nature')}
-                    />
-                    <TagFilterPanel
-                        category={TAG_CATEGORIES.SUBJECT}
-                        selectedTags={selectedTags}
-                        onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.subject}
-                        onToggleExpand={() => togglePanel('subject')}
+                        isExpanded={expandedPanels.aesthetics}
+                        onToggleExpand={() => togglePanel('aesthetics')}
                     />
                     <TagFilterPanel
                         category={TAG_CATEGORIES.LOCATION}
@@ -585,18 +581,39 @@ const SearchPanels = ({
                         onToggleExpand={() => togglePanel('location')}
                     />
                     <TagFilterPanel
-                        category={TAG_CATEGORIES.STYLE}
+                        category={TAG_CATEGORIES.OBJECTS}
                         selectedTags={selectedTags}
                         onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.style}
-                        onToggleExpand={() => togglePanel('style')}
+                        isExpanded={expandedPanels.objects}
+                        onToggleExpand={() => togglePanel('objects')}
                     />
                     <TagFilterPanel
-                        category={TAG_CATEGORIES.FILM}
+                        category={TAG_CATEGORIES.TECHNIQUE}
                         selectedTags={selectedTags}
                         onTagToggle={onTagToggle}
-                        isExpanded={expandedPanels.film}
-                        onToggleExpand={() => togglePanel('film')}
+                        isExpanded={expandedPanels.technique}
+                        onToggleExpand={() => togglePanel('technique')}
+                    />
+                    <TagFilterPanel
+                        category={TAG_CATEGORIES.PORTRAITS}
+                        selectedTags={selectedTags}
+                        onTagToggle={onTagToggle}
+                        isExpanded={expandedPanels.portraits}
+                        onToggleExpand={() => togglePanel('portraits')}
+                    />
+                    <TagFilterPanel
+                        category={TAG_CATEGORIES.ANIMALS}
+                        selectedTags={selectedTags}
+                        onTagToggle={onTagToggle}
+                        isExpanded={expandedPanels.animals}
+                        onToggleExpand={() => togglePanel('animals')}
+                    />
+                    <TagFilterPanel
+                        category={TAG_CATEGORIES.TIME}
+                        selectedTags={selectedTags}
+                        onTagToggle={onTagToggle}
+                        isExpanded={expandedPanels.time}
+                        onToggleExpand={() => togglePanel('time')}
                     />
                 </div>
             </aside>

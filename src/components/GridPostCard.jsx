@@ -9,8 +9,20 @@ import SoundTagBadge from './SoundTagBadge';
 const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectRatio }) => {
     const navigate = useNavigate();
 
-    // Determine if we should show natural aspect ratio (when filters are active)
-    const showNaturalAspectRatio = selectedOrientation || selectedAspectRatio;
+    // Helper to determine aspect ratio percentage
+    const getPaddingBottom = () => {
+        if (selectedAspectRatio) {
+            const [w, h] = selectedAspectRatio.split(':').map(Number);
+            return `${(h / w) * 100}%`;
+        }
+        if (selectedOrientation === 'landscape') return '56.25%'; // 16:9
+        if (selectedOrientation === 'portrait') return '125%'; // 4:5
+        if (selectedOrientation === 'square') return '100%'; // 1:1
+        return '100%'; // Default square
+    };
+
+    const paddingBottom = getPaddingBottom();
+    const isFiltered = selectedOrientation || selectedAspectRatio;
 
     return (
         <div
@@ -52,18 +64,17 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
             {/* Container with dynamic aspect ratio */}
             <div style={{
                 width: '100%',
-                paddingBottom: showNaturalAspectRatio ? '0' : '100%', // No padding when showing natural ratio
+                paddingBottom: paddingBottom,
                 background: '#111',
                 position: 'relative',
-                overflow: 'hidden',
-                minHeight: showNaturalAspectRatio ? '200px' : '0' // Minimum height for natural ratio
+                overflow: 'hidden'
             }}>
                 <div style={{
-                    position: showNaturalAspectRatio ? 'relative' : 'absolute',
+                    position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: showNaturalAspectRatio ? 'auto' : '100%'
+                    height: '100%'
                 }}>
                     {post.images?.[0]?.url || post.imageUrl ? (
                         <SmartImage
@@ -71,12 +82,12 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
                             previewSrc={post.images?.[0]?.previewUrl || post.previewUrl}
                             thumbnailSrc={post.images?.[0]?.thumbnailUrl || post.thumbnailUrl}
                             alt={post.title || ''}
-                            aspectRatio={showNaturalAspectRatio ? 'auto' : '1/1'}
-                            objectFit={showNaturalAspectRatio ? 'contain' : 'cover'}
+                            aspectRatio="1/1"
+                            objectFit="cover"
                             style={{
                                 width: '100%',
-                                height: showNaturalAspectRatio ? 'auto' : '100%',
-                                position: showNaturalAspectRatio ? 'relative' : 'absolute',
+                                height: '100%',
+                                position: 'absolute',
                                 top: 0,
                                 left: 0,
                                 display: 'block'
@@ -86,7 +97,7 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
                             date={getDerivedDate(post)}
                         />
                     ) : (
-                        <div style={{ width: '100%', height: showNaturalAspectRatio ? '200px' : '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FaImage color="#333" size={40} />
                         </div>
                     )}

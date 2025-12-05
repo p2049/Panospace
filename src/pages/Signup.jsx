@@ -7,6 +7,7 @@ const Signup = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
+    const [accountType, setAccountType] = useState('art'); // Default to art account
     const { signup } = useAuth();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ const Signup = () => {
                     photoURL: userCredential.user.photoURL || '',
                     createdAt: new Date().toISOString(),
                     bio: 'New Panospace Artist',
+                    accountType: accountType, // Set account type from signup
                 };
 
                 // Generate search keywords
@@ -181,6 +183,68 @@ const Signup = () => {
                     <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email" className="y2k-input" />
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password" className="y2k-input" />
                     <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required placeholder="Confirm Password" className="y2k-input" />
+
+                    {/* Account Type Selection */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: '#aaa', fontWeight: '600', letterSpacing: '0.5px' }}>
+                            ACCOUNT TYPE
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setAccountType('art')}
+                                style={{
+                                    flex: 1,
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    border: accountType === 'art' ? '2px solid #7FFFD4' : '1px solid rgba(127, 255, 212, 0.2)',
+                                    background: accountType === 'art'
+                                        ? 'linear-gradient(135deg, rgba(127, 255, 212, 0.15), rgba(127, 255, 212, 0.05))'
+                                        : 'rgba(0, 0, 0, 0.3)',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.5rem' }}>🎨</span>
+                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Art Account</span>
+                                <span style={{ fontSize: '0.7rem', color: '#888', textAlign: 'center', lineHeight: '1.3' }}>
+                                    Photography & creative work
+                                </span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setAccountType('social')}
+                                style={{
+                                    flex: 1,
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    border: accountType === 'social' ? '2px solid #FF6B9D' : '1px solid rgba(255, 107, 157, 0.2)',
+                                    background: accountType === 'social'
+                                        ? 'linear-gradient(135deg, rgba(255, 107, 157, 0.15), rgba(255, 107, 157, 0.05))'
+                                        : 'rgba(0, 0, 0, 0.3)',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.5rem' }}>👥</span>
+                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Social Account</span>
+                                <span style={{ fontSize: '0.7rem', color: '#888', textAlign: 'center', lineHeight: '1.3' }}>
+                                    Casual sharing & updates
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
                     <label style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', fontSize: '0.8rem', color: '#aaa', cursor: 'pointer' }}>
                         <input type="checkbox" required style={{ marginTop: '0.2rem' }} />
                         <span>

@@ -1,86 +1,90 @@
 /**
  * Tag Categories Configuration
- * Re-exports and extends centralized tagConfig.js
+ * Master taxonomy with 9 categories
  */
 
 import {
-    aestheticTags,
-    styleTags,
-    subjectTags,
-    locationTags,
-    natureTypeTags,
-    technicalTags,
-    gearTags,
-    eventTags,
-    filmTags,
+    ART_TYPES,
+    ENVIRONMENT_TAGS,
+    COLOR_TAGS,
+    AESTHETIC_TAGS,
+    LOCATION_TAGS,
+    OBJECT_TAGS,
+    TECHNIQUE_TAGS,
+    PORTRAIT_TAGS,
+    ANIMAL_TAGS,
+    TIME_TAGS,
     ALL_TAGS,
     tagCategories
 } from './tagConfig';
 
-// Export individual tag arrays for direct use
+// Export all tag objects
 export {
-    aestheticTags,
-    styleTags,
-    subjectTags,
-    locationTags,
-    natureTypeTags,
-    technicalTags,
-    gearTags,
-    eventTags,
-    filmTags,
+    ART_TYPES,
+    ENVIRONMENT_TAGS,
+    COLOR_TAGS,
+    AESTHETIC_TAGS,
+    LOCATION_TAGS,
+    OBJECT_TAGS,
+    TECHNIQUE_TAGS,
+    PORTRAIT_TAGS,
+    ANIMAL_TAGS,
+    TIME_TAGS,
     ALL_TAGS,
     tagCategories
 };
 
-// TAG_CATEGORIES for Search UI (with metadata)
+// TAG_CATEGORIES for Search UI (with metadata and subcategories)
 export const TAG_CATEGORIES = {
-    TECHNICAL: {
-        id: 'technical',
-        label: 'Technical & Gear',
-        description: 'Camera, lens, film stock, settings',
-        examples: [...technicalTags, ...gearTags]
+    ART_TYPES: {
+        id: 'art_types',
+        label: 'Art Types',
+        subcategories: ART_TYPES
     },
-    EVENT: {
-        id: 'event',
-        label: 'Contests & Events',
-        description: 'Time-based tags, holidays, seasons',
-        examples: eventTags
+    ENVIRONMENT: {
+        id: 'environment',
+        label: 'Environment',
+        subcategories: ENVIRONMENT_TAGS
     },
-    AESTHETIC: {
-        id: 'aesthetic',
-        label: 'Aesthetic',
-        description: 'Visual style and mood',
-        examples: aestheticTags
+    COLOR: {
+        id: 'color',
+        label: 'Color',
+        subcategories: COLOR_TAGS
     },
-    NATURE_TYPE: {
-        id: 'nature_type',
-        label: 'Nature Types',
-        description: 'Natural environments and elements',
-        examples: natureTypeTags
-    },
-    SUBJECT: {
-        id: 'subject',
-        label: 'Subject',
-        description: 'What is in the photo',
-        examples: subjectTags
+    AESTHETICS: {
+        id: 'aesthetics',
+        label: 'Aesthetics',
+        subcategories: AESTHETIC_TAGS
     },
     LOCATION: {
         id: 'location',
         label: 'Location',
-        description: 'Places, regions, cities',
-        examples: locationTags
+        subcategories: LOCATION_TAGS
     },
-    STYLE: {
-        id: 'style',
-        label: 'Style',
-        description: 'Photography techniques and genres',
-        examples: styleTags
+    OBJECTS: {
+        id: 'objects',
+        label: 'Objects',
+        subcategories: OBJECT_TAGS
     },
-    FILM: {
-        id: 'film',
-        label: 'Film',
-        description: 'Film stock and format tags',
-        examples: filmTags
+    TECHNIQUE: {
+        id: 'technique',
+        label: 'Technique',
+        subcategories: TECHNIQUE_TAGS
+    },
+    PORTRAITS: {
+        id: 'portraits',
+        label: 'Portraits',
+        subcategories: PORTRAIT_TAGS
+    },
+    ANIMALS: {
+        id: 'animals',
+        label: 'Animals',
+        subcategories: ANIMAL_TAGS
+    },
+    TIME: {
+        id: 'time',
+        label: 'Time',
+        subcategories: TIME_TAGS
     }
 };
 
@@ -88,18 +92,14 @@ export const TAG_CATEGORIES = {
 export const getTagCategory = (tag) => {
     const lowerTag = tag.toLowerCase();
 
-    // Check explicit lists first
+    // Check each category's subcategories
     for (const [catKey, catDef] of Object.entries(TAG_CATEGORIES)) {
-        if (catDef.examples.some(ex => lowerTag.includes(ex.toLowerCase()))) {
-            return catKey;
+        for (const subcatTags of Object.values(catDef.subcategories)) {
+            if (subcatTags.some(t => lowerTag === t.toLowerCase())) {
+                return catKey;
+            }
         }
     }
 
-    // Heuristics
-    if (lowerTag.startsWith('iso') || lowerTag.match(/f\d/) || lowerTag.endsWith('mm')) return 'TECHNICAL';
-    if (lowerTag.includes('contest') || lowerTag.includes('challenge')) return 'EVENT';
-    if (lowerTag.includes('film') || lowerTag.includes('35mm') || lowerTag.includes('kodak') || lowerTag.includes('portra')) return 'FILM';
-    if (lowerTag.includes('202') || lowerTag.includes('july') || lowerTag.includes('summer')) return 'EVENT';
-
-    return 'STYLE'; // Default fallback
+    return 'ENVIRONMENT'; // Default fallback
 };

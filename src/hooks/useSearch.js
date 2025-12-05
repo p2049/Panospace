@@ -289,28 +289,37 @@ export const useSearch = () => {
 
             // Orientation filter
             if (orientation) {
+                const targetOrientation = orientation.toLowerCase();
                 filtered = filtered.filter(post => {
-                    // If orientation is explicitly stored
-                    if (post.orientation) return post.orientation === orientation;
+                    // Strictly calculate from dimensions (Prioritize first image)
+                    // We ignore post.orientation to ensure visual accuracy based on the actual image
+                    const firstImage = post.images?.[0];
+                    const width = Number(firstImage?.width || post.width || post.exif?.pixelXDimension || 0);
+                    const height = Number(firstImage?.height || post.height || post.exif?.pixelYDimension || 0);
 
-                    // Otherwise calculate from dimensions
-                    const width = post.width || post.exif?.pixelXDimension || 0;
-                    const height = post.height || post.exif?.pixelYDimension || 0;
-                    if (!width || !height) return true; // Keep if unknown
+                    if (!width || !height) return false; // Strict: exclude if unknown
 
-                    if (orientation === 'landscape') return width > height;
-                    if (orientation === 'portrait') return height > width;
-                    if (orientation === 'square') return width === height;
-                    return true;
+                    const ratio = width / height;
+                    // Use a small tolerance (2%) for "square" to catch 1080x1079 etc.
+                    const isSquare = Math.abs(ratio - 1) < 0.02;
+
+                    if (targetOrientation === 'square') return isSquare;
+                    if (targetOrientation === 'landscape') return ratio > 1 && !isSquare;
+                    if (targetOrientation === 'portrait') return ratio < 1 && !isSquare;
+                    return false;
                 });
             }
+
+
 
             // Aspect Ratio filter (approximate)
             if (aspectRatio) {
                 filtered = filtered.filter(post => {
-                    const width = post.width || post.exif?.pixelXDimension || 0;
-                    const height = post.height || post.exif?.pixelYDimension || 0;
-                    if (!width || !height) return true;
+                    const firstImage = post.images?.[0];
+                    const width = Number(firstImage?.width || post.width || post.exif?.pixelXDimension || 0);
+                    const height = Number(firstImage?.height || post.height || post.exif?.pixelYDimension || 0);
+
+                    if (!width || !height) return false; // Strict: exclude if unknown
 
                     const ratio = width / height;
                     // Simple tolerance check
@@ -320,7 +329,7 @@ export const useSearch = () => {
                     if (aspectRatio === '2:3') return Math.abs(ratio - 0.66) < 0.05;
                     if (aspectRatio === '3:2') return Math.abs(ratio - 1.5) < 0.05;
                     if (aspectRatio === '21:9') return Math.abs(ratio - 2.33) < 0.05;
-                    return true;
+                    return false;
                 });
             }
 

@@ -7,14 +7,18 @@ import { useBlock } from '../hooks/useBlock';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import StarBackground from '../components/StarBackground';
-import { useFeedType } from '../hooks/useFeedType';
+import { useFeedStore } from '../store/useFeedStore';
+import { useThemeStore } from '../store/useThemeStore';
 import FeedTypeIndicator from '../components/FeedTypeIndicator';
 import { isDualFeedsEnabled } from '../config/feedConfig';
 import { filterVisiblePosts } from '../utils/filterHelpers';
+import { useToast } from '../context/ToastContext';
 
 // Feed component - Main home feed view
 const Feed = () => {
-    const { feedType, toggleFeed } = useFeedType();
+    const { currentFeed, toggleFeed } = useFeedStore();
+    const { setTheme, accentColor, secondaryColor, glowColorStrong } = useThemeStore();
+    const { showToast } = useToast();
     const [showIndicator, setShowIndicator] = useState(false);
     const [switchCount, setSwitchCount] = useState(0);
     const scrollContainerRef = useRef(null);
@@ -22,11 +26,11 @@ const Feed = () => {
     const lastScrollPositionRef = useRef(0);
     const isRestoringScrollRef = useRef(false);
 
-    // Pass feedType to hook if dual feeds enabled, otherwise null (show all)
+    // Pass currentFeed to hook if dual feeds enabled, otherwise null (show all)
     const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed(
         'HOME',
         {},
-        isDualFeedsEnabled() ? feedType : null
+        isDualFeedsEnabled() ? currentFeed : null
     );
 
     const currentTheme = getCurrentTheme();
@@ -39,6 +43,20 @@ const Feed = () => {
         filterVisiblePosts(posts || [], blockedUsers),
         [posts, blockedUsers]
     );
+
+    // Sync theme with current feed
+    useEffect(() => {
+        if (isDualFeedsEnabled()) {
+            setTheme(currentFeed); // 'art' or 'social'
+
+            // Toggle body class for CSS theme override
+            if (currentFeed === 'social') {
+                document.body.classList.add('social-theme');
+            } else {
+                document.body.classList.remove('social-theme');
+            }
+        }
+    }, [currentFeed, setTheme]);
 
     // Save scroll position before navigation
     useEffect(() => {
@@ -98,22 +116,30 @@ const Feed = () => {
                             toggleFeed();
                             setSwitchCount(prev => prev + 1);
                             setShowIndicator(true);
+                            // Show toast based on the NEW feed (after toggle)
+                            const newFeed = currentFeed === 'art' ? 'social' : 'art';
+                            showToast(
+                                newFeed === 'art' ? '🎨 Art Feed' : '👥 Social Feed',
+                                'info',
+                                1500
+                            );
                         } else {
                             navigate('/search');
                         }
                     }}
                     style={{
                         flexShrink: 0,
-                        filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.4))',
+                        filter: `drop-shadow(0 0 8px ${glowColorStrong})`,
                         cursor: 'pointer',
-                        overflow: 'visible'
+                        overflow: 'visible',
+                        transition: 'filter 0.2s ease'
                     }}
                     title={isDualFeedsEnabled() ? "Switch Feed" : "Go to Search"}
                 >
                     <defs>
                         <radialGradient id="planetGradient" cx="40%" cy="40%">
-                            <stop offset="0%" style={{ stopColor: '#7FFFD4', stopOpacity: 1 }} />
-                            <stop offset="100%" style={{ stopColor: '#00CED1', stopOpacity: 1 }} />
+                            <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
+                            <stop offset="100%" style={{ stopColor: secondaryColor, stopOpacity: 1 }} />
                         </radialGradient>
                         <filter id="planetGlow" x="-50%" y="-50%" width="200%" height="200%">
                             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -123,15 +149,15 @@ const Feed = () => {
                             </feMerge>
                         </filter>
                     </defs>
-                    <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke="#7FFFD4" strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
+                    <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
                     <circle cx="12" cy="12" r="7" fill="url(#planetGradient)" opacity="0.95" filter="url(#planetGlow)" />
-                    <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke="#7FFFD4" strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
-                    <circle cx="12" cy="12" r="7" fill="none" stroke="#7FFFD4" strokeWidth="0.5" opacity="0.3" />
+                    <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
+                    <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
                 </svg>
             </div>
 
             {/* Feed Type Indicator Overlay */}
-            <FeedTypeIndicator feedType={feedType} show={showIndicator} switchCount={switchCount} />
+            <FeedTypeIndicator feedType={currentFeed} show={showIndicator} switchCount={switchCount} />
 
             {
                 loading && posts.length === 0 && (
@@ -186,7 +212,7 @@ const Feed = () => {
                                 fontWeight: '700',
                                 letterSpacing: '0.05em'
                             }}>
-                                {isDualFeedsEnabled() && feedType === 'social'
+                                {isDualFeedsEnabled() && currentFeed === 'social'
                                     ? 'Lost in Space'
                                     : 'No posts yet'}
                             </h2>
@@ -195,7 +221,7 @@ const Feed = () => {
                                 marginBottom: '1.5rem',
                                 fontSize: '1.1rem'
                             }}>
-                                {isDualFeedsEnabled() && feedType === 'social'
+                                {isDualFeedsEnabled() && currentFeed === 'social'
                                     ? 'The Social Feed is empty. Be the first to share something!'
                                     : 'Follow some creators to see their work here!'}
                             </p>
@@ -229,7 +255,7 @@ const Feed = () => {
                                     e.currentTarget.style.boxShadow = '0 0 20px rgba(127, 255, 212, 0.2)';
                                 }}
                             >
-                                {isDualFeedsEnabled() && feedType === 'social' ? (
+                                {isDualFeedsEnabled() && currentFeed === 'social' ? (
                                     <>
                                         <FaRocket /> Explore PanoSpace
                                     </>

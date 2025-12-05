@@ -8,6 +8,7 @@ import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import MotionWrapper from './components/MotionWrapper';
 import AppLoading from './components/AppLoading';
 import OfflineBanner from './components/OfflineBanner';
+import FeedUniverse from './components/FeedUniverse';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserCacheProvider } from './context/UserCacheContext';
 import { UIProvider } from './context/UIContext';
@@ -60,6 +61,7 @@ const CampusHub = lazy(() => import('./pages/CampusHub'));
 const MigrateDates = lazy(() => import('./pages/MigrateDates'));
 const ShopSetup = lazy(() => import('./pages/ShopSetup'));
 const ShopDrafts = lazy(() => import('./pages/ShopDrafts'));
+const ColorBackfillPage = lazy(() => import('./pages/ColorBackfillPage'));
 
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -85,7 +87,9 @@ const AnimatedRoutes = () => {
         <Route path="/legal" element={<MotionWrapper><Legal /></MotionWrapper>} />
         <Route path="/" element={
           <PrivateRoute>
-            <MotionWrapper><Feed /></MotionWrapper>
+            <FeedUniverse>
+              <MotionWrapper><Feed /></MotionWrapper>
+            </FeedUniverse>
           </PrivateRoute>
         } />
         <Route path="/search" element={
@@ -170,6 +174,7 @@ const AnimatedRoutes = () => {
           </PrivateRoute>
         } />
         <Route path="/gallery/:type/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
+        <Route path="/tag/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
         <Route path="/gallery/create" element={
           <PrivateRoute>
             <MotionWrapper><CreateGallery /></MotionWrapper>
@@ -242,6 +247,7 @@ const AnimatedRoutes = () => {
         } />
         <Route path="/admin/cleanup" element={<PrivateRoute><MotionWrapper><AdminCleanup /></MotionWrapper></PrivateRoute>} />
         <Route path="/admin" element={<PrivateRoute><MotionWrapper><AdminModeration /></MotionWrapper></PrivateRoute>} />
+        <Route path="/admin/color-backfill" element={<PrivateRoute><MotionWrapper><ColorBackfillPage /></MotionWrapper></PrivateRoute>} />
         <Route path="/campus" element={<PrivateRoute><MotionWrapper><CampusHub /></MotionWrapper></PrivateRoute>} />
 
 

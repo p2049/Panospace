@@ -290,47 +290,55 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    {/* Action buttons - Fixed position in top right on mobile, below hamburger */}
-                    {isOwnProfile && window.innerWidth < 768 && (
-                        <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            display: 'flex',
-                            gap: '0.5rem',
-                            alignItems: 'center',
-                            zIndex: 10,
-                            flexDirection: 'column'
-                        }}>
+                    {/* Action buttons - Horizontal row on mobile, to the left of hamburger menu */}
+                    {isOwnProfile && (
+                        <div className="profile-mobile-actions">
+                            {/* Business Card Button */}
+                            <button
+                                onClick={() => setShowBusinessCard(true)}
+                                className="floating-nav-button"
+                                style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    padding: 0,
+                                    cursor: 'pointer',
+                                    color: '#fff'
+                                }}
+                                title="Business Card"
+                            >
+                                <FaIdBadge size={16} />
+                            </button>
+
+                            {/* Settings Button */}
+                            <button
+                                onClick={() => navigate('/edit-profile')}
+                                className="floating-nav-button"
+                                style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    padding: 0,
+                                    cursor: 'pointer',
+                                    color: '#fff'
+                                }}
+                                title="Settings"
+                            >
+                                <FaCog size={16} />
+                            </button>
+
                             {/* Compact Wallet Icon Button */}
                             <button
                                 onClick={() => setShowAddFunds(true)}
                                 className="floating-nav-button"
                                 style={{
-                                    width: '40px',
-                                    height: '40px',
+                                    width: '36px',
+                                    height: '36px',
                                     padding: 0,
                                     cursor: 'pointer',
                                     color: '#7FFFD4'
                                 }}
                                 title="Wallet"
                             >
-                                <FaWallet size={18} />
-                            </button>
-
-                            {/* Business Card Button */}
-                            <button
-                                onClick={() => setShowBusinessCard(true)}
-                                className="floating-nav-button"
-                                style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    padding: 0,
-                                    cursor: 'pointer',
-                                    color: '#fff'
-                                }}
-                            >
-                                <FaIdBadge size={18} />
+                                <FaWallet size={16} />
                             </button>
                         </div>
                     )}
@@ -1102,6 +1110,30 @@ const Profile = () => {
                     }
                     50% {
                         box-shadow: 0 0 16px rgba(0, 255, 0, 1);
+                    }
+                }
+                
+                /* Profile Action Icons - Mobile Only */
+                .profile-mobile-actions {
+                    display: none;
+                }
+                
+                @media (max-width: 768px) {
+                    .profile-mobile-actions {
+                        position: absolute !important;
+                        top: 0 !important;
+                        right: 70px !important;
+                        display: flex !important;
+                        flex-direction: row !important;
+                        gap: 0.4rem !important;
+                        align-items: center !important;
+                        z-index: 10 !important;
+                    }
+                }
+                
+                @media (min-width: 769px) {
+                    .profile-mobile-actions {
+                        display: none !important;
                     }
                 }
             `}</style>

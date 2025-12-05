@@ -180,7 +180,7 @@ const SmartImage = ({
         overflow: 'hidden',
         backgroundColor: '#1a1a1a', // Dark placeholder background
         width: '100%',
-        height: '100%'
+        height: aspectRatio === 'auto' ? 'auto' : '100%'
     };
 
     // Only apply aspectRatio if no explicit width/height in style

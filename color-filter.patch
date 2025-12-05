@@ -1,0 +1,52 @@
+--- a/src/pages/Search.jsx
++++ b/src/pages/Search.jsx
+@@ -213,6 +213,7 @@
+     const currentSortByRef = useRef(sortBy);
++    const currentSelectedColorRef = useRef(selectedColor);
+     const navigate = useNavigate();
+ 
+@@ -224,7 +225,7 @@
+     useEffect(() => {
+         const hasFilters = searchTerm || selectedTags.length > 0 || selectedPark || selectedDate ||
+-            selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio || selectedMuseum;
++            selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio || selectedMuseum || selectedColor;
+         setIsExploreMode(!hasFilters && !followingOnly && currentMode === 'posts');
+     }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, followingOnly, currentMode, selectedMuseum]);
+ 
+@@ -270,7 +271,7 @@
+             const hasFilters = term || tags.length > 0 || parkId || date ||
+                 currentSelectedCameraRef.current || currentSelectedFilmRef.current ||
+-                currentSelectedOrientationRef.current || currentSelectedAspectRatioRef.current || selectedMuseum;
++                currentSelectedOrientationRef.current || currentSelectedAspectRatioRef.current || selectedMuseum || currentSelectedColorRef.current;
+ 
+             // If Explore mode and we have recommendations, use them
+             let exploreTags = [];
+@@ -310,7 +311,8 @@
+                             orientation: currentSelectedOrientationRef.current,
+                             aspectRatio: currentSelectedAspectRatioRef.current,
+                             sort: hasFilters ? currentSortByRef.current : exploreSort,
+-                            authorIds: searchAuthorIds
++                            authorIds: searchAuthorIds,
++                            color: currentSelectedColorRef.current
+                         },
+                         isLoadMore ? lastPostDoc : null
+                     );
+@@ -490,8 +492,9 @@
+         currentSelectedOrientationRef.current = selectedOrientation;
+         currentSelectedAspectRatioRef.current = selectedAspectRatio;
+         currentSortByRef.current = sortBy;
+-    }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, sortBy]);
++        currentSelectedColorRef.current = selectedColor;
++    }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, sortBy, selectedColor]);
+ 
+     // Debounced search effect - does NOT depend on performSearch to avoid loop
+     useEffect(() => {
+@@ -502,7 +505,7 @@
+         }, 300);
+         return () => clearTimeout(timer);
+         // eslint-disable-next-line react-hooks/exhaustive-deps
+-    }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, sortBy]);
++    }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, sortBy, selectedColor]);
+ 
+     // Prefetching: Load more when user scrolls near bottom
+     useEffect(() => {

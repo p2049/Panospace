@@ -1,6 +1,7 @@
 /**
  * Color Extraction Utility
  * Extracts dominant colors from images without external dependencies
+ * CORS-safe version that fetches images as blobs first
  */
 
 /**
@@ -9,9 +10,8 @@
  * @returns {Promise<{hex: string, rgb: {r: number, g: number, b: number}, hsl: {h: number, s: number, l: number}}>}
  */
 export const extractDominantColor = async (imageSource) => {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = 'Anonymous';
 
         img.onload = () => {
             try {
@@ -99,7 +99,23 @@ export const extractDominantColor = async (imageSource) => {
 
         // Handle different input types
         if (typeof imageSource === 'string') {
-            img.src = imageSource;
+            // For URLs (especially Firebase Storage), fetch as blob first to avoid CORS taint
+            if (imageSource.startsWith('http')) {
+                try {
+                    const response = await fetch(imageSource);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => reject(new Error('Failed to read blob'));
+                    reader.readAsDataURL(blob);
+                } catch (fetchError) {
+                    reject(new Error(`Failed to fetch image: ${fetchError.message}`));
+                }
+            } else {
+                img.src = imageSource;
+            }
         } else if (imageSource instanceof File || imageSource instanceof Blob) {
             const reader = new FileReader();
             reader.onload = (e) => {

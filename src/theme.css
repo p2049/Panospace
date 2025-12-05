@@ -1,0 +1,44 @@
+/**
+ * Dynamic Theme System for Dual Feeds
+ * This file defines CSS variables that change based on the current feed (Art vs Social)
+ * The theme store (useThemeStore.js) updates these variables dynamically
+ */
+
+:root {
+    /* Dynamic Theme Variables - Updated by useThemeStore */
+    --accent-color: #7FFFD4;
+    --accent-secondary: #4CC9F0;
+    --accent-glow: rgba(127, 255, 212, 0.18);
+    --accent-glow-strong: rgba(127, 255, 212, 0.4);
+    --accent-border: rgba(127, 255, 212, 0.2);
+    --accent-gradient-start: #7FFFD4;
+    --accent-gradient-end: #4CC9F0;
+}
+
+/* Apply theme colors to all UI elements */
+.text-accent,
+.badge,
+button.primary,
+a.active,
+.active-tab {
+    color: var(--accent-color) !important;
+}
+
+.border-accent,
+.input:focus,
+.btn-secondary:hover {
+    border-color: var(--accent-color) !important;
+}
+
+.bg-accent {
+    background-color: var(--accent-color) !important;
+}
+
+.glow-accent {
+    box-shadow: 0 0 20px var(--accent-glow-strong) !important;
+}
+
+/* Smooth transitions for theme changes */
+* {
+    transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease, fill 0.3s ease, stroke 0.3s ease !important;
+}

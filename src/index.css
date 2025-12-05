@@ -21,15 +21,15 @@
   --text-disabled: #555555;
 
   /* Accent */
-  --ice-mint: #7FFFD4;
-  --ice-mint-hover: #5FDDBB;
-  --ice-mint-light: #9FFFD9;
-  --ice-mint-alpha-10: rgba(127, 255, 212, 0.1);
-  --ice-mint-alpha-20: rgba(127, 255, 212, 0.2);
-  --ice-mint-glow: 0 0 20px rgba(127, 255, 212, 0.3);
+  --ice-mint: var(--accent-color);
+  --ice-mint-hover: var(--accent-secondary);
+  --ice-mint-light: var(--accent-color);
+  --ice-mint-alpha-10: var(--accent-glow);
+  --ice-mint-alpha-20: var(--accent-border);
+  --ice-mint-glow: 0 0 20px var(--accent-glow-strong);
 
   /* Status */
-  --success: #7FFFD4;
+  --success: var(--accent-color);
   --error: #FF4D4D;
   --warning: #FFD93D;
   --info: #6C5CE7;
@@ -714,4 +714,11 @@ h6 {
     background-image:
       url("data:image/svg+xml,%3Csvg width='24' height='30' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='8' width='16' height='12' rx='2' ry='2' fill='%23ffffff' fill-opacity='0.85'/%3E%3C/svg%3E");
   }
+}
+
+
+:root {
+  --accent-color: #00FF88;
+  --accent-secondary: #5FDDBB;
+  --accent-glow: rgba(0, 255, 136, 0.25);
 }

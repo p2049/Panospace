@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './theme.css'
+import './theme-override.css'
 import './styles/ui-framework.css'
 // import './styles/viewport-scaling.css' // Temporarily disabled - causing black screen on mobile
 import App from './App.jsx'
