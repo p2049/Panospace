@@ -178,7 +178,7 @@ const SmartImage = ({
     const containerStyle = {
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: '#1a1a1a', // Dark placeholder background
+        backgroundColor: '#000', // Pure black background
         width: '100%',
         height: aspectRatio === 'auto' ? 'auto' : '100%'
     };

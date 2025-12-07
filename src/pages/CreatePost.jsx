@@ -55,6 +55,7 @@ const CreatePost = () => {
     const [title, setTitle] = useState('');
     const [tags, setTags] = useState([]);
     const [location, setLocation] = useState({ city: '', state: '', country: '' });
+    const [postType, setPostType] = useState('art'); // Unified Post Type State
 
     // Slides State
     const [slides, setSlides] = useState([]);
@@ -357,6 +358,7 @@ const CreatePost = () => {
             await createPost({
                 title,
                 tags,
+                type: postType, // Pass selected type
                 location,
                 filmMetadata: filmMetadata.isFilm ? filmMetadata : null,
                 enableRatings: enableRatings,
@@ -578,6 +580,59 @@ const CreatePost = () => {
                                 color: rgba(255, 255, 255, 0.45);
                             }
                         `}</style>
+
+                        {/* Post Type Toggle */}
+                        <div className="post-type-toggle" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                            <span style={{ marginRight: '0.75rem', fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa' }}>
+                                POST TYPE:
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setPostType("art")}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    marginRight: '0.5rem',
+                                    borderRadius: '6px',
+                                    border: postType === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                    background: postType === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                    color: postType === "art" ? '#7FFFD4' : '#888',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}
+                            >
+                                🎨 Art
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPostType("social")}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    borderRadius: '6px',
+                                    border: postType === "social" ? '1px solid #FF6B9D' : '1px solid rgba(255,255,255,0.1)',
+                                    background: postType === "social" ? 'rgba(255, 107, 157, 0.15)' : 'transparent',
+                                    color: postType === "social" ? '#FF6B9D' : '#888',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}
+                            >
+                                👥 Social
+                            </button>
+                        </div>
+
                         <div style={{ marginBottom: '0.5rem' }}>
                             <input
                                 type="text"

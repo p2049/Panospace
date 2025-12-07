@@ -1,84 +1,57 @@
 /**
- * Theme Store - Manages accent color theming for Art vs Social modes
- * Automatically switches colors based on current feed
+ * Theme Store - Manages accent color theming
+ * Locked to Art mode
  */
 
 import { create } from 'zustand';
 
-// Color definitions
-const THEMES = {
-    art: {
-        name: 'art',
-        accentColor: '#7FFFD4',      // Mint green
-        secondaryColor: '#4CC9F0',    // Cyan
-        glowColor: 'rgba(127, 255, 212, 0.18)',
-        glowColorStrong: 'rgba(127, 255, 212, 0.4)',
-        borderColor: 'rgba(127, 255, 212, 0.2)',
-        gradientStart: '#7FFFD4',
-        gradientEnd: '#4CC9F0'
-    },
-    social: {
-        name: 'social',
-        accentColor: '#00A4FF',       // Primary blue
-        secondaryColor: '#33B9FF',    // Secondary/hover blue
-        glowColor: 'rgba(0, 164, 255, 0.18)',
-        glowColorStrong: 'rgba(0, 164, 255, 0.4)',
-        borderColor: 'rgba(0, 164, 255, 0.2)',
-        gradientStart: '#00A4FF',
-        gradientEnd: '#33B9FF'
-    }
+// Color definitions (Art only)
+const ART_THEME = {
+    name: 'art',
+    accentColor: '#7FFFD4',      // Mint green
+    secondaryColor: '#4CC9F0',    // Cyan
+    glowColor: 'rgba(127, 255, 212, 0.18)',
+    glowColorStrong: 'rgba(127, 255, 212, 0.4)',
+    borderColor: 'rgba(127, 255, 212, 0.2)',
+    gradientStart: '#7FFFD4',
+    gradientEnd: '#4CC9F0'
 };
 
 export const useThemeStore = create((set) => ({
     // Current theme
     theme: 'art',
 
-    // Current colors (default to art)
-    ...THEMES.art,
+    // Current colors
+    ...ART_THEME,
 
-    // Switch theme
+    // Switch theme (No-op or reset to art)
     setTheme: (themeName) => {
-        const newTheme = THEMES[themeName] || THEMES.art;
-        set({ theme: themeName, ...newTheme });
+        // Enforce art theme regardless of input
+        set({ theme: 'art', ...ART_THEME });
 
-        // Update CSS variables
+        // Update CSS variables if needed (though they should be default)
         if (typeof document !== 'undefined') {
             const root = document.documentElement;
-            root.style.setProperty('--accent-color', newTheme.accentColor);
-            root.style.setProperty('--accent-secondary', newTheme.secondaryColor);
-            root.style.setProperty('--accent-glow', newTheme.glowColor);
-            root.style.setProperty('--accent-glow-strong', newTheme.glowColorStrong);
-            root.style.setProperty('--accent-border', newTheme.borderColor);
-            root.style.setProperty('--accent-gradient-start', newTheme.gradientStart);
-            root.style.setProperty('--accent-gradient-end', newTheme.gradientEnd);
+            root.style.setProperty('--accent-color', ART_THEME.accentColor);
+            root.style.setProperty('--accent-secondary', ART_THEME.secondaryColor);
+            root.style.setProperty('--accent-glow', ART_THEME.glowColor);
+            root.style.setProperty('--accent-glow-strong', ART_THEME.glowColorStrong);
+            root.style.setProperty('--accent-border', ART_THEME.borderColor);
+            root.style.setProperty('--accent-gradient-start', ART_THEME.gradientStart);
+            root.style.setProperty('--accent-gradient-end', ART_THEME.gradientEnd);
+
+            // Remove social theme class if present
+            document.body.classList.remove('social-theme');
         }
     },
 
     // Get current theme colors
     getColors: () => {
-        const state = useThemeStore.getState();
-        return {
-            accentColor: state.accentColor,
-            secondaryColor: state.secondaryColor,
-            glowColor: state.glowColor,
-            glowColorStrong: state.glowColorStrong,
-            borderColor: state.borderColor,
-            gradientStart: state.gradientStart,
-            gradientEnd: state.gradientEnd
-        };
+        return ART_THEME;
     }
 }));
 
 // Helper hook to get theme colors
 export const useThemeColors = () => {
-    const colors = useThemeStore((state) => ({
-        accentColor: state.accentColor,
-        secondaryColor: state.secondaryColor,
-        glowColor: state.glowColor,
-        glowColorStrong: state.glowColorStrong,
-        borderColor: state.borderColor,
-        gradientStart: state.gradientStart,
-        gradientEnd: state.gradientEnd
-    }));
-    return colors;
+    return ART_THEME;
 };

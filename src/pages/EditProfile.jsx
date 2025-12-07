@@ -8,14 +8,17 @@ import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
 import { ART_DISCIPLINES } from '../constants/artDisciplines';
 import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '../constants/gradients';
+import { ALL_COLORS } from '../constants/colorPacks';
 import DisciplineSelector from '../components/DisciplineSelector';
 import { generateUserSearchKeywords } from '../utils/searchKeywords';
 import { sanitizeDisplayName, sanitizeBio } from '../utils/sanitize';
+import ImageCropper from '../components/ImageCropper';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
-    const [selectedFile, setSelectedFile] = useState(null);
+    // Mock Premium Status check - In real app, check user subscription status
+    const isPremiumUser = currentUser?.isPremium || false;
 
     const [loading, setLoading] = useState(false);
     const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
@@ -32,6 +35,8 @@ const EditProfile = () => {
     const [selectedGradient, setSelectedGradient] = useState('green-default');
     const [unlockedGradients, setUnlockedGradients] = useState(['green-default']);
     const [starColor, setStarColor] = useState('#7FFFD4'); // Default ice-mint
+    const [profileBorderColor, setProfileBorderColor] = useState('#7FFFD4');
+    const [usernameColor, setUsernameColor] = useState('#FFFFFF'); // Default white
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -53,6 +58,8 @@ const EditProfile = () => {
                         setSelectedGradient(data.profileTheme.gradientId || 'green-default');
                         setUnlockedGradients(data.profileTheme.unlockedGradients || ['green-default']);
                         setStarColor(data.profileTheme.starColor || '#7FFFD4');
+                        setProfileBorderColor(data.profileTheme.borderColor || '#7FFFD4');
+                        setUsernameColor(data.profileTheme.usernameColor || '#FFFFFF');
                     }
                 }
             }
@@ -60,14 +67,32 @@ const EditProfile = () => {
         fetchUserData();
     }, [currentUser]);
 
+    const [showCropper, setShowCropper] = useState(false);
+    const [tempImageSrc, setTempImageSrc] = useState(null);
+
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => setPreview(reader.result);
+            reader.onloadend = () => {
+                setTempImageSrc(reader.result);
+                setShowCropper(true);
+            };
             reader.readAsDataURL(file);
-            setSelectedFile(file);
         }
+        // Reset input
+        e.target.value = '';
+    };
+
+    const handleCropComplete = (blob) => {
+        const croppedUrl = URL.createObjectURL(blob);
+        setPreview(croppedUrl);
+
+        // Convert blob to file for upload
+        const file = new File([blob], "profile_photo.jpg", { type: "image/jpeg" });
+        setSelectedFile(file);
+        setShowCropper(false);
+        setTempImageSrc(null);
     };
 
     // Discipline Logic
@@ -81,19 +106,13 @@ const EditProfile = () => {
             setSelectedNiches(newNiches);
             if (expandedDiscipline === discipline) setExpandedDiscipline(null);
         } else {
-            // Add (Limit 3)
-            if (selectedMain.length >= 3) {
-                alert("You can select up to 3 main disciplines.");
-                return;
-            }
+            // Add (no limit)
             setSelectedMain(prev => [...prev, discipline]);
             setExpandedDiscipline(discipline); // Auto-expand to show niches
         }
     };
 
     const toggleNiche = (discipline, niche) => {
-        // Calculate total niches count
-        const currentTotalNiches = Object.values(selectedNiches).flat().length;
         const isSelected = selectedNiches[discipline]?.includes(niche);
 
         if (isSelected) {
@@ -103,11 +122,7 @@ const EditProfile = () => {
                 [discipline]: prev[discipline].filter(n => n !== niche)
             }));
         } else {
-            // Add (Limit 5 total)
-            if (currentTotalNiches >= 5) {
-                alert("You can select up to 5 sub-niches total.");
-                return;
-            }
+            // Add (no limit)
             setSelectedNiches(prev => ({
                 ...prev,
                 [discipline]: [...(prev[discipline] || []), niche]
@@ -115,61 +130,138 @@ const EditProfile = () => {
         }
     };
 
+    const [selectedFile, setSelectedFile] = useState(null);
+
+    // Helper: Generate Bio Color based on Username Color
+    const generateBioColor = (hexColor) => {
+        // Default check
+        if (!hexColor || hexColor === '#FFFFFF' || hexColor.toLowerCase() === '#fff') {
+            return 'rgba(255, 255, 255, 0.7)'; // Standard soft white
+        }
+
+        // If gradient, we can't easily parse. Return standard white/gray for readability or take primary logic.
+        // For UI simplicity if gradient string is passed, we fallback to our generic nice gray.
+        if (hexColor.includes('gradient') || hexColor.includes('var')) {
+            return 'rgba(255, 255, 255, 0.75)';
+        }
+
+        // Basic Hex Parsing
+        let c;
+        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hexColor)) {
+            c = hexColor.substring(1).split('');
+            if (c.length === 3) {
+                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+            }
+            c = '0x' + c.join('');
+
+            const r = (c >> 16) & 255;
+            const g = (c >> 8) & 255;
+            const b = c & 255;
+
+            // Calculate Luma (Approx brightness)
+            const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+            // Logic:
+            // If Bright (> 200) -> Darken slightly? No, on black bg we want it bright still, but dimmer than username.
+            // Actually, for a black background:
+            // High brightness color -> reduce opacity significantly (0.7) or brightness (keep Hue).
+            // Low brightness color (Dark Blue) -> It will be invisible on black. We need to Lighten it.
+
+            if (luma < 60) {
+                // Too dark for black background. Lighten it.
+                // Simple approach: mix with white
+                const mix = (c1, c2, w) => c1 + (c2 - c1) * w;
+                const r2 = Math.round(mix(r, 255, 0.4));
+                const g2 = Math.round(mix(g, 255, 0.4));
+                const b2 = Math.round(mix(b, 255, 0.4));
+                return `rgba(${r2}, ${g2}, ${b2}, 0.8)`;
+            } else {
+                // Bright enough. Just lower opacity to create hierarchy.
+                return `rgba(${r}, ${g}, ${b}, 0.65)`;
+            }
+        }
+        return 'rgba(255, 255, 255, 0.7)';
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log("Starting profile save...");
+
+        if (!currentUser) {
+            console.error("No current user found.");
+            return;
+        }
+
         setLoading(true);
 
         try {
             let newPhotoURL = currentUser.photoURL;
 
+            // 1. Handle Image Upload
             if (selectedFile) {
-                const file = selectedFile;
-                const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
+                console.log("Uploading file...", selectedFile.name);
+                const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_${selectedFile.name}`);
+                await uploadBytes(storageRef, selectedFile);
                 newPhotoURL = await getDownloadURL(storageRef);
+                console.log("File uploaded, URL:", newPhotoURL);
             }
 
-            // Update Auth Profile
+            // 2. Sanitation
             const sanitizedDisplayName = sanitizeDisplayName(displayName);
             const sanitizedBio = sanitizeBio(bio);
 
+            // 3. Auth Update
+            console.log("Updating Auth profile...");
             await updateProfile(currentUser, {
                 displayName: sanitizedDisplayName,
                 photoURL: newPhotoURL
             });
 
-            // Generate search keywords
-            const searchKeywords = generateUserSearchKeywords({
-                displayName: sanitizedDisplayName,
-                email: currentUser.email,
-                bio: sanitizedBio,
-                artTypes: selectedMain // Map main disciplines to artTypes for search
-            });
+            // 4. Firestore Update
+            console.log("Updating Firestore...");
 
-            // Update Firestore Document
-            await setDoc(doc(db, 'users', currentUser.uid), {
+            // Auto-generate bio color
+            const autoBioColor = generateBioColor(usernameColor);
+
+            // Construct the update object carefully to avoid undefined values
+            const userUpdate = {
                 displayName: sanitizedDisplayName,
                 photoURL: newPhotoURL,
                 bio: sanitizedBio,
-                profileBgColor,
+                profileBgColor: profileBgColor || '#000000',
+                email: currentUser.email,
+                updatedAt: new Date(),
+
+                // Nested Objects - ensure they are complete
                 disciplines: {
-                    main: selectedMain,
-                    niches: selectedNiches
+                    main: selectedMain || [],
+                    niches: selectedNiches || {}
                 },
                 profileTheme: {
-                    gradientId: selectedGradient,
-                    unlockedGradients: unlockedGradients,
-                    starColor: starColor
-                },
+                    gradientId: selectedGradient || 'green-default',
+                    unlockedGradients: unlockedGradients || ['green-default'],
+                    starColor: starColor || '#7FFFD4',
+                    borderColor: profileBorderColor || '#7FFFD4',
+                    usernameColor: usernameColor || '#FFFFFF',
+                    bioColor: autoBioColor
+                }
+            };
+
+            // Add search keywords
+            userUpdate.searchKeywords = generateUserSearchKeywords({
+                displayName: sanitizedDisplayName,
                 email: currentUser.email,
-                searchKeywords,
-                updatedAt: new Date()
-            }, { merge: true });
+                bio: sanitizedBio,
+                artTypes: selectedMain || []
+            });
+
+            await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
+            console.log("Firestore updated.");
 
             navigate('/profile/me');
         } catch (error) {
-            console.error("Error updating profile:", error);
-            alert("Failed to update profile: " + error.message);
+            console.error("Save failed:", error);
+            alert("Could not save profile: " + error.message);
         } finally {
             setLoading(false);
         }
@@ -183,17 +275,25 @@ const EditProfile = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
-                background: 'rgba(20, 20, 20, 0.8)',
+                background: 'rgba(0, 0, 0, 0.95)',
                 backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
                 position: 'sticky',
                 top: 0,
                 zIndex: 100
             }}>
-                <button onClick={() => navigate('/profile/me')} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '1.2rem' }}>
+                <button onClick={() => navigate('/profile/me')} style={{ background: 'transparent', border: 'none', color: '#7FFFD4', cursor: 'pointer', fontSize: '1.2rem' }}>
                     <FaArrowLeft />
                 </button>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: '500' }}>Edit Profile</h1>
+                <h1 style={{
+                    fontSize: '1.2rem',
+                    fontWeight: '700',
+                    color: '#7FFFD4',
+                    fontFamily: 'var(--font-family-heading)',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    margin: 0
+                }}>Edit Profile</h1>
             </div>
 
             <div style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -204,10 +304,11 @@ const EditProfile = () => {
                         <div style={{
                             width: '100px',
                             height: '100px',
-                            borderRadius: '50%',
+                            borderRadius: '16px',
                             overflow: 'hidden',
-                            border: '2px solid #333',
-                            background: '#111'
+                            border: `3px solid ${profileBorderColor}`,
+                            background: '#111',
+                            boxShadow: `0 0 20px ${profileBorderColor}40`
                         }}>
                             {preview ? (
                                 <img src={preview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -215,7 +316,20 @@ const EditProfile = () => {
                                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>No Photo</div>
                             )}
                         </div>
-                        <label style={{ cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', padding: '0.5rem 1rem', background: '#333', borderRadius: '20px' }}>
+                        <label style={{
+                            cursor: 'pointer',
+                            color: '#000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.85rem',
+                            padding: '0.6rem 1.2rem',
+                            background: '#7FFFD4',
+                            borderRadius: '20px',
+                            fontWeight: '600',
+                            transition: 'all 0.2s',
+                            border: 'none'
+                        }}>
                             <FaCamera /> Change Photo
                             <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                         </label>
@@ -223,22 +337,58 @@ const EditProfile = () => {
 
                     {/* Basic Info */}
                     <div className="form-group">
-                        <label style={{ display: 'block', color: '#aaa', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Display Name</label>
+                        <label style={{ display: 'block', color: '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Display Name</label>
                         <input
                             type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
-                            style={{ width: '100%', padding: '0.8rem', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1rem' }}
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem',
+                                background: 'rgba(127, 255, 212, 0.05)',
+                                border: '1px solid rgba(127, 255, 212, 0.2)',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                fontSize: '1rem',
+                                transition: 'all 0.2s'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#7FFFD4';
+                                e.target.style.background = 'rgba(127, 255, 212, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
+                                e.target.style.background = 'rgba(127, 255, 212, 0.05)';
+                            }}
                             placeholder="Your Name"
                         />
                     </div>
 
                     <div className="form-group">
-                        <label style={{ display: 'block', color: '#aaa', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Bio</label>
+                        <label style={{ display: 'block', color: '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Bio</label>
                         <textarea
                             value={bio}
                             onChange={(e) => setBio(e.target.value)}
-                            style={{ width: '100%', padding: '0.8rem', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '1rem', minHeight: '80px', resize: 'vertical' }}
+                            style={{
+                                width: '100%',
+                                padding: '0.8rem',
+                                background: 'rgba(127, 255, 212, 0.05)',
+                                border: '1px solid rgba(127, 255, 212, 0.2)',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                fontSize: '1rem',
+                                minHeight: '80px',
+                                resize: 'vertical',
+                                transition: 'all 0.2s'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#7FFFD4';
+                                e.target.style.background = 'rgba(127, 255, 212, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
+                                e.target.style.background = 'rgba(127, 255, 212, 0.05)';
+                            }}
                             placeholder="Tell us about yourself..."
                         />
                     </div>
@@ -350,70 +500,195 @@ const EditProfile = () => {
                         </p>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.75rem' }}>
-                            {[
-                                { name: 'Ice Mint', color: '#7FFFD4' },
-                                { name: 'Purple', color: '#9D4EDD' },
-                                { name: 'Blue', color: '#4CC9F0' },
-                                { name: 'Pink', color: '#FF006E' },
-                                { name: 'Gold', color: '#FFD60A' },
-                                { name: 'Orange', color: '#FF9E00' },
-                                { name: 'Red', color: '#FF4D4D' },
-                                { name: 'Green', color: '#06FFA5' },
-                                { name: 'Cyan', color: '#00F5FF' },
-                                { name: 'White', color: '#FFFFFF' }
-                            ].map(option => (
-                                <button
-                                    key={option.color}
-                                    type="button"
-                                    onClick={() => setStarColor(option.color)}
-                                    style={{
-                                        padding: '0',
-                                        border: starColor === option.color ? '3px solid var(--ice-mint)' : '2px solid #333',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        background: 'transparent',
-                                        position: 'relative'
-                                    }}
-                                >
-                                    <div style={{
-                                        height: '60px',
-                                        background: '#000',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}>
-                                        {/* Preview stars */}
-                                        {[...Array(5)].map((_, i) => (
-                                            <div
-                                                key={i}
-                                                style={{
-                                                    position: 'absolute',
-                                                    width: '2px',
-                                                    height: '2px',
-                                                    background: option.color,
-                                                    borderRadius: '50%',
-                                                    top: `${20 + i * 15}%`,
-                                                    left: `${15 + i * 15}%`,
-                                                    boxShadow: `0 0 3px ${option.color}`
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                    <div style={{
-                                        padding: '0.4rem',
-                                        background: '#111',
-                                        textAlign: 'center',
-                                        fontSize: '0.75rem',
-                                        color: starColor === option.color ? '#fff' : '#888',
-                                        fontWeight: starColor === option.color ? '600' : '400'
-                                    }}>
-                                        {option.name}
-                                    </div>
-                                </button>
-                            ))}
+                            {ALL_COLORS.map(option => {
+                                const isPremiumLocked = option.isPremium && !isPremiumUser;
+
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => !isPremiumLocked && setStarColor(option.color)}
+                                        style={{
+                                            padding: '0',
+                                            border: starColor === option.color ? '3px solid var(--ice-mint)' : '2px solid #333',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                            background: 'transparent',
+                                            position: 'relative',
+                                            opacity: isPremiumLocked ? 0.6 : 1
+                                        }}
+                                    >
+                                        <div style={{
+                                            height: '60px',
+                                            background: '#000',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            {/* Premium Lock Overlay */}
+                                            {isPremiumLocked && (
+                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <FaLock size={16} color="#888" />
+                                                </div>
+                                            )}
+
+                                            {/* Preview stars */}
+                                            {[...Array(5)].map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        width: '2px',
+                                                        height: '2px',
+                                                        background: option.color, // Works for gradient string too on div background
+                                                        borderRadius: '50%',
+                                                        top: `${20 + i * 15}%`,
+                                                        left: `${15 + i * 15}%`,
+                                                        boxShadow: option.color.includes('gradient') ? 'none' : `0 0 3px ${option.color}`
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <div style={{
+                                            padding: '0.4rem',
+                                            background: '#111',
+                                            textAlign: 'center',
+                                            fontSize: '0.75rem',
+                                            color: starColor === option.color ? '#fff' : '#888',
+                                            fontWeight: starColor === option.color ? '600' : '400'
+                                        }}>
+                                            {option.name}
+                                        </div>
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Profile Border Color Customization */}
+                    <div className="form-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Picture Border Color</label>
+                            {/* Premium indicator if needed */}
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                            Customize the border color of your profile picture.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '0.75rem' }}>
+                            {ALL_COLORS.map(option => {
+                                const isPremiumLocked = option.isPremium && !isPremiumUser;
+
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => !isPremiumLocked && setProfileBorderColor(option.color)}
+                                        style={{
+                                            padding: '0',
+                                            border: profileBorderColor === option.color ? '3px solid #fff' : '2px solid #333',
+                                            borderRadius: '50%',
+                                            width: '40px',
+                                            height: '40px',
+                                            overflow: 'hidden',
+                                            cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                            background: option.color,
+                                            position: 'relative',
+                                            boxShadow: profileBorderColor === option.color ? `0 0 10px ${option.color.includes('gradient') ? '#fff' : option.color}` : 'none',
+                                            opacity: isPremiumLocked ? 0.6 : 1
+                                        }}
+                                        title={option.name}
+                                    >
+                                        {/* Lock Overlay */}
+                                        {isPremiumLocked && (
+                                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <FaLock size={12} color="#fff" />
+                                            </div>
+                                        )}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Username Color Customization */}
+                    <div className="form-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Username Color</label>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                            Choose a color for your username. Your bio color will automatically adjust to match.
+                        </p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.75rem' }}>
+                            {ALL_COLORS.map(option => {
+                                const isPremiumLocked = option.isPremium && !isPremiumUser;
+
+                                // Simple checker for gradient vs solid for preview
+                                const backgroundStyle = option.color.includes('gradient')
+                                    ? { background: option.color }
+                                    : { backgroundColor: option.color };
+
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => !isPremiumLocked && setUsernameColor(option.color)}
+                                        style={{
+                                            padding: '0',
+                                            border: usernameColor === option.color ? '3px solid var(--ice-mint)' : '2px solid #333',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                            background: 'transparent',
+                                            position: 'relative',
+                                            opacity: isPremiumLocked ? 0.6 : 1
+                                        }}
+                                    >
+                                        <div style={{
+                                            height: '40px',
+                                            background: '#000',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            {/* Premium Lock Overlay */}
+                                            {isPremiumLocked && (
+                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <FaLock size={16} color="#888" />
+                                                </div>
+                                            )}
+
+                                            {/* Preview Text */}
+                                            <span style={{
+                                                fontSize: '1rem',
+                                                fontWeight: '800',
+                                                ...backgroundStyle,
+                                                WebkitBackgroundClip: option.color.includes('gradient') ? 'text' : 'border-box',
+                                                WebkitTextFillColor: option.color.includes('gradient') ? 'transparent' : option.color,
+                                                color: option.color.includes('gradient') ? 'transparent' : option.color
+                                            }}>
+                                                Aa
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            padding: '0.4rem',
+                                            background: '#111',
+                                            textAlign: 'center',
+                                            fontSize: '0.75rem',
+                                            color: usernameColor === option.color ? '#fff' : '#888',
+                                            fontWeight: usernameColor === option.color ? '600' : '400'
+                                        }}>
+                                            {option.name}
+                                        </div>
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
 
@@ -422,7 +697,7 @@ const EditProfile = () => {
                         disabled={loading}
                         style={{
                             padding: '1rem',
-                            background: '#fff',
+                            background: '#7FFFD4',
                             color: '#000',
                             border: 'none',
                             borderRadius: '30px',
@@ -437,13 +712,28 @@ const EditProfile = () => {
                             opacity: loading ? 0.7 : 1,
                             position: 'sticky',
                             bottom: '20px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+                            boxShadow: '0 4px 20px rgba(127, 255, 212, 0.3)',
+                            transition: 'all 0.2s',
+                            fontFamily: 'var(--font-family-heading)',
+                            letterSpacing: '0.05em',
+                            textTransform: 'uppercase'
                         }}
                     >
                         {loading ? 'Saving...' : <><FaSave /> Save Changes</>}
                     </button>
                 </form>
             </div>
+
+            {showCropper && tempImageSrc && (
+                <ImageCropper
+                    imageSrc={tempImageSrc}
+                    onCrop={handleCropComplete}
+                    onCancel={() => {
+                        setShowCropper(false);
+                        setTempImageSrc(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

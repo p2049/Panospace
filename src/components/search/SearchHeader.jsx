@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaFilter } from 'react-icons/fa';
 import SearchFilters from './SearchFilters';
 import SearchModeTabs from './SearchModeTabs';
+import { useThemeColors } from '../../store/useThemeStore';
 
 const SearchHeader = ({
     isMobile,
@@ -21,9 +22,12 @@ const SearchHeader = ({
     viewMode,
     setViewMode,
     isSortDropdownOpen,
-    setIsSortDropdownOpen
+    setIsSortDropdownOpen,
+    searchMode,
+    setSearchMode
 }) => {
     const navigate = useNavigate();
+    const { accentColor } = useThemeColors();
 
     return (
         <div className="search-header" style={{
@@ -237,6 +241,36 @@ const SearchHeader = ({
                             }}
                         />
                     </div>
+
+                    {/* Phase 3 Fix: Art/Social Tabs - Banner Inline */}
+                    {/* Phase 3 Fix: Single Toggle Button for Art/Social */}
+                    {currentMode === 'posts' && (
+                        <div className="search-mode-tabs" style={{ flexShrink: 0 }}>
+                            <button
+                                onClick={() => setSearchMode(searchMode === "art" ? "social" : "art")}
+                                style={{
+                                    padding: '0.35rem 0.8rem',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${accentColor}`,
+                                    background: searchMode === 'art' ? accentColor : 'transparent',
+                                    color: searchMode === 'art' ? '#000' : accentColor,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none'
+                                }}
+                            >
+                                {searchMode === 'art' ? 'ART' : 'SOCIAL'}
+                            </button>
+                        </div>
+                    )}
 
                     {/* Mobile: Filter button next to Search Bar */}
                     {isMobile && (

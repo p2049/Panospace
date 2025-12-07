@@ -109,7 +109,6 @@ const Legal = () => {
                         <ul style={ulStyle}>
                             <li style={liStyle}><strong>No nudity of any kind.</strong></li>
                             <li style={liStyle}>No pornographic, sexual, or suggestive content.</li>
-                            <li style={liStyle}>No "thirst traps", adult content, or sexualized posing.</li>
                         </ul>
 
                         <h3 style={h3Style}>2. No AI Art</h3>

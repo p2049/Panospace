@@ -490,6 +490,33 @@ const Post = ({ post, priority = 'normal' }) => {
                             </div>
                         </div>
                     )}
+
+                    {/* Phase 4: Social Chip */}
+                    {(post.type === 'social') && (
+                        <div style={{ padding: '0.75rem 0 0', borderTop: '1px solid #333' }}>
+                            <span
+                                className="social-tag-chip"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate("/search", { state: { forceSocialMode: true } });
+                                }}
+                                style={{
+                                    display: 'inline-block',
+                                    padding: '2px 8px',
+                                    fontSize: '0.65rem',
+                                    borderRadius: '6px',
+                                    textTransform: 'uppercase',
+                                    cursor: 'pointer',
+                                    opacity: 0.85,
+                                    background: 'rgba(255, 107, 157, 0.15)',
+                                    border: '1px solid #FF6B9D',
+                                    color: '#FF6B9D',
+                                }}
+                            >
+                                👥 social
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
 

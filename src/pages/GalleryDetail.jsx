@@ -363,26 +363,75 @@ const StudioPage = () => {
                                         <p>No members yet</p>
                                     </div>
                                 ) : (
-                                    members.map(member => (
-                                        <div
-                                            key={member.id}
-                                            className="member-card"
-                                            onClick={() => navigate(`/profile/${member.id}`)}
-                                        >
-                                            <img
-                                                src={member.photoURL || '/default-avatar.png'}
-                                                alt={member.username}
-                                                className="member-avatar"
-                                            />
-                                            <div className="member-info">
-                                                <strong>{member.displayName || member.username}</strong>
-                                                <span>@{member.username}</span>
+                                    members.map(member => {
+                                        // Team Logic
+                                        const teamId = studio.teamAssignments?.[member.id];
+                                        const team = teamId ? studio.teams?.[teamId] : null;
+                                        const teamColor = team?.color;
+
+                                        // Username Color Priority: Team Color (if in studio) > User Theme
+                                        const displayColor = teamColor ||
+                                            (member.profileTheme?.usernameColor && !member.profileTheme.usernameColor.includes('gradient')
+                                                ? member.profileTheme.usernameColor
+                                                : '#fff');
+
+                                        return (
+                                            <div
+                                                key={member.id}
+                                                className="member-card"
+                                                onClick={() => navigate(`/profile/${member.id}`)}
+                                                style={{
+                                                    borderColor: teamColor ? teamColor : 'rgba(255,255,255,0.1)',
+                                                    borderWidth: teamColor ? '2px' : '1px'
+                                                }}
+                                            >
+                                                <div style={{ position: 'relative', width: '60px', height: '60px', margin: '0 auto 1rem' }}>
+                                                    <img
+                                                        src={member.photoURL || '/default-avatar.png'}
+                                                        alt={member.username}
+                                                        className="member-avatar"
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            borderRadius: '50%',
+                                                            objectFit: 'cover',
+                                                            border: `2px solid ${teamColor || member.profileTheme?.borderColor || '#7FFFD4'}`
+                                                        }}
+                                                    />
+                                                    {team && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            bottom: '-5px',
+                                                            right: '-5px',
+                                                            background: teamColor,
+                                                            color: '#000',
+                                                            fontSize: '0.6rem',
+                                                            padding: '2px 6px',
+                                                            borderRadius: '10px',
+                                                            fontWeight: 'bold',
+                                                            boxShadow: '0 2px 5px rgba(0,0,0,0.5)'
+                                                        }}>
+                                                            {team.name}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="member-info">
+                                                    <strong style={{
+                                                        color: displayColor,
+                                                        fontSize: '1.1rem',
+                                                        fontFamily: 'var(--font-family-heading)'
+                                                    }}>
+                                                        {member.displayName || member.username}
+                                                    </strong>
+                                                    <span style={{ opacity: 0.7 }}>@{member.username}</span>
+                                                </div>
+                                                {member.id === studio.ownerId && (
+                                                    <span className="owner-badge">Owner</span>
+                                                )}
                                             </div>
-                                            {member.id === studio.ownerId && (
-                                                <span className="owner-badge">Owner</span>
-                                            )}
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         )}

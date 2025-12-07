@@ -20,7 +20,8 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
         availableForCommission: false,
         cardImageUrl: '',
         fullCardImageUrl: '',
-        layoutMode: 'split' // 'split' or 'full'
+        layoutMode: 'split', // 'split' or 'full'
+        bio: '' // New Bio field
     });
 
     // Initialize data from user profile
@@ -34,7 +35,8 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                 availableForCommission: user.availableForCommission || false,
                 cardImageUrl: user.cardImageUrl || '',
                 fullCardImageUrl: user.fullCardImageUrl || '',
-                layoutMode: user.cardLayoutMode || 'split'
+                layoutMode: user.cardLayoutMode || 'split',
+                bio: user.bio || ''
             });
         }
     }, [user]);
@@ -58,7 +60,8 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                 availableForCommission: cardData.availableForCommission,
                 cardImageUrl: cardData.cardImageUrl,
                 fullCardImageUrl: cardData.fullCardImageUrl,
-                cardLayoutMode: cardData.layoutMode
+                cardLayoutMode: cardData.layoutMode,
+                bio: cardData.bio // Save Bio
             });
             setIsEditing(false);
             // Optional: Show success toast
@@ -71,7 +74,16 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
     if (!isOpen || !user) return null;
 
     const isOwner = currentUser && currentUser.uid === user.id;
-    const userGradient = getGradientBackground(user.gradientId || getCurrentGradientId(user));
+    // Use user's chosen gradient or fallback
+    const userGradient = getGradientBackground(user.profileTheme?.gradientId || user.gradientId || 'green-default');
+
+    // Color Logic
+    const usernameColor = (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient'))
+        ? user.profileTheme.usernameColor
+        : '#FFFFFF';
+
+    const bioColor = user.profileTheme?.bioColor || 'rgba(255, 255, 255, 0.7)';
+    const borderColor = usernameColor;
 
     return (
         <div style={{
@@ -94,12 +106,13 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                 width: '100%',
                 maxWidth: '600px',
                 aspectRatio: '1.75 / 1',
-                background: '#111',
+                background: userGradient, // Use User's Star Theme/Gradient
                 borderRadius: '12px',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
                 overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                display: 'flex'
+                border: `2px solid ${borderColor}`,
+                display: 'flex',
+                flexDirection: 'column'
             }}>
                 {/* Close Button */}
                 <button
@@ -190,54 +203,49 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                         )}
                     </div>
                 ) : (
-                    /* SPLIT MODE (Standard) */
-                    <>
-                        {/* Left Side: Image (40%) */}
+                    /* SPLIT MODE (Standard) with Bio on Left */
+                    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+
+                        {/* Left Side: Bio (40%) */}
                         <div style={{
                             width: '40%',
                             height: '100%',
-                            background: cardData.cardImageUrl ? '#000' : userGradient, // Use user gradient if no image
-                            position: 'relative',
-                            borderRight: '1px solid rgba(255,255,255,0.05)'
+                            padding: '1.5rem',
+                            borderRight: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(0,0,0,0.2)', // Slight tint for readability
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            overflowY: 'auto'
                         }}>
-                            {cardData.cardImageUrl ? (
-                                <SmartImage
-                                    src={cardData.cardImageUrl}
-                                    alt="Business Card"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            {isEditing ? (
+                                <textarea
+                                    value={cardData.bio}
+                                    onChange={(e) => setCardData({ ...cardData, bio: e.target.value })}
+                                    placeholder="Enter your professional bio..."
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        color: '#fff',
+                                        borderRadius: '4px',
+                                        padding: '0.5rem',
+                                        resize: 'none',
+                                        fontSize: '0.85rem'
+                                    }}
                                 />
                             ) : (
-                                // If no image, show nothing (just gradient) or placeholder icon if desired.
-                                // User requested: "if they dont choose an image it should default to the same gradient"
-                                // So we just leave it as the gradient background.
-                                <div style={{ width: '100%', height: '100%' }} />
-                            )}
-
-                            {isOwner && isEditing && (
-                                <div style={{
-                                    position: 'absolute',
-                                    bottom: '10px',
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '5px',
-                                    alignItems: 'center',
-                                    width: '100%'
+                                <p style={{
+                                    margin: 0,
+                                    color: bioColor,
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.5',
+                                    whiteSpace: 'pre-wrap',
+                                    fontFamily: 'var(--font-family-body)'
                                 }}>
-                                    <button style={{
-                                        background: 'rgba(0,0,0,0.7)',
-                                        color: '#fff',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        padding: '4px 10px',
-                                        borderRadius: '12px',
-                                        fontSize: '0.7rem',
-                                        cursor: 'pointer',
-                                        whiteSpace: 'nowrap'
-                                    }}>
-                                        Upload Image
-                                    </button>
-                                </div>
+                                    {cardData.bio || 'No bio added.'}
+                                </p>
                             )}
                         </div>
 
@@ -255,13 +263,21 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                                 <h2 style={{
                                     margin: '0 0 0.25rem 0',
                                     fontSize: '1.4rem',
-                                    color: '#fff',
-                                    fontWeight: '700',
-                                    lineHeight: '1.2'
+                                    color: usernameColor,
+                                    fontWeight: '800',
+                                    lineHeight: '1.2',
+                                    fontFamily: 'var(--font-family-heading)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.02em'
                                 }}>
                                     {user.displayName || user.username}
                                 </h2>
-                                <div style={{ color: 'var(--ice-mint)', fontSize: '0.85rem', fontWeight: '500' }}>
+                                <div style={{
+                                    color: bioColor, // Use bioColor for subtitle too for coherence
+                                    fontSize: '0.85rem',
+                                    fontWeight: '500',
+                                    opacity: 0.9
+                                }}>
                                     {cardData.businessType || 'Creator'}
                                 </div>
                             </div>
@@ -269,20 +285,20 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                             {/* Details */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: '#ccc' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ color: '#666', width: '16px' }}>@</span>
+                                    <span style={{ color: usernameColor, width: '16px', opacity: 0.7 }}>@</span>
                                     <span>{user.username}</span>
                                 </div>
 
                                 {user.location && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <FaMapMarkerAlt size={12} style={{ color: '#666' }} />
+                                        <FaMapMarkerAlt size={12} style={{ color: usernameColor, opacity: 0.7 }} />
                                         <span>{user.location}</span>
                                     </div>
                                 )}
 
                                 {cardData.email && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%' }}>
-                                        <FaEnvelope size={12} style={{ color: '#666', minWidth: '12px' }} />
+                                        <FaEnvelope size={12} style={{ color: usernameColor, opacity: 0.7, minWidth: '12px' }} />
                                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cardData.email}</span>
                                         <button
                                             onClick={() => handleCopy(cardData.email, 'email')}
@@ -295,7 +311,7 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
 
                                 {cardData.website && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%' }}>
-                                        <FaGlobe size={12} style={{ color: '#666', minWidth: '12px' }} />
+                                        <FaGlobe size={12} style={{ color: usernameColor, opacity: 0.7, minWidth: '12px' }} />
                                         <a
                                             href={cardData.website.startsWith('http') ? cardData.website : `https://${cardData.website}`}
                                             target="_blank"
@@ -383,7 +399,7 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                                 </div>
                             )}
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </div>

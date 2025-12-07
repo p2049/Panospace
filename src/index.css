@@ -721,4 +721,26 @@ h6 {
   --accent-color: #00FF88;
   --accent-secondary: #5FDDBB;
   --accent-glow: rgba(0, 255, 136, 0.25);
+
+  /* Mint Sci-Fi Theme Tokens (for Settings & Credits pages) */
+  --accent: #6effd8;
+  --accent-glow: rgba(110, 255, 216, 0.35);
+  --bg-darker: #020404;
+  --bg-card: #050808;
+  --text-primary: #d8fff1;
+  --text-secondary: #6b7f78;
+}
+
+@keyframes iridescent-border {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }

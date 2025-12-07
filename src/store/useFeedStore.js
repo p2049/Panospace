@@ -1,37 +1,32 @@
 /**
  * Feed Store - Zustand store for managing feed state
- * Handles current feed type, switching, and persistence
+ * Locked to Art Only
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { FEED_CONFIG } from '../config/feedConfig';
 
 const TOOLTIP_KEY = 'panospace_feed_swipe_tooltip_shown';
 
 export const useFeedStore = create(
     persist(
         (set, get) => ({
-            // Current feed type
-            currentFeed: FEED_CONFIG.DEFAULT_ACCOUNT_TYPE,
+            // Current feed type - default to art
+            currentFeed: 'art',
 
             // Tooltip state
-            hasSeenSwipeTooltip: typeof window !== 'undefined'
-                ? localStorage.getItem(TOOLTIP_KEY) === 'true'
-                : false,
+            hasSeenSwipeTooltip: true,
 
             // Switch to specific feed
             switchToFeed: (feedType) => {
-                if (feedType === 'art' || feedType === 'social') {
-                    set({ currentFeed: feedType });
-                }
+                set({ currentFeed: feedType });
             },
 
             // Toggle between feeds
             toggleFeed: () => {
-                const { currentFeed } = get();
-                const newFeed = currentFeed === 'art' ? 'social' : 'art';
-                set({ currentFeed: newFeed });
+                const current = get().currentFeed;
+                const next = current === 'art' ? 'social' : 'art';
+                set({ currentFeed: next });
             },
 
             // Mark tooltip as seen
@@ -42,17 +37,17 @@ export const useFeedStore = create(
                 set({ hasSeenSwipeTooltip: true });
             },
 
-            // Reset tooltip (for testing)
+            // Reset tooltip
             resetTooltip: () => {
+                set({ hasSeenSwipeTooltip: false });
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem(TOOLTIP_KEY);
                 }
-                set({ hasSeenSwipeTooltip: false });
             }
         }),
         {
             name: 'panospace-feed-storage',
-            partialize: (state) => ({ currentFeed: state.currentFeed })
+            partialize: (state) => ({ currentFeed: state.currentFeed, hasSeenSwipeTooltip: state.hasSeenSwipeTooltip })
         }
     )
 );

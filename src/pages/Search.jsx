@@ -138,6 +138,7 @@ const Search = () => {
     const [selectedOrientation, setSelectedOrientation] = useState(null);
     const [selectedAspectRatio, setSelectedAspectRatio] = useState(null);
     const [sortBy, setSortBy] = useState('newest');
+    const [searchMode, setSearchMode] = useState('art'); // Phase 3: Search Mode State ('art' | 'social')
 
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'
     const [isSearching, setIsSearching] = useState(false);
@@ -241,7 +242,19 @@ const Search = () => {
     useEffect(() => {
         dispatch({ type: 'RESET_RESULTS' });
         performSearch();
-    }, [currentMode, followingOnly]);
+    }, [currentMode, followingOnly, searchMode]);
+
+    // Reset filters when switching away from posts (Fix filter state bugs)
+    useEffect(() => {
+        if (currentMode !== 'posts') {
+            setSelectedPark(null);
+            setSelectedDate(null);
+            setSelectedCamera(null);
+            setSelectedFilm(null);
+            setSelectedOrientation(null);
+            setSelectedAspectRatio(null);
+        }
+    }, [currentMode]);
 
     const performSearch = useCallback(async (isLoadMore = false) => {
         if (!isMountedRef.current) return;
@@ -310,7 +323,8 @@ const Search = () => {
                             orientation: currentSelectedOrientationRef.current,
                             aspectRatio: currentSelectedAspectRatioRef.current,
                             sort: hasFilters ? currentSortByRef.current : exploreSort,
-                            authorIds: searchAuthorIds
+                            authorIds: searchAuthorIds,
+                            postType: searchMode // Phase 3: Pass searchMode to filter
                         },
                         isLoadMore ? lastPostDoc : null
                     );
@@ -477,7 +491,7 @@ const Search = () => {
             }
             isLoadingRef.current = false;
         }
-    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum]);
+    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum, searchMode]);
 
     // Update refs when search params change
     useEffect(() => {
@@ -669,27 +683,17 @@ const Search = () => {
                 setViewMode={setViewMode}
                 isSortDropdownOpen={isSortDropdownOpen}
                 setIsSortDropdownOpen={setIsSortDropdownOpen}
-
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
             />
-
-            <div style={{
-                padding: isMobile ? '0.5rem 0.8rem 0.5rem 0.8rem' : '1rem 2rem 0.5rem 2rem',
-                position: 'relative',
-                zIndex: 1
-            }}>
-                {isMobile && (
-                    <SearchModeTabs
-                        currentMode={currentMode}
-                        setCurrentMode={setCurrentMode}
-                        isMobile={isMobile}
-                    />
-                )}
-            </div>
 
             <SearchResults
                 viewMode={viewMode}
                 currentMode={currentMode}
-                results={results}
+                results={{
+                    ...results,
+                    posts: results.posts.filter(p => (p.type || 'art') === searchMode)
+                }}
                 isMobile={isMobile}
                 selectedOrientation={selectedOrientation}
                 selectedAspectRatio={selectedAspectRatio}

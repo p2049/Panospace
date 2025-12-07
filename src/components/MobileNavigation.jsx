@@ -1,41 +1,134 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaHome, FaSearch, FaUser, FaPlusSquare, FaCog, FaSignOutAlt, FaCalendar } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import NotificationBadge from './NotificationBadge';
+import { useUI } from '../context/UIContext';
+import { useBlock } from '../hooks/useBlock';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import ContextOptionsSection from './ContextOptionsSection';
+import ReportModal from './ReportModal';
 
-// Mobile Navigation Component
+import { useFeedStore } from '../store/useFeedStore';
+import { useThemeStore } from '../store/useThemeStore';
+
+// Mobile Navigation / Hamburger Menu
 const MobileNavigation = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [lastActivity, setLastActivity] = useState(Date.now());
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportConfig, setReportConfig] = useState({ type: 'post', id: null, title: '' });
+
     const navigate = useNavigate();
     const location = useLocation();
-    const { logout } = useAuth();
+    const { currentUser } = useAuth();
+    const { activePost } = useUI();
+    const { blockUser } = useBlock();
+
+    // Store hooks
+    const { currentFeed, toggleFeed } = useFeedStore();
+    const { setTheme } = useThemeStore();
+
+
 
     const inactivityTimerRef = useRef(null);
 
     // Auto-collapse logic
     useEffect(() => {
         const checkInactivity = () => {
-            if (Date.now() - lastActivity > 4000) { // 4 seconds inactivity
+            if (isOpen && Date.now() - lastActivity > 10000) { // Increased to 10s for better UX with menus
                 setIsOpen(false);
             }
         };
-
         inactivityTimerRef.current = setInterval(checkInactivity, 1000);
-
         return () => clearInterval(inactivityTimerRef.current);
-    }, [lastActivity]);
+    }, [lastActivity, isOpen]);
 
-    // Don't show on login/signup or specific creation pages
-    const hiddenPaths = ['/login', '/signup', '/create-collection', '/edit-profile', '/gallery/create', '/event/create', '/museum/create'];
-    if (hiddenPaths.includes(location.pathname) ||
-        location.pathname.startsWith('/edit-post/') ||
-        location.pathname.includes('/create-issue') ||
-        location.pathname.includes('/curate')
-    ) {
-        return null;
+    // Determine Context
+    let resolvedContext = null;
+    let resolvedPostOwnerId = null;
+    let resolvedProfileUserId = null;
+
+    if (activePost) {
+        resolvedContext = 'post';
+        resolvedPostOwnerId = activePost.authorId;
+    } else if (location.pathname.startsWith('/post/')) {
+        resolvedContext = 'post';
+        if (activePost) resolvedPostOwnerId = activePost.authorId;
+    } else if (location.pathname.startsWith('/profile/')) {
+        resolvedContext = 'profile';
+        const parts = location.pathname.split('/');
+        const idParam = parts[2];
+        resolvedProfileUserId = (idParam === 'me' || !idParam) ? currentUser?.uid : idParam;
     }
+
+    // Handlers
+    const handleEditPost = () => {
+        if (!activePost) return;
+        setIsOpen(false);
+        navigate(`/edit-post/${activePost.id}`);
+    };
+
+    const handleDeletePost = async () => {
+        if (!activePost) return;
+        if (window.confirm("Are you sure you want to delete this post?")) {
+            try {
+                await deleteDoc(doc(db, 'posts', activePost.id));
+                setIsOpen(false);
+                navigate('/');
+            } catch (error) {
+                console.error("Error deleting post:", error);
+                alert("Failed to delete post.");
+            }
+        }
+    };
+
+    const handleReportPost = () => {
+        if (!activePost) return;
+        setReportConfig({ type: 'post', id: activePost.id, title: activePost.title || 'Post' });
+        setShowReportModal(true);
+    };
+
+    const handleReportProfile = () => {
+        if (!resolvedProfileUserId) return;
+        setReportConfig({ type: 'user', id: resolvedProfileUserId, title: 'Profile' });
+        setShowReportModal(true);
+    };
+
+    const handleBlockUser = async () => {
+        if (resolvedContext === 'post' && activePost) {
+            // Check if already blocked handled by hook, but explicit confirmation desired
+            if (window.confirm(`Block ${activePost.authorName || 'user'}?`)) {
+                await blockUser(activePost.authorId);
+                setIsOpen(false);
+                navigate('/');
+            }
+        } else if (resolvedContext === 'profile' && resolvedProfileUserId) {
+            if (window.confirm(`Block this user?`)) {
+                await blockUser(resolvedProfileUserId);
+                setIsOpen(false);
+                navigate('/');
+            }
+        }
+    };
+
+    const handleCopyLink = () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url);
+        setIsOpen(false);
+        alert("Link copied to clipboard");
+    };
+
+    const handleShareProfile = () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Panospace Profile',
+                url: url
+            }).catch(console.error);
+        } else {
+            handleCopyLink();
+        }
+    };
 
     const handleInteraction = () => {
         setLastActivity(Date.now());
@@ -47,139 +140,199 @@ const MobileNavigation = () => {
         handleInteraction();
     };
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            navigate('/login');
-            setIsOpen(false);
-        } catch (error) {
-            console.error("Logout failed", error);
-        }
-    };
-
-    const navItemStyle = {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        padding: '0.8rem 0',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        opacity: 0.7,
-        width: '100%',
-        minHeight: '44px',
-        minWidth: '44px'
-    };
-
-    const activeNavItemStyle = {
-        ...navItemStyle,
-        opacity: 1,
-        color: 'var(--ice-mint, #7FFFD4)',
-        transform: 'scale(1.1)'
-    };
-
-    const panelStyle = {
-        position: 'fixed',
-        top: 0,
-        bottom: 0,
-        right: isOpen ? '0' : '-120px',
-        width: '70px',
-        height: '100vh',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        backdropFilter: 'blur(20px)',
-        borderLeft: '1px solid rgba(127, 255, 212, 0.2)',
-        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 9999,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingTop: 'max(1rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
-        paddingRight: 'env(safe-area-inset-right)',
-        boxShadow: '-5px 0 20px rgba(0, 0, 0, 0.5)',
-        overflowY: 'auto',
-        boxSizing: 'content-box'
-    };
-
+    // Styling
     const menuButtonStyle = {
         position: 'fixed',
         top: 'max(0.75rem, env(safe-area-inset-top))',
         right: '1rem',
         zIndex: 10000,
         cursor: 'pointer',
-        transition: 'transform 0.2s ease',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-        color: '#7FFFD4',
-        background: 'transparent',
+        color: '#7FFFD4', // PanoSpace Mint
+        background: 'rgba(0,0,0,0.5)',
+        backdropFilter: 'blur(4px)',
+        borderRadius: '50%',
         width: '44px',
         height: '44px',
-        minWidth: '44px',
-        minHeight: '44px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '10px',
-        WebkitTapHighlightColor: 'transparent',
-        filter: 'drop-shadow(0 0 4px rgba(127, 255, 212, 0.4))'
+        border: '1px solid rgba(127, 255, 212, 0.3)',
+        boxShadow: '0 0 10px rgba(0,0,0,0.3)'
     };
+
+    const drawerStyle = {
+        position: 'fixed',
+        top: 0,
+        right: isOpen ? 0 : '-320px',
+        width: '300px',
+        maxWidth: '80vw',
+        height: '100vh',
+        background: 'rgba(10, 10, 10, 0.95)',
+        backdropFilter: 'blur(20px)',
+        borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '-10px 0 30px rgba(0,0,0,0.8)',
+        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        zIndex: 9999,
+        paddingTop: '80px', // Space for button
+        display: 'flex',
+        flexDirection: 'column',
+    };
+
+    const navItemStyle = {
+        padding: '1.2rem 2rem',
+        color: '#fff',
+        fontSize: '1.1rem',
+        fontFamily: 'var(--font-family-heading, sans-serif)',
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        cursor: 'pointer',
+        transition: 'background 0.2s, color 0.2s'
+    };
+
+    const switchStyle = {
+        position: 'fixed',
+        top: 'max(0.75rem, env(safe-area-inset-top))',
+        right: '4.5rem',
+        zIndex: 10001,
+        display: isOpen ? 'flex' : 'none',
+        alignItems: 'center',
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(10px)',
+        borderRadius: '22px',
+        padding: '4px',
+        border: '1px solid rgba(255,255,255,0.1)',
+        height: '44px',
+        cursor: 'pointer',
+        overflow: 'hidden'
+    };
+
+    const toggleOptionStyle = (isActive, activeColor) => ({
+        padding: '0 1rem',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '18px',
+        fontSize: '0.85rem',
+        fontWeight: '700',
+        color: isActive ? '#000' : 'rgba(255,255,255,0.6)',
+        background: isActive ? activeColor : 'transparent',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        minWidth: '60px'
+    });
 
     return (
         <>
-            {/* Hamburger Menu Button */}
+            {/* Feed Switch - Visible when menu is open */}
+            <div style={switchStyle} onClick={(e) => {
+                e.stopPropagation();
+                toggleFeed();
+                handleInteraction();
+            }}>
+                <div style={toggleOptionStyle(currentFeed === 'art', '#7FFFD4')}>
+                    Art
+                </div>
+                <div style={toggleOptionStyle(currentFeed === 'social', '#7FFFD4')}>
+                    Social
+                </div>
+            </div>
+
+            {/* Hamburger Button */}
             <div
                 style={menuButtonStyle}
                 onClick={() => { setIsOpen(!isOpen); handleInteraction(); }}
-                title="Menu"
             >
-                <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                >
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
+                {isOpen ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                )}
             </div>
 
-            {/* Right Navigation Panel */}
-            <div
-                style={panelStyle}
-                onClick={handleInteraction}
-            >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', width: '100%', alignItems: 'center', margin: 'auto 0' }}>
-                    <div onClick={() => handleNavClick('/')} style={location.pathname === '/' ? activeNavItemStyle : navItemStyle}>
-                        <FaHome size={20} />
-                    </div>
-                    <div onClick={() => handleNavClick('/search')} style={location.pathname === '/search' ? activeNavItemStyle : navItemStyle}>
-                        <FaSearch size={20} />
-                    </div>
-                    <div onClick={() => handleNavClick('/create')} style={location.pathname === '/create' ? activeNavItemStyle : navItemStyle}>
-                        <FaPlusSquare size={20} />
-                    </div>
-                    <div onClick={() => handleNavClick('/profile')} style={location.pathname.startsWith('/profile') ? activeNavItemStyle : navItemStyle}>
-                        <FaUser size={20} />
-                    </div>
+            {/* Menu Drawer */}
+            <div style={drawerStyle} onClick={(e) => e.stopPropagation()}>
+                {/* Context Aware Options */}
+                <ContextOptionsSection
+                    currentContext={resolvedContext}
+                    postOwnerId={resolvedPostOwnerId}
+                    profileUserId={resolvedProfileUserId}
+                    onEditPost={handleEditPost}
+                    onDeletePost={handleDeletePost}
+                    onReportPost={handleReportPost}
+                    onReportProfile={handleReportProfile}
+                    onBlockUser={handleBlockUser}
+                    onCopyLink={handleCopyLink}
+                    onShareProfile={handleShareProfile}
+                />
 
-                    <div onClick={() => handleNavClick('/calendar')} style={location.pathname === '/calendar' ? activeNavItemStyle : navItemStyle}>
-                        <FaCalendar size={20} />
-                    </div>
-                    <div onClick={() => handleNavClick('/settings')} style={location.pathname === '/settings' ? activeNavItemStyle : navItemStyle}>
-                        <FaCog size={20} />
-                    </div>
+                {/* Main Navigation */}
+                <div onClick={() => handleNavClick('/')} style={navItemStyle}>
+                    Home
+                </div>
 
-                    <div onClick={handleLogout} style={{ ...navItemStyle, color: '#ff4444', marginTop: 'auto', marginBottom: '1rem' }}>
-                        <FaSignOutAlt size={20} />
+                <div onClick={() => handleNavClick('/search')} style={navItemStyle}>
+                    Search
+                </div>
+
+                <div onClick={() => handleNavClick('/calendar')} style={navItemStyle}>
+                    Calendar
+                </div>
+
+                {(resolvedContext === 'profile' && resolvedProfileUserId === currentUser?.uid) ? (
+                    <div onClick={() => handleNavClick('/edit-profile')} style={navItemStyle}>
+                        Edit Profile
                     </div>
+                ) : (
+                    <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
+                        My Account
+                    </div>
+                )}
+
+                <div onClick={() => handleNavClick('/marketplace')} style={navItemStyle}>
+                    Market
+                </div>
+
+                <div onClick={() => handleNavClick('/settings')} style={navItemStyle}>
+                    Settings
                 </div>
             </div>
+
+            {/* Backdrop */}
+            {isOpen && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        zIndex: 9998,
+                        backdropFilter: 'blur(2px)'
+                    }}
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            {/* Report Modal Integration */}
+            {showReportModal && (
+                <ReportModal
+                    isOpen={showReportModal}
+                    targetType={reportConfig.type}
+                    targetId={reportConfig.id}
+                    targetTitle={reportConfig.title}
+                    onClose={() => setShowReportModal(false)}
+                />
+            )}
         </>
     );
 };

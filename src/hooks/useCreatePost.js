@@ -442,6 +442,7 @@ export const useCreatePost = () => {
                 addToShop: processedItems.some((i) => i.addToShop === true),
                 moderationStatus: 'active',
                 status: status,
+                type: postData.type || 'art', // Unified type field
             };
 
             const docRef = await addDoc(collection(db, 'posts'), postDoc);

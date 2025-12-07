@@ -7,30 +7,61 @@ import { useBlock } from '../hooks/useBlock';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import StarBackground from '../components/StarBackground';
-import { useFeedStore } from '../store/useFeedStore';
-import { useThemeStore } from '../store/useThemeStore';
-import FeedTypeIndicator from '../components/FeedTypeIndicator';
-import { isDualFeedsEnabled } from '../config/feedConfig';
+import { useThemeColors } from '../store/useThemeStore';
 import { filterVisiblePosts } from '../utils/filterHelpers';
 import { useToast } from '../context/ToastContext';
+import { useFeedStore } from '../store/useFeedStore';
 
 // Feed component - Main home feed view
 const Feed = () => {
-    const { currentFeed, toggleFeed } = useFeedStore();
-    const { setTheme, accentColor, secondaryColor, glowColorStrong } = useThemeStore();
+    const { accentColor, secondaryColor, glowColorStrong } = useThemeColors();
     const { showToast } = useToast();
-    const [showIndicator, setShowIndicator] = useState(false);
-    const [switchCount, setSwitchCount] = useState(0);
     const scrollContainerRef = useRef(null);
     const location = useLocation();
     const lastScrollPositionRef = useRef(0);
     const isRestoringScrollRef = useRef(false);
 
     // Pass currentFeed to hook if dual feeds enabled, otherwise null (show all)
+    // NOTE: usePersonalizedFeed expects boolean for showSocialPosts, but we're moving to currentFeed
+    // For now, we'll map currentFeed 'social' to true, 'art' to false if the hook logic supports it.
+    // However, the hook likely needs 'currentFeed' string or we adapt here.
+    // Based on previous code: showSocialPosts (bool)
+
+    // Import store at top level first! (I will need to add import in next step if not present, but I can't do multiple edits here easily without context)
+    // Actually, I should update the state usage.
+
+    // Changing local state to store state
+    // const [showSocialPosts, setShowSocialPosts] = useState(false); -> remove this
+    // const { currentFeed } = useFeedStore(); -> add this
+
+    // Logic:
+    // If currentFeed is 'social', showSocialPosts = true
+    // If currentFeed is 'art', showSocialPosts = false
+
+    // But I can't inject imports here. I will just update this block to use the store hook ASSUMING I will add the import.
+    // Wait, I should add the import first or do it all in one go if possible.
+    // I can't add import here because it's line 1.
+
+    // I made a mistake in planning. I need to add the import first.
+    // I'll skip this tool call and do the import first.
+
+    // RE-EVALUATING: I have valid tool calls above.
+
+    // Actually, I can use `useFeedStore` directly if imported.
+    // Let's modify the usage of `usePersonalizedFeed` to use `useFeedStore`.
+    // I will simply assume I will add `import { useFeedStore } from '../store/useFeedStore';` at the top.
+
+    // BUT, I'll update the replacement content to just use a property specific to this block.
+    // I'll pause and add the import first in a separate 'replace' check.
+
+    // For this specific block:
+    const { currentFeed } = useFeedStore();
+    const showSocialPosts = currentFeed === 'social';
+
     const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed(
         'HOME',
         {},
-        isDualFeedsEnabled() ? currentFeed : null
+        showSocialPosts
     );
 
     const currentTheme = getCurrentTheme();
@@ -43,20 +74,6 @@ const Feed = () => {
         filterVisiblePosts(posts || [], blockedUsers),
         [posts, blockedUsers]
     );
-
-    // Sync theme with current feed
-    useEffect(() => {
-        if (isDualFeedsEnabled()) {
-            setTheme(currentFeed); // 'art' or 'social'
-
-            // Toggle body class for CSS theme override
-            if (currentFeed === 'social') {
-                document.body.classList.add('social-theme');
-            } else {
-                document.body.classList.remove('social-theme');
-            }
-        }
-    }, [currentFeed, setTheme]);
 
     // Save scroll position before navigation
     useEffect(() => {
@@ -105,27 +122,15 @@ const Feed = () => {
                 pointerEvents: 'auto',
                 display: 'flex',
                 alignItems: 'center',
-                height: '40px', // Ensure consistent height container
+                gap: '1rem',
+                height: '40px',
             }}>
                 <svg
                     width="40"
                     height="40"
                     viewBox="-5 -5 34 34"
                     onClick={() => {
-                        if (isDualFeedsEnabled()) {
-                            toggleFeed();
-                            setSwitchCount(prev => prev + 1);
-                            setShowIndicator(true);
-                            // Show toast based on the NEW feed (after toggle)
-                            const newFeed = currentFeed === 'art' ? 'social' : 'art';
-                            showToast(
-                                newFeed === 'art' ? '🎨 Art Feed' : '👥 Social Feed',
-                                'info',
-                                1500
-                            );
-                        } else {
-                            navigate('/search');
-                        }
+                        navigate('/profile/me');
                     }}
                     style={{
                         flexShrink: 0,
@@ -134,7 +139,7 @@ const Feed = () => {
                         overflow: 'visible',
                         transition: 'filter 0.2s ease'
                     }}
-                    title={isDualFeedsEnabled() ? "Switch Feed" : "Go to Search"}
+                    title="Go to Profile"
                 >
                     <defs>
                         <radialGradient id="planetGradient" cx="40%" cy="40%">
@@ -155,9 +160,6 @@ const Feed = () => {
                     <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
                 </svg>
             </div>
-
-            {/* Feed Type Indicator Overlay */}
-            <FeedTypeIndicator feedType={currentFeed} show={showIndicator} switchCount={switchCount} />
 
             {
                 loading && posts.length === 0 && (
@@ -212,18 +214,14 @@ const Feed = () => {
                                 fontWeight: '700',
                                 letterSpacing: '0.05em'
                             }}>
-                                {isDualFeedsEnabled() && currentFeed === 'social'
-                                    ? 'Lost in Space'
-                                    : 'No posts yet'}
+                                No posts yet
                             </h2>
                             <p style={{
                                 color: '#aaa',
                                 marginBottom: '1.5rem',
                                 fontSize: '1.1rem'
                             }}>
-                                {isDualFeedsEnabled() && currentFeed === 'social'
-                                    ? 'The Social Feed is empty. Be the first to share something!'
-                                    : 'Follow some creators to see their work here!'}
+                                Follow some creators to see their work here!
                             </p>
                             <button
                                 onClick={() => navigate('/search')}
@@ -255,13 +253,7 @@ const Feed = () => {
                                     e.currentTarget.style.boxShadow = '0 0 20px rgba(127, 255, 212, 0.2)';
                                 }}
                             >
-                                {isDualFeedsEnabled() && currentFeed === 'social' ? (
-                                    <>
-                                        <FaRocket /> Explore PanoSpace
-                                    </>
-                                ) : (
-                                    'Find Creators'
-                                )}
+                                Find Creators
                             </button>
                         </div>
                     </div>
@@ -322,5 +314,6 @@ const Feed = () => {
         </div>
     );
 };
+
 
 export default Feed;

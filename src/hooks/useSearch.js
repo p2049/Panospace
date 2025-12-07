@@ -36,8 +36,10 @@ export const useSearch = () => {
         const { userIds = [] } = filters;
         const term = (searchTerm || '').toLowerCase().trim();
 
-        // If no term and no userIds, return empty (unless we want to support "list all users" which we usually don't)
-        if (!term && userIds.length === 0) return { data: [], lastDoc: null };
+        // Return all users if no term/filter (as requested)
+        if (!term && userIds.length === 0) {
+            // Allow fall-through
+        }
 
         setLoading(true);
         setError(null);
@@ -59,14 +61,21 @@ export const useSearch = () => {
                     where('__name__', 'in', safeUserIds), // __name__ is document ID
                     limit(50)
                 );
-            } else {
-                // Standard search
+            } else if (term) {
+                // Standard search with term
                 const words = term.split(/\s+/).filter(w => w.length > 1);
                 const primaryWord = words[0] || term;
 
                 q = query(
                     usersRef,
                     where('searchKeywords', 'array-contains', primaryWord),
+                    orderBy('displayName'),
+                    limit(50)
+                );
+            } else {
+                // No term, list all users
+                q = query(
+                    usersRef,
                     orderBy('displayName'),
                     limit(50)
                 );
@@ -350,6 +359,11 @@ export const useSearch = () => {
 
                     return words.every(w => searchableText.includes(w));
                 });
+            }
+
+            // PHASE 3: Post Type Filter
+            if (filters.postType) {
+                filtered = filtered.filter(post => (post.type || 'art') === filters.postType);
             }
 
             // Apply client-side sorting to handle derived fields (EXIF date) and ensure correct order
@@ -792,7 +806,7 @@ export const useSearch = () => {
         setError(null);
 
         try {
-            const spacecardsRef = collection(db, 'spaceCards');
+            const spacecardsRef = collection(db, 'spacecards');
             let q;
             let orderByField = 'createdAt';
             let orderDirection = 'desc';

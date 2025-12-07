@@ -8,7 +8,6 @@ import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import MotionWrapper from './components/MotionWrapper';
 import AppLoading from './components/AppLoading';
 import OfflineBanner from './components/OfflineBanner';
-import FeedUniverse from './components/FeedUniverse';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { UserCacheProvider } from './context/UserCacheContext';
 import { UIProvider } from './context/UIContext';
@@ -53,6 +52,7 @@ const CommissionsPage = lazy(() => import('./pages/CommissionsPage'));
 const CreateMuseumPage = lazy(() => import('./pages/CreateMuseumPage'));
 const ProjectPage = lazy(() => import('./pages/ProjectPage'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Credits = lazy(() => import('./pages/Credits'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const AdminCleanup = lazy(() => import('./pages/AdminCleanup'));
 const AdminModeration = lazy(() => import('./pages/AdminModeration'));
@@ -87,9 +87,7 @@ const AnimatedRoutes = () => {
         <Route path="/legal" element={<MotionWrapper><Legal /></MotionWrapper>} />
         <Route path="/" element={
           <PrivateRoute>
-            <FeedUniverse>
-              <MotionWrapper><Feed /></MotionWrapper>
-            </FeedUniverse>
+            <MotionWrapper><Feed /></MotionWrapper>
           </PrivateRoute>
         } />
         <Route path="/search" element={
@@ -238,6 +236,11 @@ const AnimatedRoutes = () => {
         <Route path="/settings" element={
           <PrivateRoute>
             <MotionWrapper><Settings /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/credits" element={
+          <PrivateRoute>
+            <MotionWrapper><Credits /></MotionWrapper>
           </PrivateRoute>
         } />
         <Route path="/notifications" element={

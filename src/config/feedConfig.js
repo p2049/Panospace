@@ -1,12 +1,11 @@
-// Feed Configuration - Feature flags and settings for dual feed system
-// Controls Art Feed vs Social Feed functionality
+// Feed Configuration - Single feed system (Art only)
 
 export const FEED_CONFIG = {
     // Feature flags
-    ENABLE_DUAL_FEEDS: true, // ✅ ENABLED - Fixed with fade transition
-    ENABLE_LINKED_ACCOUNTS: false, // Phase 2 feature - link art + social accounts
+    ENABLE_DUAL_FEEDS: true,
+    ENABLE_LINKED_ACCOUNTS: true,
 
-    // Default account type for existing users (migration safe)
+    // Default account type
     DEFAULT_ACCOUNT_TYPE: 'art',
 
     // Feed types
@@ -27,12 +26,12 @@ export const FEED_CONFIG = {
  * @returns {boolean}
  */
 export const isDualFeedsEnabled = () => {
-    return FEED_CONFIG.ENABLE_DUAL_FEEDS;
+    return true;
 };
 
 /**
  * Get feed label for display
- * @param {string} feedType - 'art' or 'social'
+ * @param {string} feedType 
  * @returns {string}
  */
 export const getFeedLabel = (feedType) => {

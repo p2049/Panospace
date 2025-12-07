@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaQuestionCircle, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaLink, FaFlag, FaBan, FaCamera, FaSmile, FaEnvelope, FaLifeRing } from 'react-icons/fa';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile } from 'react-icons/fa';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -10,14 +10,12 @@ import ReportModal from '../components/ReportModal';
 import { useBlock } from '../hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '../constants/nsfwTags';
 import { isFeatureEnabled } from '../config/featureFlags';
-import { AccountTypeService } from '../services/AccountTypeService';
-import { FEED_CONFIG } from '../config/feedConfig';
 
 const Settings = () => {
     const navigate = useNavigate();
     const { currentUser, logout } = useAuth();
     const { activePost } = useUI();
-    const { blockUser, isBlocked } = useBlock();
+    const { blockUser } = useBlock();
     const [loading, setLoading] = useState(false);
 
     // Report Modal State
@@ -34,44 +32,6 @@ const Settings = () => {
 
     // Content Preferences
     const [showNSFW, setShowNSFW] = useState(getUserNSFWPreference());
-
-    // Account Type State
-    const [accountType, setAccountType] = useState(FEED_CONFIG.DEFAULT_ACCOUNT_TYPE);
-    const [loadingAccountType, setLoadingAccountType] = useState(true);
-
-    // Load user's account type on mount
-    React.useEffect(() => {
-        const loadAccountType = async () => {
-            if (currentUser) {
-                try {
-                    const type = await AccountTypeService.getAccountType(currentUser.uid);
-                    setAccountType(type);
-                } catch (error) {
-                    console.error('Error loading account type:', error);
-                } finally {
-                    setLoadingAccountType(false);
-                }
-            }
-        };
-        loadAccountType();
-    }, [currentUser]);
-
-    const toggleAccountType = async () => {
-        if (!currentUser || loadingAccountType) return;
-
-        const newType = accountType === 'art' ? 'social' : 'art';
-        setLoadingAccountType(true);
-
-        try {
-            await AccountTypeService.setAccountType(currentUser.uid, newType);
-            setAccountType(newType);
-        } catch (error) {
-            console.error('Error updating account type:', error);
-            alert('Failed to update account type. Please try again.');
-        } finally {
-            setLoadingAccountType(false);
-        }
-    };
 
     const toggleNSFW = () => {
         const newValue = !showNSFW;
@@ -187,17 +147,60 @@ const Settings = () => {
         }
     };
 
+    // Reusable Settings Row Component
+    const SettingsRow = ({ icon: Icon, label, onClick, isDestructive = false, showChevron = true }) => (
+        <button
+            onClick={onClick}
+            style={{
+                width: '100%',
+                height: '50px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 20px',
+                background: 'transparent',
+                border: '1px solid rgba(110, 255, 216, 0.15)',
+                borderRadius: '8px',
+                color: isDestructive ? '#ff4444' : 'var(--text-primary, #d8fff1)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                marginBottom: '8px'
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.background = isDestructive ? 'rgba(255, 68, 68, 0.05)' : 'rgba(110, 255, 216, 0.05)';
+                e.currentTarget.style.borderColor = isDestructive ? 'rgba(255, 68, 68, 0.3)' : 'var(--accent, #6effd8)';
+                e.currentTarget.style.boxShadow = isDestructive ? '0 0 15px rgba(255, 68, 68, 0.2)' : '0 0 15px var(--accent-glow, rgba(110,255,216,0.35))';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = 'rgba(110, 255, 216, 0.15)';
+                e.currentTarget.style.boxShadow = 'none';
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <Icon size={18} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} />
+                <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>{label}</span>
+            </div>
+            {showChevron && <FaChevronRight size={14} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} />}
+        </button>
+    );
+
     return (
-        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '80px' }}>
+        <div style={{
+            minHeight: '100vh',
+            background: 'var(--bg-darker, #020404)',
+            color: 'var(--text-primary, #d8fff1)',
+            paddingBottom: '80px'
+        }}>
             {/* Header */}
             <div style={{
                 padding: '1rem 2rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
-                background: 'rgba(20, 20, 20, 0.8)',
+                background: 'rgba(0, 0, 0, 0.95)',
                 backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                borderBottom: '1px solid rgba(110, 255, 216, 0.2)',
                 position: 'sticky',
                 top: 0,
                 zIndex: 100
@@ -207,466 +210,145 @@ const Settings = () => {
                     style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#fff',
+                        color: 'var(--accent, #6effd8)',
                         cursor: 'pointer',
                         fontSize: '1.2rem',
                         display: 'flex',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        padding: 0
                     }}
                 >
                     <FaArrowLeft />
                 </button>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: '500', margin: 0 }}>Settings</h1>
+                <h1 style={{
+                    fontSize: '1.2rem',
+                    fontWeight: '700',
+                    color: 'var(--accent, #6effd8)',
+                    fontFamily: 'var(--font-family-heading)',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    margin: 0
+                }}>Settings</h1>
             </div>
 
             <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
 
                 {/* Account Section */}
-                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>ACCOUNT</h3>
-                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
-                    <button
-                        onClick={() => navigate('/edit-profile')}
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid #222',
-                            color: '#fff',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <FaUserEdit color="#aaa" />
-                            <span>Edit Profile</span>
-                        </div>
-                        <FaChevronRight color="#444" size={12} />
-                    </button>
-                    <button
-                        onClick={() => navigate('/legal')}
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#fff',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <FaShieldAlt color="#aaa" />
-                            <span>Privacy & Legal</span>
-                        </div>
-                        <FaChevronRight color="#444" size={12} />
-                    </button>
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>Account</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <SettingsRow icon={FaUserEdit} label="Edit Profile" onClick={() => navigate('/edit-profile')} />
+                    <SettingsRow icon={FaEnvelope} label="Change Email" onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaLock} label="Change Password" onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaTrash} label="Delete Account" onClick={() => setShowDeleteConfirm(true)} isDestructive={true} />
                 </div>
 
-                {/* Account Type Section */}
-                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>ACCOUNT MODE</h3>
-                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', padding: '0.5rem' }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.8rem'
-                    }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                                <span style={{ fontSize: '1.1rem' }}>
-                                    {accountType === 'art' ? '🎨' : '👥'}
-                                </span>
-                                <span style={{ fontWeight: '600' }}>
-                                    {accountType === 'art' ? 'Art Account' : 'Social Account'}
-                                </span>
-                            </div>
-                            <span style={{ fontSize: '0.8rem', color: '#666', lineHeight: '1.4' }}>
-                                {accountType === 'art'
-                                    ? 'Your posts appear in the Art Feed (photography & creative work)'
-                                    : 'Your posts appear in the Social Feed (casual sharing & updates)'}
-                            </span>
-                        </div>
-                        <div
-                            onClick={toggleAccountType}
-                            style={{
-                                width: '50px',
-                                height: '26px',
-                                background: accountType === 'art' ? '#7FFFD4' : '#FF6B9D',
-                                borderRadius: '13px',
-                                position: 'relative',
-                                cursor: loadingAccountType ? 'not-allowed' : 'pointer',
-                                transition: 'background 0.3s',
-                                opacity: loadingAccountType ? 0.5 : 1,
-                                flexShrink: 0,
-                                marginLeft: '1rem'
-                            }}
-                        >
-                            <div style={{
-                                width: '22px',
-                                height: '22px',
-                                background: '#fff',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                top: '2px',
-                                left: accountType === 'art' ? '2px' : '26px',
-                                transition: 'left 0.3s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.7rem'
-                            }}>
-                                {accountType === 'art' ? '🎨' : '👥'}
-                            </div>
-                        </div>
-                    </div>
-                    <div style={{
-                        padding: '0.8rem',
-                        paddingTop: '0',
-                        fontSize: '0.75rem',
-                        color: '#7FFFD4',
-                        lineHeight: '1.5'
-                    }}>
-                        💡 Tip: Tap the planet logo on the home screen to switch between feeds
-                    </div>
+                {/* App Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>App</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    {isFeatureEnabled('NOTIFICATIONS') && (
+                        <SettingsRow icon={FaBell} label="Notifications" onClick={() => alert('Coming soon')} />
+                    )}
+                    <SettingsRow icon={FaShieldAlt} label="Privacy & Safety" onClick={() => navigate('/legal')} />
+                    <SettingsRow icon={FaGlobe} label="Language" onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaPalette} label="Theme" onClick={() => alert('Coming soon')} />
                 </div>
 
-                {/* Post Settings Section (Only visible when activePost exists) */}
-                {activePost && (
-                    <>
-                        <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>POST SETTINGS</h3>
-                        <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
-                            {/* Copy Link */}
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(`${window.location.origin}/post/${activePost.id}`);
-                                    alert('Link copied!');
-                                }}
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    padding: '1rem',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    borderBottom: '1px solid #222',
-                                    color: '#fff',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <FaLink color="#aaa" />
-                                <span>Copy Post Link</span>
-                            </button>
-
-                            {/* Owner-only actions */}
-                            {currentUser && currentUser.uid === activePost.authorId ? (
-                                <>
-                                    <button
-                                        onClick={() => navigate(`/edit-post/${activePost.id}`)}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '1rem',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            borderBottom: '1px solid #222',
-                                            color: '#fff',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <FaCamera color="#aaa" />
-                                        <span>Edit Post</span>
-                                    </button>
-                                    {/* Convert to Smiley (only for star-rated posts) */}
-                                    {activePost.enableRatings && (
-                                        <button
-                                            onClick={() => setShowConversionConfirm(true)}
-                                            style={{
-                                                width: '100%',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '1rem',
-                                                padding: '1rem',
-                                                background: 'transparent',
-                                                border: 'none',
-                                                borderBottom: '1px solid #222',
-                                                color: '#fff',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <FaSmile color="#7FFFD4" />
-                                            <span>Convert to Smiley Likes</span>
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={async () => {
-                                            if (window.confirm("Delete this post?")) {
-                                                try {
-                                                    await deleteDoc(doc(db, 'posts', activePost.id));
-                                                    navigate('/');
-                                                } catch (e) {
-                                                    console.error(e);
-                                                    alert('Failed to delete');
-                                                }
-                                            }
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '1rem',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: '#ff4444',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <FaTrash />
-                                        <span>Delete Post</span>
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    <button
-                                        onClick={() => setShowReportModal(true)}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '1rem',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            borderBottom: '1px solid #222',
-                                            color: '#fff',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <FaFlag color="#aaa" />
-                                        <span>Report Post</span>
-                                    </button>
-                                    <button
-                                        onClick={async () => {
-                                            if (window.confirm(`Block ${activePost.username || 'this user'}? You won't see their posts or comments.`)) {
-                                                try {
-                                                    await blockUser(activePost.authorId, activePost.username);
-                                                    alert('User blocked successfully');
-                                                    navigate('/');
-                                                } catch (error) {
-                                                    console.error('Error blocking user:', error);
-                                                    alert('Failed to block user');
-                                                }
-                                            }
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '1rem',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            color: '#ff4444',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <FaBan />
-                                        <span>Block User</span>
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {/* Notifications Section */}
-                {isFeatureEnabled('NOTIFICATIONS') && (
-                    <>
-                        <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>NOTIFICATIONS</h3>
-                        <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', padding: '0.5rem' }}>
-                            {Object.entries(notifications).map(([key, value]) => (
-                                <div key={key} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '0.8rem',
-                                    borderBottom: '1px solid #222'
-                                }}>
-                                    <span style={{ textTransform: 'capitalize' }}>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                                    <div
-                                        onClick={() => toggleNotification(key)}
-                                        style={{
-                                            width: '40px',
-                                            height: '20px',
-                                            background: value ? 'var(--ice-mint)' : '#333',
-                                            borderRadius: '10px',
-                                            position: 'relative',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.2s'
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: '16px',
-                                            height: '16px',
-                                            background: '#fff',
-                                            borderRadius: '50%',
-                                            position: 'absolute',
-                                            top: '2px',
-                                            left: value ? '22px' : '2px',
-                                            transition: 'left 0.2s'
-                                        }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </>
-                )}
-
-                {/* Content Preferences Section */}
-                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>CONTENT PREFERENCES</h3>
-                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', padding: '0.5rem' }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.8rem'
-                    }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span>Show Sensitive Content</span>
-                            <span style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>
-                                Automatically reveal NSFW posts
-                            </span>
-                        </div>
-                        <div
-                            onClick={toggleNSFW}
-                            style={{
-                                width: '40px',
-                                height: '20px',
-                                background: showNSFW ? 'var(--ice-mint)' : '#333',
-                                borderRadius: '10px',
-                                position: 'relative',
-                                cursor: 'pointer',
-                                transition: 'background 0.2s'
-                            }}
-                        >
-                            <div style={{
-                                width: '16px',
-                                height: '16px',
-                                background: '#fff',
-                                borderRadius: '50%',
-                                position: 'absolute',
-                                top: '2px',
-                                left: showNSFW ? '22px' : '2px',
-                                transition: 'left 0.2s'
-                            }} />
-                        </div>
-                    </div>
+                {/* Billing Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>Billing</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <SettingsRow icon={FaCreditCard} label="Manage Subscription" onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaCreditCard} label="Payment Methods" onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaHistory} label="Purchase History" onClick={() => alert('Coming soon')} />
                 </div>
 
-                {/* Support Section */}
-                <h3 style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>SUPPORT</h3>
-                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
-                    <a
-                        href="mailto:support@panospace.com"
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid #222',
-                            color: '#fff',
-                            textDecoration: 'none'
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <FaEnvelope color="#aaa" />
-                            <span>Contact Support</span>
-                        </div>
-                        <FaChevronRight color="#444" size={12} />
-                    </a>
-                    <a
-                        href="https://panospace.com/help"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#fff',
-                            textDecoration: 'none'
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <FaLifeRing color="#aaa" />
-                            <span>Help Center</span>
-                        </div>
-                        <FaChevronRight color="#444" size={12} />
-                    </a>
+                {/* About Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>About</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <SettingsRow icon={FaFileContract} label="Terms of Service" onClick={() => navigate('/legal')} />
+                    <SettingsRow icon={FaShieldAlt} label="Privacy Policy" onClick={() => navigate('/legal')} />
+                    <SettingsRow icon={FaLifeRing} label="Contact Support" onClick={() => window.location.href = 'mailto:support@panospace.com'} />
+                    <SettingsRow icon={FaAward} label="Credits" onClick={() => navigate('/credits')} />
                 </div>
 
-                {/* Danger Zone */}
-                <h3 style={{ color: '#ff4444', fontSize: '0.9rem', marginBottom: '0.5rem', marginLeft: '0.5rem' }}>DANGER ZONE</h3>
-                <div style={{ background: '#111', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem' }}>
-                    <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            padding: '1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#ff4444',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <FaTrash />
-                        <span>Delete Account</span>
-                    </button>
+                {/* Sign Out */}
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <SettingsRow icon={FaSignOutAlt} label="Sign Out" onClick={handleLogout} isDestructive={true} showChevron={false} />
                 </div>
 
-                <div style={{ textAlign: 'center', color: '#444', fontSize: '0.8rem', marginBottom: '1rem' }}>
-                    <p>Panospace v1.0.0</p>
-                    <p>Built for Artists</p>
+                {/* Version Info */}
+                <div style={{
+                    textAlign: 'center',
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginTop: '2rem',
+                    opacity: 0.6
+                }}>
+                    <p style={{ margin: '0 0 0.25rem 0' }}>Panospace v1.0.0</p>
+                    <p style={{ margin: 0 }}>Built for Artists</p>
                 </div>
 
-                {/* Logout Button - Bottom of Page */}
-                <button
-                    onClick={handleLogout}
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        padding: '1rem',
-                        background: '#111',
-                        border: '1px solid #333',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '1rem'
-                    }}
-                >
-                    <FaSignOutAlt />
-                    <span>Sign Out</span>
-                </button>
             </div>
 
             {/* Delete Account Modal */}
@@ -674,8 +356,8 @@ const Settings = () => {
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.8)',
-                    backdropFilter: 'blur(5px)',
+                    background: 'rgba(0,0,0,0.9)',
+                    backdropFilter: 'blur(10px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -683,17 +365,18 @@ const Settings = () => {
                     padding: '2rem'
                 }}>
                     <div style={{
-                        background: '#1a1a1a',
-                        border: '1px solid #333',
+                        background: 'var(--bg-card, #050808)',
+                        border: '1px solid rgba(110, 255, 216, 0.2)',
                         borderRadius: '16px',
                         padding: '2rem',
                         maxWidth: '400px',
-                        width: '100%'
+                        width: '100%',
+                        boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
                     }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
                             <FaExclamationTriangle size={40} color="#ff4444" />
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Delete Account?</h2>
-                            <p style={{ color: '#ccc' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary, #d8fff1)' }}>Delete Account?</h2>
+                            <p style={{ color: 'var(--text-secondary, #6b7f78)' }}>
                                 This action is <strong>irreversible</strong>. All your photos, profile data, and settings will be permanently deleted.
                             </p>
 
@@ -705,7 +388,7 @@ const Settings = () => {
 
                             <form onSubmit={handleDeleteAccount} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
                                 <div style={{ textAlign: 'left' }}>
-                                    <label style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '0.5rem', display: 'block' }}>
+                                    <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #6b7f78)', marginBottom: '0.5rem', display: 'block' }}>
                                         Confirm Password to Delete
                                     </label>
                                     <input
@@ -717,10 +400,11 @@ const Settings = () => {
                                         style={{
                                             width: '100%',
                                             padding: '0.8rem',
-                                            background: '#000',
-                                            border: '1px solid #333',
+                                            background: 'var(--bg-darker, #020404)',
+                                            border: '1px solid rgba(110, 255, 216, 0.2)',
                                             borderRadius: '8px',
-                                            color: '#fff'
+                                            color: 'var(--text-primary, #d8fff1)',
+                                            fontSize: '1rem'
                                         }}
                                     />
                                 </div>
@@ -736,7 +420,8 @@ const Settings = () => {
                                         borderRadius: '8px',
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
-                                        opacity: loading || !deletePassword ? 0.5 : 1
+                                        opacity: loading || !deletePassword ? 0.5 : 1,
+                                        fontSize: '1rem'
                                     }}
                                 >
                                     {loading ? 'Deleting...' : 'Permanently Delete Account'}
@@ -752,9 +437,10 @@ const Settings = () => {
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#aaa',
+                                    color: 'var(--text-secondary, #6b7f78)',
                                     cursor: 'pointer',
-                                    textDecoration: 'underline'
+                                    textDecoration: 'underline',
+                                    fontSize: '0.9rem'
                                 }}
                             >
                                 Cancel, keep my account
@@ -769,8 +455,8 @@ const Settings = () => {
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.8)',
-                    backdropFilter: 'blur(5px)',
+                    background: 'rgba(0,0,0,0.9)',
+                    backdropFilter: 'blur(10px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -778,17 +464,18 @@ const Settings = () => {
                     padding: '2rem'
                 }}>
                     <div style={{
-                        background: '#1a1a1a',
-                        border: '1px solid #333',
+                        background: 'var(--bg-card, #050808)',
+                        border: '1px solid rgba(110, 255, 216, 0.2)',
                         borderRadius: '16px',
                         padding: '2rem',
                         maxWidth: '400px',
-                        width: '100%'
+                        width: '100%',
+                        boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
                     }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
-                            <FaSmile size={40} color="#7FFFD4" />
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Convert to Smiley Likes?</h2>
-                            <p style={{ color: '#ccc' }}>
+                            <FaSmile size={40} color="var(--accent, #6effd8)" />
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary, #d8fff1)' }}>Convert to Smiley Likes?</h2>
+                            <p style={{ color: 'var(--text-secondary, #6b7f78)' }}>
                                 This will convert your star rating system to simple smiley likes. Each user who rated will count as 1 like.
                             </p>
                             <p style={{ color: '#ff4444', fontSize: '0.9rem', background: 'rgba(255,68,68,0.1)', padding: '0.75rem', borderRadius: '8px', width: '100%' }}>
@@ -807,14 +494,15 @@ const Settings = () => {
                                 style={{
                                     width: '100%',
                                     padding: '1rem',
-                                    background: '#7FFFD4',
+                                    background: 'var(--accent, #6effd8)',
                                     color: '#000',
                                     border: 'none',
                                     borderRadius: '8px',
                                     fontWeight: 'bold',
                                     cursor: 'pointer',
                                     opacity: converting ? 0.5 : 1,
-                                    marginTop: '0.5rem'
+                                    marginTop: '0.5rem',
+                                    fontSize: '1rem'
                                 }}
                             >
                                 {converting ? 'Converting...' : 'Convert to Smiley Likes'}
@@ -828,9 +516,10 @@ const Settings = () => {
                                 style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#aaa',
+                                    color: 'var(--text-secondary, #6b7f78)',
                                     cursor: 'pointer',
-                                    textDecoration: 'underline'
+                                    textDecoration: 'underline',
+                                    fontSize: '0.9rem'
                                 }}
                             >
                                 Cancel
