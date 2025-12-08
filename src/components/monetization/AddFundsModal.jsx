@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaTimes, FaWallet, FaCreditCard, FaLock, FaGem, FaRocket } from 'react-icons/fa';
-import { WalletService } from '../../services/WalletService';
-import { subscribeToUltra, getUserTier, USER_TIERS } from '../../services/monetizationService';
-import { useAuth } from '../../context/AuthContext';
+import { WalletService } from '@/services/WalletService';
+import { subscribeToUltra, getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import { useAuth } from '@/context/AuthContext';
 
 const PRESET_AMOUNTS = [10, 25, 50, 100];
 

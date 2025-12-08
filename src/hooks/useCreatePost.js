@@ -1,18 +1,18 @@
 // src/hooks/useCreatePost.js
 import { useState, useRef } from 'react';
-import { db, storage } from '../firebase';
+import { db, storage } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '../utils/printifyPricing';
-import { extractExifData } from '../utils/exifUtils';
-import { formatPrice } from '../utils/helpers';
-import { AccountTypeService } from '../services/AccountTypeService';
-import { generateSearchKeywords } from '../utils/searchKeywords';
-import { extractDominantColor } from '../utils/colorExtraction';
-import { generateAllThumbnails } from '../utils/thumbnailGenerator';
-import { sanitizeTitle, sanitizeDescription, sanitizeTag } from '../utils/sanitize';
+import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '@/core/utils/pricing';
+import { extractExifData } from '@/core/utils/exif';
+import { formatPrice } from '@/core/utils/helpers';
+import { AccountTypeService } from '@/core/services/firestore/users.service';
+import { generateSearchKeywords } from '@/core/utils/searchKeywords';
+import { extractDominantColor } from '@/core/utils/colors';
+import { generateAllThumbnails } from '@/core/utils/thumbnailGenerator';
+import { sanitizeTitle, sanitizeDescription, sanitizeTag } from '@/core/utils/sanitize';
 
 // ---------------------------------------------------------------------------
 // Hook: useCreatePost

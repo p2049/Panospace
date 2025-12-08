@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getFeedLabel } from '../config/feedConfig';
+import { getFeedLabel } from '@/config/feedConfig';
 
 /**
  * FeedTypeIndicator - Shows which feed is active when switching

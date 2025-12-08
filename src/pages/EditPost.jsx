@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { FaArrowLeft, FaTags, FaMapMarkerAlt, FaSave } from 'react-icons/fa';
-import Toast from '../components/Toast';
-import { generateSearchKeywords } from '../utils/searchKeywords';
+import Toast from '@/components/Toast';
+import { generateSearchKeywords } from '@/core/utils/searchKeywords';
 
 const EditPost = () => {
     const { id } = useParams();

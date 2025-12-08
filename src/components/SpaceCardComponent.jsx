@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaStar, FaShoppingCart, FaUser } from 'react-icons/fa';
-import { RARITY_TIERS } from '../services/SpaceCardService';
+import { RARITY_TIERS } from '@/services/SpaceCardService';
 
 // Add keyframes for iridescent border animation
 const styleSheet = document.styleSheets[0];

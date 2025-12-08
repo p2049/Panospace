@@ -10,7 +10,7 @@ import {
     calculatePrintifyEarnings,
     getAspectRatioCategory as sourceGetRatio,
     getValidSizesForImage as sourceGetValidSizes
-} from '../utils/printifyPricing';
+} from '@/core/utils/pricing';
 
 const SOURCE_SIZES = getPrintifyProducts();
 const sourceCalc = (retailPrice, sizeId, isUltra) => {
@@ -42,7 +42,7 @@ export function formatCents(cents) {
     return `$${((cents || 0) / 100).toFixed(2)}`;
 }
 
-import { printifyApi } from '../services/printifyApi';
+import { printifyApi } from '@/services/printifyApi';
 
 export const mockPrintfulAPI = {
     async createProduct(imageUrl, title, sizes) {

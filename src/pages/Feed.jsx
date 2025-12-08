@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { usePersonalizedFeed } from '../hooks/usePersonalizedFeed';
+import { usePersonalizedFeed } from '@/hooks/usePersonalizedFeed';
 import { FaRedo, FaCalendarAlt, FaRocket } from 'react-icons/fa';
-import Post from '../components/Post';
-import { getCurrentTheme } from '../constants/monthlyThemes';
-import { useBlock } from '../hooks/useBlock';
+import Post from '@/components/Post';
+import { getCurrentTheme } from '@/core/constants/monthlyThemes';
+import { useBlock } from '@/hooks/useBlock';
 import { useNavigate, useLocation } from 'react-router-dom';
-import SEO from '../components/SEO';
-import StarBackground from '../components/StarBackground';
-import { useThemeColors } from '../store/useThemeStore';
-import { filterVisiblePosts } from '../utils/filterHelpers';
-import { useToast } from '../context/ToastContext';
-import { useFeedStore } from '../store/useFeedStore';
+import SEO from '@/components/SEO';
+import StarBackground from '@/components/StarBackground';
+import { useThemeColors } from '@/core/store/useThemeStore';
+import { filterVisiblePosts } from '@/core/utils/filterHelpers';
+import { useToast } from '@/context/ToastContext';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
 // Feed component - Main home feed view
 const Feed = () => {
@@ -49,7 +49,7 @@ const Feed = () => {
 
     // Actually, I can use `useFeedStore` directly if imported.
     // Let's modify the usage of `usePersonalizedFeed` to use `useFeedStore`.
-    // I will simply assume I will add `import { useFeedStore } from '../store/useFeedStore';` at the top.
+    // I will simply assume I will add `import { useFeedStore } from '@/core/store/useFeedStore';` at the top.
 
     // BUT, I'll update the replacement content to just use a property specific to this block.
     // I'll pause and add the import first in a separate 'replace' check.

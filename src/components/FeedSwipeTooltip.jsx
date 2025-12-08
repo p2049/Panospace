@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useFeedStore } from '../store/useFeedStore';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
 const FeedSwipeTooltip = () => {
     const { hasSeenSwipeTooltip, markTooltipSeen } = useFeedStore();

@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useCallback, useReducer, useRef } from 'react';
 import { FaTimes, FaUniversity } from 'react-icons/fa';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useSearch } from '../hooks/useSearch';
-import { useFollowing } from '../hooks/useFollowing';
-import { useBlock } from '../hooks/useBlock';
-import { parseDateFromURL } from '../utils/dateHelpers';
-import { getRecommendations } from '../utils/recommendations';
-import SearchLayoutWrapper from '../components/search/SearchLayoutWrapper';
-import SearchHeader from '../components/search/SearchHeader';
-import SearchModeTabs from '../components/search/SearchModeTabs';
-import SearchFilters from '../components/search/SearchFilters';
-import SearchResults from '../components/search/SearchResults';
-import { filterVisiblePosts, filterVisibleItems, filterVisibleUsers } from '../utils/filterHelpers';
+import { useAuth } from '@/context/AuthContext';
+import { useSearch } from '@/hooks/useSearch';
+import { useFollowing } from '@/hooks/useFollowing';
+import { useBlock } from '@/hooks/useBlock';
+import { parseDateFromURL } from '@/core/utils/dates';
+import { getRecommendations } from '@/core/utils/recommendations';
+import SearchLayoutWrapper from '@/components/search/SearchLayoutWrapper';
+import SearchHeader from '@/components/search/SearchHeader';
+import SearchModeTabs from '@/components/search/SearchModeTabs';
+import SearchFilters from '@/components/search/SearchFilters';
+import SearchResults from '@/components/search/SearchResults';
+import { filterVisiblePosts, filterVisibleItems, filterVisibleUsers } from '@/core/utils/filterHelpers';
 
 
 

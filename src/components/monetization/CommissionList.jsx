@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheck, FaTimes, FaDownload } from 'react-icons/fa';
-import { getCommissions } from '../../services/monetizationService';
+import { getCommissions } from '@/core/services/firestore/monetization.service';
 
 const CommissionList = ({ userId, role = 'editor' }) => {
     const [commissions, setCommissions] = useState([]);

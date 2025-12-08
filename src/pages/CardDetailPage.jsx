@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaStar, FaShoppingCart, FaUser, FaClock, FaChartLine } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { useSpaceCard } from '../hooks/useSpaceCard';
-import { SpaceCardService, RARITY_TIERS } from '../services/SpaceCardService';
-import SpaceCardComponent from '../components/SpaceCardComponent';
-import { PageSkeleton } from '../components/ui/Skeleton';
-import { isFeatureEnabled } from '../config/featureFlags';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { useSpaceCard } from '@/hooks/useSpaceCard';
+import { SpaceCardService, RARITY_TIERS } from '@/services/SpaceCardService';
+import SpaceCardComponent from '@/components/SpaceCardComponent';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { isFeatureEnabled } from '@/config/featureFlags';
 
 const CardDetailPage = () => {
     const { cardId } = useParams();

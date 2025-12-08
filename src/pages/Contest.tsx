@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCountdown } from '../hooks/useCountdown';
-import { getContestStats, getAllWinners } from '../services/contestService';
-import type { ContestStats, MonthlyWinner } from '../types/contest';
+import { useCountdown } from '@/hooks/useCountdown';
+import { getContestStats, getAllWinners } from '@/services/contestService';
+import type { ContestStats, MonthlyWinner } from '@/core/types/contest';
 import { FaTrophy, FaCrown, FaFire, FaInfoCircle, FaPlus } from 'react-icons/fa';
-import SmartImage from '../components/SmartImage';
-import { useAuth } from '../context/AuthContext';
-import { getUserTier, USER_TIERS } from '../services/monetizationService';
-import PaywallModal from '../components/monetization/PaywallModal';
+import SmartImage from '@/components/SmartImage';
+import { useAuth } from '@/context/AuthContext';
+import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import PaywallModal from '@/components/monetization/PaywallModal';
 
 const Contest = () => {
     const navigate = useNavigate();

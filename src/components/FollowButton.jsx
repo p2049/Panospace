@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { FaUserPlus, FaUserCheck } from 'react-icons/fa';
 
 const FollowButton = ({ targetUserId, targetUserName }) => {

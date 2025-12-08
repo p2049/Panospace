@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/DateStampOverlay.css';
+import '@/styles/DateStampOverlay.css';
 
 const DateStampOverlay = ({ date, styleName = 'panospace', quartzDate = null }) => {
     // If quartzDate is provided (from post.uiOverlays.quartzDate), use that instead

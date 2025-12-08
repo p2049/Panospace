@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaFileUpload, FaWallet } from 'react-icons/fa';
-import { createCommission } from '../../services/monetizationService';
-import { useAuth } from '../../context/AuthContext';
-import { WalletService } from '../../services/WalletService';
+import { createCommission } from '@/core/services/firestore/monetization.service';
+import { useAuth } from '@/context/AuthContext';
+import { WalletService } from '@/services/WalletService';
 
 const CommissionModal = ({ editorId, editorName, onClose, onSuccess }) => {
     const { currentUser } = useAuth();

@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/film-strip-35mm.css';
+import '@/styles/film-strip-35mm.css';
 
 /**
  * FilmStrip35mm - Photorealistic 35mm Film Strip Simulation

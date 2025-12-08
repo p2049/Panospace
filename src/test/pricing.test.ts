@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { calculateEarnings, formatPrice, isValidPrice } from '../domain/shop/pricing';
+import { calculateEarnings, formatPrice, isValidPrice } from '@/domain/shop/pricing';
 
 describe('calculateEarnings', () => {
     it('should calculate 60/40 split correctly', () => {

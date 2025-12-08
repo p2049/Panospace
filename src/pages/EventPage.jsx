@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useEvent, useEventSubmissions } from '../hooks/useEventSystem';
-import EventSubmissionModal from '../components/EventSubmissionModal';
-import { useCountdown } from '../hooks/useCountdown';
+import { useAuth } from '@/context/AuthContext';
+import { useEvent, useEventSubmissions } from '@/hooks/useEventSystem';
+import EventSubmissionModal from '@/components/EventSubmissionModal';
+import { useCountdown } from '@/hooks/useCountdown';
 import { FaClock, FaTag, FaUser, FaCamera, FaLock } from 'react-icons/fa';
-import SmartImage from '../components/SmartImage';
+import SmartImage from '@/components/SmartImage';
 
 const EventPage = () => {
     const { eventId } = useParams();

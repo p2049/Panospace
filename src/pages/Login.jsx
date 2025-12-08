@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import SEO from '../components/SEO';
-import StarBackground from '../components/StarBackground';
+import { useAuth } from '@/context/AuthContext';
+import SEO from '@/components/SEO';
+import StarBackground from '@/components/StarBackground';
 
 const Login = () => {
     const emailRef = useRef();

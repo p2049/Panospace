@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { FaArrowLeft } from 'react-icons/fa';
-import InfiniteGrid from '../components/InfiniteGrid';
+import InfiniteGrid from '@/components/InfiniteGrid';
 
 const AestheticStudio = () => {
     const { type, tag } = useParams();

@@ -1,11 +1,11 @@
 /**
- * PANOSPACE SEARCH SERVICE
+ * SEARCH SERVICE
  * 
  * Unified search interface with automatic provider selection
  * Supports: Algolia (primary), Firestore (fallback), Cache (performance)
  */
 
-import { SEARCH_STRATEGY, CACHE_CONFIG } from './architecture';
+import { SEARCH_STRATEGY, CACHE_CONFIG } from './searchConfig';
 import { AlgoliaProvider } from './providers/AlgoliaProvider';
 import { FirestoreProvider } from './providers/FirestoreProvider';
 import { CacheProvider } from './providers/CacheProvider';
@@ -33,9 +33,6 @@ class SearchService {
 
     /**
      * Universal search method
-     * @param {string} query - Search query
-     * @param {Object} options - Search options
-     * @returns {Promise<Object>} Search results
      */
     async search(query, options = {}) {
         const startTime = Date.now();
@@ -190,10 +187,7 @@ class SearchService {
             return cached;
         }
 
-        // Calculate from search history
-        // This would typically be done server-side
         const trending = await this._calculateTrendingSearches(limit);
-
         await this.cache.set(cacheKey, trending, CACHE_CONFIG.TRENDING_SEARCHES.ttl);
 
         return trending;
@@ -273,15 +267,11 @@ class SearchService {
             timestamp: Date.now()
         });
 
-        // Keep only last N searches
         const trimmed = history.slice(0, CACHE_CONFIG.USER_HISTORY.maxSize);
-
         await this.cache.set(cacheKey, trimmed, CACHE_CONFIG.USER_HISTORY.ttl);
     }
 
     async _calculateTrendingSearches(limit) {
-        // This would typically aggregate from analytics
-        // For now, return placeholder
         return [];
     }
 }

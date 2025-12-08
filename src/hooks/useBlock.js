@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, setDoc, deleteDoc, getDoc, serverTimestamp, collection, onSnapshot, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
+import { db } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
 
 export const useBlock = () => {
     const { currentUser } = useAuth();

@@ -5,7 +5,7 @@
  */
 
 import algoliasearch from 'algoliasearch/lite';
-import { SEARCH_INDICES } from '../architecture';
+import { SEARCH_INDICES } from '@/core/services/firestore/architecture';
 
 export class AlgoliaProvider {
     constructor() {

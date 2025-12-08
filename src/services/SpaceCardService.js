@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { doc, getDoc, getDocs, addDoc, updateDoc, runTransaction, collection, query, where, orderBy, limit, serverTimestamp, increment } from 'firebase/firestore';
 import { WalletService } from './WalletService';
 

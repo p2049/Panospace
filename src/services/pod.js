@@ -1,4 +1,4 @@
-import { getPrintifyProducts, calculatePrintifyEarnings } from '../utils/printifyPricing';
+import { getPrintifyProducts, calculatePrintifyEarnings } from '@/core/utils/pricing';
 
 // Re-export from single source of truth
 export const PRINT_SIZES = getPrintifyProducts();

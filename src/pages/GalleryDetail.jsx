@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useGallery } from '../hooks/useGallery';
+import { useAuth } from '@/context/AuthContext';
+import { useGallery } from '@/hooks/useGallery';
 import {
     getGalleryPosts,
     getGalleryCollections
-} from '../services/galleryService';
-import { db } from '../firebase';
-import { PageSkeleton, SkeletonGrid } from '../components/ui/Skeleton';
+} from '@/core/services/firestore/studios.service';
+import { db } from '@/firebase';
+import { PageSkeleton, SkeletonGrid } from '@/components/ui/Skeleton';
 import {
     FaArrowLeft,
     FaLock,
@@ -17,15 +17,15 @@ import {
     FaFolderOpen,
     FaUsers
 } from 'react-icons/fa';
-import Post from '../components/Post';
-import InviteMembersModal from '../components/galleries/InviteMembersModal';
-import MagazineSubmissionBox from '../components/MagazineSubmissionBox';
-import { getMagazinesByGallery, getMagazineIssues } from '../services/magazineService';
-import { useStudioProjects } from '../hooks/useProjects';
-import CreateProjectModal from '../components/CreateProjectModal';
-import ProjectCard from '../components/ProjectCard';
+import Post from '@/components/Post';
+import InviteMembersModal from '@/components/galleries/InviteMembersModal';
+import MagazineSubmissionBox from '@/components/MagazineSubmissionBox';
+import { getMagazinesByGallery, getMagazineIssues } from '@/services/magazineService';
+import { useStudioProjects } from '@/hooks/useProjects';
+import CreateProjectModal from '@/components/CreateProjectModal';
+import ProjectCard from '@/components/ProjectCard';
 import { FaBriefcase } from 'react-icons/fa';
-import '../styles/gallery-page.css';
+import '@/styles/gallery-page';
 
 const StudioPage = () => {
     const { id } = useParams();

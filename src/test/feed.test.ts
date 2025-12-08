@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { calculatePostScore, rankPostsForUser } from '../domain/feed/score';
-import type { Post, UserProfile } from '../types';
+import { calculatePostScore, rankPostsForUser } from '@/domain/feed/score';
+import type { Post, UserProfile } from '@/types';
 import { Timestamp } from 'firebase/firestore';
 
 const mockUser: UserProfile = {

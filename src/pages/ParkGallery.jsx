@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getParkById } from '../constants/parksData';
-import { useParks } from '../hooks/useParks';
+import { getParkById } from '@/core/constants/parksData';
+import { useParks } from '@/hooks/useParks';
 import { FaArrowLeft, FaMapMarkerAlt, FaMountain, FaTree, FaImage } from 'react-icons/fa';
-import { SkeletonGrid } from '../components/ui/Skeleton';
+import { SkeletonGrid } from '@/components/ui/Skeleton';
 
 const ParkGallery = () => {
     const { parkId } = useParams();

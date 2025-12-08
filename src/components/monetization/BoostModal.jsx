@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaRocket, FaWallet } from 'react-icons/fa';
-import { purchaseBoost, BOOST_LEVELS } from '../../services/monetizationService';
-import { WalletService } from '../../services/WalletService';
-import { useAuth } from '../../context/AuthContext';
+import { purchaseBoost, BOOST_LEVELS } from '@/core/services/firestore/monetization.service';
+import { WalletService } from '@/services/WalletService';
+import { useAuth } from '@/context/AuthContext';
 
 const BoostModal = ({ postId, onClose, onSuccess }) => {
     const { currentUser } = useAuth();

@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaTimes, FaStar, FaTrophy } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { SpaceCardService } from '../services/SpaceCardService';
+import { SpaceCardService } from '@/services/SpaceCardService';
 
 const BadgeUnlockedModal = ({ badges, onClose, userId, userName }) => {
     const navigate = useNavigate();

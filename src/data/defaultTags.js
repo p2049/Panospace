@@ -15,7 +15,7 @@ export {
     filmTags,
     getAllDefaultTags,
     getTagsByCategory
-} from '../constants/tagConfig';
+} from '@/core/constants/tagConfig';
 
 // For backwards compatibility - export with uppercase names as well
 export {
@@ -28,4 +28,4 @@ export {
     GEAR_TAGS,
     EVENT_TAGS,
     FILM_TAGS
-} from '../constants/tagConfig';
+} from '@/core/constants/tagConfig';

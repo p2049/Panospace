@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaCheck, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { ART_DISCIPLINES } from '../constants/artDisciplines';
+import { ART_DISCIPLINES } from '@/core/constants/artDisciplines';
 
 const DisciplineSelector = ({
     selectedMain,

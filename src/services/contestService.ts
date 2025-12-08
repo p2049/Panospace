@@ -1,6 +1,6 @@
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
-import type { MonthlyWinner, ContestStats, ContestEntry, Contest, FullContestEntry } from '../types/contest';
+import type { MonthlyWinner, ContestStats, ContestEntry, Contest, FullContestEntry } from '@/core/types/contest';
 
 /**
  * Get current month's top posts for leaderboard

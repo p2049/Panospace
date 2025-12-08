@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import CommissionList from '../components/monetization/CommissionList';
-import HeaderBar from '../components/HeaderBar';
+import CommissionList from '@/components/monetization/CommissionList';
+import HeaderBar from '@/components/HeaderBar';
 
 const CommissionsPage = () => {
     const navigate = useNavigate();

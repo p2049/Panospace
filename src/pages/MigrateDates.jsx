@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { migrateDateFormats } from '../utils/migrateDateFormat';
-import { useAuth } from '../context/AuthContext';
+import { migrateDateFormats } from '@/core/utils/dates';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * Admin utility page to migrate date formats in existing posts

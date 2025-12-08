@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db, storage } from '../firebase';
+import { db, storage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
-import { ART_DISCIPLINES } from '../constants/artDisciplines';
-import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '../constants/gradients';
-import { ALL_COLORS } from '../constants/colorPacks';
-import DisciplineSelector from '../components/DisciplineSelector';
-import { generateUserSearchKeywords } from '../utils/searchKeywords';
-import { sanitizeDisplayName, sanitizeBio } from '../utils/sanitize';
-import ImageCropper from '../components/ImageCropper';
+import { ART_DISCIPLINES } from '@/core/constants/artDisciplines';
+import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '@/core/constants/gradients';
+import { ALL_COLORS } from '@/core/constants/colorPacks';
+import DisciplineSelector from '@/components/DisciplineSelector';
+import { generateUserSearchKeywords } from '@/core/utils/searchKeywords';
+import { sanitizeDisplayName, sanitizeBio } from '@/core/utils/sanitize';
+import ImageCropper from '@/components/ImageCropper';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -39,6 +39,7 @@ const EditProfile = () => {
     const [usernameColor, setUsernameColor] = useState('#FFFFFF'); // Default white
     const [bannerMode, setBannerMode] = useState('stars'); // 'stars' or 'gradient'
     const [useStarsOverlay, setUseStarsOverlay] = useState(false);
+    const [textGlow, setTextGlow] = useState(false);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -64,6 +65,7 @@ const EditProfile = () => {
                         setUsernameColor(data.profileTheme.usernameColor || '#FFFFFF');
                         setBannerMode(data.profileTheme.bannerMode || 'stars');
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
+                        setTextGlow(data.profileTheme.textGlow || false);
                     }
                 }
             }
@@ -249,7 +251,8 @@ const EditProfile = () => {
                     usernameColor: usernameColor || '#FFFFFF',
                     bioColor: autoBioColor,
                     bannerMode: bannerMode,
-                    useStarsOverlay: useStarsOverlay
+                    useStarsOverlay: useStarsOverlay,
+                    textGlow: textGlow
                 }
             };
 
@@ -466,6 +469,20 @@ const EditProfile = () => {
                         <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
                             Choose a color for your username.
                         </p>
+
+                        {/* Text Glow Toggle */}
+                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input
+                                type="checkbox"
+                                id="textGlow"
+                                checked={textGlow}
+                                onChange={(e) => setTextGlow(e.target.checked)}
+                                style={{ width: '16px', height: '16px', accentColor: '#7FFFD4', cursor: 'pointer' }}
+                            />
+                            <label htmlFor="textGlow" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
+                                Enable neon glow effect
+                            </label>
+                        </div>
 
                         <div style={{
                             display: 'flex',

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { inviteMembers } from '../../services/galleryService';
+import { useAuth } from '@/context/AuthContext';
+import { inviteMembers } from '@/core/services/firestore/studios.service';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { db } from '@/firebase';
 import { FaTimes, FaSearch, FaUserPlus } from 'react-icons/fa';
 import './InviteMembersModal.css';
 

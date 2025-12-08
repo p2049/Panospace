@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useEvents, useFollowingEvents } from '../hooks/useEvents';
+import { useAuth } from '@/context/AuthContext';
+import { useEvents, useFollowingEvents } from '@/hooks/useEvents';
 
 import { FaPlus, FaChevronLeft, FaChevronRight, FaCalendar, FaUsers, FaSearch } from 'react-icons/fa';
-import { formatDateForInput } from '../utils/dateHelpers';
-import { generateCalendarDays } from '../utils/calendarHelpers';
+import { formatDateForInput } from '@/core/utils/dates';
+import { generateCalendarDays } from '@/core/utils/dates';
 
 const Calendar = () => {
     const { currentUser } = useAuth();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import { getMemberGalleries, addPostToGallery, addCollectionToGallery, validateContentForGallery } from '../../services/galleryService';
+import { useAuth } from '@/context/AuthContext';
+import { getMemberGalleries, addPostToGallery, addCollectionToGallery, validateContentForGallery } from '@/core/services/firestore/studios.service';
 import { FaTimes, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
 import './AddToGalleryModal.css';
 

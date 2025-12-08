@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { FaArrowLeft, FaTag, FaInfoCircle, FaEdit, FaSave, FaCheck, FaTimes } from 'react-icons/fa';
-import CheckoutButton from '../components/CheckoutButton';
+import CheckoutButton from '@/components/CheckoutButton';
 import {
     getPrintifyProducts,
     PRINT_TIERS,
@@ -13,11 +13,11 @@ import {
     getValidSizesForImage,
     getRetailPrice,
     calculateTieredPricing
-} from '../utils/printifyPricing';
+} from '@/core/utils/pricing';
 
 const PRINT_SIZES = getPrintifyProducts();
-import { formatPrice } from '../utils/helpers';
-import { isFeatureEnabled } from '../config/featureFlags';
+import { formatPrice } from '@/core/utils/helpers';
+import { isFeatureEnabled } from '@/config/featureFlags';
 
 const ShopItemDetail = () => {
     const { id } = useParams();

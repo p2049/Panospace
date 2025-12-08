@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaFilter } from 'react-icons/fa';
 import SearchFilters from './SearchFilters';
 import SearchModeTabs from './SearchModeTabs';
-import { useThemeColors } from '../../store/useThemeStore';
+import { useThemeColors } from '@/core/store/useThemeStore';
 
 const SearchHeader = ({
     isMobile,

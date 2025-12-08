@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaImage } from 'react-icons/fa';
 import SmartImage from './SmartImage';
-import { getDerivedDate } from '../utils/dateHelpers';
+import { getDerivedDate } from '@/core/utils/dates';
 import SpaceCardBadge from './SpaceCardBadge';
 import SoundTagBadge from './SoundTagBadge';
 

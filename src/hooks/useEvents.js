@@ -13,7 +13,7 @@ import {
     orderBy,
     Timestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 
 /**
  * Hook for fetching events within a date range

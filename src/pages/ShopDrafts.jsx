@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ShopService } from '../services/ShopService';
-import PublishShopItemModal from '../components/PublishShopItemModal';
-import SmartImage from '../components/SmartImage';
+import { useAuth } from '@/context/AuthContext';
+import { ShopService } from '@/core/services/firestore/studios.service';
+import PublishShopItemModal from '@/components/PublishShopItemModal';
+import SmartImage from '@/components/SmartImage';
 import { FaStore, FaEye, FaTrash, FaExclamationCircle } from 'react-icons/fa';
 
 const ShopDrafts = () => {

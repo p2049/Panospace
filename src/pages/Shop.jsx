@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { FaShoppingBag, FaTag } from 'react-icons/fa';
-import SmartImage from '../components/SmartImage';
-import ShopItemCard from '../components/ui/cards/ShopItemCard';
-import { PageSkeleton } from '../components/ui/Skeleton';
+import SmartImage from '@/components/SmartImage';
+import ShopItemCard from '@/components/ui/cards/ShopItemCard';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 // Helper to sanitize and validate shop items from Firestore
 const sanitizeShopItem = (raw) => {

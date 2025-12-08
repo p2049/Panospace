@@ -18,7 +18,8 @@ export default defineConfig({
         },
     },
     server: {
-        port: 3000,
+        port: 5173,
+        host: true,
         open: true,
     },
     build: {
@@ -28,7 +29,8 @@ export default defineConfig({
             output: {
                 manualChunks: {
                     'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-                    'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+                    'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/analytics'],
+                    'ui-vendor': ['react-icons'],
                 },
             },
         },

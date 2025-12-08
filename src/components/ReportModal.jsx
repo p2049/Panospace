@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FaTimes, FaFlag, FaExclamationTriangle } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { ModerationService } from '../services/ModerationService';
-import { REPORT_CATEGORIES, REPORT_REASONS } from '../constants/moderationConstants';
+import { useAuth } from '@/context/AuthContext';
+import { ModerationService } from '@/services/ModerationService';
+import { REPORT_CATEGORIES, REPORT_REASONS } from '@/core/constants/moderationConstants';
 
 const ReportModal = ({ isOpen, targetType, targetId, targetTitle, onClose }) => {
     if (!isOpen) return null;

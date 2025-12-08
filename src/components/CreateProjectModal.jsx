@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaUsers } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { useProjectManagement } from '../hooks/useProjects';
+import { useAuth } from '@/context/AuthContext';
+import { useProjectManagement } from '@/hooks/useProjects';
 import PSButton from './PSButton';
 
 const CreateProjectModal = ({ isOpen, onClose, studioId, onSuccess }) => {

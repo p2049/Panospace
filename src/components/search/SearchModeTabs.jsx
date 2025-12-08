@@ -1,9 +1,9 @@
 import React from 'react';
 import { FaCamera, FaImage, FaLayerGroup, FaTrophy, FaCalendar, FaUsers, FaIdCard, FaUniversity } from 'react-icons/fa';
-import ModernIcon from '../ModernIcon';
-import PSButton from '../PSButton';
+import ModernIcon from '@/components/ModernIcon';
+import PSButton from '@/components/PSButton';
 
-import { isFeatureEnabled } from '../../config/featureFlags';
+import { isFeatureEnabled } from '@/config/featureFlags';
 
 const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
     return (

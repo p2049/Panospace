@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SpaceCardService } from '../services/SpaceCardService';
+import { SpaceCardService } from '@/services/SpaceCardService';
 
 /**
  * Hook to fetch a space card and its marketplace listings

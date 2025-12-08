@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useUI } from '../context/UIContext';
-import { useBlock } from '../hooks/useBlock';
+import { useAuth } from '@/context/AuthContext';
+import { useUI } from '@/context/UIContext';
+import { useBlock } from '@/hooks/useBlock';
 import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import ContextOptionsSection from './ContextOptionsSection';
 import ReportModal from './ReportModal';
 
-import { useFeedStore } from '../store/useFeedStore';
-import { useThemeStore } from '../store/useThemeStore';
+import { useFeedStore } from '@/core/store/useFeedStore';
+import { useThemeStore } from '@/core/store/useThemeStore';
 import { useTranslation } from 'react-i18next';
 
 // Mobile Navigation / Hamburger Menu

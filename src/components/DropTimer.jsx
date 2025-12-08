@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useCountdown } from '../hooks/useCountdown';
-import { getEventStatus, shouldShowSubmissions, canSubmitToEvent } from '../utils/eventValidation';
+import { useCountdown } from '@/hooks/useCountdown';
+import { getEventStatus, shouldShowSubmissions, canSubmitToEvent } from '@/core/utils/eventValidation';
 import { FaClock, FaCalendar, FaUsers, FaTrophy } from 'react-icons/fa';
 
 /**

@@ -1,6 +1,6 @@
 import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, limit, startAfter } from 'firebase/firestore';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db, storage } from '@/core/firebase';
 
 /**
  * Cleanup utility to delete posts whose images no longer exist in Storage

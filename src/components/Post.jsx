@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { FaCamera, FaInfoCircle, FaUserCircle, FaMapMarkerAlt, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 import LikeButton from './LikeButton';
@@ -11,11 +11,11 @@ import SmartImage from './SmartImage';
 import DateStampOverlay from './DateStampOverlay';
 import SpaceCardBadge from './SpaceCardBadge';
 import SoundTagBadge from './SoundTagBadge';
-import { useUI } from '../context/UIContext';
-import '../styles/Post.css';
+import { useUI } from '@/context/UIContext';
+import '@/styles/Post.css';
 
-import { formatExifForDisplay } from '../utils/exifUtils';
-import { isNSFW, getUserNSFWPreference } from '../constants/nsfwTags';
+import { formatExifForDisplay } from '@/core/utils/exif';
+import { isNSFW, getUserNSFWPreference } from '@/core/constants/nsfwTags';
 
 const ExifDisplay = React.memo(({ exif }) => {
     const displayData = formatExifForDisplay(exif);

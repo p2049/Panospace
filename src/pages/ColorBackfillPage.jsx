@@ -1,6 +1,6 @@
 // Admin Color Backfill Page
 import React, { useState } from 'react';
-import { colorBackfillTool } from '../utils/colorBackfillTool';
+import { colorBackfillTool } from '@/core/utils/colors';
 
 const ColorBackfillPage = () => {
     const [isRunning, setIsRunning] = useState(false);

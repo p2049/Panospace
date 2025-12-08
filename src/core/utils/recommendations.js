@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/core/firebase';
 
 /**
  * Get personalized search filters for the Explore feed

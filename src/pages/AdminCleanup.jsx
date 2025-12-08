@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { cleanupOrphanedPosts, cleanupOrphanedShopItems, cleanupOrphanedUserImages } from '../utils/cleanupOrphanedPosts';
+import { useAuth } from '@/context/AuthContext';
+import { cleanupOrphanedPosts, cleanupOrphanedShopItems, cleanupOrphanedUserImages } from '@/core/utils/cleanupOrphanedPosts';
 import { FaTrash, FaArrowLeft, FaExclamationTriangle, FaUser, FaBug } from 'react-icons/fa';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
-import AsyncButton from '../components/AsyncButton';
+import { db } from '@/firebase';
+import AsyncButton from '@/components/AsyncButton';
 
 const AdminCleanup = () => {
     const { currentUser } = useAuth();

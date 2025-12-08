@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 
 export const InstitutionService = {

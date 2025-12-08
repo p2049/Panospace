@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { FaSortAmountDown, FaTh, FaList } from 'react-icons/fa';
-import { SORT_OPTIONS } from '../../constants/searchFilters';
-import PSButton from '../PSButton';
+import { SORT_OPTIONS } from '@/core/constants/searchFilters';
+import PSButton from '@/components/PSButton';
 
 const SearchFilters = ({
     sortBy,

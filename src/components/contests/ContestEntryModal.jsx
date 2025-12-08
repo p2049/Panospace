@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaTrophy, FaTimes, FaCheck, FaExclamationTriangle, FaWallet } from 'react-icons/fa';
-import { useAuth } from '../../context/AuthContext';
-import { useContestEntry } from '../../hooks/useContestEntry';
-import { WalletService } from '../../services/WalletService';
+import { useAuth } from '@/context/AuthContext';
+import { useContestEntry } from '@/hooks/useContestEntry';
+import { WalletService } from '@/services/WalletService';
 
 const ContestEntryModal = ({ contest, post, onClose, onSuccess }) => {
     const { currentUser } = useAuth();

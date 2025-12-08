@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions, db } from '../firebase';
+import { functions, db } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, startAfter, doc, getDoc } from 'firebase/firestore';
 
 export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialPosts = false) => {

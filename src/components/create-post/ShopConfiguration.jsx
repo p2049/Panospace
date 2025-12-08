@@ -1,5 +1,5 @@
 import React from 'react';
-import { PRINT_TIERS } from '../../utils/printifyPricing';
+import { PRINT_TIERS } from '@/core/utils/pricing';
 
 /**
  * ShopConfiguration Component

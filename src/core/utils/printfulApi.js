@@ -6,8 +6,8 @@
  * New code should import from '@/core/pricing' instead.
  */
 
-export * from '../constants/printSizes';
-import { createPrintifyProductPayload } from '../core/pricing';
+export * from '@/core/constants/printSizes';
+import { createPrintifyProductPayload } from '@/core/core/pricing';
 
 // Mock POD Integration (kept for compatibility but using canonical pricing)
 export const mockPODIntegration = {

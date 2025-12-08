@@ -6,11 +6,11 @@
  * New code should import from '@/core/pricing' instead.
  */
 
-import type { PrintSize, Earnings } from '../../types';
+import type { PrintSize, Earnings } from '@/types';
 import {
     getPrintifyProducts,
     calculatePrintifyEarnings
-} from '../../core/pricing';
+} from '@/core/pricing';
 
 // Re-export values from the single source of truth
 export const PRINT_SIZES: PrintSize[] = getPrintifyProducts() as any;

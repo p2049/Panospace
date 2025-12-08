@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage, db } from '../firebase';
+import { storage, db } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { FaImage, FaTimes, FaPlus, FaArrowLeft, FaBook, FaCheck, FaGripVertical } from 'react-icons/fa';
-import { MAGAZINE_CONFIG } from '../constants/magazineConfig';
+import { MAGAZINE_CONFIG } from '@/core/constants/magazineConfig';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { sanitizeDescription } from '../utils/sanitize';
+import { sanitizeDescription } from '@/core/utils/sanitize';
 
 const CreateMagazineIssue = () => {
     const { id: magazineId } = useParams();

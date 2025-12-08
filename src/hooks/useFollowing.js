@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, query, getDocs, doc, setDoc, deleteDoc, Timestamp, where } from 'firebase/firestore';
 
 export const useFollowing = (userId) => {

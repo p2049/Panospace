@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaInfoCircle, FaCamera } from 'react-icons/fa';
-import { formatExifForDisplay } from '../utils/exifUtils';
+import { formatExifForDisplay } from '@/core/utils/exif';
 
 const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
     const [currentSlide, setCurrentSlide] = useState(0);

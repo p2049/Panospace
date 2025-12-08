@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getContest, getContestLeaderboard } from '../services/contestService';
+import { getContest, getContestLeaderboard } from '@/services/contestService';
 
 /**
  * Hook to fetch a contest and its leaderboard

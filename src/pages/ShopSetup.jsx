@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ShopService } from '../services/ShopService';
+import { useAuth } from '@/context/AuthContext';
+import { ShopService } from '@/core/services/firestore/studios.service';
 import { FaStore, FaCheck, FaShieldAlt, FaGavel } from 'react-icons/fa';
 
 const ShopSetup = () => {

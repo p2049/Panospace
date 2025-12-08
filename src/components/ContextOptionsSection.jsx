@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronRight, FaPen, FaTrash, FaFlag, FaBan, FaLink, FaShareAlt } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 const ContextOptionsSection = ({
     currentContext,

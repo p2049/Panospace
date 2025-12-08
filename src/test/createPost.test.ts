@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { calculateEarnings } from '../domain/shop/pricing';
-import { formatPrice } from '../domain/shop/pricing';
+import { calculateEarnings } from '@/domain/shop/pricing';
+import { formatPrice } from '@/domain/shop/pricing';
 
 describe('CreatePost Data Flow', () => {
     describe('Price Formatting', () => {

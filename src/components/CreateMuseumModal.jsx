@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaSearch, FaUniversity, FaUser, FaImage, FaPlus, FaTrash } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { useCreateCollection } from '../hooks/useCollections';
-import { useSearch } from '../hooks/useSearch';
-import { getUserTier, USER_TIERS } from '../services/monetizationService';
-import { useToast } from '../context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { useCreateCollection } from '@/hooks/useCollections';
+import { useSearch } from '@/hooks/useSearch';
+import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import { useToast } from '@/context/ToastContext';
 
 const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
     const { currentUser } = useAuth();

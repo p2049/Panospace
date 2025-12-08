@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaTimes, FaCamera } from 'react-icons/fa';
-import { formatAperture, formatExifDate } from '../utils/exifUtils';
+import { formatAperture, formatExifDate } from '@/core/utils/exif';
 
 const ExifModal = ({ exifData, onClose }) => {
     if (!exifData) return null;

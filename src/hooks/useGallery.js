@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { getGallery } from '../services/galleryService';
+import { db } from '@/firebase';
+import { getGallery } from '@/core/services/firestore/studios.service';
 
 /**
  * Hook to fetch a single gallery by ID

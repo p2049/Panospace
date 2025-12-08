@@ -17,9 +17,9 @@ import {
     serverTimestamp,
     Timestamp
 } from 'firebase/firestore';
-import { db } from '../../firebase';
-import type { ShopItem, Post, PostItem, PrintSize, Earnings } from '../../types';
-import { getPrintifyProducts } from '../../utils/printifyPricing';
+import { db } from '@/firebase';
+import type { ShopItem, Post, PostItem, PrintSize, Earnings } from '@/types';
+import { getPrintifyProducts } from '@/core/utils/pricing';
 const PRINT_SIZES = getPrintifyProducts();
 import { calculateEarnings } from './pricing';
 

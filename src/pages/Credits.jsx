@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
-import StarBackground from '../components/StarBackground';
+import StarBackground from '@/components/StarBackground';
 import { useTranslation } from 'react-i18next';
 
 const Credits = () => {

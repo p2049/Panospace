@@ -1,34 +1,35 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { doc, addDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-import { useBlock } from '../hooks/useBlock';
-import { useCollections } from '../hooks/useCollections';
-import { useProfile } from '../hooks/useProfile';
-import SEO from '../components/SEO';
-import StarBackground from '../components/StarBackground';
-import WalletDisplay from '../components/WalletDisplay';
-import InfiniteGrid from '../components/InfiniteGrid';
-import CreateMuseumModal from '../components/CreateMuseumModal';
-import MuseumCard from '../components/MuseumCard';
-import ReportModal from '../components/ReportModal';
-import CreateCardModal from '../components/CreateCardModal';
-import BusinessCardModal from '../components/BusinessCardModal';
-import CommissionModal from '../components/monetization/CommissionModal';
-import WalletModal from '../components/WalletModal';
-import DisciplinesModal from '../components/DisciplinesModal';
-import { getUnreadCount } from '../services/notificationService';
-import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette } from 'react-icons/fa';
-import FollowListModal from '../components/FollowListModal';
+import { doc, addDoc, deleteDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
+import { useBlock } from '@/hooks/useBlock';
+import { useCollections } from '@/hooks/useCollections';
+import { useProfile } from '@/hooks/useProfile';
+import SEO from '@/components/SEO';
+import StarBackground from '@/components/StarBackground';
+import WalletDisplay from '@/components/WalletDisplay';
+import InfiniteGrid from '@/components/InfiniteGrid';
+import CreateMuseumModal from '@/components/CreateMuseumModal';
+import MuseumCard from '@/components/MuseumCard';
+import ReportModal from '@/components/ReportModal';
+import CreateCardModal from '@/components/CreateCardModal';
+import BusinessCardModal from '@/components/BusinessCardModal';
+import CommissionModal from '@/components/monetization/CommissionModal';
+import WalletModal from '@/components/WalletModal';
+import DisciplinesModal from '@/components/DisciplinesModal';
+import { getUnreadCount } from '@/services/notificationService';
+import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette, FaStar } from 'react-icons/fa';
+import FollowListModal from '@/components/FollowListModal';
 import { getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { isFeatureEnabled } from '../config/featureFlags';
-import { RocketIcon, AstronautIcon, PlanetIcon } from '../components/SpaceIcons';
-import { getGradientBackground, getGradient } from '../constants/gradients';
+import { isFeatureEnabled } from '@/config/featureFlags';
+import { RocketIcon, AstronautIcon, PlanetIcon } from '@/components/SpaceIcons';
+import { COLORS, getGradientCss, getThemeGradient } from '@/core/theme/colors';
+import { useThemeStore } from '@/core/store/useThemeStore';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
-import { useThemeStore } from '../store/useThemeStore';
-import { useFeedStore } from '../store/useFeedStore';
+import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 
 
 const Profile = () => {
@@ -39,6 +40,9 @@ const Profile = () => {
     const { t } = useTranslation();
     const { setProfileAccent, resetProfileAccent } = useThemeStore();
     const [showCreateMuseumModal, setShowCreateMuseumModal] = useState(false);
+
+    // Responsive Layout Engine
+    const { layout, isMobile, getSafeSpacing } = useLayoutEngine('profile');
 
     const targetId = (id === 'me' || !id) ? currentUser?.uid : id;
 
@@ -68,7 +72,8 @@ const Profile = () => {
         isFollowing,
         followDocId,
         setIsFollowing,
-        setFollowDocId
+        setFollowDocId,
+        setSpaceCards
     } = useProfile(targetId, currentUser, activeTab, feedType);
 
     // Fetch orders for Gallery tab
@@ -158,18 +163,24 @@ const Profile = () => {
     // Determine Banner Background and Mode - moved up for Hooks
     const bannerMode = user?.profileTheme?.bannerMode || 'stars';
     const bannerGradientId = user?.profileTheme?.gradientId || 'aurora-horizon';
-    const bannerGradient = getGradientBackground(bannerGradientId);
+    const bannerGradient = getGradientCss(bannerGradientId);
 
     // Calculate effective username color
     let effectiveUsernameColor = user?.profileTheme?.usernameColor || '#FFFFFF';
     if (bannerMode === 'gradient') {
-        const currentGradient = getGradient(bannerGradientId);
+        const currentGradient = getThemeGradient(bannerGradientId);
         if (currentGradient?.topColor && currentGradient.topColor === effectiveUsernameColor) {
             effectiveUsernameColor = '#FFFFFF';
         }
     }
 
-    const solidPlanetColor = (effectiveUsernameColor?.match(/#[0-9a-fA-F]{6}/) || ['#7FFFD4'])[0];
+    const solidPlanetColor = (effectiveUsernameColor?.match(/#[0-9a-fA-F]{6}/) || [COLORS.iceMint])[0];
+
+    const isFadingToBlack = bannerMode === 'gradient' &&
+        (bannerGradientId?.endsWith('black') ||
+            ['night-sky'].includes(bannerGradientId));
+
+
 
     // Set Global Profile Accent for MobileNavigation
     React.useEffect(() => {
@@ -204,12 +215,12 @@ const Profile = () => {
             />
             {/* Header with Space Theme */}
             <div style={{
-                background: bannerMode === 'gradient' ? bannerGradient : '#000',
-                paddingTop: '0', // No top padding, content will push down
-                paddingBottom: '0.25rem', // Ultra minimal padding
-                borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
+                background: bannerMode === 'gradient' ? bannerGradient : COLORS.black,
+                paddingTop: '0',
+                paddingBottom: '0', // Removed minimal padding
+                // Hide border if fading to black
+                borderBottom: isFadingToBlack ? '1px solid rgba(127, 255, 212, 0.06)' : '1px solid rgba(127, 255, 212, 0.2)',
                 width: '100%',
-                // height: 'auto', // Let content dictate height
                 boxSizing: 'border-box',
                 position: 'relative'
             }}>
@@ -217,7 +228,7 @@ const Profile = () => {
                 {/* Animated Stars Background - Only if enabled */}
                 {(bannerMode === 'stars' || user.profileTheme?.useStarsOverlay) && (
                     <StarBackground
-                        starColor={user.profileTheme?.starColor || '#7FFFD4'}
+                        starColor={user.profileTheme?.starColor || COLORS.iceMint}
                         transparent={bannerMode === 'gradient'}
                     />
                 )}
@@ -256,7 +267,7 @@ const Profile = () => {
                     // removed maxWidth/margin auto to allow true left alignment relative to screen
                     position: 'relative',
                     zIndex: 1,
-                    padding: window.innerWidth < 768 ? '0 1.5rem' : '0 2rem',
+                    padding: `0.25rem ${layout.paddingX}`,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'stretch'
@@ -269,10 +280,10 @@ const Profile = () => {
                         onClick={() => navigate('/')}
                         style={{
                             position: 'fixed',
-                            top: 'max(0.75rem, env(safe-area-inset-top))',
+                            top: getSafeSpacing('top', '0.75rem'),
                             left: '1rem',
-                            width: '40px',
-                            height: '40px',
+                            width: layout.profile.actionButtonSize,
+                            height: layout.profile.actionButtonSize,
                             background: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
@@ -283,7 +294,7 @@ const Profile = () => {
                         }}
                         title="Go to Home Feed"
                     >
-                        <svg width="40" height="40" viewBox="-5 -5 34 34" xmlns="http://www.w3.org/2000/svg">
+                        <svg width={layout.profile.actionButtonSize} height={layout.profile.actionButtonSize} viewBox="-5 -5 34 34" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <radialGradient id="planetGradientProfile" cx="40%" cy="40%">
                                     <stop offset="0%" style={{ stopColor: solidPlanetColor, stopOpacity: 1 }} />
@@ -304,6 +315,8 @@ const Profile = () => {
                         </svg>
                     </button>
 
+                    {/* Toggle Stars Button Removed - Moved to Settings */}
+
 
 
 
@@ -313,12 +326,12 @@ const Profile = () => {
                         alignItems: 'center', // Center Username
                         justifyContent: 'center',
                         width: '100%',
-                        marginTop: '0.75rem', // Tightened Global Margin
-                        marginBottom: '4px'
+                        marginTop: '0', // Tightened to 0
+                        marginBottom: '0'
                     }}>
                         {/* Username */}
                         <h1 style={{
-                            fontSize: window.innerWidth < 768 ? '1.5rem' : '2.2rem',
+                            fontSize: layout.profile.usernameSize,
                             fontWeight: '800',
                             margin: '0',
                             fontFamily: 'var(--font-family-heading)',
@@ -335,7 +348,9 @@ const Profile = () => {
                             color: (effectiveUsernameColor && !effectiveUsernameColor.includes('gradient'))
                                 ? effectiveUsernameColor
                                 : '#FFFFFF',
-                            textShadow: '0 0 30px rgba(0,0,0,0.5)',
+                            textShadow: user.profileTheme?.textGlow
+                                ? `0 0 12px ${solidPlanetColor}80, 0 0 24px ${solidPlanetColor}40`
+                                : '0 0 30px rgba(0,0,0,0.5)',
                             wordBreak: 'break-word',
                             textAlign: 'center' // Explicitly center text
                         }}>
@@ -352,9 +367,9 @@ const Profile = () => {
                                         title="Wallet"
                                         style={{
                                             position: 'absolute',
-                                            top: '70px', // Aligned with Business Card row (Bottom Right Corner)
-                                            right: '1rem', // Aligned with Hamburger column
-                                            width: '44px', // Standardize width for center alignment
+                                            top: '70px',
+                                            right: '1rem',
+                                            width: '44px',
                                             height: '44px',
                                             background: 'transparent',
                                             border: 'none',
@@ -373,7 +388,7 @@ const Profile = () => {
                                         onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                     >
-                                        <FaWallet size={window.innerWidth < 768 ? 20 : 24} />
+                                        <FaWallet size={isMobile ? 20 : 24} />
                                     </button>
                                 )}
 
@@ -383,8 +398,8 @@ const Profile = () => {
                                     title={isOwnProfile ? "Edit Business Card" : "View Business Card"}
                                     style={{
                                         position: 'absolute',
-                                        top: '70px', // Moved down to match Wallet
-                                        left: 'calc(1rem + 5px)', // Moved 5px right
+                                        top: '70px',
+                                        left: 'calc(1rem + 5px)',
                                         background: 'transparent',
                                         border: 'none', // Ensure no box
                                         outline: 'none', // Ensure no box
@@ -402,7 +417,7 @@ const Profile = () => {
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    <FaIdBadge size={window.innerWidth < 768 ? 20 : 24} />
+                                    <FaIdBadge size={isMobile ? 20 : 24} />
                                 </button>
 
 
@@ -475,8 +490,8 @@ const Profile = () => {
                     <div
                         style={{
                             position: 'relative', // Resets to flow
-                            marginTop: '4px', // Reduced gap
-                            marginBottom: '4px', // Reduced to match symmetric spacing
+                            marginTop: '2px',
+                            marginBottom: '0.5rem', // Added space between avatar and username
                             display: 'flex',
                             justifyContent: 'center',
                             width: 'auto',
@@ -486,8 +501,8 @@ const Profile = () => {
                             onClick={(e) => { e.stopPropagation(); setShowProfilePopout(prev => !prev); }}
                             style={{
                                 position: 'relative',
-                                width: window.innerWidth < 768 ? '75px' : '90px',
-                                height: window.innerWidth < 768 ? '75px' : '90px',
+                                width: layout.profile.avatarSize,
+                                height: layout.profile.avatarSize,
                                 borderRadius: '20px', // Slightly sharper rounding
                                 background: '#000',
                                 zIndex: 10,
@@ -517,7 +532,9 @@ const Profile = () => {
                                 position: 'relative',
                                 zIndex: 1,
                                 background: '#111',
-                                boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                                boxShadow: user.profileTheme?.textGlow
+                                    ? `0 0 15px ${user.profileTheme?.borderColor || solidPlanetColor}66, 0 8px 32px rgba(0,0,0,0.5)`
+                                    : '0 8px 32px rgba(0,0,0,0.5)'
                             }}>
                                 {user.photoURL ? (
                                     <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -765,7 +782,12 @@ const Profile = () => {
             </div >
 
             {/* Tabs */}
-            < div style={{ borderBottom: '1px solid #222', marginBottom: window.innerWidth < 768 ? '0.75rem' : '2rem', overflowX: 'auto' }}>
+            <div style={{
+                borderBottom: '1px solid #222',
+                marginBottom: isMobile ? '0.75rem' : '2rem',
+                marginTop: '1rem', // Balanced spacing
+                overflowX: 'auto'
+            }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'center', // Center the tabs
@@ -782,7 +804,6 @@ const Profile = () => {
                         { id: 'cards', label: 'Cards', icon: PlanetIcon, enabled: isFeatureEnabled('SPACECARDS_CREATE') }
                     ].filter(tab => tab.enabled).map(tab => {
                         const Icon = tab.icon;
-                        const isMobile = window.innerWidth < 768;
                         const isSelected = activeTab === tab.id;
 
                         // Tab Color Logic
@@ -819,13 +840,21 @@ const Profile = () => {
                             };
                         }
 
+                        // Add Glow if selected and enabled
+                        if (isSelected && user.profileTheme?.textGlow) {
+                            tabStyle.textShadow = `0 0 10px ${usernameColor}`;
+                            // Removed box shadow per user request
+                        }
+
                         return (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 style={{
                                     flex: '0 0 auto',
-                                    padding: isMobile ? '0.5rem 0.75rem' : '1rem 1.5rem',
+                                    height: isMobile ? '1.5rem' : '2rem', // Match username height (1.5rem)
+                                    padding: isMobile ? '0 12px' : '0 1.5rem',
+                                    boxSizing: 'border-box',
                                     background: 'transparent',
                                     border: 'none',
                                     cursor: 'pointer',
@@ -833,6 +862,11 @@ const Profile = () => {
                                     alignItems: 'center',
                                     gap: '0.5rem',
                                     fontSize: isMobile ? '0.75rem' : '0.9rem',
+
+                                    // Font adjustments to remove "weird padding" from high-ascent fonts
+                                    lineHeight: '1',
+                                    paddingTop: '2px', // Micro-adjustment for visual centering of all-caps font
+
                                     fontWeight: isSelected ? '700' : '500',
                                     fontFamily: 'var(--font-family-heading)',
                                     letterSpacing: '0.05em',
@@ -880,7 +914,7 @@ const Profile = () => {
 
                         <InfiniteGrid
                             items={posts}
-                            columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                            columns={layout.gridColumns}
                             gap="1rem"
                             renderItem={(post, index) => (
                                 <div
@@ -924,7 +958,7 @@ const Profile = () => {
                     activeTab === 'shop' && (
                         <InfiniteGrid
                             items={shopItems}
-                            columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                            columns={layout.gridColumns}
                             gap="1rem"
                             renderItem={(item) => {
                                 const prices = item.printSizes?.map(s => Number(s.price)) || [];
@@ -991,7 +1025,7 @@ const Profile = () => {
                             )}
                             <InfiniteGrid
                                 items={collections}
-                                columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                                columns={layout.gridColumns}
                                 gap="1rem"
                                 renderItem={(collection) => (
                                     <div
@@ -1057,7 +1091,7 @@ const Profile = () => {
                             )}
                             <InfiniteGrid
                                 items={spaceCards}
-                                columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                                columns={layout.gridColumns}
                                 gap="1rem"
                                 renderItem={(card) => {
                                     const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
@@ -1178,7 +1212,7 @@ const Profile = () => {
                                 {orders.length > 0 ? (
                                     <InfiniteGrid
                                         items={orders}
-                                        columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                                        columns={layout.gridColumns}
                                         gap="1rem"
                                         renderItem={(order) => (
                                             <div style={{
@@ -1209,7 +1243,7 @@ const Profile = () => {
                                 {spaceCards.length > 0 ? (
                                     <InfiniteGrid
                                         items={spaceCards}
-                                        columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                                        columns={layout.gridColumns}
                                         gap="1rem"
                                         renderItem={(card) => {
                                             const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
@@ -1379,7 +1413,7 @@ const Profile = () => {
             <CreateMuseumModal
                 isOpen={showCreateMuseumModal}
                 onClose={() => setShowCreateMuseumModal(false)}
-                onSuccess={(newMuseum) => {
+                onSuccess={() => {
                     window.location.reload();
                 }}
             />

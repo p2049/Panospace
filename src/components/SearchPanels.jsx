@@ -3,10 +3,10 @@ import StarBackground from './StarBackground';
 import TagFilterPanel from './TagFilterPanel';
 import ModernIcon from './ModernIcon';
 import CustomDropdown from './CustomDropdown';
-import { TAG_CATEGORIES } from '../constants/tagCategories';
-import { PARKS_DATA } from '../constants/parksData';
-import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '../constants/searchFilters';
-import { formatDateForDisplay, formatDateForInput } from '../utils/dateHelpers';
+import { TAG_CATEGORIES } from '@/core/constants/tagCategories';
+import { PARKS_DATA } from '@/core/constants/parksData';
+import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '@/core/constants/searchFilters';
+import { formatDateForDisplay, formatDateForInput } from '@/core/utils/dates';
 import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 const SearchPanels = ({

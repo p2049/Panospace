@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaImage, FaLock, FaUsers, FaGlobe, FaCalendar, FaStore, FaRss } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { useCreateCollection } from '../hooks/useCollections';
+import { useAuth } from '@/context/AuthContext';
+import { useCreateCollection } from '@/hooks/useCollections';
 
 const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) => {
     const { currentUser } = useAuth();

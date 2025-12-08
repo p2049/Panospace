@@ -1,11 +1,11 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useMagazine } from '../hooks/useMagazine';
+import { useAuth } from '@/context/AuthContext';
+import { useMagazine } from '@/hooks/useMagazine';
 import { FaArrowLeft, FaBook, FaClock, FaCalendar, FaImage, FaUsers, FaEye } from 'react-icons/fa';
-import SEO from '../components/SEO';
-import StarBackground from '../components/StarBackground';
-import { PageSkeleton } from '../components/ui/Skeleton';
+import SEO from '@/components/SEO';
+import StarBackground from '@/components/StarBackground';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 const MagazineView = () => {
     const { id } = useParams();

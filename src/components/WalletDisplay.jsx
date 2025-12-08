@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaWallet, FaPlus } from 'react-icons/fa';
-import { WalletService } from '../services/WalletService';
-import { useAuth } from '../context/AuthContext';
+import { WalletService } from '@/services/WalletService';
+import { useAuth } from '@/context/AuthContext';
 import AddFundsModal from './monetization/AddFundsModal';
 
 const WalletDisplay = ({ userId }) => {

@@ -11,7 +11,7 @@ import {
     addPostToProject,
     removePostFromProject,
     toggleProjectFollow
-} from '../services/projectService';
+} from '@/services/projectService';
 
 /**
  * Hook to fetch a single project

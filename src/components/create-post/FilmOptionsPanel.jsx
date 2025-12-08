@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaMagic } from 'react-icons/fa';
-import { FILM_STOCKS, FILM_FORMATS, COMMON_FILM_ISOS } from '../../constants/filmStocks';
-import { generateQuartzDateString, QUARTZ_DATE_FORMATS } from '../../utils/exifUtils';
+import { FILM_STOCKS, FILM_FORMATS, COMMON_FILM_ISOS } from '@/core/constants/filmStocks';
+import { generateQuartzDateString, QUARTZ_DATE_FORMATS } from '@/core/utils/exif';
 
 /**
  * FilmOptionsPanel Component

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendar, FaMapMarkerAlt } from 'react-icons/fa';
-import { formatDateForDisplay } from '../utils/dateHelpers';
+import { formatDateForDisplay } from '@/core/utils/dates';
 
 const EventCard = ({ event }) => {
     const navigate = useNavigate();

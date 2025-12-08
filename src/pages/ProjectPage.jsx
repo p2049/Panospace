@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-import { useProject } from '../hooks/useProjects';
-import { useProjectManagement } from '../hooks/useProjects';
+import { db } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
+import { useProject } from '@/hooks/useProjects';
+import { useProjectManagement } from '@/hooks/useProjects';
 import { FaUsers, FaImage, FaHeart, FaRegHeart, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
-import SEO from '../components/SEO';
-import StarBackground from '../components/StarBackground';
-import GridPostCard from '../components/GridPostCard';
+import SEO from '@/components/SEO';
+import StarBackground from '@/components/StarBackground';
+import GridPostCard from '@/components/GridPostCard';
 
 const ProjectPage = () => {
     const { studioId, projectId } = useParams();

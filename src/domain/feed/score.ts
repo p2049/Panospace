@@ -4,7 +4,7 @@
  * Calculates post relevance scores based on user preferences and engagement.
  */
 
-import type { Post, UserProfile } from '../../types';
+import type { Post, UserProfile } from '@/types';
 
 /**
  * Calculate relevance score for a post given user context.

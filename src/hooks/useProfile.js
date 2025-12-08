@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, getDocs, collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { db } from '../firebase';
-import { SpaceCardService } from '../services/SpaceCardService';
+import { db } from '@/firebase';
+import { SpaceCardService } from '@/services/SpaceCardService';
 
 /**
  * useProfile Hook
@@ -222,6 +222,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
         isFollowing,
         followDocId,
         setIsFollowing,
-        setFollowDocId
+        setFollowDocId,
+        setSpaceCards
     };
 };

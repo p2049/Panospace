@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaEnvelope, FaGlobe, FaBriefcase, FaMapMarkerAlt, FaCopy, FaCheck, FaImage, FaExchangeAlt } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { db } from '../firebase';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import SmartImage from './SmartImage';
-import { getGradientBackground, getCurrentGradientId } from '../constants/gradients';
+import { getGradientBackground, getCurrentGradientId } from '@/core/constants/gradients';
 
 const BusinessCardModal = ({ isOpen, onClose, user }) => {
     const { currentUser } = useAuth();

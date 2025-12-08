@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaCamera } from 'react-icons/fa';
-import ManualExifForm from '../ManualExifForm';
-import { formatCameraModel } from '../../utils/exifUtils';
+import ManualExifForm from '@/components/ManualExifForm';
+import { formatCameraModel } from '@/core/utils/exif';
 
 /**
  * ManualExifEditor Component

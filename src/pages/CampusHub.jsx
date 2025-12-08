@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { InstitutionService } from '../services/InstitutionService';
+import { useAuth } from '@/context/AuthContext';
+import { InstitutionService } from '@/services/InstitutionService';
 import { FaUniversity, FaSearch, FaLock, FaCheckCircle } from 'react-icons/fa';
-import SEO from '../components/SEO';
+import SEO from '@/components/SEO';
 
 const CampusHub = () => {
     const { currentUser } = useAuth();

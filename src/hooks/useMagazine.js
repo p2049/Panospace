@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { getMagazineIssues } from '../services/magazineService';
+import { db } from '@/firebase';
+import { getMagazineIssues } from '@/services/magazineService';
 
 /**
  * Hook to fetch a magazine and its issues

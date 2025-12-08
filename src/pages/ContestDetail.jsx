@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaTrophy, FaClock, FaUsers, FaDollarSign, FaArrowLeft } from 'react-icons/fa';
-import { useContest } from '../hooks/useContest';
-import { useAuth } from '../context/AuthContext';
-import SmartImage from '../components/SmartImage';
-import ContestEntryModal from '../components/contests/ContestEntryModal';
-import { PageSkeleton } from '../components/ui/Skeleton';
+import { useContest } from '@/hooks/useContest';
+import { useAuth } from '@/context/AuthContext';
+import SmartImage from '@/components/SmartImage';
+import ContestEntryModal from '@/components/contests/ContestEntryModal';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 const ContestDetail = () => {
     const { contestId } = useParams();

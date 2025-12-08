@@ -1,4 +1,4 @@
-import { getPrintifyProducts, PRINT_TIERS, STICKER_PRODUCTS, calculatePrintifyEarnings, getRetailPrice } from '../utils/printifyPricing';
+import { getPrintifyProducts, PRINT_TIERS, STICKER_PRODUCTS, calculatePrintifyEarnings, getRetailPrice } from '@/core/utils/printifyPricing';
 
 export const PRINT_SIZES = getPrintifyProducts();
 export { PRINT_TIERS };

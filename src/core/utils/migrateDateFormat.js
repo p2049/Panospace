@@ -1,7 +1,7 @@
 // Migration script to update date format in existing posts
 // Run this once to convert all old date formats from "MM.DD.YY" to "D M 'Y"
 
-import { db } from '../firebase';
+import { db } from '@/core/firebase';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 
 export const migrateDateFormats = async () => {

@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { db, functions } from '../firebase';
+import { db, functions } from '@/firebase';
 import { collection, addDoc, query, where, getDocs, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { useAuth } from '../context/AuthContext';
-import { WalletService } from '../services/WalletService';
+import { useAuth } from '@/context/AuthContext';
+import { WalletService } from '@/services/WalletService';
 
 export const useContestEntry = () => {
     const { currentUser } = useAuth();

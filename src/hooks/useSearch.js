@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { db, functions } from '../firebase';
+import { db, functions } from '@/firebase';
 import { httpsCallable } from 'firebase/functions';
 import {
     collection,
@@ -10,9 +10,9 @@ import {
     limit,
     startAfter
 } from 'firebase/firestore';
-import { getDerivedDate, isSameDate } from '../utils/dateHelpers';
-import { SORT_OPTIONS } from '../constants/searchFilters';
-import { sortPostsByTrending } from '../utils/trendingAlgorithm';
+import { getDerivedDate, isSameDate } from '@/core/utils/dates';
+import { SORT_OPTIONS } from '@/core/constants/searchFilters';
+import { sortPostsByTrending } from '@/core/utils/trendingAlgorithm';
 
 export const useSearch = () => {
     const [loading, setLoading] = useState(false);

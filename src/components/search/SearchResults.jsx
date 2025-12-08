@@ -1,15 +1,15 @@
 import React from 'react';
 import { FaRocket } from 'react-icons/fa';
-import StarBackground from '../StarBackground';
-import GridPostCard from '../GridPostCard';
-import FeedPostCard from '../FeedPostCard';
-import UserCard from '../UserCard';
-import GalleryCard from '../ui/cards/GalleryCard';
-import CollectionCard from '../CollectionCard';
-import ContestCard from '../ContestCard';
-import EventCard from '../EventCard';
-import SpaceCard from '../SpaceCard';
-import PSButton from '../PSButton';
+import StarBackground from '@/components/StarBackground';
+import GridPostCard from '@/components/GridPostCard';
+import FeedPostCard from '@/components/FeedPostCard';
+import UserCard from '@/components/UserCard';
+import GalleryCard from '@/components/ui/cards/GalleryCard';
+import CollectionCard from '@/components/CollectionCard';
+import ContestCard from '@/components/ContestCard';
+import EventCard from '@/components/EventCard';
+import SpaceCard from '@/components/SpaceCard';
+import PSButton from '@/components/PSButton';
 
 const SearchResults = ({
     viewMode,

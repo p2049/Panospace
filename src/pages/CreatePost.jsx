@@ -1,24 +1,24 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useCreatePost } from '../hooks/useCreatePost';
-import { useCollections } from '../hooks/useCollections';
-import { PRINT_TIERS } from '../utils/printifyPricing';
-import { isFeatureEnabled } from '../config/featureFlags';
-import { useDraftSaving } from '../hooks/useDraftSaving';
+import { useAuth } from '@/context/AuthContext';
+import { useCreatePost } from '@/hooks/useCreatePost';
+import { useCollections } from '@/hooks/useCollections';
+import { PRINT_TIERS } from '@/core/utils/pricing';
+import { isFeatureEnabled } from '@/config/featureFlags';
+import { useDraftSaving } from '@/hooks/useDraftSaving';
 
-import ThumbnailStrip from '../components/create-post/ThumbnailStrip';
-import ImageCarousel from '../components/create-post/ImageCarousel';
-import TagCategoryPanel from '../components/create-post/TagCategoryPanel';
-import FilmOptionsPanel from '../components/create-post/FilmOptionsPanel';
-import ManualExifEditor from '../components/create-post/ManualExifEditor';
-import ShopConfiguration from '../components/create-post/ShopConfiguration';
-import CollectionSelector from '../components/create-post/CollectionSelector';
-import RatingSystemSelector from '../components/create-post/RatingSystemSelector';
+import ThumbnailStrip from '@/components/create-post/ThumbnailStrip';
+import ImageCarousel from '@/components/create-post/ImageCarousel';
+import TagCategoryPanel from '@/components/create-post/TagCategoryPanel';
+import FilmOptionsPanel from '@/components/create-post/FilmOptionsPanel';
+import ManualExifEditor from '@/components/create-post/ManualExifEditor';
+import ShopConfiguration from '@/components/create-post/ShopConfiguration';
+import CollectionSelector from '@/components/create-post/CollectionSelector';
+import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
-import { SpaceCardService } from '../services/SpaceCardService';
-import PageHeader from '../components/PageHeader';
+import { db } from '@/firebase';
+import { SpaceCardService } from '@/services/SpaceCardService';
+import PageHeader from '@/components/PageHeader';
 import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle } from 'react-icons/fa';
 
 

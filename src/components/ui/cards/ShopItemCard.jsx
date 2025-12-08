@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import SmartImage from '../../SmartImage';
+import SmartImage from '@/components/SmartImage';
 
 const ShopItemCard = ({ item }) => {
     const navigate = useNavigate();

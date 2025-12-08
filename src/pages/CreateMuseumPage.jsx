@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import MuseumCreator from '../components/monetization/MuseumCreator';
-import HeaderBar from '../components/HeaderBar';
+import MuseumCreator from '@/components/monetization/MuseumCreator';
+import HeaderBar from '@/components/HeaderBar';
 
 const CreateMuseumPage = () => {
     const navigate = useNavigate();

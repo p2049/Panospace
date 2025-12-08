@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaImage } from 'react-icons/fa';
-import { createMuseum } from '../../services/monetizationService';
-import { useAuth } from '../../context/AuthContext';
+import { createMuseum } from '@/core/services/firestore/monetization.service';
+import { useAuth } from '@/context/AuthContext';
 
 const MuseumCreator = ({ onClose, onSuccess }) => {
     const { currentUser } = useAuth();

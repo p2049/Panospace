@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { getMagazine, getMagazineIssue } from '../services/magazineService';
-import { getIssueSubmissions, updateSubmissionStatus, approveSubmissionImages } from '../services/submissionService';
-import { notifySubmissionApproved, notifySubmissionRejected } from '../services/notificationService';
+import { useAuth } from '@/context/AuthContext';
+import { getMagazine, getMagazineIssue } from '@/services/magazineService';
+import { getIssueSubmissions, updateSubmissionStatus, approveSubmissionImages } from '@/services/submissionService';
+import { notifySubmissionApproved, notifySubmissionRejected } from '@/services/notificationService';
 import { FaArrowLeft, FaCheck, FaTimes, FaImage, FaUsers, FaClock } from 'react-icons/fa';
 
 const MagazineCuration = () => {

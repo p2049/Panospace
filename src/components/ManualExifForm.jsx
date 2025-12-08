@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCamera, FaTimes } from 'react-icons/fa';
-import { validateExifData } from '../utils/exifUtils';
+import { validateExifData } from '@/core/utils/exif';
 
 /**
  * Manual EXIF Input Form

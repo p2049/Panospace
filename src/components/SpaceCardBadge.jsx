@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaRocket, FaCrown } from 'react-icons/fa';
-import { RARITY_TIERS } from '../services/SpaceCardService';
+import { RARITY_TIERS } from '@/services/SpaceCardService';
 
 const SpaceCardBadge = ({ type = 'owner', rarity = 'Common', className = '' }) => {
     const rarityInfo = RARITY_TIERS[rarity] || RARITY_TIERS.Common;

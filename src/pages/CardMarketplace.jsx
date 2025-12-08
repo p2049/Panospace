@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaFilter, FaSearch, FaStar } from 'react-icons/fa';
-import { SpaceCardService, RARITY_TIERS, CARD_DISCIPLINES, EDITION_TYPES } from '../services/SpaceCardService';
-import SpaceCardComponent from '../components/SpaceCardComponent';
+import { SpaceCardService, RARITY_TIERS, CARD_DISCIPLINES, EDITION_TYPES } from '@/services/SpaceCardService';
+import SpaceCardComponent from '@/components/SpaceCardComponent';
 
 const CardMarketplace = () => {
     const navigate = useNavigate();

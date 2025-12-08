@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { RocketIcon, AstronautIcon } from './SpaceIcons';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 

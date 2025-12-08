@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { getUserNotifications, markAsRead, markAllAsRead } from '../services/notificationService';
+import { useAuth } from '@/context/AuthContext';
+import { getUserNotifications, markAsRead, markAllAsRead } from '@/services/notificationService';
 import { FaBell, FaCheck, FaImage, FaBook, FaClock, FaTimes, FaCheckDouble } from 'react-icons/fa';
 
 const Notifications = () => {

@@ -1,6 +1,6 @@
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { doc, getDoc, getDocs, addDoc, updateDoc, runTransaction, collection, query, where, orderBy, limit, serverTimestamp, increment } from 'firebase/firestore';
-import { MODERATION_THRESHOLDS, MODERATION_STATUS, REPORT_STATUS } from '../constants/moderationConstants';
+import { MODERATION_THRESHOLDS, MODERATION_STATUS, REPORT_STATUS } from '@/core/constants/moderationConstants';
 
 export const ModerationService = {
     /**

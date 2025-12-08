@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaImage, FaCalendar, FaClock, FaGlobe, FaUsers, FaLock } from 'react-icons/fa';
-import { RELEASE_FREQUENCIES } from '../../constants/magazineConfig';
+import { RELEASE_FREQUENCIES } from '@/core/constants/magazineConfig';
 
 const MagazineModePanel = ({
     images,

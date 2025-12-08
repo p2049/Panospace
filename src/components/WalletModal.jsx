@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FaWallet, FaHistory, FaArrowUp, FaArrowDown, FaTimes, FaPlus } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { WalletService } from '../services/WalletService';
-import { formatPrice } from '../utils/helpers';
-import useModalEscape from '../hooks/useModalEscape';
+import { useAuth } from '@/context/AuthContext';
+import { WalletService } from '@/services/WalletService';
+import { formatPrice } from '@/core/utils/helpers';
+import useModalEscape from '@/hooks/useModalEscape';
 import StarBackground from './StarBackground';
 
 const WalletModal = ({ onClose }) => {

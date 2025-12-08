@@ -1,32 +1,33 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
-import { useCreateCollection } from '../hooks/useCollections';
-import { db } from '../firebase';
+import { storage } from '@/firebase';
+import { useCreateCollection } from '@/hooks/useCollections';
+import { db } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import exifr from 'exifr';
-import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '../utils/printifyPricing';
-import { getUserTier, USER_TIERS } from '../services/monetizationService';
-import PaywallModal from '../components/monetization/PaywallModal';
+import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '@/core/utils/pricing';
+import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import PaywallModal from '@/components/monetization/PaywallModal';
 const PRINT_SIZES = getPrintifyProducts();
 
-import { createMagazine, calculateNextReleaseDate } from '../services/magazineService';
-import ImageUploadPanel from '../components/create-collection/ImageUploadPanel';
-import MagazineModePanel from '../components/create-collection/MagazineModePanel';
-import MuseumModePanel from '../components/create-collection/MuseumModePanel';
-import CollectionModePanel from '../components/create-collection/CollectionModePanel';
-import StudioModePanel from '../components/create-collection/GalleryModePanel';
-import PageHeader from '../components/PageHeader';
-import PSButton from '../components/PSButton';
-import ModeSelector from '../components/create-collection/ModeSelector';
-import CollectionFields from '../components/create-collection/CollectionFields';
+import { createMagazine, calculateNextReleaseDate } from '@/services/magazineService';
+import ImageUploadPanel from '@/components/create-collection/ImageUploadPanel';
+import MagazineModePanel from '@/components/create-collection/MagazineModePanel';
+import MuseumModePanel from '@/components/create-collection/MuseumModePanel';
+import CollectionModePanel from '@/components/create-collection/CollectionModePanel';
+import StudioModePanel from '@/components/create-collection/GalleryModePanel';
+import PageHeader from '@/components/PageHeader';
+import PSButton from '@/components/PSButton';
+import ModeSelector from '@/components/create-collection/ModeSelector';
+import CollectionFields from '@/components/create-collection/CollectionFields';
 
-import SubmitBar from '../components/create-collection/SubmitBar';
-import { sanitizeTitle, sanitizeDescription } from '../utils/sanitize';
+import SubmitBar from '@/components/create-collection/SubmitBar';
+import { sanitizeTitle, sanitizeDescription } from '@/core/utils/sanitize';
 
+import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 
 const CreateCollection = () => {
     const { currentUser } = useAuth();
@@ -34,6 +35,27 @@ const CreateCollection = () => {
     const { showError, showSuccess } = useToast();
     const { createCollection, loading: creating } = useCreateCollection();
     const fileInputRef = useRef(null);
+
+    // Responsive Layout Engine
+    const { layout, isMobile, isLandscape, getSafeSpacing } = useLayoutEngine('create_collection');
+
+    const containerStyle = {
+        maxWidth: layout.containerWidth === '100%' ? '100%' : layout.containerWidth,
+        margin: '0 auto',
+        padding: `${layout.paddingY} ${layout.paddingX}`,
+        paddingBottom: '6rem', // Always ensure space for bottom bar/scrolling
+        width: '100%',
+        boxSizing: 'border-box',
+        minHeight: '100vh',
+        paddingTop: getSafeSpacing('top', layout.headerHeight)
+    };
+
+    const gridStyle = {
+        display: 'grid',
+        gridTemplateColumns: isMobile && !isLandscape ? '1fr' : '1fr 1fr',
+        gap: layout.gridGap && layout.gridGap !== '1px' ? layout.gridGap : (isMobile ? '2rem' : '3rem'),
+        alignItems: 'start'
+    };
 
     // Generate stars once and memoize them
     const stars = useMemo(() => {
@@ -367,32 +389,17 @@ const CreateCollection = () => {
                     0%, 100% { opacity: 0.3; transform: scale(1); }
                     50% { opacity: 1; transform: scale(1.2); }
                 }
-
-                .create-collection-container {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 2rem;
-                    width: 100%;
-                    box-sizing: border-box;
-                }
-
-                .create-collection-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 3rem;
-                }
-
-                @media (max-width: 768px) {
-                    .create-collection-container {
-                        padding: 1rem;
-                        padding-bottom: 6rem; /* Extra space for mobile scrolling */
-                    }
-                    .create-collection-grid {
-                        grid-template-columns: 1fr;
-                        gap: 2rem;
-                    }
-                }
             `}</style>
+
+            {/* 
+               Header now respects Safe Spacing via padding in parent or explicit margin
+               Since we are in a 'ps-page-overflow' (assuming it handles scrollTop), 
+               we might want absolute positioning or fixed header. 
+               The 'PageHeader' component likely handles its own positioning, 
+               but we should ensure it doesn't overlap. 
+               
+               Actually, PageHeader is usually fixed. 
+            */}
 
             <PageHeader
                 title={
@@ -428,10 +435,13 @@ const CreateCollection = () => {
                         noPadding={true}
                     />
                 }
+            // Pass layout config to PageHeader if it supports it, 
+            // or assume PageHeader handles basic top spacing. 
+            // We'll rely on the container's paddingTop for content spacing.
             />
 
-            <div className="create-collection-container">
-                <div className="create-collection-grid">
+            <div style={containerStyle}>
+                <div style={gridStyle}>
                     <div>
                         <ImageUploadPanel
                             images={images}

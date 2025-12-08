@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { createGallery } from '../services/galleryService';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { createGallery } from '@/core/services/firestore/studios.service';
 import { FaImage, FaTags, FaMapMarkerAlt, FaLock, FaGlobe, FaArrowLeft } from 'react-icons/fa';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { getUserTier, USER_TIERS } from '../services/monetizationService';
-import PaywallModal from '../components/monetization/PaywallModal';
-import '../styles/create-gallery.css';
-import StarBackground from '../components/StarBackground';
-import { sanitizeTitle, sanitizeDescription } from '../utils/sanitize';
+import { db } from '@/firebase';
+import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import PaywallModal from '@/components/monetization/PaywallModal';
+import '@/styles/create-gallery';
+import StarBackground from '@/components/StarBackground';
+import { sanitizeTitle, sanitizeDescription } from '@/core/utils/sanitize';
 
 const POPULAR_TAGS = [
     'landscape', 'portrait', 'street', 'nature', 'urban', 'film',

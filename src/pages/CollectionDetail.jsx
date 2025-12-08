@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, getDocs, query, where, collection as firestoreCollection, documentId, orderBy, limit } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-import { useCollection, useCreateCollection } from '../hooks/useCollections';
+import { db } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
+import { useCollection, useCreateCollection } from '@/hooks/useCollections';
 import { FaArrowLeft, FaLock, FaUsers, FaGlobe, FaStore, FaEdit, FaShoppingCart, FaPlus } from 'react-icons/fa';
-import SmartImage from '../components/SmartImage';
+import SmartImage from '@/components/SmartImage';
 
 const CollectionDetail = () => {
     const { id } = useParams();

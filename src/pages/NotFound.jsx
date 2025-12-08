@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCompass, FaArrowLeft } from 'react-icons/fa';
-import SEO from '../components/SEO';
+import SEO from '@/components/SEO';
 
 const NotFound = () => {
     const navigate = useNavigate();

@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar } from 'react-icons/fa';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useUI } from '../context/UIContext';
-import ReportModal from '../components/ReportModal';
-import { useBlock } from '../hooks/useBlock';
-import { getUserNSFWPreference, setUserNSFWPreference } from '../constants/nsfwTags';
-import { isFeatureEnabled } from '../config/featureFlags';
+import { db } from '@/firebase';
+import { useUI } from '@/context/UIContext';
+import ReportModal from '@/components/ReportModal';
+import { useBlock } from '@/hooks/useBlock';
+import { getUserNSFWPreference, setUserNSFWPreference } from '@/core/constants/nsfwTags';
+import { isFeatureEnabled } from '@/config/featureFlags';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -55,6 +55,35 @@ const Settings = () => {
             } catch (error) {
                 console.error("Error saving language preference:", error);
             }
+        }
+    };
+
+
+
+    // Appearance State
+    const [togglingStars, setTogglingStars] = useState(false);
+
+    const toggleStarsOverlay = async () => {
+        if (!currentUser) return;
+        setTogglingStars(true);
+        try {
+            // Fetch latest to ensure we toggle correctly
+            const userRef = doc(db, 'users', currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                const currentVal = userData.profileTheme?.useStarsOverlay || false;
+                await updateDoc(userRef, {
+                    'profileTheme.useStarsOverlay': !currentVal
+                });
+                // Reload to reflect changes globally
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error("Error toggling stars:", error);
+            alert("Failed to update theme setting.");
+        } finally {
+            setTogglingStars(false);
         }
     };
 
@@ -297,6 +326,33 @@ const Settings = () => {
                     <SettingsRow icon={FaTrash} label={t('settings.deleteAccount')} onClick={() => setShowDeleteConfirm(true)} isDestructive={true} />
                 </div>
 
+                {/* Appearance Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>{t('settings.appearance') || 'APPEARANCE'}</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <SettingsRow
+                        icon={FaStar}
+                        label={togglingStars ? "Updating..." : "Toggle Star Overlay"}
+                        onClick={toggleStarsOverlay}
+                    />
+                    <SettingsRow icon={FaPalette} label={t('settings.theme')} onClick={() => alert('Theme selection coming soon')} />
+                </div>
+
+
+
 
 
                 {/* Billing Section */}
@@ -370,279 +426,287 @@ const Settings = () => {
             </div>
 
             {/* Language Selection Modal */}
-            {showLanguageModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    padding: '2rem'
-                }} onClick={() => setShowLanguageModal(false)}>
+            {
+                showLanguageModal && (
                     <div style={{
-                        background: 'var(--bg-card, #050808)',
-                        border: '1px solid rgba(110, 255, 216, 0.2)',
-                        borderRadius: '16px',
-                        padding: '1.5rem',
-                        maxWidth: '400px',
-                        width: '100%',
-                        maxHeight: '80vh',
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.9)',
+                        backdropFilter: 'blur(10px)',
                         display: 'flex',
-                        flexDirection: 'column',
-                        boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
-                    }} onClick={(e) => e.stopPropagation()}>
-                        <h2 style={{
-                            fontSize: '1.25rem',
-                            fontWeight: 'bold',
-                            color: 'var(--text-primary, #d8fff1)',
-                            marginBottom: '1rem',
-                            textAlign: 'center'
-                        }}>{t('settings.language')}</h2>
-
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '2rem'
+                    }} onClick={() => setShowLanguageModal(false)}>
                         <div style={{
-                            overflowY: 'auto',
+                            background: 'var(--bg-card, #050808)',
+                            border: '1px solid rgba(110, 255, 216, 0.2)',
+                            borderRadius: '16px',
+                            padding: '1.5rem',
+                            maxWidth: '400px',
+                            width: '100%',
+                            maxHeight: '80vh',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '0.5rem',
-                            paddingRight: '0.5rem'
-                        }}>
-                            {languages.map((lang) => (
-                                <button
-                                    key={lang.code}
-                                    onClick={() => changeLanguage(lang.code)}
-                                    style={{
-                                        padding: '1rem',
-                                        background: i18n.language === lang.code ? 'rgba(110, 255, 216, 0.1)' : 'transparent',
-                                        border: i18n.language === lang.code ? '1px solid var(--accent, #6effd8)' : '1px solid rgba(255, 255, 255, 0.05)',
-                                        borderRadius: '8px',
-                                        color: i18n.language === lang.code ? 'var(--accent, #6effd8)' : 'var(--text-secondary, #6b7f78)',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        fontSize: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <span>{lang.name}</span>
-                                    {i18n.language === lang.code && <FaCheck size={14} />}
-                                </button>
-                            ))}
-                        </div>
+                            boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
+                        }} onClick={(e) => e.stopPropagation()}>
+                            <h2 style={{
+                                fontSize: '1.25rem',
+                                fontWeight: 'bold',
+                                color: 'var(--text-primary, #d8fff1)',
+                                marginBottom: '1rem',
+                                textAlign: 'center'
+                            }}>{t('settings.language')}</h2>
 
-                        <button
-                            onClick={() => setShowLanguageModal(false)}
-                            style={{
-                                marginTop: '1rem',
-                                padding: '0.75rem',
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text-secondary, #6b7f78)',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                textDecoration: 'underline',
-                                alignSelf: 'center'
-                            }}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Delete Account Modal */}
-            {showDeleteConfirm && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    padding: '2rem'
-                }}>
-                    <div style={{
-                        background: 'var(--bg-card, #050808)',
-                        border: '1px solid rgba(110, 255, 216, 0.2)',
-                        borderRadius: '16px',
-                        padding: '2rem',
-                        maxWidth: '400px',
-                        width: '100%',
-                        boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
-                    }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
-                            <FaExclamationTriangle size={40} color="#ff4444" />
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary, #d8fff1)' }}>Delete Account?</h2>
-                            <p style={{ color: 'var(--text-secondary, #6b7f78)' }}>
-                                This action is <strong>irreversible</strong>. All your photos, profile data, and settings will be permanently deleted.
-                            </p>
-
-                            {deleteError && (
-                                <div style={{ color: '#ff4444', background: 'rgba(255,68,68,0.1)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.9rem', width: '100%' }}>
-                                    {deleteError}
-                                </div>
-                            )}
-
-                            <form onSubmit={handleDeleteAccount} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                                <div style={{ textAlign: 'left' }}>
-                                    <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #6b7f78)', marginBottom: '0.5rem', display: 'block' }}>
-                                        Confirm Password to Delete
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={deletePassword}
-                                        onChange={(e) => setDeletePassword(e.target.value)}
-                                        placeholder="Enter your password"
-                                        required
+                            <div style={{
+                                overflowY: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.5rem',
+                                paddingRight: '0.5rem'
+                            }}>
+                                {languages.map((lang) => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => changeLanguage(lang.code)}
                                         style={{
-                                            width: '100%',
-                                            padding: '0.8rem',
-                                            background: 'var(--bg-darker, #020404)',
-                                            border: '1px solid rgba(110, 255, 216, 0.2)',
+                                            padding: '1rem',
+                                            background: i18n.language === lang.code ? 'rgba(110, 255, 216, 0.1)' : 'transparent',
+                                            border: i18n.language === lang.code ? '1px solid var(--accent, #6effd8)' : '1px solid rgba(255, 255, 255, 0.05)',
                                             borderRadius: '8px',
-                                            color: 'var(--text-primary, #d8fff1)',
-                                            fontSize: '1rem'
+                                            color: i18n.language === lang.code ? 'var(--accent, #6effd8)' : 'var(--text-secondary, #6b7f78)',
+                                            textAlign: 'left',
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            transition: 'all 0.2s'
                                         }}
-                                    />
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={loading || !deletePassword}
-                                    style={{
-                                        padding: '1rem',
-                                        background: '#ff4444',
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        opacity: loading || !deletePassword ? 0.5 : 1,
-                                        fontSize: '1rem'
-                                    }}
-                                >
-                                    {loading ? 'Deleting...' : 'Permanently Delete Account'}
-                                </button>
-                            </form>
+                                    >
+                                        <span>{lang.name}</span>
+                                        {i18n.language === lang.code && <FaCheck size={14} />}
+                                    </button>
+                                ))}
+                            </div>
 
                             <button
-                                onClick={() => {
-                                    setShowDeleteConfirm(false);
-                                    setDeletePassword('');
-                                    setDeleteError('');
-                                }}
+                                onClick={() => setShowLanguageModal(false)}
                                 style={{
+                                    marginTop: '1rem',
+                                    padding: '0.75rem',
                                     background: 'transparent',
                                     border: 'none',
                                     color: 'var(--text-secondary, #6b7f78)',
                                     cursor: 'pointer',
+                                    fontSize: '0.9rem',
                                     textDecoration: 'underline',
-                                    fontSize: '0.9rem'
-                                }}
-                            >
-                                Cancel, keep my account
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Conversion Confirmation Modal */}
-            {showConversionConfirm && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.9)',
-                    backdropFilter: 'blur(10px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    padding: '2rem'
-                }}>
-                    <div style={{
-                        background: 'var(--bg-card, #050808)',
-                        border: '1px solid rgba(110, 255, 216, 0.2)',
-                        borderRadius: '16px',
-                        padding: '2rem',
-                        maxWidth: '400px',
-                        width: '100%',
-                        boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
-                    }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
-                            <FaSmile size={40} color="var(--accent, #6effd8)" />
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary, #d8fff1)' }}>Convert to Smiley Likes?</h2>
-                            <p style={{ color: 'var(--text-secondary, #6b7f78)' }}>
-                                This will convert your star rating system to simple smiley likes. Each user who rated will count as 1 like.
-                            </p>
-                            <p style={{ color: '#ff4444', fontSize: '0.9rem', background: 'rgba(255,68,68,0.1)', padding: '0.75rem', borderRadius: '8px', width: '100%' }}>
-                                ⚠️ This action cannot be reversed. Original star ratings will be permanently lost.
-                            </p>
-
-                            {conversionError && (
-                                <div style={{ color: '#ff4444', background: 'rgba(255,68,68,0.1)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.9rem', width: '100%' }}>
-                                    {conversionError}
-                                </div>
-                            )}
-
-                            <button
-                                onClick={handleConvertToSmiley}
-                                disabled={converting}
-                                style={{
-                                    width: '100%',
-                                    padding: '1rem',
-                                    background: 'var(--accent, #6effd8)',
-                                    color: '#000',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    opacity: converting ? 0.5 : 1,
-                                    marginTop: '0.5rem',
-                                    fontSize: '1rem'
-                                }}
-                            >
-                                {converting ? 'Converting...' : 'Convert to Smiley Likes'}
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    setShowConversionConfirm(false);
-                                    setConversionError('');
-                                }}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: 'var(--text-secondary, #6b7f78)',
-                                    cursor: 'pointer',
-                                    textDecoration: 'underline',
-                                    fontSize: '0.9rem'
+                                    alignSelf: 'center'
                                 }}
                             >
                                 Cancel
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
+
+            {/* Delete Account Modal */}
+            {
+                showDeleteConfirm && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.9)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '2rem'
+                    }}>
+                        <div style={{
+                            background: 'var(--bg-card, #050808)',
+                            border: '1px solid rgba(110, 255, 216, 0.2)',
+                            borderRadius: '16px',
+                            padding: '2rem',
+                            maxWidth: '400px',
+                            width: '100%',
+                            boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
+                                <FaExclamationTriangle size={40} color="#ff4444" />
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary, #d8fff1)' }}>Delete Account?</h2>
+                                <p style={{ color: 'var(--text-secondary, #6b7f78)' }}>
+                                    This action is <strong>irreversible</strong>. All your photos, profile data, and settings will be permanently deleted.
+                                </p>
+
+                                {deleteError && (
+                                    <div style={{ color: '#ff4444', background: 'rgba(255,68,68,0.1)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.9rem', width: '100%' }}>
+                                        {deleteError}
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleDeleteAccount} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #6b7f78)', marginBottom: '0.5rem', display: 'block' }}>
+                                            Confirm Password to Delete
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={deletePassword}
+                                            onChange={(e) => setDeletePassword(e.target.value)}
+                                            placeholder="Enter your password"
+                                            required
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.8rem',
+                                                background: 'var(--bg-darker, #020404)',
+                                                border: '1px solid rgba(110, 255, 216, 0.2)',
+                                                borderRadius: '8px',
+                                                color: 'var(--text-primary, #d8fff1)',
+                                                fontSize: '1rem'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !deletePassword}
+                                        style={{
+                                            padding: '1rem',
+                                            background: '#ff4444',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            opacity: loading || !deletePassword ? 0.5 : 1,
+                                            fontSize: '1rem'
+                                        }}
+                                    >
+                                        {loading ? 'Deleting...' : 'Permanently Delete Account'}
+                                    </button>
+                                </form>
+
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteConfirm(false);
+                                        setDeletePassword('');
+                                        setDeleteError('');
+                                    }}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-secondary, #6b7f78)',
+                                        cursor: 'pointer',
+                                        textDecoration: 'underline',
+                                        fontSize: '0.9rem'
+                                    }}
+                                >
+                                    Cancel, keep my account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Conversion Confirmation Modal */}
+            {
+                showConversionConfirm && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.9)',
+                        backdropFilter: 'blur(10px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '2rem'
+                    }}>
+                        <div style={{
+                            background: 'var(--bg-card, #050808)',
+                            border: '1px solid rgba(110, 255, 216, 0.2)',
+                            borderRadius: '16px',
+                            padding: '2rem',
+                            maxWidth: '400px',
+                            width: '100%',
+                            boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', textAlign: 'center' }}>
+                                <FaSmile size={40} color="var(--accent, #6effd8)" />
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary, #d8fff1)' }}>Convert to Smiley Likes?</h2>
+                                <p style={{ color: 'var(--text-secondary, #6b7f78)' }}>
+                                    This will convert your star rating system to simple smiley likes. Each user who rated will count as 1 like.
+                                </p>
+                                <p style={{ color: '#ff4444', fontSize: '0.9rem', background: 'rgba(255,68,68,0.1)', padding: '0.75rem', borderRadius: '8px', width: '100%' }}>
+                                    ⚠️ This action cannot be reversed. Original star ratings will be permanently lost.
+                                </p>
+
+                                {conversionError && (
+                                    <div style={{ color: '#ff4444', background: 'rgba(255,68,68,0.1)', padding: '0.5rem', borderRadius: '4px', fontSize: '0.9rem', width: '100%' }}>
+                                        {conversionError}
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={handleConvertToSmiley}
+                                    disabled={converting}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'var(--accent, #6effd8)',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        opacity: converting ? 0.5 : 1,
+                                        marginTop: '0.5rem',
+                                        fontSize: '1rem'
+                                    }}
+                                >
+                                    {converting ? 'Converting...' : 'Convert to Smiley Likes'}
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setShowConversionConfirm(false);
+                                        setConversionError('');
+                                    }}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-secondary, #6b7f78)',
+                                        cursor: 'pointer',
+                                        textDecoration: 'underline',
+                                        fontSize: '0.9rem'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
             {/* Report Modal */}
-            {showReportModal && activePost && (
-                <ReportModal
-                    isOpen={showReportModal}
-                    targetType="post"
-                    targetId={activePost.id}
-                    targetTitle={activePost.caption || activePost.title || 'Post'}
-                    onClose={() => setShowReportModal(false)}
-                />
-            )}
-        </div>
+            {
+                showReportModal && activePost && (
+                    <ReportModal
+                        isOpen={showReportModal}
+                        targetType="post"
+                        targetId={activePost.id}
+                        targetTitle={activePost.caption || activePost.title || 'Post'}
+                        onClose={() => setShowReportModal(false)}
+                    />
+                )
+            }
+        </div >
     );
 };
 

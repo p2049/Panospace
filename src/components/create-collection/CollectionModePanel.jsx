@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaGlobe, FaUsers, FaLock, FaStore, FaTag } from 'react-icons/fa';
-import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '../../utils/printifyPricing';
+import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '@/core/utils/pricing';
 
 const PRINT_SIZES = getPrintifyProducts();
 

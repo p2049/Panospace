@@ -1,12 +1,17 @@
-// Utility functions for fetching posts by status
-// Utility functions for fetching posts by status
-
 import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
+
+/**
+ * Posts Service
+ * Core logic for fetching, creating, and managing posts.
+ */
+
+// ============================================================================
+// FETCH QUERIES
+// ============================================================================
 
 /**
  * Fetch published posts for a user (for profile/feed display)
- * Handles legacy posts (missing status) by filtering in memory
  */
 export const fetchPublishedPosts = async (userId, limitCount = 20) => {
     try {
@@ -15,7 +20,7 @@ export const fetchPublishedPosts = async (userId, limitCount = 20) => {
             postsRef,
             where('userId', '==', userId),
             orderBy('createdAt', 'desc'),
-            limit(limitCount + 10) // Fetch extra to account for drafts
+            limit(limitCount + 10)
         );
 
         const snapshot = await getDocs(q);
@@ -29,7 +34,7 @@ export const fetchPublishedPosts = async (userId, limitCount = 20) => {
 };
 
 /**
- * Fetch draft posts for a user (for draft picker)
+ * Fetch draft posts for a user
  */
 export const fetchDrafts = async (userId) => {
     try {
@@ -50,8 +55,7 @@ export const fetchDrafts = async (userId) => {
 };
 
 /**
- * Fetch all posts for feed (published only)
- * Handles legacy posts by filtering in memory
+ * Fetch feed posts (published only)
  */
 export const fetchFeedPosts = async (limitCount = 20) => {
     try {

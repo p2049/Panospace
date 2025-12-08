@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import '../styles/film-strip-carousel.css';
+import '@/styles/film-strip-carousel.css';
 
 /**
  * FilmStripCarousel - Clean, modern film strip UI for post viewer/**

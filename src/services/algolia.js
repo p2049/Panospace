@@ -3,7 +3,7 @@
 
 import algoliasearch from 'algoliasearch/lite';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 
 // Algolia configuration (set these in .env)
 const ALGOLIA_APP_ID = import.meta.env.VITE_ALGOLIA_APP_ID || '';

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PARKS_DATA } from '../constants/parksData';
+import { PARKS_DATA } from '@/core/constants/parksData';
 import { FaTree, FaMountain } from 'react-icons/fa';
-import ParkCard from '../components/ui/cards/ParkCard';
+import ParkCard from '@/components/ui/cards/ParkCard';
 
 const Parks = () => {
     const navigate = useNavigate();

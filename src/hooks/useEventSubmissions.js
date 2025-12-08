@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, addDoc, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
-import { validateSubmission } from '../utils/eventValidation';
-import { getDerivedDate } from '../utils/dateHelpers';
+import { validateSubmission } from '@/core/utils/eventValidation';
+import { getDerivedDate } from '@/core/utils/dates';
 
 export const useEventSubmissions = (eventId) => {
     const [submissions, setSubmissions] = useState([]);

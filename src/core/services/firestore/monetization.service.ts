@@ -8,10 +8,9 @@ import {
     query,
     where,
     getDocs,
-    orderBy,
-    limit
+    orderBy
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 
 /**
  * Monetization Service
@@ -38,18 +37,10 @@ export const BOOST_LEVELS = {
 
 /**
  * Get the monetization tier of a user
- * @param {string} userId 
- * @returns {Promise<string>} 'free', 'ultra', or 'partner'
- */
-/**
- * Get the monetization tier of a user
- * @param {string} userId 
- * @returns {Promise<string>} 'free', 'ultra', or 'partner'
  */
 export const getUserTier = async (userId) => {
     if (!userId) return USER_TIERS.FREE;
 
-    // Dev/Demo Accounts - Always grant PARTNER tier for testing
     const DEV_EMAILS = ['appreview@paxus.app', 'dev@paxus.app', 'admin@paxus.app'];
 
     try {
@@ -58,7 +49,6 @@ export const getUserTier = async (userId) => {
 
         const data = userDoc.data();
 
-        // Check if user is a dev account
         if (data.email && DEV_EMAILS.includes(data.email)) {
             return USER_TIERS.PARTNER;
         }
@@ -75,15 +65,14 @@ export const getUserTier = async (userId) => {
 /**
  * Subscribe user to Space Creator (formerly Ultra)
  * Cost: $5.00 / month
- * @param {string} userId 
  */
 export const subscribeToUltra = async (userId) => {
     const PRICE = 5.00;
 
     try {
-        // 1. Deduct funds from user wallet
         // Dynamic import to avoid circular dependency
-        const { WalletService } = await import('./WalletService');
+        // Assuming WalletService will be moved or is accessible via alias
+        const { WalletService } = await import('@/services/WalletService');
 
         await WalletService.subtractFunds(
             userId,
@@ -94,10 +83,9 @@ export const subscribeToUltra = async (userId) => {
             'subscription'
         );
 
-        // 2. Activate Subscription
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
-            isUltra: true, // Keeping internal flag as isUltra for compatibility
+            isUltra: true,
             subscriptionStatus: 'active',
             subscriptionPlan: 'space_creator_monthly',
             subscriptionUpdatedAt: serverTimestamp(),
@@ -112,19 +100,13 @@ export const subscribeToUltra = async (userId) => {
 
 /**
  * Purchase a boost for a post
- * @param {string} userId - The user purchasing the boost
- * @param {string} postId - The post to boost
- * @param {number} level - 1, 2, or 3
  */
 export const purchaseBoost = async (userId, postId, level = 1) => {
-    const boostConfig = BOOST_LEVELS[level];
-    if (!boostConfig) throw new Error("Invalid boost level");
-
+    const boostConfig = BOOST_LEVELS[level] || BOOST_LEVELS[1];
     const priceInDollars = boostConfig.priceCents / 100;
 
     try {
-        // 1. Deduct funds from user wallet
-        const { WalletService } = await import('./WalletService');
+        const { WalletService } = await import('@/services/WalletService');
         await WalletService.subtractFunds(
             userId,
             priceInDollars,
@@ -134,9 +116,7 @@ export const purchaseBoost = async (userId, postId, level = 1) => {
             'boost'
         );
 
-        // 2. Update post with boost data
         const postRef = doc(db, 'posts', postId);
-
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + boostConfig.durationHours);
 
@@ -156,31 +136,23 @@ export const purchaseBoost = async (userId, postId, level = 1) => {
 
 /**
  * Create a commission request
- * @param {string} editorId 
- * @param {string} buyerId 
- * @param {string} rawFileUrl 
- * @param {number} price 
- * @param {string} instructions 
  */
 export const createCommission = async (editorId, buyerId, rawFileUrl, price, instructions = '') => {
     try {
-        // 1. Create the commission document first
         const commissionData = {
             editorId,
             buyerId,
             rawFileUrl,
             price,
             instructions,
-            status: 'pending', // Paid, waiting for editor to accept/start
+            status: 'pending',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         };
 
         const docRef = await addDoc(collection(db, 'commissions'), commissionData);
 
-        // 2. Process Payment
-        // We import WalletService dynamically to avoid circular dependencies if any
-        const { default: WalletService } = await import('./WalletService');
+        const { default: WalletService } = await import('@/services/WalletService');
         await WalletService.processCommissionPayment(buyerId, editorId, price, docRef.id);
 
         return { id: docRef.id, ...commissionData };
@@ -192,8 +164,6 @@ export const createCommission = async (editorId, buyerId, rawFileUrl, price, ins
 
 /**
  * Get commissions for a user
- * @param {string} userId 
- * @param {string} role 'editor' or 'buyer'
  */
 export const getCommissions = async (userId, role = 'editor') => {
     try {
@@ -213,12 +183,9 @@ export const getCommissions = async (userId, role = 'editor') => {
 
 /**
  * Create a Digital Museum (Partner Feature)
- * @param {string} partnerId 
- * @param {object} museumData 
  */
 export const createMuseum = async (partnerId, museumData) => {
     try {
-        // Verify partner status first
         const tier = await getUserTier(partnerId);
         if (tier !== USER_TIERS.PARTNER) throw new Error("Only partners can create museums");
 
@@ -226,7 +193,7 @@ export const createMuseum = async (partnerId, museumData) => {
             ...museumData,
             ownerId: partnerId,
             createdAt: serverTimestamp(),
-            type: museumData.type || PARTNER_TYPES.CITY // Default to city
+            type: museumData.type || PARTNER_TYPES.CITY
         };
 
         const docRef = await addDoc(collection(db, 'museums'), data);
@@ -239,11 +206,8 @@ export const createMuseum = async (partnerId, museumData) => {
 
 /**
  * Get Sponsored Cards (Ads)
- * @param {number} limitCount 
  */
 export const getSponsoredCards = async (limitCount = 1) => {
-    // In a real system, this would fetch from an 'ads' collection based on targeting
-    // For now, return a mock ad
     return [{
         id: 'sponsored_mock_1',
         type: 'sponsored',

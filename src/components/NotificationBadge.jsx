@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { getUnreadCount } from '../services/notificationService';
+import { useAuth } from '@/context/AuthContext';
+import { getUnreadCount } from '@/services/notificationService';
 
 const NotificationBadge = ({ size = 32, showDot = true }) => {
     const { currentUser } = useAuth();

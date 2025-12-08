@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
-import { usePreferenceLearning } from '../hooks/usePersonalizedFeed';
+import { useAuth } from '@/context/AuthContext';
+import { usePreferenceLearning } from '@/hooks/usePersonalizedFeed';
 import { FaStar, FaRegStar, FaSmile, FaRegSmile } from 'react-icons/fa';
 
 const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }) => {

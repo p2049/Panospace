@@ -4,8 +4,8 @@
  * Extracts camera metadata from image files using exifr library.
  */
 
-import { extractExifData as jsExtract } from '../../utils/exifUtils';
-import type { ExifData } from '../../types';
+import { extractExifData as jsExtract } from '@/core/utils/exif';
+import type { ExifData } from '@/types';
 
 /**
  * Extract EXIF data from an image file

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ShopService } from '../services/ShopService';
+import { useAuth } from '@/context/AuthContext';
+import { ShopService } from '@/core/services/firestore/studios.service';
 
 /**
  * ShopSetupGate - Wrapper component that enforces shop setup requirement

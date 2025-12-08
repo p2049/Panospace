@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, increment, collection, query, orderBy, getDocs, where, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-import { useCollection } from '../hooks/useCollections';
+import { db } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
+import { useCollection } from '@/hooks/useCollections';
 import { FaArrowLeft, FaUniversity, FaImage, FaUser, FaPlus, FaCheck, FaSearch } from 'react-icons/fa';
-import SEO from '../components/SEO';
-import GalleryCard from '../components/ui/cards/GalleryCard';
-import StarBackground from '../components/StarBackground';
-import CreateExhibitModal from '../components/museums/CreateExhibitModal';
+import SEO from '@/components/SEO';
+import GalleryCard from '@/components/ui/cards/GalleryCard';
+import StarBackground from '@/components/StarBackground';
+import CreateExhibitModal from '@/components/museums/CreateExhibitModal';
 import { FaClock } from 'react-icons/fa';
 
 const MuseumView = () => {

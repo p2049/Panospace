@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FaTimes, FaImage, FaStar, FaInfoCircle, FaRocket, FaFileAlt, FaUpload } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { SpaceCardService, RARITY_TIERS, EDITION_TYPES, CARD_DISCIPLINES, CARD_STYLES } from '../services/SpaceCardService';
-import { fetchPublishedPosts, fetchDrafts } from '../utils/postQueries';
-import { storage, db } from '../firebase';
+import { useAuth } from '@/context/AuthContext';
+import { SpaceCardService, RARITY_TIERS, EDITION_TYPES, CARD_DISCIPLINES, CARD_STYLES } from '@/services/SpaceCardService';
+import { fetchPublishedPosts, fetchDrafts } from '@/core/services/firestore/posts.service';
+import { storage, db } from '@/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import {
@@ -12,7 +12,7 @@ import {
     getAutoRarity,
     getAllParks,
     getTagLabel
-} from '../constants/officialCardCategories';
+} from '@/core/constants/officialCardCategories';
 import StarBackground from './StarBackground';
 
 const CreateCardModal = ({ onClose, onCreated }) => {

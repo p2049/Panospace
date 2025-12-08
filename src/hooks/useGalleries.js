@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { collection, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove, query, where, orderBy, limit } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
-import { generateSearchKeywords } from '../utils/searchKeywords';
+import { useAuth } from '@/context/AuthContext';
+import { generateSearchKeywords } from '@/core/utils/searchKeywords';
 
 export const useGalleries = () => {
     const [loading, setLoading] = useState(false);

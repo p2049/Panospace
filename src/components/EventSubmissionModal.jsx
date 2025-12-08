@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useEventSystem } from '../hooks/useEventSystem';
+import { useAuth } from '@/context/AuthContext';
+import { useEventSystem } from '@/hooks/useEventSystem';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { FaTimes, FaCheckCircle } from 'react-icons/fa';
 
 const EventSubmissionModal = ({ isOpen, onClose, eventId, eventTitle, isExpired }) => {

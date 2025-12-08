@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaGem, FaCheck, FaTrophy, FaImage, FaPalette, FaStore, FaCrown } from 'react-icons/fa';
-import { subscribeToUltra, getUserTier, USER_TIERS } from '../services/monetizationService';
-import { useAuth } from '../context/AuthContext';
-import UltraBadge from '../components/monetization/UltraBadge';
+import { subscribeToUltra, getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import { useAuth } from '@/context/AuthContext';
+import UltraBadge from '@/components/monetization/UltraBadge';
 
 const UltraPage = () => {
     const { currentUser } = useAuth();

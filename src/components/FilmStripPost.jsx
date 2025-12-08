@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import '../styles/film-strip-post.css';
+import '@/styles/film-strip-post.css';
 import DateStampOverlay from './DateStampOverlay';
 import SmartImage from './SmartImage';
 

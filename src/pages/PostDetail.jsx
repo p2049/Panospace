@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '@/firebase';
 import { FaArrowLeft } from 'react-icons/fa';
-import Post from '../components/Post';
+import Post from '@/components/Post';
 
 const PostDetail = () => {
     const { id } = useParams();

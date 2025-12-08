@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaPlus, FaTimes, FaHashtag } from 'react-icons/fa';
-import TagFilterPanel from '../TagFilterPanel';
-import { TAG_CATEGORIES, ALL_TAGS } from '../../constants/tagCategories';
+import TagFilterPanel from '@/components/TagFilterPanel';
+import { TAG_CATEGORIES, ALL_TAGS } from '@/core/constants/tagCategories';
 
 /**
  * TagCategoryPanel Component

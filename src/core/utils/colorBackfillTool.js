@@ -2,8 +2,8 @@
 // This can be run from the browser console or as a page component
 
 import { collection, getDocs, doc, updateDoc, query, where, limit } from 'firebase/firestore';
-import { db } from '../firebase';
-import { extractDominantColor } from '../utils/colorExtraction';
+import { db } from '@/core/firebase';
+import { extractDominantColor } from '@/core/utils/colors';
 
 export class ColorBackfillTool {
     constructor() {

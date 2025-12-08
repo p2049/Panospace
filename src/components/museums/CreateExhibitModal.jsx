@@ -2,9 +2,9 @@ import React, { useState, useRef } from 'react';
 import { FaTimes, FaImage, FaClock, FaCloudUploadAlt } from 'react-icons/fa';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { db, storage } from '../../firebase';
-import { useAuth } from '../../context/AuthContext';
-import PSButton from '../PSButton';
+import { db, storage } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
+import PSButton from '@/components/PSButton';
 
 const CreateExhibitModal = ({ isOpen, onClose, museumId }) => {
     const { currentUser } = useAuth();

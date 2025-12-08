@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { functions, db } from '../firebase';
+import { functions, db } from '@/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { FaShoppingCart, FaWallet } from 'react-icons/fa';
-import { useAuth } from '../context/AuthContext';
-import { WalletService } from '../services/WalletService';
+import { useAuth } from '@/context/AuthContext';
+import { WalletService } from '@/services/WalletService';
 
 // Initialize Stripe with the provided test key
 const stripePromise = loadStripe('pk_test_51SVxZtF3FCQ1N5YCyooRPhAZiECp9ivHgrIcOcomZPy6fbcCy34C6I7mT4dgC27yh51VcwPebwCAuVdOkgtaJKBa00mB4c8yta');

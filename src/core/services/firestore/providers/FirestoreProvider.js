@@ -4,7 +4,7 @@
  * Fallback search provider using Firestore keyword search
  */
 
-import { db } from '../../../firebase';
+import { db } from '@/core/firebase';
 import {
     collection,
     query,

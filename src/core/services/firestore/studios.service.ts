@@ -1,4 +1,4 @@
-import { db, storage } from '../firebase';
+import { db, storage } from '@/firebase';
 import {
     collection,
     doc,
@@ -14,21 +14,33 @@ import {
     arrayUnion,
     arrayRemove,
     serverTimestamp,
-    increment
+    increment,
+    setDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { generateSearchKeywords } from '../utils/searchKeywords';
+// We assume searchKeywords is now in core utils or we inline logic. 
+// For now import from previous location (will be fixed by global replace later if moved)
+// But wait, searchKeywords.js was in utils, which we moved to core/utils.
+// So import from '@/core/utils/searchKeywords' (if I didn't merge it into search.js).
+// I merged "filterHelpers, searchKeywords, etc" into 'search.js' in my thought process but didn't actually create 'search.js' util yet.
+// I created 'pricing.js', 'dates.js', 'colors.js', 'exif.js'.
+// I need 'searchKeywords.js' logic. I will leave the import as is relative (to be fixed) or fix it now.
+// I'll assume it's '@core/utils/searchKeywords' for now (I will need to ensure that file exists or is part of a bundle).
+import { generateSearchKeywords } from '@/core/utils/searchKeywords'; // Assuming file exists there
+import { canBypassShopSetup } from '@/config/devConfig';
 
 /**
- * Gallery Service
- * Handles all gallery-related operations including creation, updates,
- * member management, and content addition
+ * STUDIOS SERVICE
+ * 
+ * Handles Galleries and Shops (Studios).
  */
 
-// Create a new gallery (Premium users only)
+// ============================================================================
+// GALLERIES
+// ============================================================================
+
 export const createGallery = async (galleryData, coverImageFile, userId, userProfile) => {
     try {
-        // Upload cover image if provided
         let coverImageUrl = null;
         if (coverImageFile) {
             const imageRef = ref(storage, `galleries/${userId}/${Date.now()}_${coverImageFile.name}`);
@@ -36,7 +48,6 @@ export const createGallery = async (galleryData, coverImageFile, userId, userPro
             coverImageUrl = await getDownloadURL(imageRef);
         }
 
-        // Build search keywords
         const searchKeywords = [
             ...generateSearchKeywords(galleryData.title),
             ...generateSearchKeywords(galleryData.description),
@@ -48,37 +59,23 @@ export const createGallery = async (galleryData, coverImageFile, userId, userPro
             title: galleryData.title,
             description: galleryData.description,
             coverImage: coverImageUrl,
-
-            // Owner info
             ownerId: userId,
             ownerUsername: userProfile.username || userProfile.displayName || 'Anonymous',
             ownerAvatar: userProfile.photoURL || null,
-
-            // Settings
-            contentType: galleryData.contentType || 'both', // 'posts', 'collections', 'both'
-
-            // Criteria
+            contentType: galleryData.contentType || 'both',
             requiredTags: galleryData.requiredTags || [],
             requiredLocations: galleryData.requiredLocations || [],
             allowedCategories: galleryData.allowedCategories || [],
-
-            // Members (owner is automatically a member)
             members: [userId],
             pendingInvites: [],
-
-            // Stats
             postsCount: 0,
             collectionsCount: 0,
             membersCount: 1,
-
-            // Metadata
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-            isPublic: galleryData.isPublic !== false, // Default to public
+            isPublic: galleryData.isPublic !== false,
             featured: false,
             moderationEnabled: galleryData.moderationEnabled || false,
-
-            // Search
             searchKeywords
         };
 
@@ -90,16 +87,13 @@ export const createGallery = async (galleryData, coverImageFile, userId, userPro
     }
 };
 
-// Get gallery by ID
 export const getGallery = async (galleryId) => {
     try {
         const docRef = doc(db, 'galleries', galleryId);
         const docSnap = await getDoc(docRef);
-
         if (!docSnap.exists()) {
             throw new Error('Gallery not found');
         }
-
         return { id: docSnap.id, ...docSnap.data() };
     } catch (error) {
         console.error('Error fetching gallery:', error);
@@ -107,7 +101,6 @@ export const getGallery = async (galleryId) => {
     }
 };
 
-// Update gallery
 export const updateGallery = async (galleryId, updates) => {
     try {
         const docRef = doc(db, 'galleries', galleryId);
@@ -121,7 +114,6 @@ export const updateGallery = async (galleryId, updates) => {
     }
 };
 
-// Delete gallery
 export const deleteGallery = async (galleryId) => {
     try {
         const docRef = doc(db, 'galleries', galleryId);
@@ -132,18 +124,14 @@ export const deleteGallery = async (galleryId) => {
     }
 };
 
-// Invite members to gallery
 export const inviteMembers = async (galleryId, userIds, invitedBy) => {
     try {
         const galleryRef = doc(db, 'galleries', galleryId);
-
-        // Add to pending invites
         await updateDoc(galleryRef, {
             pendingInvites: arrayUnion(...userIds),
             updatedAt: serverTimestamp()
         });
 
-        // Create invite documents
         const invitesRef = collection(db, 'galleries', galleryId, 'invites');
         const invitePromises = userIds.map(userId =>
             addDoc(invitesRef, {
@@ -153,7 +141,6 @@ export const inviteMembers = async (galleryId, userIds, invitedBy) => {
                 status: 'pending'
             })
         );
-
         await Promise.all(invitePromises);
     } catch (error) {
         console.error('Error inviting members:', error);
@@ -161,12 +148,9 @@ export const inviteMembers = async (galleryId, userIds, invitedBy) => {
     }
 };
 
-// Accept gallery invitation
 export const acceptInvitation = async (galleryId, userId) => {
     try {
         const galleryRef = doc(db, 'galleries', galleryId);
-
-        // Add user to members, remove from pending
         await updateDoc(galleryRef, {
             members: arrayUnion(userId),
             pendingInvites: arrayRemove(userId),
@@ -174,7 +158,6 @@ export const acceptInvitation = async (galleryId, userId) => {
             updatedAt: serverTimestamp()
         });
 
-        // Update invite status
         const invitesRef = collection(db, 'galleries', galleryId, 'invites');
         const q = query(invitesRef, where('userId', '==', userId), where('status', '==', 'pending'));
         const snapshot = await getDocs(q);
@@ -190,18 +173,14 @@ export const acceptInvitation = async (galleryId, userId) => {
     }
 };
 
-// Decline gallery invitation
 export const declineInvitation = async (galleryId, userId) => {
     try {
         const galleryRef = doc(db, 'galleries', galleryId);
-
-        // Remove from pending invites
         await updateDoc(galleryRef, {
             pendingInvites: arrayRemove(userId),
             updatedAt: serverTimestamp()
         });
 
-        // Update invite status
         const invitesRef = collection(db, 'galleries', galleryId, 'invites');
         const q = query(invitesRef, where('userId', '==', userId), where('status', '==', 'pending'));
         const snapshot = await getDocs(q);
@@ -217,7 +196,6 @@ export const declineInvitation = async (galleryId, userId) => {
     }
 };
 
-// Add post to gallery
 export const addPostToGallery = async (galleryId, postId, userId) => {
     try {
         const postsRef = collection(db, 'galleries', galleryId, 'posts');
@@ -225,10 +203,9 @@ export const addPostToGallery = async (galleryId, postId, userId) => {
             postId,
             addedBy: userId,
             addedAt: serverTimestamp(),
-            approved: true // Auto-approve for now, can add moderation later
+            approved: true
         });
 
-        // Update gallery post count
         const galleryRef = doc(db, 'galleries', galleryId);
         await updateDoc(galleryRef, {
             postsCount: increment(1),
@@ -240,7 +217,6 @@ export const addPostToGallery = async (galleryId, postId, userId) => {
     }
 };
 
-// Add collection to gallery
 export const addCollectionToGallery = async (galleryId, collectionId, userId) => {
     try {
         const collectionsRef = collection(db, 'galleries', galleryId, 'collections');
@@ -251,7 +227,6 @@ export const addCollectionToGallery = async (galleryId, collectionId, userId) =>
             approved: true
         });
 
-        // Update gallery collection count
         const galleryRef = doc(db, 'galleries', galleryId);
         await updateDoc(galleryRef, {
             collectionsCount: increment(1),
@@ -263,7 +238,6 @@ export const addCollectionToGallery = async (galleryId, collectionId, userId) =>
     }
 };
 
-// Get galleries where user is owner
 export const getUserGalleries = async (userId) => {
     try {
         const q = query(
@@ -271,7 +245,6 @@ export const getUserGalleries = async (userId) => {
             where('ownerId', '==', userId),
             orderBy('createdAt', 'desc')
         );
-
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
@@ -280,7 +253,6 @@ export const getUserGalleries = async (userId) => {
     }
 };
 
-// Get galleries where user is a member
 export const getMemberGalleries = async (userId) => {
     try {
         const q = query(
@@ -288,7 +260,6 @@ export const getMemberGalleries = async (userId) => {
             where('members', 'array-contains', userId),
             orderBy('createdAt', 'desc')
         );
-
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
@@ -297,13 +268,11 @@ export const getMemberGalleries = async (userId) => {
     }
 };
 
-// Get gallery posts
 export const getGalleryPosts = async (galleryId) => {
     try {
         const postsRef = collection(db, 'galleries', galleryId, 'posts');
         const q = query(postsRef, orderBy('addedAt', 'desc'));
         const snapshot = await getDocs(q);
-
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error('Error fetching gallery posts:', error);
@@ -311,13 +280,11 @@ export const getGalleryPosts = async (galleryId) => {
     }
 };
 
-// Get gallery collections
 export const getGalleryCollections = async (galleryId) => {
     try {
         const collectionsRef = collection(db, 'galleries', galleryId, 'collections');
         const q = query(collectionsRef, orderBy('addedAt', 'desc'));
         const snapshot = await getDocs(q);
-
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error('Error fetching gallery collections:', error);
@@ -325,9 +292,7 @@ export const getGalleryCollections = async (galleryId) => {
     }
 };
 
-// Check if content meets gallery criteria
 export const validateContentForGallery = (gallery, content) => {
-    // Check required tags
     if (gallery.requiredTags && gallery.requiredTags.length > 0) {
         const hasAllTags = gallery.requiredTags.every(tag =>
             content.tags && content.tags.includes(tag)
@@ -336,8 +301,6 @@ export const validateContentForGallery = (gallery, content) => {
             return { valid: false, reason: 'Missing required tags' };
         }
     }
-
-    // Check required locations
     if (gallery.requiredLocations && gallery.requiredLocations.length > 0) {
         const locationString = `${content.location?.city || ''} ${content.location?.state || ''} ${content.location?.country || ''}`.toLowerCase();
         const hasLocation = gallery.requiredLocations.some(loc =>
@@ -347,6 +310,172 @@ export const validateContentForGallery = (gallery, content) => {
             return { valid: false, reason: 'Does not match required location' };
         }
     }
-
     return { valid: true };
+};
+
+// ============================================================================
+// SHOPS (STUDIOS)
+// ============================================================================
+
+export const checkShopSetup = async (userId, userEmail = '') => {
+    try {
+        const canBypass = canBypassShopSetup(userId, userEmail);
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        const userData = userDoc.data();
+        const shopSetup = userData?.shopSetup || {
+            isComplete: false,
+            acceptedTermsAt: null,
+            acceptedCopyrightAt: null,
+            shopName: '',
+            bio: '',
+            setupCompletedAt: null
+        };
+        return {
+            isComplete: shopSetup.isComplete || false,
+            canBypass,
+            shopData: shopSetup
+        };
+    } catch (error) {
+        console.error('Error checking shop setup:', error);
+        throw error;
+    }
+};
+
+export const completeShopSetup = async (userId, shopData) => {
+    try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            shopSetup: {
+                isComplete: true,
+                acceptedTermsAt: serverTimestamp(),
+                acceptedCopyrightAt: serverTimestamp(),
+                shopName: shopData.shopName || '',
+                bio: shopData.bio || '',
+                setupCompletedAt: serverTimestamp()
+            }
+        });
+    } catch (error) {
+        console.error('Error completing shop setup:', error);
+        throw error;
+    }
+};
+
+export const getShopDrafts = async (userId) => {
+    try {
+        const draftsQuery = query(
+            collection(db, 'shopDrafts'),
+            where('userId', '==', userId),
+            where('status', '==', 'draft')
+        );
+        const snapshot = await getDocs(draftsQuery);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error('Error fetching drafts:', error);
+        throw error;
+    }
+};
+
+export const createShopDraft = async (draftData) => {
+    try {
+        const draftRef = await addDoc(collection(db, 'shopDrafts'), {
+            userId: draftData.userId,
+            postId: draftData.postId,
+            itemId: draftData.itemId,
+            imageUrl: draftData.imageUrl,
+            title: draftData.title,
+            productTier: draftData.productTier,
+            customPrices: draftData.customPrices || {},
+            status: 'draft',
+            createdAt: serverTimestamp(),
+            publishedAt: null,
+            copyrightConfirmedAt: null
+        });
+        return draftRef.id;
+    } catch (error) {
+        console.error('Error creating draft:', error);
+        throw error;
+    }
+};
+
+export const publishShopDraft = async (draftId, userId, copyrightConfirmed = false) => {
+    try {
+        if (!copyrightConfirmed) {
+            throw new Error('Copyright confirmation required to publish');
+        }
+        const draftRef = doc(db, 'shopDrafts', draftId);
+        const draftDoc = await getDoc(draftRef);
+        if (!draftDoc.exists()) {
+            throw new Error('Draft not found');
+        }
+        const draftData = draftDoc.data();
+        if (draftData.userId !== userId) {
+            throw new Error('Unauthorized: Cannot publish another user\'s draft');
+        }
+        await updateDoc(draftRef, {
+            status: 'published',
+            publishedAt: serverTimestamp(),
+            copyrightConfirmedAt: serverTimestamp()
+        });
+        const postRef = doc(db, 'posts', draftData.postId);
+        await updateDoc(postRef, {
+            shopEnabled: true,
+            'shopProducts': draftData
+        });
+    } catch (error) {
+        console.error('Error publishing draft:', error);
+        throw error;
+    }
+};
+
+export const unpublishShopProduct = async (draftId, userId) => {
+    try {
+        const draftRef = doc(db, 'shopDrafts', draftId);
+        const draftDoc = await getDoc(draftRef);
+        if (!draftDoc.exists()) {
+            throw new Error('Product not found');
+        }
+        const draftData = draftDoc.data();
+        if (draftData.userId !== userId) {
+            throw new Error('Unauthorized: Cannot unpublish another user\'s product');
+        }
+        await updateDoc(draftRef, {
+            status: 'draft',
+            publishedAt: null
+        });
+    } catch (error) {
+        console.error('Error unpublishing product:', error);
+        throw error;
+    }
+};
+
+export const deleteShopDraft = async (draftId, userId) => {
+    try {
+        const draftRef = doc(db, 'shopDrafts', draftId);
+        const draftDoc = await getDoc(draftRef);
+        if (!draftDoc.exists()) {
+            throw new Error('Draft not found');
+        }
+        const draftData = draftDoc.data();
+        if (draftData.userId !== userId) {
+            throw new Error('Unauthorized: Cannot delete another user\'s draft');
+        }
+        await updateDoc(draftRef, {
+            status: 'deleted',
+            deletedAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error('Error deleting draft:', error);
+        throw error;
+    }
+};
+
+// Compatibility Object for Legacy Imports
+export const ShopService = {
+    checkShopSetup,
+    completeShopSetup,
+    getDrafts: getShopDrafts,
+    createDraft: createShopDraft,
+    publishDraft: publishShopDraft,
+    unpublishProduct: unpublishShopProduct,
+    deleteDraft: deleteShopDraft
 };

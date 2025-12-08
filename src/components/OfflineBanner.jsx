@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaWifi, FaExclamationTriangle } from 'react-icons/fa';
-import useOnlineStatus from '../hooks/useOnlineStatus';
-import { OfflineQueue } from '../services/OfflineQueue';
+import useOnlineStatus from '@/hooks/useOnlineStatus';
+import { OfflineQueue } from '@/services/OfflineQueue';
 
 /**
  * OfflineBanner - Minimal banner shown when connection is lost
