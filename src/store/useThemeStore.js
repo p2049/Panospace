@@ -45,6 +45,40 @@ export const useThemeStore = create((set) => ({
         }
     },
 
+    // Override accent color for Profile view
+    setProfileAccent: (color) => {
+        if (!color) return;
+
+        // Handle gradient strings - extract first hex or fallback
+        let solidColor = color;
+        if (color.includes('gradient')) {
+            const match = color.match(/#[0-9a-fA-F]{6}/);
+            solidColor = match ? match[0] : ART_THEME.accentColor;
+        }
+
+        set({
+            accentColor: solidColor,
+            secondaryColor: solidColor // Use same color for simplicity in profile mode
+        });
+
+        if (typeof document !== 'undefined') {
+            const root = document.documentElement;
+            root.style.setProperty('--accent-color', solidColor);
+            root.style.setProperty('--accent-secondary', solidColor);
+            // Optionally update glows if desired, but accent-color usually handles main UI
+        }
+    },
+
+    // Reset to default Art theme
+    resetProfileAccent: () => {
+        set({ ...ART_THEME });
+        if (typeof document !== 'undefined') {
+            const root = document.documentElement;
+            root.style.setProperty('--accent-color', ART_THEME.accentColor);
+            root.style.setProperty('--accent-secondary', ART_THEME.secondaryColor);
+        }
+    },
+
     // Get current theme colors
     getColors: () => {
         return ART_THEME;

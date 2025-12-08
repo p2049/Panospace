@@ -3,6 +3,7 @@ import './index.css'
 import './theme.css'
 import './styles/ui-framework.css'
 // import './styles/viewport-scaling.css' // Temporarily disabled - causing black screen on mobile
+import './i18n';
 import App from './App.jsx'
 
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';

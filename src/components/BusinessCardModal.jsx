@@ -106,7 +106,7 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                 width: '100%',
                 maxWidth: '600px',
                 aspectRatio: '1.75 / 1',
-                background: userGradient, // Use User's Star Theme/Gradient
+                background: userGradient,
                 borderRadius: '12px',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
                 overflow: 'hidden',

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { doc, addDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -16,12 +17,18 @@ import ReportModal from '../components/ReportModal';
 import CreateCardModal from '../components/CreateCardModal';
 import BusinessCardModal from '../components/BusinessCardModal';
 import CommissionModal from '../components/monetization/CommissionModal';
+import WalletModal from '../components/WalletModal';
 import DisciplinesModal from '../components/DisciplinesModal';
 import { getUnreadCount } from '../services/notificationService';
 import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette } from 'react-icons/fa';
 import FollowListModal from '../components/FollowListModal';
 import { getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { isFeatureEnabled } from '../config/featureFlags';
+import { RocketIcon, AstronautIcon, PlanetIcon } from '../components/SpaceIcons';
+import { getGradientBackground, getGradient } from '../constants/gradients';
+
+import { useThemeStore } from '../store/useThemeStore';
+import { useFeedStore } from '../store/useFeedStore';
 
 
 const Profile = () => {
@@ -29,6 +36,8 @@ const Profile = () => {
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { blockUser } = useBlock();
+    const { t } = useTranslation();
+    const { setProfileAccent, resetProfileAccent } = useThemeStore();
     const [showCreateMuseumModal, setShowCreateMuseumModal] = useState(false);
 
     const targetId = (id === 'me' || !id) ? currentUser?.uid : id;
@@ -41,15 +50,14 @@ const Profile = () => {
     const [showDisciplinesModal, setShowDisciplinesModal] = useState(false);
     const [showFollowList, setShowFollowList] = useState(false);
     const [followListType, setFollowListType] = useState('followers');
-
-
+    const { currentFeed: feedType, toggleFeed } = useFeedStore();
     const [showAddFunds, setShowAddFunds] = useState(false);
+    const [showProfilePopout, setShowProfilePopout] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
     const [orders, setOrders] = useState([]);
     const { collections, loading: collectionsLoading } = useCollections(targetId);
 
-    // Use the new useProfile hook
     const {
         user,
         posts,
@@ -61,7 +69,7 @@ const Profile = () => {
         followDocId,
         setIsFollowing,
         setFollowDocId
-    } = useProfile(targetId, currentUser, activeTab);
+    } = useProfile(targetId, currentUser, activeTab, feedType);
 
     // Fetch orders for Gallery tab
     React.useEffect(() => {
@@ -147,6 +155,30 @@ const Profile = () => {
         return () => clearInterval(interval);
     }, [currentUser, targetId]);
 
+    // Determine Banner Background and Mode - moved up for Hooks
+    const bannerMode = user?.profileTheme?.bannerMode || 'stars';
+    const bannerGradientId = user?.profileTheme?.gradientId || 'aurora-horizon';
+    const bannerGradient = getGradientBackground(bannerGradientId);
+
+    // Calculate effective username color
+    let effectiveUsernameColor = user?.profileTheme?.usernameColor || '#FFFFFF';
+    if (bannerMode === 'gradient') {
+        const currentGradient = getGradient(bannerGradientId);
+        if (currentGradient?.topColor && currentGradient.topColor === effectiveUsernameColor) {
+            effectiveUsernameColor = '#FFFFFF';
+        }
+    }
+
+    const solidPlanetColor = (effectiveUsernameColor?.match(/#[0-9a-fA-F]{6}/) || ['#7FFFD4'])[0];
+
+    // Set Global Profile Accent for MobileNavigation
+    React.useEffect(() => {
+        if (user && !loading) {
+            setProfileAccent(effectiveUsernameColor);
+        }
+        return () => resetProfileAccent();
+    }, [effectiveUsernameColor, setProfileAccent, resetProfileAccent, user, loading]);
+
     if (loading) return <div className="ps-loading">Loading...</div>;
 
     if (!user) {
@@ -159,7 +191,9 @@ const Profile = () => {
         );
     }
 
+    // Derived state that requires user to be present (though user is present here due to checks above)
     const isOwnProfile = currentUser?.uid === user.id;
+
 
     return (
         <div className="ps-page">
@@ -170,18 +204,51 @@ const Profile = () => {
             />
             {/* Header with Space Theme */}
             <div style={{
-                background: '#000',
+                background: bannerMode === 'gradient' ? bannerGradient : '#000',
                 paddingTop: '0', // No top padding, content will push down
                 paddingBottom: '0.25rem', // Ultra minimal padding
                 borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
                 width: '100%',
                 // height: 'auto', // Let content dictate height
                 boxSizing: 'border-box',
-                position: 'relative',
-                overflow: 'hidden'
+                position: 'relative'
             }}>
-                {/* Animated Stars Background */}
-                <StarBackground starColor={user.profileTheme?.starColor || '#7FFFD4'} />
+                {/* Animated Stars Background - Only if enabled */}
+                {/* Animated Stars Background - Only if enabled */}
+                {(bannerMode === 'stars' || user.profileTheme?.useStarsOverlay) && (
+                    <StarBackground
+                        starColor={user.profileTheme?.starColor || '#7FFFD4'}
+                        transparent={bannerMode === 'gradient'}
+                    />
+                )}
+
+                {/* Gradient Polish Overlays (Noise + Vignette) - Only if gradient mode */}
+                {(bannerMode === 'gradient') && (
+                    <>
+                        {/* 1. Subtle Grain/Noise Overlay */}
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E")`,
+                            opacity: 0.15,
+                            mixBlendMode: 'overlay',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+
+                        {/* 2. Bottom Vignette (Soft Fade) */}
+                        <div style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '40%', // Fade covers bottom 40%
+                            background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%)',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    </>
+                )}
 
                 {/* Content Layer */}
                 <div style={{
@@ -212,15 +279,15 @@ const Profile = () => {
                             padding: 0,
                             zIndex: 10000,
                             transition: 'opacity 0.2s',
-                            filter: 'drop-shadow(0 0 8px rgba(127,255,212,0.3))'
+                            filter: `drop-shadow(0 0 8px ${solidPlanetColor}4D)`
                         }}
                         title="Go to Home Feed"
                     >
-                        <svg width="40" height="40" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="40" height="40" viewBox="-5 -5 34 34" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <radialGradient id="planetGradientProfile" cx="40%" cy="40%">
-                                    <stop offset="0%" style={{ stopColor: '#7FFFD4', stopOpacity: 1 }} />
-                                    <stop offset="100%" style={{ stopColor: '#00CED1', stopOpacity: 1 }} />
+                                    <stop offset="0%" style={{ stopColor: solidPlanetColor, stopOpacity: 1 }} />
+                                    <stop offset="100%" style={{ stopColor: solidPlanetColor, stopOpacity: 0.8 }} />
                                 </radialGradient>
                                 <filter id="planetGlowProfile">
                                     <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -230,23 +297,23 @@ const Profile = () => {
                                     </feMerge>
                                 </filter>
                             </defs>
-                            <ellipse cx="16" cy="16" rx="11" ry="3" fill="none" stroke="#7FFFD4" strokeWidth="1.2" opacity="0.4" transform="rotate(-20 16 16)" />
-                            <circle cx="16" cy="16" r="6" fill="url(#planetGradientProfile)" opacity="0.95" filter="url(#planetGlowProfile)" />
-                            <ellipse cx="16" cy="16" rx="11" ry="3" fill="none" stroke="#7FFFD4" strokeWidth="1.2" opacity="0.6" transform="rotate(-20 16 16)" strokeDasharray="0,6,15,100" />
-                            <circle cx="16" cy="16" r="6" fill="none" stroke="#7FFFD4" strokeWidth="0.4" opacity="0.3" />
+                            <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={solidPlanetColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
+                            <circle cx="12" cy="12" r="7" fill="url(#planetGradientProfile)" opacity="0.95" filter="url(#planetGlowProfile)" />
+                            <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={solidPlanetColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
+                            <circle cx="12" cy="12" r="7" fill="none" stroke={solidPlanetColor} strokeWidth="0.5" opacity="0.3" />
                         </svg>
                     </button>
 
 
 
-                    {/* --- LAYER 1: CENTERED USERNAME (With Absolute Elements around) --- */}
+
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center', // Center Username
                         justifyContent: 'center',
                         width: '100%',
-                        marginTop: '12px', // Reduced top spacing
+                        marginTop: '0.75rem', // Tightened Global Margin
                         marginBottom: '4px'
                     }}>
                         {/* Username */}
@@ -258,15 +325,15 @@ const Profile = () => {
                             letterSpacing: '0.02em',
                             textTransform: 'uppercase',
                             lineHeight: '1.0',
-                            background: (user.profileTheme?.usernameColor && user.profileTheme.usernameColor.includes('gradient'))
-                                ? user.profileTheme.usernameColor
+                            background: (effectiveUsernameColor && effectiveUsernameColor.includes('gradient'))
+                                ? effectiveUsernameColor
                                 : 'transparent',
-                            WebkitBackgroundClip: (user.profileTheme?.usernameColor && user.profileTheme.usernameColor.includes('gradient'))
+                            WebkitBackgroundClip: (effectiveUsernameColor && effectiveUsernameColor.includes('gradient'))
                                 ? 'text' : 'border-box',
-                            WebkitTextFillColor: (user.profileTheme?.usernameColor && user.profileTheme.usernameColor.includes('gradient'))
-                                ? 'transparent' : (user.profileTheme?.usernameColor || '#FFFFFF'),
-                            color: (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient'))
-                                ? user.profileTheme.usernameColor
+                            WebkitTextFillColor: (effectiveUsernameColor && effectiveUsernameColor.includes('gradient'))
+                                ? 'transparent' : (effectiveUsernameColor || '#FFFFFF'),
+                            color: (effectiveUsernameColor && !effectiveUsernameColor.includes('gradient'))
+                                ? effectiveUsernameColor
                                 : '#FFFFFF',
                             textShadow: '0 0 30px rgba(0,0,0,0.5)',
                             wordBreak: 'break-word',
@@ -275,19 +342,52 @@ const Profile = () => {
                             {user.username || user.displayName}
                         </h1>
 
-                        {/* Icons Container - Rendering Children Absolutely */}
-                        <div>
-                            {/* Wallet (Own Profile Only) */}
-                            {isOwnProfile && (
+                        {/* Icons Container - HIDDEN FOR CLEAN BANNER, MOVED TO POPOUT */}
+                        {false && (
+                            <div>
+                                {/* Wallet (Own Profile Only) */}
+                                {isOwnProfile && (
+                                    <button
+                                        onClick={() => setShowAddFunds(true)}
+                                        title="Wallet"
+                                        style={{
+                                            position: 'absolute',
+                                            top: '70px', // Aligned with Business Card row (Bottom Right Corner)
+                                            right: '1rem', // Aligned with Hamburger column
+                                            width: '44px', // Standardize width for center alignment
+                                            height: '44px',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: 0,
+                                            cursor: 'pointer',
+                                            color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')
+                                                ? user.profileTheme.usernameColor
+                                                : '#7FFFD4',
+                                            opacity: 0.9,
+                                            transition: 'transform 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            zIndex: 60
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    >
+                                        <FaWallet size={window.innerWidth < 768 ? 20 : 24} />
+                                    </button>
+                                )}
+
+                                {/* Business Card (Always Visible) */}
                                 <button
-                                    onClick={() => setShowAddFunds(true)}
-                                    title="Wallet"
+                                    onClick={() => setShowBusinessCard(true)}
+                                    title={isOwnProfile ? "Edit Business Card" : "View Business Card"}
                                     style={{
                                         position: 'absolute',
-                                        top: '70px', // Moved down slightly to align
-                                        right: 'calc(1rem + 5px)', // Moved 5px left
+                                        top: '70px', // Moved down to match Wallet
+                                        left: 'calc(1rem + 5px)', // Moved 5px right
                                         background: 'transparent',
-                                        border: 'none',
+                                        border: 'none', // Ensure no box
+                                        outline: 'none', // Ensure no box
                                         padding: 0,
                                         cursor: 'pointer',
                                         color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')
@@ -302,38 +402,12 @@ const Profile = () => {
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    <FaWallet size={window.innerWidth < 768 ? 20 : 24} />
+                                    <FaIdBadge size={window.innerWidth < 768 ? 20 : 24} />
                                 </button>
-                            )}
 
-                            {/* Business Card (Always Visible) */}
-                            <button
-                                onClick={() => setShowBusinessCard(true)}
-                                title={isOwnProfile ? "Edit Business Card" : "View Business Card"}
-                                style={{
-                                    position: 'absolute',
-                                    top: '70px', // Moved down to match Wallet
-                                    left: 'calc(1rem + 5px)', // Moved 5px right
-                                    background: 'transparent',
-                                    border: 'none', // Ensure no box
-                                    outline: 'none', // Ensure no box
-                                    padding: 0,
-                                    cursor: 'pointer',
-                                    color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')
-                                        ? user.profileTheme.usernameColor
-                                        : '#7FFFD4',
-                                    opacity: 0.9,
-                                    transition: 'transform 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                            >
-                                <FaIdBadge size={window.innerWidth < 768 ? 20 : 24} />
-                            </button>
-                        </div>
+
+                            </div>
+                        )}
                     </div>
 
                     {/* --- LAYER 2: STATS & ACTIONS --- */}
@@ -346,117 +420,12 @@ const Profile = () => {
                         marginTop: '0px',
                         marginBottom: '0px'
                     }}>
-                        {/* Wrapper for Stats to keep structure if needed, or just list items */}
 
-                        {/* Stats Row (Followers/Following) - Right of Planet */}
-                        <div style={{
-                            position: 'absolute',
-                            top: '23px', // Moved 5px down (18 + 5)
-                            left: '60px', // Planet width + gap
-                            display: 'flex',
-                            gap: '0.5rem'
-                        }}>
-                            <button
-                                onClick={() => { setFollowListType('followers'); setShowFollowList(true); }}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none', // Removed thick border
-                                    padding: '2px 4px', // Minimal padding
-                                    cursor: 'pointer',
-                                    fontSize: '0.7rem', // Smaller text
-                                    color: 'rgba(255,255,255,0.5)', // Gray text
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    transition: 'all 0.2s',
-                                    fontFamily: 'var(--font-family-body)'
-                                }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.color = user.profileTheme?.usernameColor || '#fff';
-                                    e.currentTarget.style.textDecoration = 'underline'; // Hover effect
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
-                                    e.currentTarget.style.textDecoration = 'none';
-                                }}
-                            >
-                                <span style={{
-                                    fontWeight: 'bold',
-                                    color: (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient'))
-                                        ? user.profileTheme.usernameColor
-                                        : '#fff'
-                                }}>
-                                    {user.followersCount || 0}
-                                </span>
-                                Followers
-                            </button>
 
-                            <button
-                                onClick={() => { setFollowListType('following'); setShowFollowList(true); }}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    padding: '2px 4px',
-                                    cursor: 'pointer',
-                                    fontSize: '0.7rem',
-                                    color: 'rgba(255,255,255,0.5)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    transition: 'all 0.2s',
-                                    fontFamily: 'var(--font-family-body)'
-                                }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.color = user.profileTheme?.usernameColor || '#fff';
-                                    e.currentTarget.style.textDecoration = 'underline';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.color = 'rgba(255,255,255,0.5)';
-                                    e.currentTarget.style.textDecoration = 'none';
-                                }}
-                            >
-                                <span style={{
-                                    fontWeight: 'bold',
-                                    color: (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient'))
-                                        ? user.profileTheme.usernameColor
-                                        : '#fff'
-                                }}>
-                                    {user.followingCount || 0}
-                                </span>
-                                Following
-                            </button>
-                        </div>
 
-                        {/* Badges & Disciplines (Optional, keep if needed for context, but keep small) */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', marginTop: '8px' }}>
-                            {user.disciplines?.main?.length > 0 && (
-                                <button
-                                    onClick={() => setShowDisciplinesModal(true)}
-                                    style={{
-                                        padding: '0.2rem 0.5rem',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '4px',
-                                        color: 'rgba(255,255,255,0.8)',
-                                        fontSize: '0.65rem',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '0.3rem',
-                                        fontFamily: 'var(--font-family-heading)',
-                                        letterSpacing: '0.05em',
-                                        textTransform: 'uppercase'
-                                    }}
-                                >
-                                    <FaPalette size={9} />
-                                    {user.disciplines.main.length} {user.disciplines.main.length === 1 ? 'Discipline' : 'Disciplines'}
-                                </button>
-                            )}
-                        </div>
 
                         {/* Follow / Commission Buttons */}
-                        {!isOwnProfile && (
+                        {false && !isOwnProfile && (
                             <div style={{ marginTop: '12px', display: 'flex', gap: '0.75rem' }}>
                                 <button
                                     onClick={handleFollow}
@@ -503,23 +472,27 @@ const Profile = () => {
                     </div>
 
                     {/* --- LAYER 3: AVATAR (Relative Centered) --- */}
-                    <div style={{
-                        position: 'relative', // Resets to flow
-                        marginTop: '4px', // Reduced gap
-                        marginBottom: '12px', // Matched bottom spacing
-                        display: 'flex',
-                        justifyContent: 'center',
-                        width: 'auto',
-                        zIndex: 10
-                    }}>
-                        <div style={{
-                            position: 'relative',
-                            width: window.innerWidth < 768 ? '75px' : '90px',
-                            height: window.innerWidth < 768 ? '75px' : '90px',
-                            borderRadius: '20px', // Slightly sharper rounding
-                            background: '#000',
+                    <div
+                        style={{
+                            position: 'relative', // Resets to flow
+                            marginTop: '4px', // Reduced gap
+                            marginBottom: '4px', // Reduced to match symmetric spacing
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: 'auto',
                             zIndex: 10
                         }}>
+                        <div
+                            onClick={(e) => { e.stopPropagation(); setShowProfilePopout(prev => !prev); }}
+                            style={{
+                                position: 'relative',
+                                width: window.innerWidth < 768 ? '75px' : '90px',
+                                height: window.innerWidth < 768 ? '75px' : '90px',
+                                borderRadius: '20px', // Slightly sharper rounding
+                                background: '#000',
+                                zIndex: 10,
+                                cursor: 'pointer'
+                            }}>
                             {/* Iridescent/Gradient Border Effect */}
                             {user.profileTheme?.borderColor && user.profileTheme.borderColor.includes('gradient') && (
                                 <div style={{
@@ -556,7 +529,7 @@ const Profile = () => {
                             {/* Notification Badge */}
                             {isOwnProfile && unreadNotifications > 0 && (
                                 <div
-                                    onClick={() => navigate('/notifications')}
+                                    onClick={(e) => { e.stopPropagation(); navigate('/notifications'); }}
                                     style={{
                                         position: 'absolute',
                                         top: '-4px',
@@ -573,8 +546,221 @@ const Profile = () => {
                                     }}
                                 />
                             )}
+
+                            {/* Profile Info Popout */}
+                            {showProfilePopout && (
+                                <>
+                                    <div style={{ position: 'fixed', inset: 0, zIndex: 99, cursor: 'default' }} onClick={(e) => { e.stopPropagation(); setShowProfilePopout(false); }} />
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 'calc(100% + 12px)',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        background: 'rgba(10, 10, 10, 0.95)',
+                                        backdropFilter: 'blur(16px)',
+                                        border: `1px solid ${user.profileTheme?.borderColor || '#7FFFD4'}`,
+                                        borderRadius: '16px',
+                                        padding: '1.25rem',
+                                        zIndex: 100,
+                                        width: 'max-content',
+                                        minWidth: '220px',
+                                        boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+                                        display: 'flex',
+                                        cursor: 'default',
+                                        flexDirection: 'column',
+                                        gap: '1rem',
+                                        textAlign: 'left'
+                                    }} onClick={(e) => e.stopPropagation()}>
+                                        {/* Social Section */}
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                                                <h4 style={{ margin: '0', fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px', color: user.profileTheme?.usernameColor }}>Social</h4>
+
+                                                {!isOwnProfile ? (
+                                                    <button
+                                                        onClick={handleFollow}
+                                                        disabled={followLoading}
+                                                        style={{
+                                                            padding: '2px 8px',
+                                                            fontSize: '0.65rem',
+                                                            background: 'transparent',
+                                                            border: `1px solid ${user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)'}`,
+                                                            borderRadius: '4px',
+                                                            color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)',
+                                                            fontWeight: '600',
+                                                            cursor: followLoading ? 'wait' : 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.05em',
+                                                            fontFamily: 'var(--font-family-heading)',
+                                                            opacity: followLoading ? 0.5 : 1
+                                                        }}
+                                                    >
+                                                        {isFollowing ? t('profile.following') : t('profile.follow')}
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => navigate('/edit-profile')}
+                                                        style={{
+                                                            padding: '2px 8px',
+                                                            fontSize: '0.65rem',
+                                                            background: 'transparent',
+                                                            border: `1px solid ${user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)'}`,
+                                                            borderRadius: '4px',
+                                                            color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.05em',
+                                                            fontFamily: 'var(--font-family-heading)'
+                                                        }}
+                                                    >
+                                                        {t('profile.editProfile')}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                                                <div onClick={() => { setFollowListType('following'); setShowFollowList(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                                                    <span style={{ fontSize: '1rem', fontWeight: '800', fontFamily: 'var(--font-family-heading)', color: user.profileTheme?.usernameColor }}>{user.followingCount || 0}</span>
+                                                    <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{t('profile.following')}</span>
+                                                </div>
+                                                <div onClick={() => { setFollowListType('followers'); setShowFollowList(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                                                    <span style={{ fontSize: '1rem', fontWeight: '800', fontFamily: 'var(--font-family-heading)', color: user.profileTheme?.usernameColor }}>{user.followersCount || 0}</span>
+                                                    <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{t('profile.followers')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Creative Section */}
+                                        {(user.disciplines?.main?.length > 0) && (
+                                            <div>
+                                                <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px', color: user.profileTheme?.usernameColor }}>Creative</h4>
+                                                <div onClick={() => { setShowDisciplinesModal(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <FaPalette size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                                    <span style={{ fontSize: '0.9rem' }}>{user.disciplines.main.length} Disciplines</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Collectibles Section */}
+                                        {spaceCards?.length > 0 && (
+                                            <div>
+                                                <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px', color: user.profileTheme?.usernameColor }}>Collectibles</h4>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <PlanetIcon size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                                    <span style={{ fontSize: '0.9rem' }}>{spaceCards.length} Space Cards</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Identity/Wallet Section */}
+                                        <div>
+                                            <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px', color: user.profileTheme?.usernameColor }}>Identity</h4>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                <div onClick={() => { setShowBusinessCard(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <FaIdBadge size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                                    <span style={{ fontSize: '0.9rem' }}>{t('profile.businessCard')}</span>
+                                                </div>
+                                                {isOwnProfile && (
+                                                    <div onClick={() => { setShowAddFunds(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <FaWallet size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                                        <span style={{ fontSize: '0.9rem' }}>{t('profile.wallet')}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Actions Section */}
+                                        {!isOwnProfile && (
+                                            <div>
+                                                <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px', color: user.profileTheme?.usernameColor }}>Actions</h4>
+                                                <div onClick={() => { setShowCommissionModal(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <FaRocket size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                                    <span style={{ fontSize: '0.9rem' }}>Commission</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
+
+
+
+                    {/* --- NEW STATS ROW (HIDDEN) --- */}
+                    {false && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '2rem', // Generous spacing
+                            marginTop: '4px', // Symmetric space above
+                            marginBottom: '4px', // Symmetric space below
+                            zIndex: 50
+                        }}>
+                            {/* Following */}
+                            <button
+                                onClick={() => { setFollowListType('following'); setShowFollowList(true); }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    color: (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff',
+                                    fontFamily: 'var(--font-family-heading)',
+                                    fontSize: '1rem',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                <RocketIcon size={20} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                {user.followingCount || 0}
+                            </button>
+
+                            {/* Followers */}
+                            <button
+                                onClick={() => { setFollowListType('followers'); setShowFollowList(true); }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    color: (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff',
+                                    fontFamily: 'var(--font-family-heading)',
+                                    fontSize: '1rem',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                <AstronautIcon size={20} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
+                                {user.followersCount || 0}
+                            </button>
+
+                            {/* Disciplines */}
+                            {user.disciplines?.main?.length > 0 && (
+                                <button
+                                    onClick={() => setShowDisciplinesModal(true)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        color: (user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff',
+                                        fontFamily: 'var(--font-family-heading)',
+                                        fontSize: '1rem',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    <FaPalette size={20} />
+                                    {user.disciplines.main.length}
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div >
 
@@ -589,12 +775,11 @@ const Profile = () => {
                     // paddingRight removed
                 }}>
                     {[
-                        { id: 'posts', label: 'Posts', icon: FaTh, enabled: true },
-                        { id: 'shop', label: 'Shop', icon: FaShoppingBag, enabled: isFeatureEnabled('SHOP') },
+                        { id: 'posts', label: t('tab.posts'), icon: FaTh, enabled: true },
                         { id: 'collections', label: 'Collections', icon: FaLayerGroup, enabled: isFeatureEnabled('COLLECTIONS') },
-                        { id: 'gallery', label: 'Gallery', icon: FaImage, enabled: isFeatureEnabled('GALLERIES') },
-                        { id: 'cards', label: 'Cards', icon: FaRocket, enabled: isFeatureEnabled('SPACECARDS_CREATE') },
-                        { id: 'badges', label: 'Badges', icon: FaCheck, enabled: true }
+                        { id: 'shop', label: t('tab.shop'), icon: FaShoppingBag, enabled: true },
+                        { id: 'gallery', label: t('tab.galleries'), icon: FaImage, enabled: isFeatureEnabled('GALLERIES') },
+                        { id: 'cards', label: 'Cards', icon: PlanetIcon, enabled: isFeatureEnabled('SPACECARDS_CREATE') }
                     ].filter(tab => tab.enabled).map(tab => {
                         const Icon = tab.icon;
                         const isMobile = window.innerWidth < 768;
@@ -655,8 +840,33 @@ const Profile = () => {
                                     ...tabStyle
                                 }}
                             >
-                                <Icon size={isMobile ? 13 : 16} style={{ color: isSelected && isGradient ? user.profileTheme?.starColor : 'inherit' }} />
+                                <Icon
+                                    size={tab.id === 'cards' ? (isMobile ? 24 : 28) : (isMobile ? 13 : 16)}
+                                    style={{ color: isSelected && isGradient ? user.profileTheme?.starColor : 'inherit' }}
+                                />
                                 {tab.label}
+
+                                {/* Feed Switcher - Only next to Posts tab */}
+                                {tab.id === 'posts' && (
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent tab switching if clicked directly (though we are on buttons)
+                                            toggleFeed();
+                                        }}
+                                        style={{
+                                            marginLeft: '6px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            padding: '4px',
+                                            cursor: 'pointer',
+                                            opacity: isSelected ? 1 : 0.5,
+                                            transition: 'transform 0.2s',
+                                        }}
+                                        title={`Switch to ${feedType === 'art' ? 'Social' : 'Art'} Feed`}
+                                    >
+                                        {feedType === 'art' ? <FaPalette size={14} /> : <FaUserPlus size={14} />}
+                                    </div>
+                                )}
                             </button>
                         );
                     })}
@@ -666,42 +876,48 @@ const Profile = () => {
             {/* Content */}
             < div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
                 {activeTab === 'posts' && (
-                    <InfiniteGrid
-                        items={posts}
-                        columns={{ mobile: 2, tablet: 3, desktop: 4 }}
-                        gap="1rem"
-                        renderItem={(post, index) => (
-                            <div
-                                onClick={() => navigate(`/post/${post.id}`, {
-                                    state: {
-                                        contextPosts: posts,
-                                        initialIndex: index
-                                    }
-                                })}
-                                style={{
-                                    aspectRatio: '1',
-                                    background: '#111',
-                                    borderRadius: '8px',
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s',
-                                }}
-                            >
-                                {post.images?.[0]?.url || post.imageUrl ? (
-                                    <img
-                                        src={post.images?.[0]?.url || post.imageUrl}
-                                        alt=""
-                                        loading="lazy"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
-                                ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
-                                        No Image
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    />
+                    <>
+
+                        <InfiniteGrid
+                            items={posts}
+                            columns={{ mobile: 2, tablet: 3, desktop: 4 }}
+                            gap="1rem"
+                            renderItem={(post, index) => (
+                                <div
+                                    onClick={() => navigate(`/post/${post.id}`, {
+                                        state: {
+                                            contextPosts: posts,
+                                            initialIndex: index
+                                        }
+                                    })}
+                                    style={{
+                                        aspectRatio: '1',
+                                        background: '#111',
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s',
+                                    }}
+                                >
+                                    {(() => {
+                                        const thumbnail = post.images?.[0]?.url || (typeof post.images?.[0] === 'string' ? post.images[0] : null) || post.imageUrl || post.image;
+                                        return thumbnail ? (
+                                            <img
+                                                src={thumbnail}
+                                                alt=""
+                                                loading="lazy"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+                                                No Image
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            )}
+                        />
+                    </>
                 )}
 
                 {
@@ -753,12 +969,12 @@ const Profile = () => {
                     activeTab === 'collections' && (
                         <>
                             {isOwnProfile && (
-                                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
                                     <button
                                         onClick={() => navigate('/create-collection')}
                                         style={{
                                             padding: '0.75rem 1.5rem',
-                                            background: '#7FFFD4',
+                                            background: effectiveUsernameColor || '#7FFFD4',
                                             border: 'none',
                                             borderRadius: '8px',
                                             color: '#000',
@@ -819,12 +1035,12 @@ const Profile = () => {
                     activeTab === 'cards' && (
                         <>
                             {isOwnProfile && (
-                                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
                                     <button
                                         onClick={() => setShowCreateCardModal(true)}
                                         style={{
                                             padding: '0.75rem 1.5rem',
-                                            background: '#7FFFD4',
+                                            background: effectiveUsernameColor || '#7FFFD4',
                                             border: 'none',
                                             borderRadius: '8px',
                                             color: '#000',
@@ -969,15 +1185,11 @@ const Profile = () => {
                                                 background: '#111',
                                                 borderRadius: '8px',
                                                 overflow: 'hidden',
-                                                border: '1px solid #333'
+                                                border: '1px solid #333',
+                                                padding: '1rem',
+                                                color: '#fff'
                                             }}>
-                                                <div style={{ aspectRatio: '1', background: '#222', position: 'relative' }}>
-                                                    <img src={order.items?.[0]?.imageUrl} alt="Print" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                </div>
-                                                <div style={{ padding: '0.75rem' }}>
-                                                    <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.9rem' }}>Order #{order.id.slice(0, 8)}</div>
-                                                    <div style={{ color: '#888', fontSize: '0.8rem' }}>{new Date(order.createdAt?.toDate()).toLocaleDateString()}</div>
-                                                </div>
+                                                Order #{order.id}
                                             </div>
                                         )}
                                     />
@@ -1089,18 +1301,6 @@ const Profile = () => {
                         </>
                     )
                 }
-
-                {/* Empty States */}
-                {
-                    activeTab === 'posts' && posts.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>No posts yet.</div>
-                    )
-                }
-                {
-                    activeTab === 'shop' && shopItems.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>No items for sale.</div>
-                    )
-                }
                 {
                     activeTab === 'collections' && collections.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
@@ -1164,6 +1364,14 @@ const Profile = () => {
                             setShowCommissionModal(false);
                             alert('Commission request submitted successfully!');
                         }}
+                    />
+                )
+            }
+
+            {
+                showAddFunds && (
+                    <WalletModal
+                        onClose={() => setShowAddFunds(false)}
                     />
                 )
             }

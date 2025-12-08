@@ -107,7 +107,16 @@ const Feed = () => {
     }, [visiblePosts.length]);
 
     return (
-        <div style={{ height: '100vh', width: '100vw', background: '#000', overflow: 'hidden', position: 'relative' }}>
+        <div style={{
+            height: '100vh',
+            width: '100vw',
+            background: '#000',
+            overflow: 'hidden',
+            position: 'relative',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'none'
+        }}>
             <SEO title="Home" description="Your personalized feed of amazing art and photography." />
 
             {/* Deep Space Background - Only show when empty */}

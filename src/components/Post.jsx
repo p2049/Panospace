@@ -198,7 +198,10 @@ const Post = ({ post, priority = 'normal' }) => {
                 overflow: 'hidden',
                 backgroundColor: '#000',
                 // Prevent layout shift
-                willChange: 'transform'
+                willChange: 'transform',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none'
             }}
             data-testid="post-item"
         >

@@ -19,7 +19,7 @@ import { SpaceCardService } from '../services/SpaceCardService';
  * @param {string} activeTab - The currently active tab ('posts', 'shop', 'cards', 'badges', 'collections')
  * @returns {object} Profile data and loading states
  */
-export const useProfile = (userId, currentUser, activeTab = 'posts') => {
+export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 'art') => {
     const isMountedRef = useRef(true);
 
     const [user, setUser] = useState(null);
@@ -96,28 +96,39 @@ export const useProfile = (userId, currentUser, activeTab = 'posts') => {
 
             try {
                 // Posts - only show posts that are marked to show in profile
-                if (activeTab === 'posts' && posts.length === 0) {
+                if (activeTab === 'posts') {
+                    // Reset posts when feedType changes
+                    setPosts([]);
+
                     const userPostsQuery = query(
                         collection(db, 'posts'),
                         where('authorId', '==', userId),
                         orderBy('createdAt', 'desc'),
-                        limit(20)
+                        limit(50)
                     );
                     const postsSnap = await getDocs(userPostsQuery);
+
+                    console.log(`[useProfile] Fetched ${postsSnap.docs.length} raw posts for user ${userId}`);
+
                     if (isMountedRef.current) {
-                        // Filter to only show posts where:
-                        // 1. showInProfile is true, OR
-                        // 2. showInProfile is undefined (old posts), OR
-                        // 3. collectionId is null (not in a collection)
                         const filteredPosts = postsSnap.docs
                             .map(d => ({ id: d.id, ...d.data() }))
                             .filter(post => {
-                                // If showInProfile is explicitly false, hide it
-                                if (post.showInProfile === false) return false;
-                                // Otherwise show it (true, undefined, or null)
-                                return true;
+                                // 1. Filter by Type (Handle legacy posts)
+                                const postType = post.type || 'art';
+                                const matchesType = postType === feedType;
+
+                                // 2. Filter showInProfile (TEMPORARILY DISABLED)
+                                const notHidden = true; // post.showInProfile !== false;
+
+                                if (!matchesType) console.log(`[useProfile] Filtered out post ${post.id}: wrong type (${postType} != ${feedType})`);
+                                // if (!notHidden) console.log(`[useProfile] Filtered out post ${post.id}: hidden from profile`);
+
+                                return matchesType && notHidden;
                             });
-                        setPosts(filteredPosts);
+
+                        console.log(`[useProfile] Final posts count: ${filteredPosts.length}`);
+                        setPosts(filteredPosts.slice(0, 20)); // Limit back to 20
                     }
                 }
 
@@ -148,7 +159,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts') => {
         };
 
         fetchTabData();
-    }, [activeTab, user, userId]);
+    }, [activeTab, user, userId, feedType]);
 
     // Fetch badges separately since they are shown in header
     useEffect(() => {

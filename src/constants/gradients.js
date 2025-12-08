@@ -4,45 +4,141 @@
  */
 
 export const PROFILE_GRADIENTS = {
-    'green-default': {
-        id: 'green-default',
-        name: 'Mint Gradient',
-        description: 'Default Panospace gradient',
-        background: 'linear-gradient(135deg, rgba(0,20,15,0.95) 0%, rgba(0,40,30,0.95) 50%, rgba(0,0,0,0.95) 100%)',
+    'aurora-horizon': {
+        id: 'aurora-horizon',
+        name: 'Aurora Horizon',
+        description: 'Blue to Pink Shift',
+        background: 'linear-gradient(0deg, #7FDBFF, #FFB7D5, #FF5C8A)',
+        topColor: '#FF5C8A',
         isDefault: true,
         unlockCondition: 'default'
     },
-    'blue-mint': {
-        id: 'blue-mint',
-        name: 'Ocean Breeze',
-        description: 'Cool blue tones',
-        background: 'linear-gradient(135deg, rgba(0,15,30,0.95) 0%, rgba(0,30,50,0.95) 50%, rgba(0,0,0,0.95) 100%)',
+    'cosmic-sunset': {
+        id: 'cosmic-sunset',
+        name: 'Cosmic Sunset',
+        description: 'Orange to Purple Fade',
+        background: 'linear-gradient(0deg, #FF914D, #FF5C8A, #5A3FFF)',
+        topColor: '#5A3FFF',
         isDefault: false,
-        unlockCondition: 'achievement' // Future: unlock via achievements
+        unlockCondition: 'free'
     },
-    'orange-sunset': {
-        id: 'orange-sunset',
-        name: 'Golden Hour',
-        description: 'Warm sunset gradient',
-        background: 'linear-gradient(135deg, rgba(30,15,0,0.95) 0%, rgba(50,25,0,0.95) 50%, rgba(0,0,0,0.95) 100%)',
+    'nebula-dream': {
+        id: 'nebula-dream',
+        name: 'Nebula Dream',
+        description: 'Pink to Deep Purple',
+        background: 'linear-gradient(0deg, #FFB7D5, #A7B6FF, #5A3FFF)',
+        topColor: '#5A3FFF',
         isDefault: false,
-        unlockCondition: 'achievement'
+        unlockCondition: 'free'
     },
-    'purple-night': {
-        id: 'purple-night',
-        name: 'Twilight',
-        description: 'Deep purple night',
-        background: 'linear-gradient(135deg, rgba(20,0,30,0.95) 0%, rgba(35,0,50,0.95) 50%, rgba(0,0,0,0.95) 100%)',
+    'void-aurora': {
+        id: 'void-aurora',
+        name: 'Void Aurora',
+        description: 'Purple to Ion Blue',
+        background: 'linear-gradient(0deg, #1A0535, #7FDBFF, #1B82FF)',
+        topColor: '#1B82FF',
         isDefault: false,
-        unlockCondition: 'achievement'
+        unlockCondition: 'free'
     },
-    'grey-steel': {
-        id: 'grey-steel',
-        name: 'Steel',
-        description: 'Monochrome elegance',
-        background: 'linear-gradient(135deg, rgba(20,20,20,0.95) 0%, rgba(30,30,30,0.95) 50%, rgba(0,0,0,0.95) 100%)',
+    'solar-drop': {
+        id: 'solar-drop',
+        name: 'Solar Drop',
+        description: 'Flare to Cosmic Ice',
+        background: 'linear-gradient(0deg, #FF5C8A, #FF914D, #E6F8FF)',
+        topColor: '#E6F8FF',
         isDefault: false,
-        unlockCondition: 'achievement'
+        unlockCondition: 'free'
+    },
+    'mint-nebula': {
+        id: 'mint-nebula',
+        name: 'Mint Nebula',
+        description: 'Atmospheric Blue',
+        background: 'linear-gradient(0deg, #AEE1FF, #62B6FF, #1B75D1)',
+        topColor: '#1B75D1',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'night-sky': {
+        id: 'night-sky',
+        name: 'Night Sky',
+        description: 'Deep Cosmic Blue',
+        background: 'linear-gradient(0deg, #0A0F2D, #131A45, #1E275B)',
+        topColor: '#1E275B',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    // Gradients fading to black at the bottom using palette colors
+    'aurora-blue-black': {
+        id: 'aurora-blue-black',
+        name: 'Aurora Blue → Black',
+        description: 'Aurora Blue fading to black',
+        background: 'linear-gradient(0deg, #000000, #7FDBFF)',
+        topColor: '#7FDBFF',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'ion-blue-black': {
+        id: 'ion-blue-black',
+        name: 'Ion Blue → Black',
+        description: 'Ion Blue fading to black',
+        background: 'linear-gradient(0deg, #000000, #1B82FF)',
+        topColor: '#1B82FF',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'nebula-pink-black': {
+        id: 'nebula-pink-black',
+        name: 'Nebula Pink → Black',
+        description: 'Nebula Pink fading to black',
+        background: 'linear-gradient(0deg, #000000, #FFB7D5)',
+        topColor: '#FFB7D5',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'solar-flare-pink-black': {
+        id: 'solar-flare-pink-black',
+        name: 'Solar Flare Pink → Black',
+        description: 'Solar Flare Pink fading to black',
+        background: 'linear-gradient(0deg, #000000, #FF5C8A)',
+        topColor: '#FF5C8A',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'cosmic-periwinkle-black': {
+        id: 'cosmic-periwinkle-black',
+        name: 'Cosmic Periwinkle → Black',
+        description: 'Cosmic Periwinkle fading to black',
+        background: 'linear-gradient(0deg, #000000, #A7B6FF)',
+        topColor: '#A7B6FF',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'deep-orbit-purple-black': {
+        id: 'deep-orbit-purple-black',
+        name: 'Deep Orbit Purple → Black',
+        description: 'Deep Orbit Purple fading to black',
+        background: 'linear-gradient(0deg, #000000, #5A3FFF)',
+        topColor: '#5A3FFF',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'stellar-orange-black': {
+        id: 'stellar-orange-black',
+        name: 'Stellar Orange → Black',
+        description: 'Stellar Orange fading to black',
+        background: 'linear-gradient(0deg, #FF914D, #000000)',
+        topColor: '#FF914D',
+        isDefault: false,
+        unlockCondition: 'free'
+    },
+    'classic-mint-black': {
+        id: 'classic-mint-black',
+        name: 'Classic Mint → Black',
+        description: 'Classic Mint fading to black',
+        background: 'linear-gradient(0deg, #7FFFD4, #000000)',
+        topColor: '#7FFFD4',
+        isDefault: false,
+        unlockCondition: 'free'
     }
 };
 
@@ -50,7 +146,7 @@ export const PROFILE_GRADIENTS = {
  * Get gradient by ID
  */
 export const getGradient = (gradientId) => {
-    return PROFILE_GRADIENTS[gradientId] || PROFILE_GRADIENTS['green-default'];
+    return PROFILE_GRADIENTS[gradientId] || PROFILE_GRADIENTS['aurora-horizon'];
 };
 
 /**
@@ -65,7 +161,7 @@ export const getGradientBackground = (gradientId) => {
  * Get default gradient ID
  */
 export const getDefaultGradientId = () => {
-    return 'green-default';
+    return 'aurora-horizon';
 };
 
 /**
@@ -73,7 +169,7 @@ export const getDefaultGradientId = () => {
  */
 export const getUnlockedGradients = (user) => {
     if (!user?.profileTheme?.unlockedGradients) {
-        return ['green-default'];
+        return ['aurora-horizon'];
     }
     return user.profileTheme.unlockedGradients;
 };
@@ -83,7 +179,7 @@ export const getUnlockedGradients = (user) => {
  */
 export const getCurrentGradientId = (user) => {
     if (!user?.profileTheme?.gradientId) {
-        return 'green-default';
+        return 'aurora-horizon';
     }
     return user.profileTheme.gradientId;
 };

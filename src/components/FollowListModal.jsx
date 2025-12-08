@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { RocketIcon, AstronautIcon } from './SpaceIcons';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
@@ -102,8 +103,13 @@ const FollowListModal = ({ isOpen, onClose, userId, type = 'followers', title })
                     alignItems: 'center',
                     justifyContent: 'space-between'
                 }}>
-                    <h2 style={{ margin: 0, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        {title || (type === 'followers' ? 'Followers' : 'Following')}
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {title ? title : (
+                            <>
+                                {type === 'followers' ? <AstronautIcon size={20} /> : <RocketIcon size={20} />}
+                                {type === 'followers' ? 'Followers' : 'Following'}
+                            </>
+                        )}
                     </h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
                         <FaTimes size={18} />

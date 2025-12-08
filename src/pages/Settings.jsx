@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck } from 'react-icons/fa';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -14,9 +15,49 @@ import { isFeatureEnabled } from '../config/featureFlags';
 const Settings = () => {
     const navigate = useNavigate();
     const { currentUser, logout } = useAuth();
+    const { t, i18n } = useTranslation();
     const { activePost } = useUI();
     const { blockUser } = useBlock();
     const [loading, setLoading] = useState(false);
+
+    // Language State
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
+    const languages = [
+        { code: 'en', name: 'English' },
+        { code: 'es', name: 'Español' },
+        { code: 'pt-BR', name: 'Português (Brasil)' },
+        { code: 'fr', name: 'Français' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'it', name: 'Italiano' },
+        { code: 'ja', name: '日本語' },
+        { code: 'ko', name: '한국어' },
+        { code: 'zh-CN', name: '简体中文' },
+        { code: 'zh-TW', name: '繁體中文' },
+        { code: 'hi', name: 'हिन्दी' },
+        { code: 'ar', name: 'العربية' },
+        { code: 'ru', name: 'Русский' },
+        { code: 'tr', name: 'Türkçe' },
+        { code: 'id', name: 'Bahasa Indonesia' },
+        { code: 'vi', name: 'Tiếng Việt' },
+        { code: 'th', name: 'ไทย' },
+        { code: 'nl', name: 'Nederlands' },
+        { code: 'pl', name: 'Polski' },
+        { code: 'sv', name: 'Svenska' }
+    ];
+
+    const changeLanguage = async (langCode) => {
+        i18n.changeLanguage(langCode);
+        setShowLanguageModal(false);
+        if (currentUser) {
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                await updateDoc(userRef, { language: langCode });
+            } catch (error) {
+                console.error("Error saving language preference:", error);
+            }
+        }
+    };
+
 
     // Report Modal State
     const [showReportModal, setShowReportModal] = useState(false);
@@ -228,7 +269,7 @@ const Settings = () => {
                     letterSpacing: '0.15em',
                     textTransform: 'uppercase',
                     margin: 0
-                }}>Settings</h1>
+                }}>{t('settings.title')}</h1>
             </div>
 
             <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -242,7 +283,7 @@ const Settings = () => {
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                     fontWeight: '600'
-                }}>Account</h3>
+                }}>{t('settings.account')}</h3>
                 <div style={{
                     background: 'var(--bg-card, #050808)',
                     borderRadius: '12px',
@@ -250,36 +291,13 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <SettingsRow icon={FaUserEdit} label="Edit Profile" onClick={() => navigate('/edit-profile')} />
-                    <SettingsRow icon={FaEnvelope} label="Change Email" onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaLock} label="Change Password" onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaTrash} label="Delete Account" onClick={() => setShowDeleteConfirm(true)} isDestructive={true} />
+                    <SettingsRow icon={FaUserEdit} label={t('settings.editProfile')} onClick={() => navigate('/edit-profile')} />
+                    <SettingsRow icon={FaEnvelope} label={t('settings.changeEmail')} onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaLock} label={t('settings.changePassword')} onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaTrash} label={t('settings.deleteAccount')} onClick={() => setShowDeleteConfirm(true)} isDestructive={true} />
                 </div>
 
-                {/* App Section */}
-                <h3 style={{
-                    color: 'var(--text-secondary, #6b7f78)',
-                    fontSize: '0.75rem',
-                    marginBottom: '12px',
-                    marginLeft: '4px',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    fontWeight: '600'
-                }}>App</h3>
-                <div style={{
-                    background: 'var(--bg-card, #050808)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginBottom: '24px',
-                    border: '1px solid rgba(110, 255, 216, 0.1)'
-                }}>
-                    {isFeatureEnabled('NOTIFICATIONS') && (
-                        <SettingsRow icon={FaBell} label="Notifications" onClick={() => alert('Coming soon')} />
-                    )}
-                    <SettingsRow icon={FaShieldAlt} label="Privacy & Safety" onClick={() => navigate('/legal')} />
-                    <SettingsRow icon={FaGlobe} label="Language" onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaPalette} label="Theme" onClick={() => alert('Coming soon')} />
-                </div>
+
 
                 {/* Billing Section */}
                 <h3 style={{
@@ -290,7 +308,7 @@ const Settings = () => {
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                     fontWeight: '600'
-                }}>Billing</h3>
+                }}>{t('settings.billing')}</h3>
                 <div style={{
                     background: 'var(--bg-card, #050808)',
                     borderRadius: '12px',
@@ -298,9 +316,9 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <SettingsRow icon={FaCreditCard} label="Manage Subscription" onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaCreditCard} label="Payment Methods" onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaHistory} label="Purchase History" onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaCreditCard} label={t('settings.manageSubscription')} onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaCreditCard} label={t('settings.paymentMethods')} onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaHistory} label={t('settings.purchaseHistory')} onClick={() => alert('Coming soon')} />
                 </div>
 
                 {/* About Section */}
@@ -312,7 +330,7 @@ const Settings = () => {
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                     fontWeight: '600'
-                }}>About</h3>
+                }}>{t('settings.about')}</h3>
                 <div style={{
                     background: 'var(--bg-card, #050808)',
                     borderRadius: '12px',
@@ -320,10 +338,10 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <SettingsRow icon={FaFileContract} label="Terms of Service" onClick={() => navigate('/legal')} />
-                    <SettingsRow icon={FaShieldAlt} label="Privacy Policy" onClick={() => navigate('/legal')} />
-                    <SettingsRow icon={FaLifeRing} label="Contact Support" onClick={() => window.location.href = 'mailto:support@panospace.com'} />
-                    <SettingsRow icon={FaAward} label="Credits" onClick={() => navigate('/credits')} />
+                    <SettingsRow icon={FaFileContract} label={t('settings.terms')} onClick={() => navigate('/legal')} />
+                    <SettingsRow icon={FaShieldAlt} label={t('settings.privacyPolicy')} onClick={() => navigate('/legal')} />
+                    <SettingsRow icon={FaLifeRing} label={t('settings.support')} onClick={() => window.location.href = 'mailto:support@panospace.com'} />
+                    <SettingsRow icon={FaAward} label={t('settings.credits')} onClick={() => navigate('/credits')} />
                 </div>
 
                 {/* Sign Out */}
@@ -334,7 +352,7 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <SettingsRow icon={FaSignOutAlt} label="Sign Out" onClick={handleLogout} isDestructive={true} showChevron={false} />
+                    <SettingsRow icon={FaSignOutAlt} label={t('settings.signOut')} onClick={handleLogout} isDestructive={true} showChevron={false} />
                 </div>
 
                 {/* Version Info */}
@@ -345,11 +363,96 @@ const Settings = () => {
                     marginTop: '2rem',
                     opacity: 0.6
                 }}>
-                    <p style={{ margin: '0 0 0.25rem 0' }}>Panospace v1.0.0</p>
-                    <p style={{ margin: 0 }}>Built for Artists</p>
+                    <p style={{ margin: '0 0 0.25rem 0' }}>{t('settings.version')}</p>
+                    <p style={{ margin: 0 }}>{t('settings.builtFor')}</p>
                 </div>
 
             </div>
+
+            {/* Language Selection Modal */}
+            {showLanguageModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.9)',
+                    backdropFilter: 'blur(10px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '2rem'
+                }} onClick={() => setShowLanguageModal(false)}>
+                    <div style={{
+                        background: 'var(--bg-card, #050808)',
+                        border: '1px solid rgba(110, 255, 216, 0.2)',
+                        borderRadius: '16px',
+                        padding: '1.5rem',
+                        maxWidth: '400px',
+                        width: '100%',
+                        maxHeight: '80vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 0 40px var(--accent-glow, rgba(110,255,216,0.35))'
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <h2 style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 'bold',
+                            color: 'var(--text-primary, #d8fff1)',
+                            marginBottom: '1rem',
+                            textAlign: 'center'
+                        }}>{t('settings.language')}</h2>
+
+                        <div style={{
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                            paddingRight: '0.5rem'
+                        }}>
+                            {languages.map((lang) => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => changeLanguage(lang.code)}
+                                    style={{
+                                        padding: '1rem',
+                                        background: i18n.language === lang.code ? 'rgba(110, 255, 216, 0.1)' : 'transparent',
+                                        border: i18n.language === lang.code ? '1px solid var(--accent, #6effd8)' : '1px solid rgba(255, 255, 255, 0.05)',
+                                        borderRadius: '8px',
+                                        color: i18n.language === lang.code ? 'var(--accent, #6effd8)' : 'var(--text-secondary, #6b7f78)',
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                        fontSize: '1rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <span>{lang.name}</span>
+                                    {i18n.language === lang.code && <FaCheck size={14} />}
+                                </button>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={() => setShowLanguageModal(false)}
+                            style={{
+                                marginTop: '1rem',
+                                padding: '0.75rem',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-secondary, #6b7f78)',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem',
+                                textDecoration: 'underline',
+                                alignSelf: 'center'
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Account Modal */}
             {showDeleteConfirm && (

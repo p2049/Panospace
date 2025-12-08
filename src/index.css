@@ -149,6 +149,16 @@
   padding: 0;
 }
 
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 html,
 body {
   width: 100%;
@@ -165,6 +175,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-weight: 500;
   letter-spacing: 0.02em;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Restore text selection for inputs and content areas */
+input,
+textarea,
+[contenteditable],
+.selectable-text {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 /* === GLOBAL TYPOGRAPHY ENFORCEMENT === */

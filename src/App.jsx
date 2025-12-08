@@ -100,6 +100,11 @@ const AnimatedRoutes = () => {
             <MotionWrapper><CreatePost /></MotionWrapper>
           </PrivateRoute>
         } />
+        <Route path="/create-post" element={
+          <PrivateRoute>
+            <MotionWrapper><CreatePost /></MotionWrapper>
+          </PrivateRoute>
+        } />
         <Route path="/profile/:id" element={
           <PrivateRoute>
             <MotionWrapper><Profile /></MotionWrapper>

@@ -10,6 +10,7 @@ import ReportModal from './ReportModal';
 
 import { useFeedStore } from '../store/useFeedStore';
 import { useThemeStore } from '../store/useThemeStore';
+import { useTranslation } from 'react-i18next';
 
 // Mobile Navigation / Hamburger Menu
 const MobileNavigation = () => {
@@ -23,10 +24,11 @@ const MobileNavigation = () => {
     const { currentUser } = useAuth();
     const { activePost } = useUI();
     const { blockUser } = useBlock();
+    const { t } = useTranslation();
 
     // Store hooks
     const { currentFeed, toggleFeed } = useFeedStore();
-    const { setTheme } = useThemeStore();
+    const { setTheme, accentColor } = useThemeStore();
 
 
 
@@ -149,17 +151,16 @@ const MobileNavigation = () => {
         cursor: 'pointer',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-        color: '#7FFFD4', // PanoSpace Mint
-        background: 'rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(4px)',
-        borderRadius: '50%',
+        color: accentColor, // Dynamic Theme Color
+        background: 'transparent',
         width: '44px',
         height: '44px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: '1px solid rgba(127, 255, 212, 0.3)',
-        boxShadow: '0 0 10px rgba(0,0,0,0.3)'
+        border: 'none',
+        outline: 'none',
+        filter: `drop-shadow(0 0 6px ${accentColor}80)` // Tasteful glow
     };
 
     const drawerStyle = {
@@ -279,33 +280,37 @@ const MobileNavigation = () => {
 
                 {/* Main Navigation */}
                 <div onClick={() => handleNavClick('/')} style={navItemStyle}>
-                    Home
+                    {t('nav.home')}
                 </div>
 
                 <div onClick={() => handleNavClick('/search')} style={navItemStyle}>
-                    Search
+                    {t('nav.search')}
+                </div>
+
+                <div onClick={() => handleNavClick('/create-post')} style={navItemStyle}>
+                    {t('nav.create')}
                 </div>
 
                 <div onClick={() => handleNavClick('/calendar')} style={navItemStyle}>
-                    Calendar
+                    {t('nav.calendar')}
                 </div>
 
                 {(resolvedContext === 'profile' && resolvedProfileUserId === currentUser?.uid) ? (
                     <div onClick={() => handleNavClick('/edit-profile')} style={navItemStyle}>
-                        Edit Profile
+                        {t('settings.editProfile')}
                     </div>
                 ) : (
                     <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
-                        My Account
+                        {t('settings.account')}
                     </div>
                 )}
 
                 <div onClick={() => handleNavClick('/marketplace')} style={navItemStyle}>
-                    Market
+                    {t('nav.market')}
                 </div>
 
                 <div onClick={() => handleNavClick('/settings')} style={navItemStyle}>
-                    Settings
+                    {t('settings.title')}
                 </div>
             </div>
 

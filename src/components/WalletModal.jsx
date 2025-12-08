@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { WalletService } from '../services/WalletService';
 import { formatPrice } from '../utils/helpers';
 import useModalEscape from '../hooks/useModalEscape';
+import StarBackground from './StarBackground';
 
 const WalletModal = ({ onClose }) => {
     const { currentUser } = useAuth();
@@ -75,7 +76,7 @@ const WalletModal = ({ onClose }) => {
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    background: '#1a1a1a',
+                    background: '#0a0a0a',
                     border: '1px solid #333',
                     borderRadius: '16px',
                     width: '90%',
@@ -84,15 +85,22 @@ const WalletModal = ({ onClose }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+                    position: 'relative'
                 }}>
+
+                {/* Star Background */}
+                <StarBackground starColor="#7FFFD4" />
+
                 {/* Header */}
                 <div style={{
                     padding: '1.5rem',
                     borderBottom: '1px solid #333',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    position: 'relative',
+                    zIndex: 1
                 }}>
                     <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem' }}>
                         <FaWallet style={{ color: '#7FFFD4' }} /> My Wallet
@@ -119,7 +127,7 @@ const WalletModal = ({ onClose }) => {
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', borderBottom: '1px solid #333' }}>
+                <div style={{ display: 'flex', borderBottom: '1px solid #333', position: 'relative', zIndex: 1 }}>
                     <button
                         onClick={() => setActiveTab('balance')}
                         style={{
@@ -155,7 +163,7 @@ const WalletModal = ({ onClose }) => {
                 </div>
 
                 {/* Content */}
-                <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
+                <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, position: 'relative', zIndex: 1 }}>
                     {loading ? (
                         <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>Loading wallet data...</div>
                     ) : activeTab === 'balance' ? (

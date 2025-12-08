@@ -11,7 +11,8 @@ import {
     STICKER_PRODUCTS,
     calculatePrintifyEarnings,
     getValidSizesForImage,
-    getRetailPrice
+    getRetailPrice,
+    calculateTieredPricing
 } from '../utils/printifyPricing';
 
 const PRINT_SIZES = getPrintifyProducts();

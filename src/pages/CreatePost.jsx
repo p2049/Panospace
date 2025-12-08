@@ -94,7 +94,7 @@ const CreatePost = () => {
     const [filmMode, setFilmMode] = useState('continuous'); // 'continuous' or 'cut'
     const [enableQuartzDate, setEnableQuartzDate] = useState(false);
     const [enableRatings, setEnableRatings] = useState(true); // true = 5-star rating, false = simple like
-    const [showInProfile, setShowInProfile] = useState(false); // Whether to show in user's profile feed
+    const [showInProfile, setShowInProfile] = useState(true); // Whether to show in user's profile feed
     const [quartzDateString, setQuartzDateString] = useState(() => {
         const today = new Date();
         const d = String(today.getDate());
@@ -607,7 +607,7 @@ const CreatePost = () => {
                                     gap: '0.4rem'
                                 }}
                             >
-                                🎨 Art
+                                Art
                             </button>
                             <button
                                 type="button"
@@ -615,9 +615,9 @@ const CreatePost = () => {
                                 style={{
                                     padding: '0.4rem 0.8rem',
                                     borderRadius: '6px',
-                                    border: postType === "social" ? '1px solid #FF6B9D' : '1px solid rgba(255,255,255,0.1)',
-                                    background: postType === "social" ? 'rgba(255, 107, 157, 0.15)' : 'transparent',
-                                    color: postType === "social" ? '#FF6B9D' : '#888',
+                                    border: postType === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                    background: postType === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                    color: postType === "social" ? '#7FFFD4' : '#888',
                                     fontSize: '0.75rem',
                                     fontWeight: '700',
                                     textTransform: 'uppercase',
@@ -629,7 +629,7 @@ const CreatePost = () => {
                                     gap: '0.4rem'
                                 }}
                             >
-                                👥 Social
+                                Social
                             </button>
                         </div>
 
@@ -648,6 +648,7 @@ const CreatePost = () => {
                                     borderRadius: 0,
                                     padding: '0.5rem 0',
                                     background: 'transparent',
+                                    color: '#7FFFD4',
                                     transition: 'all 110ms ease-out',
                                     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
                                 }}
@@ -783,15 +784,14 @@ const CreatePost = () => {
 
                             {/* Shop Configuration */}
                             {/* Shop Configuration */}
-                            {isFeatureEnabled('SHOP') && (
-                                <ShopConfiguration
-                                    activeSlide={activeSlide}
-                                    activeSlideIndex={activeSlideIndex}
-                                    slides={slides}
-                                    updateSlide={updateSlide}
-                                    handleAddAllToShop={handleAddAllToShop}
-                                />
-                            )}
+                            {/* Shop Configuration */}
+                            <ShopConfiguration
+                                activeSlide={activeSlide}
+                                activeSlideIndex={activeSlideIndex}
+                                slides={slides}
+                                updateSlide={updateSlide}
+                                handleAddAllToShop={handleAddAllToShop}
+                            />
                         </div>
                     )}
                 </div>

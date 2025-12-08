@@ -18,8 +18,8 @@ const StarBackground = ({ starColor = '#7FFFD4', transparent = false }) => {
 
     // Create multiple layers of stars with different depths
     const starLayers = useMemo(() => {
-        // Don't generate stars on mobile to save memory
-        if (isMobile) return { far: [], mid: [], near: [], hidden: [] };
+        // Generate stars for all devices
+        // if (isMobile) return { far: [], mid: [], near: [], hidden: [] };
 
         return {
             far: [...Array(30)].map((_, i) => ({
@@ -73,9 +73,9 @@ const StarBackground = ({ starColor = '#7FFFD4', transparent = false }) => {
             overflow: 'hidden',
             background: transparent ? 'transparent' : 'radial-gradient(ellipse at center, rgba(10, 10, 20, 0.3) 0%, rgba(0, 0, 0, 0.95) 70%, #000 100%)'
         }}>
-            {!isMobile && (
-                <>
-                    <style>{`
+            {/* Condition removed to show on mobile */}
+            <>
+                <style>{`
                         @keyframes slow-twinkle {
                             0% { opacity: 0.7; transform: scale(1); }
                             80% { opacity: 0.7; transform: scale(1); }
@@ -107,75 +107,74 @@ const StarBackground = ({ starColor = '#7FFFD4', transparent = false }) => {
                         }
                     `}</style>
 
-                    {/* Far layer - steady background stars */}
-                    {starLayers.far.map((star) => (
-                        <div
-                            key={star.id}
-                            className="star-item star-far"
-                            style={{
-                                width: `${star.size}px`,
-                                height: `${star.size}px`,
-                                top: `${star.top}%`,
-                                left: `${star.left}%`,
-                                opacity: 0.6,
-                                animation: `slow-twinkle ${Math.random() * 10 + 12}s ease-in-out infinite`,
-                                animationDelay: `${Math.random() * 20}s`
-                            }}
-                        />
-                    ))}
+                {/* Far layer - steady background stars */}
+                {starLayers.far.map((star) => (
+                    <div
+                        key={star.id}
+                        className="star-item star-far"
+                        style={{
+                            width: `${star.size}px`,
+                            height: `${star.size}px`,
+                            top: `${star.top}%`,
+                            left: `${star.left}%`,
+                            opacity: 0.6,
+                            animation: `slow-twinkle ${Math.random() * 10 + 12}s ease-in-out infinite`,
+                            animationDelay: `${Math.random() * 20}s`
+                        }}
+                    />
+                ))}
 
-                    {/* Mid layer - occasional twinkle */}
-                    {starLayers.mid.map((star) => (
-                        <div
-                            key={star.id}
-                            className="star-item star-mid"
-                            style={{
-                                width: `${star.size}px`,
-                                height: `${star.size}px`,
-                                top: `${star.top}%`,
-                                left: `${star.left}%`,
-                                opacity: 0.7,
-                                animation: `slow-twinkle ${Math.random() * 8 + 10}s ease-in-out infinite`,
-                                animationDelay: `${Math.random() * 15}s`
-                            }}
-                        />
-                    ))}
+                {/* Mid layer - occasional twinkle */}
+                {starLayers.mid.map((star) => (
+                    <div
+                        key={star.id}
+                        className="star-item star-mid"
+                        style={{
+                            width: `${star.size}px`,
+                            height: `${star.size}px`,
+                            top: `${star.top}%`,
+                            left: `${star.left}%`,
+                            opacity: 0.7,
+                            animation: `slow-twinkle ${Math.random() * 8 + 10}s ease-in-out infinite`,
+                            animationDelay: `${Math.random() * 15}s`
+                        }}
+                    />
+                ))}
 
-                    {/* Near layer - brighter, more active */}
-                    {starLayers.near.map((star) => (
-                        <div
-                            key={star.id}
-                            className="star-item star-near"
-                            style={{
-                                width: `${star.size}px`,
-                                height: `${star.size}px`,
-                                top: `${star.top}%`,
-                                left: `${star.left}%`,
-                                opacity: 0.8,
-                                animation: `slow-twinkle ${Math.random() * 6 + 8}s ease-in-out infinite`,
-                                animationDelay: `${Math.random() * 10}s`
-                            }}
-                        />
-                    ))}
+                {/* Near layer - brighter, more active */}
+                {starLayers.near.map((star) => (
+                    <div
+                        key={star.id}
+                        className="star-item star-near"
+                        style={{
+                            width: `${star.size}px`,
+                            height: `${star.size}px`,
+                            top: `${star.top}%`,
+                            left: `${star.left}%`,
+                            opacity: 0.8,
+                            animation: `slow-twinkle ${Math.random() * 6 + 8}s ease-in-out infinite`,
+                            animationDelay: `${Math.random() * 10}s`
+                        }}
+                    />
+                ))}
 
-                    {/* Hidden layer - emerge from nowhere */}
-                    {starLayers.hidden.map((star) => (
-                        <div
-                            key={star.id}
-                            className="star-item star-hidden"
-                            style={{
-                                width: `${star.size}px`,
-                                height: `${star.size}px`,
-                                top: `${star.top}%`,
-                                left: `${star.left}%`,
-                                opacity: 0,
-                                animation: `emerge-twinkle ${star.animationDuration}s ease-in-out infinite`,
-                                animationDelay: `${star.animationDelay}s`
-                            }}
-                        />
-                    ))}
-                </>
-            )}
+                {/* Hidden layer - emerge from nowhere */}
+                {starLayers.hidden.map((star) => (
+                    <div
+                        key={star.id}
+                        className="star-item star-hidden"
+                        style={{
+                            width: `${star.size}px`,
+                            height: `${star.size}px`,
+                            top: `${star.top}%`,
+                            left: `${star.left}%`,
+                            opacity: 0,
+                            animation: `emerge-twinkle ${star.animationDuration}s ease-in-out infinite`,
+                            animationDelay: `${star.animationDelay}s`
+                        }}
+                    />
+                ))}
+            </>
         </div>
     );
 };
