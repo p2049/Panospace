@@ -191,7 +191,7 @@ const EditProfile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Starting profile save...");
+        // Starting profile save...
 
         if (!currentUser) {
             console.error("No current user found.");
@@ -205,11 +205,14 @@ const EditProfile = () => {
 
             // 1. Handle Image Upload
             if (selectedFile) {
-                console.log("Uploading file...", selectedFile.name);
-                const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_${selectedFile.name}`);
-                await uploadBytes(storageRef, selectedFile);
-                newPhotoURL = await getDownloadURL(storageRef);
-                console.log("File uploaded, URL:", newPhotoURL);
+                try {
+                    const storageRef = ref(storage, `profile_photos/${currentUser.uid}_${Date.now()}`);
+                    await uploadBytes(storageRef, selectedFile);
+                    newPhotoURL = await getDownloadURL(storageRef);
+                } catch (uploadError) {
+                    console.error("Image upload failed:", uploadError);
+                    alert("Failed to upload image, but saving profile data.");
+                }
             }
 
             // 2. Sanitation
@@ -217,14 +220,14 @@ const EditProfile = () => {
             const sanitizedBio = sanitizeBio(bio);
 
             // 3. Auth Update
-            console.log("Updating Auth profile...");
+            // 3. Auth Update
             await updateProfile(currentUser, {
                 displayName: sanitizedDisplayName,
                 photoURL: newPhotoURL
             });
 
             // 4. Firestore Update
-            console.log("Updating Firestore...");
+            // 4. Firestore Update
 
             // Auto-generate bio color
             const autoBioColor = generateBioColor(usernameColor);
@@ -265,7 +268,6 @@ const EditProfile = () => {
             });
 
             await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
-            console.log("Firestore updated.");
 
             navigate('/profile/me');
         } catch (error) {

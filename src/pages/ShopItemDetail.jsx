@@ -15,9 +15,10 @@ import {
     calculateTieredPricing
 } from '@/core/utils/pricing';
 
-const PRINT_SIZES = getPrintifyProducts();
 import { formatPrice } from '@/core/utils/helpers';
 import { isFeatureEnabled } from '@/config/featureFlags';
+
+const PRINT_SIZES = getPrintifyProducts();
 
 const ShopItemDetail = () => {
     const { id } = useParams();
@@ -39,6 +40,10 @@ const ShopItemDetail = () => {
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false); // Toggle for owners to edit active items
     const [previewSizeId, setPreviewSizeId] = useState(null); // For crop preview in edit mode
+    // New Feature States
+    const [showAdvanced, setShowAdvanced] = useState(false); // 5. Batch Editor Toggle
+    const [showWallPreview, setShowWallPreview] = useState(false); // 4. "Preview on Wall" Modal State
+    const [activeSlide, setActiveSlide] = useState(0); // Slider State
 
     useEffect(() => {
         const fetchItem = async () => {
@@ -180,6 +185,40 @@ const ShopItemDetail = () => {
     const isOwner = currentUser?.uid === item.userId;
     const isDraft = !item.available;
 
+    // 🔒 ACCESS CONTROL: Prevent others from viewing drafts
+    if (isDraft && !isOwner) {
+        return (
+            <div style={{
+                height: '100vh',
+                background: '#000',
+                color: '#fff',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexDirection: 'column',
+                gap: '1rem'
+            }}>
+                <div style={{ fontSize: '3rem' }}>🔒</div>
+                <h2>Not Available</h2>
+                <p style={{ color: '#888' }}>This shop item hasn't been published yet.</p>
+                <button
+                    onClick={() => navigate('/shop')}
+                    style={{
+                        padding: '0.8rem 1.5rem',
+                        background: '#333',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        marginTop: '1rem'
+                    }}
+                >
+                    Back to Shop
+                </button>
+            </div>
+        );
+    }
+
     // Show editor if it's a draft OR if the owner explicitly requested to edit
     const showEditor = (isOwner && isDraft) || (isOwner && isEditing);
 
@@ -240,16 +279,17 @@ const ShopItemDetail = () => {
                         {/* Left Col: Image Preview */}
                         <div>
                             <div style={{
+                                position: 'relative', // For overlay
                                 background: '#111',
                                 borderRadius: '12px',
                                 overflow: 'hidden',
                                 border: '1px solid #222',
                                 marginBottom: '1rem',
-                                aspectRatio: `${previewRatio}`,
+                                // ALWAYS show original aspect ratio container
+                                aspectRatio: `${item.aspectRatio || 1.5}`,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'aspect-ratio 0.3s ease'
+                                justifyContent: 'center'
                             }}>
                                 <img
                                     src={item.imageUrl}
@@ -258,16 +298,63 @@ const ShopItemDetail = () => {
                                     style={{
                                         width: '100%',
                                         height: '100%',
-                                        objectFit: 'cover',
+                                        objectFit: 'contain', // Ensure full image is visible
                                         display: 'block'
                                     }}
                                 />
+
+                                {/* 1. LIVE MARGIN GUIDES (Mask) */}
+                                {(() => {
+                                    const originalRatio = item.aspectRatio || 1.5;
+                                    // Determine crop dimensions as percentage of container
+                                    let widthPercent = 100;
+                                    let heightPercent = 100;
+
+                                    if (previewRatio > originalRatio) {
+                                        // Target is wider/shorter than original -> Limit Height
+                                        heightPercent = (originalRatio / previewRatio) * 100;
+                                    } else {
+                                        // Target is taller/narrower than original -> Limit Width
+                                        widthPercent = (previewRatio / originalRatio) * 100;
+                                    }
+
+                                    return (
+                                        <>
+                                            {/* The "Safe Zone" Box */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                width: `${widthPercent}%`,
+                                                height: `${heightPercent}%`,
+                                                border: '2px dashed #7FFFD4',
+                                                boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.75)', // Darken everything OUTSIDE this box
+                                                pointerEvents: 'none',
+                                                zIndex: 10
+                                            }} />
+
+                                            {/* Label */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '10px',
+                                                right: '10px',
+                                                background: '#7FFFD4',
+                                                color: '#000',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 'bold',
+                                                zIndex: 11
+                                            }}>
+                                                PRINT AREA
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                             <div style={{ color: '#7FFFD4', fontSize: '0.9rem', fontWeight: 'bold' }}>
                                 {previewLabel}
                             </div>
                             <div style={{ color: '#888', fontSize: '0.8rem', marginTop: '0.5rem' }}>
-                                Aspect Ratio: {previewRatio.toFixed(2)}
+                                Original Ratio: {(item.aspectRatio || 1.5).toFixed(2)} → Print Ratio: {previewRatio.toFixed(2)}
                             </div>
                         </div>
 
@@ -355,7 +442,39 @@ const ShopItemDetail = () => {
 
                             {/* Size & Pricing */}
                             <div>
-                                <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 'bold', color: '#ccc' }}>Available Sizes & Pricing</label>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <label style={{ fontWeight: 'bold', color: '#ccc' }}>Available Sizes & Pricing</label>
+
+                                    {/* 5. Batch Switcher Toggle */}
+                                    <button
+                                        onClick={() => setShowAdvanced(!showAdvanced)}
+                                        style={{ fontSize: '0.8rem', color: '#7FFFD4', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                                    >
+                                        {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
+                                    </button>
+                                </div>
+
+                                {showAdvanced && (
+                                    <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#222', borderRadius: '4px', display: 'flex', gap: '1rem' }}>
+                                        <button
+                                            onClick={() => {
+                                                const newEnabled = {};
+                                                potentialSizes.forEach(s => newEnabled[s.id] = true);
+                                                setEnabledSizes(newEnabled);
+                                            }}
+                                            style={{ fontSize: '0.8rem', color: '#fff', background: '#333', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            Select All
+                                        </button>
+                                        <button
+                                            onClick={() => setEnabledSizes({})}
+                                            style={{ fontSize: '0.8rem', color: '#fff', background: '#333', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            Deselect All
+                                        </button>
+                                    </div>
+                                )}
+
                                 <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
                                     Select sizes to offer. Click to preview cropping.
                                 </p>
@@ -371,8 +490,7 @@ const ShopItemDetail = () => {
                                                 onClick={() => setPreviewSizeId(size.id)}
                                                 style={{
                                                     display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '1rem',
+                                                    flexDirection: 'column',
                                                     background: isPreviewing ? '#1a1a1a' : '#111',
                                                     padding: '1rem',
                                                     borderRadius: '8px',
@@ -382,28 +500,53 @@ const ShopItemDetail = () => {
                                                     transition: 'all 0.2s'
                                                 }}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isEnabled}
-                                                    onChange={(e) => {
-                                                        e.stopPropagation();
-                                                        setEnabledSizes(prev => ({ ...prev, [size.id]: e.target.checked }));
-                                                        setPreviewSizeId(size.id); // Also preview when toggling
-                                                    }}
-                                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                                                />
-                                                <div style={{ width: '80px', fontWeight: 'bold' }}>{size.label}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: isEnabled ? '0.8rem' : '0' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isEnabled}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            setEnabledSizes(prev => ({ ...prev, [size.id]: e.target.checked }));
+                                                            setPreviewSizeId(size.id); // Also preview when toggling
+                                                        }}
+                                                        style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                                    />
+                                                    <div style={{ width: '80px', fontWeight: 'bold' }}>{size.label}</div>
+
+                                                    {!isEnabled && <span style={{ fontSize: '0.8rem', color: '#666' }}>Click to enable</span>}
+                                                </div>
 
                                                 {isEnabled && pricing && (
-                                                    <>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <span style={{ color: '#888' }}>$</span>
-                                                            <span style={{ fontWeight: 'bold', color: '#fff' }}>{pricing.finalPrice.toFixed(2)}</span>
+                                                    <div style={{
+                                                        background: 'rgba(0,0,0,0.3)',
+                                                        padding: '0.8rem',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.85rem',
+                                                        display: 'grid',
+                                                        gridTemplateColumns: '1fr 1fr',
+                                                        gap: '0.5rem'
+                                                    }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ color: '#ccc' }}>Buyer Price:</span>
+                                                            <span style={{ fontWeight: 'bold', color: '#fff' }}>${pricing.finalPrice.toFixed(2)}</span>
                                                         </div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#888', marginLeft: 'auto' }}>
-                                                            Profit: <span style={{ color: '#7FFFD4' }}>${pricing.artistProfit.toFixed(2)}</span>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ color: '#888' }}>Base Cost:</span>
+                                                            <span style={{ color: '#888' }}>${pricing.baseCost.toFixed(2)}</span>
                                                         </div>
-                                                    </>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #333', paddingTop: '0.3rem', marginTop: '0.3rem', gridColumn: '1 / -1' }}>
+                                                            <span style={{ color: '#aaa' }}>Total Profit:</span>
+                                                            <span style={{ color: '#fff' }}>${(pricing.finalPrice - pricing.baseCost).toFixed(2)}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ color: '#7FFFD4' }}>Creator ({(pricing.artistShare * 100).toFixed(0)}%):</span>
+                                                            <span style={{ color: '#7FFFD4', fontWeight: 'bold' }}>${pricing.artistProfit.toFixed(2)}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ color: '#aaa' }}>Platform:</span>
+                                                            <span style={{ color: '#aaa' }}>{(100 - pricing.artistShare * 100).toFixed(0)}%</span>
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </div>
                                         );
@@ -452,6 +595,66 @@ const ShopItemDetail = () => {
             showCropWarning = true;
         }
     }
+
+    // Helper to get dimensions from ID (e.g., '12x18' -> {w: 12, h: 18})
+    const getPrintDimensions = (sizeId) => {
+        if (!sizeId) return { w: 24, h: 36 }; // Default to a large size for visual impact
+        const parts = sizeId.split('x').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            return { w: parts[0], h: parts[1] };
+        }
+        return { w: 24, h: 36 };
+    };
+
+    // Calculate dynamic style based on selected size
+    const currentDims = getPrintDimensions(selectedSize);
+
+    const mockups = [
+        { id: 0, type: 'original', label: 'Original' },
+        {
+            id: 1,
+            type: 'mockup',
+            label: 'In Context 1',
+            bg: '/assets/andrew-neel-DLD5LvnFblU-unsplash.jpg',
+            wallWidthInches: 180, // Approx 15ft visible width (Back-calculated from 7ft ladder reference)
+            baseTop: '25%', // Raised as requested
+            baseLeft: '50%'
+        },
+        {
+            id: 2,
+            type: 'mockup',
+            label: 'In Context 2',
+            bg: '/assets/andrej-lisakov-3A4XZUopCJA-unsplash.jpg',
+            wallWidthInches: 80, // Adjusted to 80 inches (approx 6.5ft) to accurately scale up art relative to the lamp
+            baseTop: '35%',
+            baseLeft: '50%'
+        }
+    ];
+
+    // Helper to generate style for active slide
+    const getMockupStyle = (slideId) => {
+        const config = mockups.find(m => m.id === slideId);
+        if (!config || config.type !== 'mockup') return {};
+
+        const isLandscape = (item.width && item.height && item.width > item.height) || (item.aspectRatio && item.aspectRatio > 1);
+
+        // If image is landscape, the larger dimension is the width.
+        // If portrait, the smaller dimension is the width.
+        const printWidth = isLandscape ? Math.max(currentDims.w, currentDims.h) : Math.min(currentDims.w, currentDims.h);
+
+        const widthPercent = (printWidth / config.wallWidthInches) * 100;
+
+        // Safety clamp: Lowered min to 1% to allow small sizes (4x6) to scale linearly without being artificially inflated
+        const safeWidth = Math.max(1, Math.min(90, widthPercent));
+
+        return {
+            top: config.baseTop,
+            left: config.baseLeft,
+            width: `${safeWidth}%`,
+            transform: 'translate(-50%, -20%)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+        };
+    };
 
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', padding: '2rem' }}>
@@ -521,31 +724,96 @@ const ShopItemDetail = () => {
                 maxWidth: '1200px',
                 margin: '0 auto'
             }}>
-                <div style={{
-                    background: '#111',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    border: '1px solid #222',
-                    // Dynamic Aspect Ratio Container
-                    aspectRatio: `${targetRatio}`,
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative'
-                }}>
-                    <img
-                        src={item.imageUrl}
-                        alt={item.title}
-                        loading="lazy"
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover', // Simulates the crop
-                            objectPosition: 'center'
-                        }}
-                    />
+                {/* Image Carousel Col */}
+                <div>
+                    <div style={{
+                        background: '#111',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        border: '1px solid #222',
+                        // Use mockup ratio (usually landscape) or targetRatio for original
+                        aspectRatio: activeSlide === 0 ? `${targetRatio}` : '1.5',
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        position: 'relative',
+                        marginBottom: '1rem'
+                    }}>
+                        {activeSlide === 0 ? (
+                            // Slide 0: Original Art
+                            <img
+                                src={item.imageUrl}
+                                alt={item.title}
+                                loading="lazy"
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center'
+                                }}
+                            />
+                        ) : (
+                            // Mockup Slides
+                            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                {/* Background Room */}
+                                <img
+                                    src={mockups[activeSlide].bg}
+                                    alt="Room Mockup"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                                {/* Overlay Art */}
+                                <div style={{
+                                    position: 'absolute',
+                                    ...getMockupStyle(activeSlide)
+                                }}>
+                                    <div style={{
+                                        // Maintain the ART's aspect ratio within the placement box
+                                        aspectRatio: `${item.aspectRatio || 1.5}`,
+                                        width: '100%',
+                                        background: '#000',
+                                        // Optional: Add matting or frame here
+                                        border: '1px solid rgba(255,255,255,0.8)'
+                                    }}>
+                                        <img
+                                            src={item.imageUrl}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Slide Navigation Arrows (Optional, let's stick to thumbnails below for now) */}
+                    </div>
+
+                    {/* Thumbnails */}
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        {mockups.map((slide) => (
+                            <button
+                                key={slide.id}
+                                onClick={() => setActiveSlide(slide.id)}
+                                style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '8px',
+                                    border: activeSlide === slide.id ? '2px solid #7FFFD4' : '2px solid transparent',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    background: '#222'
+                                }}
+                            >
+                                {slide.type === 'original' ? (
+                                    <img src={item.imageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <img src={slide.bg} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                )}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{item.title}</h1>
@@ -673,7 +941,7 @@ const ShopItemDetail = () => {
                         )}
                     </div>
 
-                    <div style={{ marginTop: '2rem' }}>
+                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
                         <CheckoutButton
                             post={item}
                             selectedSize={selectedSize}
@@ -694,7 +962,12 @@ const ShopItemDetail = () => {
                                 transition: 'all 0.2s'
                             }}
                         />
+
+
                     </div>
+
+                    {/* Preview on Wall Modal (Placeholder) */}
+
 
                     <div style={{
                         marginTop: '2rem',
@@ -715,7 +988,7 @@ const ShopItemDetail = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

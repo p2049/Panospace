@@ -14,8 +14,8 @@ export const useFeedStore = create(
             // Current feed type - default to art
             currentFeed: 'art',
 
-            // Tooltip state
-            hasSeenSwipeTooltip: true,
+            // Following only mode
+            followingOnly: false,
 
             // Switch to specific feed
             switchToFeed: (feedType) => {
@@ -27,6 +27,33 @@ export const useFeedStore = create(
                 const current = get().currentFeed;
                 const next = current === 'art' ? 'social' : 'art';
                 set({ currentFeed: next });
+            },
+
+            // Toggle following only
+            toggleFollowingOnly: () => {
+                set((state) => ({ followingOnly: !state.followingOnly }));
+            },
+
+            // Set following only
+            setFollowingOnly: (value) => {
+                set({ followingOnly: value });
+            },
+
+            // Custom Feed State
+            customFeedEnabled: false,
+            activeCustomFeedId: null,
+            activeCustomFeedName: null,
+
+            toggleCustomFeed: () => {
+                set((state) => ({ customFeedEnabled: !state.customFeedEnabled }));
+            },
+
+            setCustomFeedEnabled: (enabled) => {
+                set({ customFeedEnabled: enabled });
+            },
+
+            setActiveCustomFeed: (id, name) => {
+                set({ activeCustomFeedId: id, activeCustomFeedName: name });
             },
 
             // Mark tooltip as seen
@@ -47,7 +74,14 @@ export const useFeedStore = create(
         }),
         {
             name: 'panospace-feed-storage',
-            partialize: (state) => ({ currentFeed: state.currentFeed, hasSeenSwipeTooltip: state.hasSeenSwipeTooltip })
+            partialize: (state) => ({
+                currentFeed: state.currentFeed,
+                hasSeenSwipeTooltip: state.hasSeenSwipeTooltip,
+                followingOnly: state.followingOnly,
+                customFeedEnabled: state.customFeedEnabled,
+                activeCustomFeedId: state.activeCustomFeedId,
+                activeCustomFeedName: state.activeCustomFeedName
+            })
         }
     )
 );

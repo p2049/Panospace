@@ -15,43 +15,84 @@ export const PRINT_TIERS = {
     LIMITED: 'limited'
 };
 
+// Updated Price Ladder (Ascending Order)
 export const PRINTIFY_PRODUCTS = [
+    {
+        id: '4x6',
+        label: '4" × 6"',
+        tier: 'small',
+        ratio: 1.5,
+        price: 8.99, // EXACT
+        baseCostCents: 500, // Est
+        printifyProviderId: 10,
+        printifyBlueprintId: 1008
+    },
     {
         id: '5x7',
         label: '5" × 7"',
         tier: 'small',
-        ratio: 1.4, // 7/5
-        price: 12.00,
+        ratio: 1.4,
+        price: 11.99, // EXACT
         baseCostCents: 500,
         printifyProviderId: 10,
         printifyBlueprintId: 1001
+    },
+    {
+        id: '6x8',
+        label: '6" × 8"',
+        tier: 'small',
+        ratio: 1.33,
+        price: 14.99, // Interpolated
+        baseCostCents: 600,
+        printifyProviderId: 10,
+        printifyBlueprintId: 1011
     },
     {
         id: '8x10',
         label: '8" × 10"',
         tier: 'small',
         ratio: 1.25,
-        price: 14.40,
+        price: 18.99, // Interpolated
         baseCostCents: 650,
         printifyProviderId: 10,
         printifyBlueprintId: 1002
     },
     {
+        id: '8x12',
+        label: '8" × 12"',
+        tier: 'small',
+        ratio: 1.5,
+        price: 21.99, // EXACT
+        baseCostCents: 700,
+        printifyProviderId: 10,
+        printifyBlueprintId: 1009
+    },
+    {
         id: '11x14',
         label: '11" × 14"',
-        tier: 'small',
+        tier: 'medium',
         ratio: 1.27,
-        price: 19.80,
+        price: 26.99, // Interpolated
         baseCostCents: 850,
         printifyProviderId: 10,
         printifyBlueprintId: 1003
+    },
+    {
+        id: '12x16',
+        label: '12" × 16"',
+        tier: 'medium',
+        ratio: 1.33,
+        price: 28.99, // Interpolated
+        baseCostCents: 900,
+        printifyProviderId: 10,
+        printifyBlueprintId: 1013
     },
     {
         id: '12x18',
         label: '12" × 18"',
         tier: 'medium',
         ratio: 1.5,
-        price: 25.20,
+        price: 29.99, // EXACT
         baseCostCents: 1000,
         printifyProviderId: 10,
         printifyBlueprintId: 1004
@@ -61,7 +102,7 @@ export const PRINTIFY_PRODUCTS = [
         label: '16" × 20"',
         tier: 'medium',
         ratio: 1.25,
-        price: 28.80,
+        price: 39.99, // Interpolated
         baseCostCents: 1200,
         printifyProviderId: 10,
         printifyBlueprintId: 1005
@@ -69,91 +110,41 @@ export const PRINTIFY_PRODUCTS = [
     {
         id: '18x24',
         label: '18" × 24"',
-        tier: 'medium',
+        tier: 'large',
         ratio: 1.33,
-        price: 37.80,
+        price: 49.99, // Interpolated
         baseCostCents: 1450,
         printifyProviderId: 10,
         printifyBlueprintId: 1006
-    },
-    {
-        id: '24x36',
-        label: '24" × 36"',
-        tier: 'large',
-        ratio: 1.5,
-        price: 52.20,
-        baseCostCents: 2200,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1007
-    },
-    // Additional sizes
-    {
-        id: '4x6',
-        label: '4" × 6"',
-        tier: 'small',
-        ratio: 1.5,
-        price: 14.99,
-        baseCostCents: 800,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1008
-    },
-    {
-        id: '8x12',
-        label: '8" × 12"',
-        tier: 'small',
-        ratio: 1.5,
-        price: 26.99,
-        baseCostCents: 1400,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1009
     },
     {
         id: '20x30',
         label: '20" × 30"',
         tier: 'large',
         ratio: 1.5,
-        price: 74.99,
-        baseCostCents: 3200,
+        price: 54.99, // EXACT
+        baseCostCents: 2000,
         printifyProviderId: 10,
         printifyBlueprintId: 1010
     },
     {
-        id: '6x8',
-        label: '6" × 8"',
-        tier: 'small',
-        ratio: 1.33,
-        price: 19.99,
-        baseCostCents: 1000,
+        id: '24x36',
+        label: '24" × 36"',
+        tier: 'large',
+        ratio: 1.5,
+        price: 69.99, // EXACT
+        baseCostCents: 2200,
         printifyProviderId: 10,
-        printifyBlueprintId: 1011
+        printifyBlueprintId: 1007
     },
-    {
-        id: '9x12',
-        label: '9" × 12"',
-        tier: 'small',
-        ratio: 1.33,
-        price: 29.99,
-        baseCostCents: 1500,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1012
-    },
-    {
-        id: '12x16',
-        label: '12" × 16"',
-        tier: 'medium',
-        ratio: 1.33,
-        price: 39.99,
-        baseCostCents: 1900,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1013
-    },
+    // Square Sizes
     {
         id: '8x8',
         label: '8" × 8"',
         tier: 'small',
         ratio: 1.0,
-        price: 22.99,
-        baseCostCents: 1100,
+        price: 16.99,
+        baseCostCents: 600,
         printifyProviderId: 10,
         printifyBlueprintId: 1014
     },
@@ -162,8 +153,8 @@ export const PRINTIFY_PRODUCTS = [
         label: '10" × 10"',
         tier: 'small',
         ratio: 1.0,
-        price: 26.99,
-        baseCostCents: 1300,
+        price: 22.99,
+        baseCostCents: 750,
         printifyProviderId: 10,
         printifyBlueprintId: 1015
     },
@@ -172,8 +163,8 @@ export const PRINTIFY_PRODUCTS = [
         label: '12" × 12"',
         tier: 'medium',
         ratio: 1.0,
-        price: 34.99,
-        baseCostCents: 1700,
+        price: 25.99,
+        baseCostCents: 900,
         printifyProviderId: 10,
         printifyBlueprintId: 1016
     },
@@ -182,8 +173,8 @@ export const PRINTIFY_PRODUCTS = [
         label: '16" × 16"',
         tier: 'medium',
         ratio: 1.0,
-        price: 49.99,
-        baseCostCents: 2300,
+        price: 34.99,
+        baseCostCents: 1200,
         printifyProviderId: 10,
         printifyBlueprintId: 1017
     },
@@ -192,40 +183,10 @@ export const PRINTIFY_PRODUCTS = [
         label: '20" × 20"',
         tier: 'large',
         ratio: 1.0,
-        price: 64.99,
-        baseCostCents: 3000,
+        price: 44.99,
+        baseCostCents: 1600,
         printifyProviderId: 10,
         printifyBlueprintId: 1018
-    },
-    {
-        id: '8x14',
-        label: '8" × 14"',
-        tier: 'small',
-        ratio: 1.78,
-        price: 29.99,
-        baseCostCents: 1500,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1019
-    },
-    {
-        id: '12x21',
-        label: '12" × 21"',
-        tier: 'medium',
-        ratio: 1.78,
-        price: 46.99,
-        baseCostCents: 2100,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1020
-    },
-    {
-        id: '16x28',
-        label: '16" × 28"',
-        tier: 'large',
-        ratio: 1.78,
-        price: 64.99,
-        baseCostCents: 2900,
-        printifyProviderId: 10,
-        printifyBlueprintId: 1021
     }
 ];
 
@@ -234,7 +195,7 @@ export const STICKER_PRODUCTS = [
         id: 'sticker_3x3',
         label: '3" × 3" Sticker',
         baseCost: 1.80,
-        price: 3.50,
+        price: 3.99,
         printifyProviderId: 20,
         printifyBlueprintId: 2001
     },
@@ -242,7 +203,7 @@ export const STICKER_PRODUCTS = [
         id: 'sticker_4x4',
         label: '4" × 4" Sticker',
         baseCost: 2.20,
-        price: 5.00,
+        price: 5.99,
         printifyProviderId: 20,
         printifyBlueprintId: 2002
     }
@@ -262,20 +223,36 @@ export const getPrintifyProducts = () => PRINTIFY_PRODUCTS;
 // ============================================================================
 
 /**
+ * Helper to round to nearest .99
+ */
+const roundTo99 = (value) => {
+    return Math.floor(value) + 0.99;
+};
+
+/**
  * Apply tier multiplier to a base value
+ * Premium = Economy * 1.3 (rounded to nearest .99)
  */
 export const applyTierMultiplier = (value, tier = PRINT_TIERS.ECONOMY) => {
     if (tier === PRINT_TIERS.PREMIUM) {
-        return value * 1.5;
+        return roundTo99(value * 1.3);
     }
     return value;
 };
 
 /**
- * Get the artist share percentage based on user tier
+ * Get the artist share percentage based on retail price
+ * TIERED SYSTEM (Safe Mode):
+ * Tier 1 (< $20): 20%
+ * Tier 2 ($20-$49): 25%
+ * Tier 3 ($50-$99): 30%
+ * Tier 4 (>= $100): 35%
  */
-export const getArtistShare = (isUltra = false) => {
-    return isUltra ? 0.75 : 0.60;
+export const getArtistShare = (retailPrice) => {
+    if (retailPrice < 20) return 0.20;
+    if (retailPrice < 50) return 0.25;
+    if (retailPrice < 100) return 0.30;
+    return 0.35;
 };
 
 // ============================================================================
@@ -290,7 +267,7 @@ export const getPrintifyBasePrice = (sizeId, type = 'economy') => {
     if (!product) return 0;
 
     const baseCost = product.baseCostCents / 100;
-    return applyTierMultiplier(baseCost, type);
+    return baseCost;
 };
 
 /**
@@ -307,17 +284,18 @@ export const getRetailPrice = (sizeId, type = 'economy') => {
  * Calculate earnings for a given retail price
  */
 export const calculateEarnings = (retailPrice, sizeId, isUltra = false) => {
-    const product = PRINTIFY_PRODUCTS.find(p => p.id === sizeId);
-    const baseCost = product ? product.baseCostCents / 100 : 15.00; // Default fallback
+    const product = PRINTIFY_PRODUCTS.find(p => p.id === sizeId) || STICKER_PRODUCTS.find(s => s.id === sizeId);
+    const baseCost = product ? product.baseCostCents / 100 : (product ? product.baseCost : 10.00);
 
     const profit = Math.max(0, retailPrice - baseCost);
-    const artistShare = getArtistShare(isUltra);
+    const artistShare = getArtistShare(retailPrice);
 
     return {
         artistEarnings: profit * artistShare,
         platformEarnings: profit * (1 - artistShare),
         baseCost: baseCost,
-        retailPrice: retailPrice
+        retailPrice: retailPrice,
+        artistSharePercent: artistShare
     };
 };
 
@@ -333,7 +311,8 @@ export const calculateTieredPricing = (sizeId, tier = 'economy', isUltra = false
         finalPrice: retailPrice,
         artistProfit: earnings.artistEarnings,
         platformProfit: earnings.platformEarnings,
-        baseCost: earnings.baseCost
+        baseCost: earnings.baseCost,
+        artistShare: earnings.artistSharePercent
     };
 };
 
@@ -344,13 +323,14 @@ export const calculateStickerPricing = (stickerId) => {
     const retailPrice = sticker.price;
     const baseCost = sticker.baseCost;
     const profit = Math.max(0, retailPrice - baseCost);
-    const artistShare = 0.60;
+    const artistShare = getArtistShare(retailPrice);
 
     return {
         finalPrice: retailPrice,
         artistProfit: profit * artistShare,
         platformProfit: profit * (1 - artistShare),
-        baseCost: baseCost
+        baseCost: baseCost,
+        artistShare: artistShare
     };
 };
 
@@ -635,3 +615,4 @@ export function formatPriceInput(price) {
     if (isNaN(numPrice)) return '0.00';
     return numPrice.toFixed(2);
 }
+

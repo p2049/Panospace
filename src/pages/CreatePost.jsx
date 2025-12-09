@@ -798,7 +798,7 @@ const CreatePost = () => {
             </div >
 
             {/* Animated Stars Background */}
-            < div style={{
+            <div style={{
                 position: 'fixed',
                 top: 0,
                 left: 0,
@@ -827,7 +827,7 @@ const CreatePost = () => {
                         />
                     ))
                 }
-            </div >
+            </div>
 
             <style>{`
                 @keyframes twinkle {
@@ -1441,7 +1441,7 @@ const CreatePost = () => {
                     letter-spacing: 0.05em;
                 }
             `}</style>
-        </div >
+        </div>
     );
 };
 

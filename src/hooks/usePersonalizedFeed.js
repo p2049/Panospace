@@ -8,14 +8,47 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, startAfter, doc, getDoc } from 'firebase/firestore';
+import { useAuth } from '@/context/AuthContext';
+import { useFollowing } from '@/hooks/useFollowing';
 
-export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialPosts = false) => {
+export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialPosts = false, followingOnly = false, customFeedEnabled = false, activeCustomFeedId = null) => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [hasMore, setHasMore] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const lastDocRef = useRef(null);
+    const { currentUser } = useAuth();
+    const { followingList, loading: followingLoading } = useFollowing(currentUser?.uid);
+
+    // Custom Feed State
+    const [customFeedConfig, setCustomFeedConfig] = useState(null);
+    const [configLoading, setConfigLoading] = useState(false);
+
+    // Fetch Custom Feed Config
+    useEffect(() => {
+        const loadConfig = async () => {
+            if (customFeedEnabled && activeCustomFeedId && currentUser) {
+                setConfigLoading(true);
+                try {
+                    const docRef = doc(db, 'users', currentUser.uid, 'customFeeds', activeCustomFeedId);
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        setCustomFeedConfig(snap.data());
+                    } else {
+                        setCustomFeedConfig(null);
+                    }
+                } catch (e) {
+                    console.error("Error loading feed config", e);
+                } finally {
+                    setConfigLoading(false);
+                }
+            } else {
+                setCustomFeedConfig(null);
+            }
+        };
+        loadConfig();
+    }, [customFeedEnabled, activeCustomFeedId, currentUser]);
 
     // Reset state when feed type changes
     useEffect(() => {
@@ -23,11 +56,15 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
         lastDocRef.current = null;
         setHasMore(true);
         setError(null);
-    }, [feedType, JSON.stringify(options), showSocialPosts]);
+    }, [feedType, JSON.stringify(options), showSocialPosts, followingOnly, customFeedEnabled, activeCustomFeedId]);
 
     const fetchPosts = useCallback(async (isRefresh = false) => {
         // Prevent multiple simultaneous fetches unless it's a forced refresh
         if (loading && !isRefresh) return;
+
+        // Wait for dependencies
+        if (customFeedEnabled && (configLoading || !customFeedConfig)) return;
+        if (followingOnly && followingLoading && !customFeedEnabled) return;
 
         try {
             setLoading(true);
@@ -36,28 +73,42 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                 setError(null);
             }
 
+            let limitSize = 10;
+            // Fetch more if filtering aggressively
+            if (followingOnly || customFeedEnabled) limitSize = 50;
+
             let constraints = [
                 orderBy('createdAt', 'desc'),
-                limit(5)
+                limit(limitSize)
             ];
 
-            // Apply filters based on feedType
-            if (feedType === 'PARK' && options.parkId) {
-                constraints.unshift(where('parkId', '==', options.parkId));
-            } else if (feedType === 'CITY' && options.cityName) {
-                constraints.unshift(where('city', '==', options.cityName));
-            } else if (feedType === 'EVENT' && options.eventId) {
-                constraints.unshift(where('eventId', '==', options.eventId));
-            } else if (feedType === 'EXPLORE') {
-                // Explore might differ, but for now just recent
+            // ---------------------------------------------------------
+            // Custom Feed Logic
+            // ---------------------------------------------------------
+            if (customFeedEnabled && customFeedConfig) {
+                // 1. Tags Filter (Firestore)
+                if (customFeedConfig.tags && customFeedConfig.tags.length > 0) {
+                    constraints.unshift(where('tags', 'array-contains-any', customFeedConfig.tags.slice(0, 10)));
+                }
             }
+            // ---------------------------------------------------------
+            // Standard Logic
+            // ---------------------------------------------------------
+            else {
+                // Apply filters based on feedType
+                if (feedType === 'PARK' && options.parkId) {
+                    constraints.unshift(where('parkId', '==', options.parkId));
+                } else if (feedType === 'CITY' && options.cityName) {
+                    constraints.unshift(where('city', '==', options.cityName));
+                } else if (feedType === 'EVENT' && options.eventId) {
+                    constraints.unshift(where('eventId', '==', options.eventId));
+                }
 
-            // Social vs Art filter
-            if (showSocialPosts) {
-                constraints.unshift(where('type', '==', 'social'));
-            } else {
-                // strict Art filter
-                constraints.unshift(where('type', '==', 'art'));
+                if (showSocialPosts) {
+                    constraints.unshift(where('type', '==', 'social'));
+                } else {
+                    constraints.unshift(where('type', '==', 'art'));
+                }
             }
 
             // Pagination
@@ -68,10 +119,77 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             const q = query(collection(db, 'posts'), ...constraints);
             const snapshot = await getDocs(q);
 
-            const newPosts = snapshot.docs.map(doc => ({
+            let newPosts = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // ---------------------------------------------------------
+            // Filter Logic (Common + Custom)
+            // ---------------------------------------------------------
+
+            // 1. Filter Own Posts (Common)
+            // USER REQUEST: Show your own posts in feed (Previous logic filtered them out)
+            // if (currentUser && (feedType === 'HOME' || feedType === 'EXPLORE')) {
+            //    newPosts = newPosts.filter(p => p.userId !== currentUser.uid && p.authorId !== currentUser.uid);
+            // }
+
+            // 2. Custom Feed Advanced Filters
+            if (customFeedEnabled && customFeedConfig) {
+
+                // Filter: Source (Global / Following)
+                if (!customFeedConfig.includeGlobal) {
+                    // Must be in following list
+                    if (followingList && followingList.length > 0) {
+                        newPosts = newPosts.filter(p => followingList.includes(p.userId) || followingList.includes(p.authorId));
+                    } else {
+                        newPosts = [];
+                    }
+                }
+
+                // Filter: Orientation
+                if (customFeedConfig.orientation && customFeedConfig.orientation !== 'any') {
+                    newPosts = newPosts.filter(p => {
+                        const ratio = p.imageDetails?.aspectRatio || 1;
+                        if (customFeedConfig.orientation === 'portrait') return ratio < 1;
+                        if (customFeedConfig.orientation === 'landscape') return ratio > 1;
+                        return true;
+                    });
+                }
+
+                // Filter: Locations
+                if (customFeedConfig.locations && customFeedConfig.locations.length > 0) {
+                    newPosts = newPosts.filter(p => {
+                        if (!p.locationName && !p.city && !p.state && !p.country) return false;
+                        const locString = `${p.locationName} ${p.city} ${p.state} ${p.country}`.toLowerCase();
+                        return customFeedConfig.locations.some(l => locString.includes(l.toLowerCase()));
+                    });
+                }
+
+                // Filter: Colors (Skipped complex logic for now, just placeholder)
+            }
+            // 3. Standard Following Only Filter
+            else if (followingOnly && currentUser) {
+                if (followingList && followingList.length > 0) {
+                    // USER REQUEST: Show your own posts in feed when on following
+                    // We simply add currentUser.uid to the inclusion check
+                    newPosts = newPosts.filter(p =>
+                        followingList.includes(p.userId) ||
+                        followingList.includes(p.authorId) ||
+                        p.userId === currentUser.uid || // Explicitly include self
+                        p.authorId === currentUser.uid  // Explicitly include self
+                    );
+                } else {
+                    // If following no one, but want to see own posts?
+                    // Usually "Following Only" implies you must follow someone.
+                    // But if it's "your feed", you might expect your own posts.
+                    // Let's at least show own posts if following list is empty but filter is active.
+                    newPosts = newPosts.filter(p =>
+                        p.userId === currentUser.uid ||
+                        p.authorId === currentUser.uid
+                    );
+                }
+            }
 
             if (isRefresh) {
                 setPosts(newPosts);
@@ -85,7 +203,7 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
 
             if (snapshot.docs.length > 0) {
                 lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-                setHasMore(snapshot.docs.length >= 5);
+                setHasMore(snapshot.docs.length >= limitSize);
             } else {
                 setHasMore(false);
             }
@@ -97,12 +215,14 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             setLoading(false);
             setRefreshing(false);
         }
-    }, [feedType, JSON.stringify(options), showSocialPosts]);
+    }, [feedType, JSON.stringify(options), showSocialPosts, followingOnly, followingList, followingLoading, currentUser, customFeedEnabled, customFeedConfig, configLoading]);
 
     // Initial load
     useEffect(() => {
-        fetchPosts(true);
-    }, [fetchPosts]);
+        if (!followingLoading && !configLoading) {
+            fetchPosts(true);
+        }
+    }, [fetchPosts, followingLoading, configLoading]);
 
     return {
         posts,
@@ -158,7 +278,8 @@ export const usePreferenceLearning = () => {
         try {
             await onPostLikedFn({ postId });
         } catch (error) {
-            console.error('Error tracking like:', error);
+            // Suppress CORS/internal errors in dev to prevent console noise
+            console.warn('Engagement tracking failed (non-critical):', error.message);
         }
     }, []);
 

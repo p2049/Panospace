@@ -227,7 +227,9 @@ const SearchHeader = ({
                                 boxShadow: '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)',
                                 backdropFilter: 'blur(10px)',
                                 transition: 'all 0.3s ease',
-                                height: '32px'
+                                transition: 'all 0.3s ease',
+                                height: '32px', // Force height
+                                boxSizing: 'border-box'
                             }}
                             onFocus={(e) => {
                                 e.target.style.borderColor = 'var(--ice-mint)';
@@ -264,7 +266,11 @@ const SearchHeader = ({
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.4rem',
-                                    boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none'
+                                    boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none',
+                                    height: '32px', // Enforce 32px
+                                    boxSizing: 'border-box',
+                                    display: 'flex',
+                                    alignItems: 'center'
                                 }}
                             >
                                 {searchMode === 'art' ? 'ART' : 'SOCIAL'}

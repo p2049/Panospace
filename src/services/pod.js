@@ -20,7 +20,7 @@ export const calculatePrice = (basePrice, markup = 30) => {
 
 export const mockPODIntegration = {
     createProduct: async (designUrl, products) => {
-        console.log('Creating POD product with design:', designUrl);
+        // Creating POD product with design
         return {
             id: `pod_${Date.now()}`,
             status: 'created',
@@ -39,7 +39,7 @@ export const mockPODIntegration = {
     },
 
     submitOrder: async (orderData) => {
-        console.log('Submitting POD order:', orderData);
+        // Submitting POD order
         return {
             orderId: `ord_${Date.now()}`,
             status: 'processing',

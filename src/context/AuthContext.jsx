@@ -31,9 +31,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        console.log("AuthContext: Setting up onAuthStateChanged listener");
+        // AuthContext: Setting up onAuthStateChanged listener
         const unsubscribe = onAuthStateChanged(auth, (user) => {
-            console.log("AuthContext: onAuthStateChanged fired", user);
+            // AuthContext: onAuthStateChanged fired
             setCurrentUser(user);
             setLoading(false);
         }, (error) => {
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
         const timeout = setTimeout(() => {
             setLoading((currentLoading) => {
                 if (currentLoading) {
-                    console.warn("AuthContext: Firebase auth timed out, forcing loading to false");
+                    // AuthContext: Firebase auth timed out, forcing loading to false
                     return false;
                 }
                 return currentLoading;

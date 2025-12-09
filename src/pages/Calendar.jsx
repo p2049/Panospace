@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useEvents, useFollowingEvents } from '@/hooks/useEvents';
 
-import { FaPlus, FaChevronLeft, FaChevronRight, FaCalendar, FaUsers, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaChevronLeft, FaChevronRight, FaCalendar, FaUsers, FaSearch, FaMoon } from 'react-icons/fa';
 import { formatDateForInput } from '@/core/utils/dates';
 import { generateCalendarDays } from '@/core/utils/dates';
 
@@ -44,8 +44,20 @@ const Calendar = () => {
     // Get events for a specific day
     const getEventsForDay = (date) => {
         return events.filter(event => {
-            const eventDate = new Date(event.eventDate);
-            return eventDate.toDateString() === date.toDateString();
+            // Handle various date formats (Timestamp, String, Date object)
+            let raw = event.dateUTC || event.date || event.eventDate;
+            let d = null;
+            if (raw && raw.toDate) d = raw.toDate();
+            else if (raw) d = new Date(raw);
+
+            if (!d) return false;
+
+            // Strict UTC comparison as requested
+            // But 'date' argument is local from Calendar grid.
+            // We must compare the YYYY-MM-DD components.
+            return d.getFullYear() === date.getFullYear() &&
+                d.getMonth() === date.getMonth() &&
+                d.getDate() === date.getDate();
         });
     };
 
@@ -138,6 +150,7 @@ const Calendar = () => {
                             >
                                 <FaPlus /> Create Event
                             </button>
+
                         </div>
 
                         {/* View Toggle */}
@@ -300,8 +313,27 @@ const Calendar = () => {
                                                 {day.date.getDate()}
                                             </div>
                                             {dayEvents.length > 0 && (
-                                                <div style={{ fontSize: '0.75rem', color: '#7FFFD4' }}>
-                                                    {dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}
+                                                <div style={{ fontSize: '0.75rem', color: '#7FFFD4', display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                                    {dayEvents.map((evt, evtIndex) => {
+                                                        // Icon Logic
+                                                        let icon = "📸"; // Default
+                                                        const name = (evt.title || evt.name || "").toLowerCase();
+                                                        const type = (evt.type || "").toLowerCase();
+
+                                                        if (name.includes('full moon')) icon = "🌕";
+                                                        else if (name.includes('lunar eclipse')) icon = "🌘";
+                                                        else if (name.includes('solar eclipse')) icon = "🌑";
+                                                        else if (name.includes('meteor')) icon = "✨";
+                                                        else if (name.includes('solstice') || name.includes('equinox')) icon = "🍂";
+                                                        else if (type.includes('holiday')) icon = "🎉";
+                                                        else if (evt.icon) icon = evt.icon;
+
+                                                        return (
+                                                            <span key={evt.id || evtIndex} title={evt.title || evt.name} style={{ fontSize: '14px' }}>
+                                                                {icon}
+                                                            </span>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
@@ -404,9 +436,10 @@ const Calendar = () => {
                     </div>
                 </div>
 
-
             </div>
         </div>
+
+
     );
 };
 

@@ -55,18 +55,22 @@ const Feed = () => {
     // I'll pause and add the import first in a separate 'replace' check.
 
     // For this specific block:
-    const { currentFeed } = useFeedStore();
+    const { currentFeed, followingOnly, customFeedEnabled, activeCustomFeedId } = useFeedStore();
     const showSocialPosts = currentFeed === 'social';
 
     const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed(
         'HOME',
         {},
-        showSocialPosts
+        showSocialPosts,
+        followingOnly,
+        customFeedEnabled,
+        activeCustomFeedId
     );
 
     const currentTheme = getCurrentTheme();
     const { blockedUsers } = useBlock();
     const navigate = useNavigate();
+    const { setFollowingOnly } = useFeedStore(); // Needed for switch button
 
     // Filter out blocked content - memoized to prevent re-renders
     // STABILITY: Ensure posts is always an array
@@ -75,36 +79,15 @@ const Feed = () => {
         [posts, blockedUsers]
     );
 
-    // Save scroll position before navigation
+    // Scroll behavior: Always start at top
+    // Previous scroll restoration logic removed as per user request
     useEffect(() => {
-        const saveScrollPosition = () => {
-            if (scrollContainerRef.current) {
-                lastScrollPositionRef.current = scrollContainerRef.current.scrollTop;
-                sessionStorage.setItem('feedScrollPosition', lastScrollPositionRef.current.toString());
-            }
-        };
-
-        return () => {
-            saveScrollPosition();
-        };
-    }, []);
-
-    // Restore scroll position on mount
-    useEffect(() => {
-        if (visiblePosts.length > 0 && scrollContainerRef.current) {
-            const savedPosition = sessionStorage.getItem('feedScrollPosition');
-            if (savedPosition && !isRestoringScrollRef.current) {
-                isRestoringScrollRef.current = true;
-                // Use requestAnimationFrame to ensure DOM is ready
-                requestAnimationFrame(() => {
-                    if (scrollContainerRef.current) {
-                        scrollContainerRef.current.scrollTop = parseInt(savedPosition, 10);
-                        isRestoringScrollRef.current = false;
-                    }
-                });
-            }
+        // Reset scroll to top on mount if needed, though default browser behavior handles this mostly.
+        // Ensuring it for good measure.
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
         }
-    }, [visiblePosts.length]);
+    }, [location.pathname]); // Run on navigation to this page
 
     return (
         <div style={{
@@ -312,9 +295,132 @@ const Feed = () => {
                                 />
                             </div>
                         ))}
-                        {loading && (
+                        {/* Loading State or End of Feed */}
+                        {loading ? (
                             <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', scrollSnapAlign: 'none' }}>
                                 Loading more...
+                            </div>
+                        ) : !hasMore && (
+                            /* Feed End Page */
+                            <div style={{
+                                height: '100vh',
+                                width: '100vw',
+                                scrollSnapAlign: 'start',
+                                scrollSnapStop: 'always',
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#000',
+                                color: '#fff'
+                            }}>
+                                {/* Background Starfield */}
+                                <div style={{ position: 'absolute', inset: 0, opacity: 0.6 }}>
+                                    <StarBackground />
+                                </div>
+
+                                {/* Content Container */}
+                                <div style={{
+                                    position: 'relative',
+                                    zIndex: 10,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '2rem',
+                                    padding: '2rem',
+                                    textAlign: 'center',
+                                    maxWidth: '400px',
+                                    background: 'rgba(0,0,0,0.5)',
+                                    backdropFilter: 'blur(10px)',
+                                    borderRadius: '20px',
+                                    border: '1px solid rgba(127, 255, 212, 0.1)'
+                                }}>
+                                    <h2 style={{
+                                        fontFamily: '"Rajdhani", sans-serif',
+                                        fontSize: '2rem',
+                                        color: '#7FFFD4',
+                                        textShadow: '0 0 10px rgba(127, 255, 212, 0.5)',
+                                        margin: 0
+                                    }}>
+                                        End of Feed
+                                    </h2>
+                                    <p style={{
+                                        color: '#aaa',
+                                        fontSize: '1rem',
+                                        lineHeight: '1.5',
+                                        textWrap: 'balance', /* PREVENTS WIDOWS */
+                                        maxWidth: '300px',
+                                        margin: '0 auto'
+                                    }}>
+                                        You've reached the end of your feed. <br />
+                                        Explore the universe further or check your profile.
+                                    </p>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                                        {/* Search Button */}
+                                        <button
+                                            onClick={() => navigate('/search')}
+                                            style={{
+                                                padding: '1rem',
+                                                background: 'rgba(127, 255, 212, 0.1)',
+                                                border: '1px solid #7FFFD4',
+                                                borderRadius: '12px',
+                                                color: '#7FFFD4',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                fontFamily: '"Rajdhani", sans-serif',
+                                                fontSize: '1.1rem',
+                                                letterSpacing: '1px'
+                                            }}
+                                        >
+                                            DISCOVER NEW ART
+                                        </button>
+
+                                        {/* Profile Button */}
+                                        <button
+                                            onClick={() => navigate('/profile/me')}
+                                            style={{
+                                                padding: '1rem',
+                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                borderRadius: '12px',
+                                                color: '#fff',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                fontFamily: '"Rajdhani", sans-serif',
+                                                fontSize: '1.1rem',
+                                                letterSpacing: '1px'
+                                            }}
+                                        >
+                                            GO TO PROFILE
+                                        </button>
+
+                                        {/* Feed Switch Button */}
+                                        <button
+                                            onClick={() => {
+                                                // Toggle following only state
+                                                setFollowingOnly(!followingOnly);
+                                                // Refresh page to apply? The hook might react to state change.
+                                                // Ideally scroll to top too.
+                                                if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+                                            }}
+                                            style={{
+                                                padding: '1rem',
+                                                background: 'transparent',
+                                                border: '1px dashed rgba(255, 255, 255, 0.3)',
+                                                borderRadius: '12px',
+                                                color: '#aaa',
+                                                cursor: 'pointer',
+                                                fontFamily: '"Rajdhani", sans-serif',
+                                                fontSize: '1rem',
+                                                letterSpacing: '1px'
+                                            }}
+                                        >
+                                            SWITCH TO {followingOnly ? 'GLOBAL' : 'FOLLOWING'} FEED
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

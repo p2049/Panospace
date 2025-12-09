@@ -155,6 +155,13 @@ export function layoutForScreen(width: number, height: number, screen: string = 
     switch (screen) {
         case 'profile':
             // Profile specific layout tweaks
+            if (device === 'phone') {
+                config.gridColumns = 3;
+                config.gridGap = '3px'; // Tighter gap for grid
+                config.paddingX = '2px'; // Maximize width for images
+            } else {
+                config.gridGap = '1rem'; // Standard gap for larger screens
+            }
             if (device === 'desktop') {
                 config.bannerHeight = '300px';
             }

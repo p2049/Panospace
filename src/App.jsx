@@ -62,6 +62,8 @@ const MigrateDates = lazy(() => import('./pages/MigrateDates'));
 const ShopSetup = lazy(() => import('./pages/ShopSetup'));
 const ShopDrafts = lazy(() => import('./pages/ShopDrafts'));
 const ColorBackfillPage = lazy(() => import('./pages/ColorBackfillPage'));
+const CustomFeedManager = lazy(() => import('./pages/CustomFeedManager'));
+const CustomFeedCreator = lazy(() => import('./pages/CustomFeedCreator'));
 
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -256,6 +258,8 @@ const AnimatedRoutes = () => {
         <Route path="/admin/cleanup" element={<PrivateRoute><MotionWrapper><AdminCleanup /></MotionWrapper></PrivateRoute>} />
         <Route path="/admin" element={<PrivateRoute><MotionWrapper><AdminModeration /></MotionWrapper></PrivateRoute>} />
         <Route path="/admin/color-backfill" element={<PrivateRoute><MotionWrapper><ColorBackfillPage /></MotionWrapper></PrivateRoute>} />
+        <Route path="/custom-feeds" element={<PrivateRoute><MotionWrapper><CustomFeedManager /></MotionWrapper></PrivateRoute>} />
+        <Route path="/custom-feeds/create" element={<PrivateRoute><MotionWrapper><CustomFeedCreator /></MotionWrapper></PrivateRoute>} />
         <Route path="/campus" element={<PrivateRoute><MotionWrapper><CampusHub /></MotionWrapper></PrivateRoute>} />
 
 

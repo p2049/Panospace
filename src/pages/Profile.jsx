@@ -25,6 +25,7 @@ import FollowListModal from '@/components/FollowListModal';
 import { getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { RocketIcon, AstronautIcon, PlanetIcon } from '@/components/SpaceIcons';
+import PlanetUserIcon from '@/components/PlanetUserIcon'; // Import new shared icon
 import { COLORS, getGradientCss, getThemeGradient } from '@/core/theme/colors';
 import { useThemeStore } from '@/core/store/useThemeStore';
 import { useFeedStore } from '@/core/store/useFeedStore';
@@ -236,16 +237,7 @@ const Profile = () => {
                 {/* Gradient Polish Overlays (Noise + Vignette) - Only if gradient mode */}
                 {(bannerMode === 'gradient') && (
                     <>
-                        {/* 1. Subtle Grain/Noise Overlay */}
-                        <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.5'/%3E%3C/svg%3E")`,
-                            opacity: 0.15,
-                            mixBlendMode: 'overlay',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
+
 
                         {/* 2. Bottom Vignette (Soft Fade) */}
                         <div style={{
@@ -315,11 +307,6 @@ const Profile = () => {
                         </svg>
                     </button>
 
-                    {/* Toggle Stars Button Removed - Moved to Settings */}
-
-
-
-
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -357,72 +344,6 @@ const Profile = () => {
                             {user.username || user.displayName}
                         </h1>
 
-                        {/* Icons Container - HIDDEN FOR CLEAN BANNER, MOVED TO POPOUT */}
-                        {false && (
-                            <div>
-                                {/* Wallet (Own Profile Only) */}
-                                {isOwnProfile && (
-                                    <button
-                                        onClick={() => setShowAddFunds(true)}
-                                        title="Wallet"
-                                        style={{
-                                            position: 'absolute',
-                                            top: '70px',
-                                            right: '1rem',
-                                            width: '44px',
-                                            height: '44px',
-                                            background: 'transparent',
-                                            border: 'none',
-                                            padding: 0,
-                                            cursor: 'pointer',
-                                            color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')
-                                                ? user.profileTheme.usernameColor
-                                                : '#7FFFD4',
-                                            opacity: 0.9,
-                                            transition: 'transform 0.2s',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            zIndex: 60
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                    >
-                                        <FaWallet size={isMobile ? 20 : 24} />
-                                    </button>
-                                )}
-
-                                {/* Business Card (Always Visible) */}
-                                <button
-                                    onClick={() => setShowBusinessCard(true)}
-                                    title={isOwnProfile ? "Edit Business Card" : "View Business Card"}
-                                    style={{
-                                        position: 'absolute',
-                                        top: '70px',
-                                        left: 'calc(1rem + 5px)',
-                                        background: 'transparent',
-                                        border: 'none', // Ensure no box
-                                        outline: 'none', // Ensure no box
-                                        padding: 0,
-                                        cursor: 'pointer',
-                                        color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')
-                                            ? user.profileTheme.usernameColor
-                                            : '#7FFFD4',
-                                        opacity: 0.9,
-                                        transition: 'transform 0.2s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                >
-                                    <FaIdBadge size={isMobile ? 20 : 24} />
-                                </button>
-
-
-                            </div>
-                        )}
                     </div>
 
                     {/* --- LAYER 2: STATS & ACTIONS --- */}
@@ -539,7 +460,9 @@ const Profile = () => {
                                 {user.photoURL ? (
                                     <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', color: '#888' }}>{user.displayName?.[0]?.toUpperCase() || '?'}</div>
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <PlanetUserIcon size={parseInt(layout.profile.avatarSize, 10) * 0.7} color={user.profileTheme?.usernameColor || '#7FFFD4'} />
+                                    </div>
                                 )}
                             </div>
 
@@ -915,7 +838,7 @@ const Profile = () => {
                         <InfiniteGrid
                             items={posts}
                             columns={layout.gridColumns}
-                            gap="1rem"
+                            gap={layout.gridGap}
                             renderItem={(post, index) => (
                                 <div
                                     onClick={() => navigate(`/post/${post.id}`, {
@@ -959,7 +882,7 @@ const Profile = () => {
                         <InfiniteGrid
                             items={shopItems}
                             columns={layout.gridColumns}
-                            gap="1rem"
+                            gap={layout.gridGap}
                             renderItem={(item) => {
                                 const prices = item.printSizes?.map(s => Number(s.price)) || [];
                                 const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
@@ -1026,7 +949,7 @@ const Profile = () => {
                             <InfiniteGrid
                                 items={collections}
                                 columns={layout.gridColumns}
-                                gap="1rem"
+                                gap={layout.gridGap}
                                 renderItem={(collection) => (
                                     <div
                                         onClick={() => navigate(`/collection/${collection.id}`)}
@@ -1092,7 +1015,7 @@ const Profile = () => {
                             <InfiniteGrid
                                 items={spaceCards}
                                 columns={layout.gridColumns}
-                                gap="1rem"
+                                gap={layout.gridGap}
                                 renderItem={(card) => {
                                     const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
                                     return (
@@ -1183,7 +1106,7 @@ const Profile = () => {
                         <InfiniteGrid
                             items={badges}
                             columns={{ mobile: 3, tablet: 4, desktop: 6 }}
-                            gap="1rem"
+                            gap={layout.gridGap}
                             renderItem={(badge) => (
                                 <div style={{
                                     aspectRatio: '1',
@@ -1213,7 +1136,7 @@ const Profile = () => {
                                     <InfiniteGrid
                                         items={orders}
                                         columns={layout.gridColumns}
-                                        gap="1rem"
+                                        gap={layout.gridGap}
                                         renderItem={(order) => (
                                             <div style={{
                                                 background: '#111',
@@ -1244,7 +1167,7 @@ const Profile = () => {
                                     <InfiniteGrid
                                         items={spaceCards}
                                         columns={layout.gridColumns}
-                                        gap="1rem"
+                                        gap={layout.gridGap}
                                         renderItem={(card) => {
                                             const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
                                             return (

@@ -5,7 +5,7 @@ import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc, de
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { PRINT_SIZES, calculateEarnings, getValidSizesForImage } from '@/core/utils/pricing';
+import { PRINT_SIZES, STICKER_SIZES, calculateEarnings, calculateTieredPricing, calculateStickerPricing, getValidSizesForImage } from '@/core/utils/pricing';
 import { extractExifData } from '@/core/utils/exif';
 import { formatPrice } from '@/core/utils/helpers';
 import { AccountTypeService } from '@/core/services/firestore/users.service';
@@ -58,21 +58,20 @@ export const useCreatePost = () => {
     // status: 'published' (default) | 'draft'
     // -----------------------------------------------------------------------
     const createPost = async (postData, slides, status = 'published') => {
-        console.log('🚀 CREATE POST STARTED');
-        console.log('📊 Slides count:', slides.length);
-        console.log('📝 Post data:', postData);
+        // Create Post Started
+        // Slides count, Post data...
 
         setLoading(true);
         setError(null);
         setProgress(0);
-        console.log('✅ Loading state set to true, progress set to 0');
+        // Loading state set
 
         try {
             if (!currentUser) {
                 console.error('❌ No current user!');
                 throw new Error('Must be logged in');
             }
-            console.log('✅ User authenticated:', currentUser.uid);
+            // User authenticated
 
             // 🔐 SECURITY: Enforce rate limiting
             const now = Date.now();
@@ -138,7 +137,7 @@ export const useCreatePost = () => {
             // Process slides sequentially to prevent memory/network overload
             for (let i = 0; i < totalSlides; i++) {
                 const slide = slides[i];
-                console.log(`🖼️ Processing slide ${i + 1}/${totalSlides}...`);
+                // Processing slide...
 
                 // Update progress at start of each slide
                 const baseProgress = (i / totalSlides) * 100;
@@ -146,7 +145,7 @@ export const useCreatePost = () => {
 
                 if (slide.type === 'image') {
                     try {
-                        console.log(`  📸 Generating thumbnails for slide ${i + 1}...`);
+                        // Generating thumbnails...
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 10)); // +10% for thumbnail gen
 
                         // 1. Generate Thumbnails Client-Side
@@ -156,7 +155,7 @@ export const useCreatePost = () => {
                             l0 = thumbs.l0;
                             l1 = thumbs.l1;
                             l2 = thumbs.l2;
-                            console.log(`  ✅ Thumbnails generated for slide ${i + 1}`);
+                            // Thumbnails generated
                         } catch (genError) {
                             console.warn(`  ⚠️ Thumbnail generation failed for slide ${i + 1}, using original:`, genError);
                             l0 = slide.file;
@@ -173,12 +172,12 @@ export const useCreatePost = () => {
                         const l0Ref = ref(storage, `posts/${currentUser.uid}/thumbnails/${baseFilename}_l0.jpg`);
 
                         // 3. Upload All Versions with fallback
-                        console.log(`  ⬆️ Uploading original image ${i + 1}...`);
+                        // Uploading original...
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 20)); // +20% for upload start
 
                         // We upload L2 (Original) first to ensure we have the main asset
                         const urlL2 = await uploadWithRetry(l2Ref, l2);
-                        console.log(`  ✅ Original uploaded for slide ${i + 1}`);
+                        // Original uploaded
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 50)); // +50% after main upload
 
                         // Upload thumbnails with fallback to original if generation failed
@@ -186,12 +185,12 @@ export const useCreatePost = () => {
                         let urlL0 = urlL2; // Fallback
 
                         try {
-                            console.log(`  ⬆️ Uploading thumbnails for slide ${i + 1}...`);
+                            // Uploading thumbnails...
                             [urlL1, urlL0] = await Promise.all([
                                 uploadWithRetry(l1Ref, l1),
                                 uploadWithRetry(l0Ref, l0)
                             ]);
-                            console.log(`  ✅ Thumbnails uploaded for slide ${i + 1}`);
+                            // Thumbnails uploaded
                             setProgress(Math.round(baseProgress + (1 / totalSlides) * 70)); // +70% after thumbnails
                         } catch (thumbError) {
                             console.warn('Thumbnail upload failed, using original:', thumbError);
@@ -199,7 +198,7 @@ export const useCreatePost = () => {
                         }
 
                         // 4. Get Dimensions
-                        console.log(`  📐 Getting dimensions for slide ${i + 1}...`);
+                        // Getting dimensions...
                         let width = null;
                         let height = null;
                         try {
@@ -211,13 +210,13 @@ export const useCreatePost = () => {
                             });
                             width = img.naturalWidth;
                             height = img.naturalHeight;
-                            console.log(`  ✅ Dimensions: ${width}x${height}`);
+                            // Dimensions retrieved
                         } catch (e) {
                             console.warn('Failed to get image dimensions', e);
                         }
 
                         // 5. EXIF - Enhanced with retry
-                        console.log(`  📷 Extracting EXIF for slide ${i + 1}...`);
+                        // Extracting EXIF...
                         let extractedExif = null;
 
                         // Only attempt EXIF extraction for JPEG/TIFF
@@ -226,7 +225,7 @@ export const useCreatePost = () => {
                             slide.file.type === 'image/tiff';
 
                         if (!isExifSupported) {
-                            console.log('  ⏭️ Skipping EXIF for non-JPEG/TIFF file');
+                            // Skipping EXIF
                         } else {
                             try {
                                 // ONE SHOT ONLY - 300ms timeout
@@ -239,12 +238,12 @@ export const useCreatePost = () => {
                                 extractedExif = await Promise.race([exifPromise, timeoutPromise]);
                             } catch (e) {
                                 // Silently fail or log debug only - don't stop, don't retry
-                                console.log('  ⏭️ No EXIF data found or extraction timed out (skipping)');
+                                // No EXIF found
                             }
                         }
 
                         const finalExif = slide.manualExif || extractedExif;
-                        console.log(`  ✅ EXIF extracted for slide ${i + 1}`);
+                        // EXIF done
 
                         // 6. Print Sizes
                         const validSizes = getValidSizesForImage(width, height);
@@ -258,7 +257,7 @@ export const useCreatePost = () => {
                         const printSizeIds = bestFitSizes.map((s) => s.id);
 
                         // 7. Dominant Color
-                        console.log(`  🎨 Extracting color for slide ${i + 1}...`);
+                        // Extracting dominant color...
                         let dominantColor = null;
                         try {
                             // Add timeout for color extraction (3 seconds)
@@ -268,7 +267,7 @@ export const useCreatePost = () => {
                             );
                             const colorData = await Promise.race([colorPromise, colorTimeout]);
                             dominantColor = colorData.hex;
-                            console.log(`  ✅ Color extracted: ${dominantColor}`);
+                            // Color extracted
                         } catch (e) {
                             console.warn('Failed to extract dominant color', e);
                         }
@@ -476,7 +475,8 @@ export const useCreatePost = () => {
             const shopPromises = processedItems
                 .filter((i) => i.type === 'image' && i.addToShop)
                 .map(async (item) => {
-                    const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES, STICKER_SIZES } = await import('../utils/printifyPricing');
+                    // Using static imports instead of broken dynamic import
+                    // const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES, STICKER_SIZES } = await import('../utils/printifyPricing');
 
                     let printSizesConfig = PRINT_SIZES.filter((size) =>
                         item.printSizes.includes(size.id)

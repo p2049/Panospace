@@ -11,7 +11,7 @@ const DEFAULT_ACCOUNT_TYPE = 'art';
 /**
  * Get user's account type
  */
-export const getAccountType = async (userId) => {
+export const getAccountType = async (userId: string): Promise<string> => {
     try {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (!userDoc.exists()) {
@@ -29,7 +29,7 @@ export const getAccountType = async (userId) => {
 /**
  * Set user's account type
  */
-export const setAccountType = async (userId, accountType) => {
+export const setAccountType = async (userId: string, accountType: string) => {
     try {
         if (accountType !== 'art' && accountType !== 'social') {
             throw new Error('Invalid account type. Must be "art" or "social"');
@@ -39,7 +39,7 @@ export const setAccountType = async (userId, accountType) => {
             accountType
         });
 
-        console.log(`Account type updated to ${accountType} for user ${userId}`);
+        // Account type updated
     } catch (error) {
         console.error('Error setting account type:', error);
         throw error;

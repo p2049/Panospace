@@ -9,8 +9,21 @@ import ContextOptionsSection from './ContextOptionsSection';
 import ReportModal from './ReportModal';
 
 import { useFeedStore } from '@/core/store/useFeedStore';
+import { useCustomFeeds } from '@/hooks/useCustomFeeds';
 import { useThemeStore } from '@/core/store/useThemeStore';
 import { useTranslation } from 'react-i18next';
+import {
+    FaHome,
+    FaSearch,
+    FaPlusSquare,
+    FaCalendarAlt,
+    FaUserCircle,
+    FaStore,
+    FaCog,
+    FaEdit,
+    FaFilter,
+    FaPlus
+} from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
 const MobileNavigation = () => {
@@ -27,23 +40,43 @@ const MobileNavigation = () => {
     const { t } = useTranslation();
 
     // Store hooks
-    const { currentFeed, toggleFeed } = useFeedStore();
+    const {
+        currentFeed,
+        toggleFeed,
+        followingOnly,
+        toggleFollowingOnly,
+        customFeedEnabled,
+        toggleCustomFeed,
+        activeCustomFeedId,
+        activeCustomFeedName
+    } = useFeedStore();
     const { setTheme, accentColor } = useThemeStore();
 
 
 
+    const [showCustomSelector, setShowCustomSelector] = useState(false);
+    const { feeds } = useCustomFeeds();
     const inactivityTimerRef = useRef(null);
 
     // Auto-collapse logic
     useEffect(() => {
         const checkInactivity = () => {
-            if (isOpen && Date.now() - lastActivity > 10000) { // Increased to 10s for better UX with menus
+            // Close selector if inactive too
+            if ((isOpen || showCustomSelector) && Date.now() - lastActivity > 10000) {
                 setIsOpen(false);
+                setShowCustomSelector(false);
             }
         };
         inactivityTimerRef.current = setInterval(checkInactivity, 1000);
         return () => clearInterval(inactivityTimerRef.current);
-    }, [lastActivity, isOpen]);
+    }, [lastActivity, isOpen, showCustomSelector]);
+
+    // Close selector when clicking outside
+    useEffect(() => {
+        if (!isOpen) {
+            setShowCustomSelector(false);
+        }
+    }, [isOpen]);
 
     // Determine Context
     let resolvedContext = null;
@@ -142,6 +175,20 @@ const MobileNavigation = () => {
         handleInteraction();
     };
 
+    const handleCustomFeedSelect = (feedId, feedName) => {
+        setActiveCustomFeed(feedId, feedName);
+        setCustomFeedEnabled(true);
+        setShowCustomSelector(false);
+        setIsOpen(false);
+    };
+
+    const handleDisableCustomFeed = () => {
+        setCustomFeedEnabled(false);
+        setActiveCustomFeed(null, null);
+        setShowCustomSelector(false);
+        setIsOpen(false);
+    };
+
     // Styling
     const menuButtonStyle = {
         position: 'fixed',
@@ -151,7 +198,8 @@ const MobileNavigation = () => {
         cursor: 'pointer',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-        color: accentColor, // Dynamic Theme Color
+        // ... (rest of style inferred to be unchanged if I only replace handlers, but I'm replacing a large block. I must ensure I don't lose the button style definition)
+        color: accentColor,
         background: 'transparent',
         width: '44px',
         height: '44px',
@@ -160,7 +208,7 @@ const MobileNavigation = () => {
         justifyContent: 'center',
         border: 'none',
         outline: 'none',
-        filter: `drop-shadow(0 0 6px ${accentColor}80)` // Tasteful glow
+        filter: `drop-shadow(0 0 6px ${accentColor}80)`
     };
 
     const drawerStyle = {
@@ -190,7 +238,10 @@ const MobileNavigation = () => {
         textTransform: 'uppercase',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         cursor: 'pointer',
-        transition: 'background 0.2s, color 0.2s'
+        transition: 'background 0.2s, color 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem' // Space for icon
     };
 
     const switchStyle = {
@@ -229,19 +280,7 @@ const MobileNavigation = () => {
 
     return (
         <>
-            {/* Feed Switch - Visible when menu is open */}
-            <div style={switchStyle} onClick={(e) => {
-                e.stopPropagation();
-                toggleFeed();
-                handleInteraction();
-            }}>
-                <div style={toggleOptionStyle(currentFeed === 'art', '#7FFFD4')}>
-                    Art
-                </div>
-                <div style={toggleOptionStyle(currentFeed === 'social', '#7FFFD4')}>
-                    Social
-                </div>
-            </div>
+
 
             {/* Hamburger Button */}
             <div
@@ -264,80 +303,367 @@ const MobileNavigation = () => {
 
             {/* Menu Drawer */}
             <div style={drawerStyle} onClick={(e) => e.stopPropagation()}>
-                {/* Context Aware Options */}
-                <ContextOptionsSection
-                    currentContext={resolvedContext}
-                    postOwnerId={resolvedPostOwnerId}
-                    profileUserId={resolvedProfileUserId}
-                    onEditPost={handleEditPost}
-                    onDeletePost={handleDeletePost}
-                    onReportPost={handleReportPost}
-                    onReportProfile={handleReportProfile}
-                    onBlockUser={handleBlockUser}
-                    onCopyLink={handleCopyLink}
-                    onShareProfile={handleShareProfile}
-                />
 
-                {/* Main Navigation */}
-                <div onClick={() => handleNavClick('/')} style={navItemStyle}>
-                    {t('nav.home')}
+                {/* Left Pane - Sub Options (Feed / Context) */}
+                <div style={{
+                    width: '60px', // Narrow strip for sub-menu triggers or indicators could go here, 
+                    // BUT user asked for "sub box to the left of the first box".
+                    // Let's interpret: 
+                    // The "Main Box" is the navigation list (Right side usually? Or are we splitting the drawer?)
+                    // Actually, distinct "Boxes" implies a visual separation. 
+                    // Let's try a layout where a "Sub Menu" slides out or sits to the left of the main menu items.
+
+                    // RE-READING: "pull up a second menu box, sub box, to the left of the first box"
+                    // Currently the drawer is on the RIGHT. 
+                    // So "Left of the first box" means closer to the center of the screen? Or is the "First Box" the main nav?
+
+                    // Interpretation: When "Feed Options" is clicked, instead of a dropdown *inside* the drawer or over it, 
+                    // A WHOLE NEW PANEL appears to the left of the main drawer.
+                    // Let's implement this "Sidecar" panel.
+                }}>
                 </div>
 
-                <div onClick={() => handleNavClick('/search')} style={navItemStyle}>
-                    {t('nav.search')}
-                </div>
-
-                <div onClick={() => handleNavClick('/create-post')} style={navItemStyle}>
-                    {t('nav.create')}
-                </div>
-
-                <div onClick={() => handleNavClick('/calendar')} style={navItemStyle}>
-                    {t('nav.calendar')}
-                </div>
-
-                {(resolvedContext === 'profile' && resolvedProfileUserId === currentUser?.uid) ? (
-                    <div onClick={() => handleNavClick('/edit-profile')} style={navItemStyle}>
-                        {t('settings.editProfile')}
-                    </div>
-                ) : (
-                    <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
-                        {t('settings.account')}
-                    </div>
-                )}
-
-                <div onClick={() => handleNavClick('/marketplace')} style={navItemStyle}>
-                    {t('nav.market')}
-                </div>
-
-                <div onClick={() => handleNavClick('/settings')} style={navItemStyle}>
-                    {t('settings.title')}
-                </div>
+                {/* We need to render the "Sidecar" panel outside of the main drawer div but conditional on state */}
             </div>
 
+            {/* Sidecar Panel for Feed Options */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                right: (isOpen && showCustomSelector) ? '300px' : '-320px', // Slides out to the left of the main drawer (which is 300px wide)
+                width: '260px',
+                height: '100vh',
+                background: '#111111', // Solid background color
+                // backdropFilter: 'none', // Explicitly remove backdrop filter
+                borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+                transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: 9999, // Raised to match drawer and sit above backdrop
+                paddingTop: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                pointerEvents: isOpen ? 'auto' : 'none'
+            }} onClick={(e) => e.stopPropagation()}>
+
+                <div style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM FEEDS</h3>
+                </div>
+
+                {/* Standard Feed Toggles REMOVED from Sidecar */}
+
+                <div style={{ fontSize: '0.7rem', color: '#888', padding: '0 1rem 0.5rem 1rem' }}>SAVED FEEDS</div>
+
+                {/* Feeds List */}
+                <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
+                    padding: '0 1rem'
+                }}>
+                    {/* Default / Disable Option */}
+                    <button
+                        onClick={handleDisableCustomFeed}
+                        style={{
+                            padding: '0.8rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: !customFeedEnabled ? 'rgba(255,255,255,0.1)' : 'transparent',
+                            color: !customFeedEnabled ? '#fff' : 'rgba(255,255,255,0.6)',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}
+                    >
+                        <span>Standard Feed</span>
+                        {!customFeedEnabled && <div style={{ width: 8, height: 8, borderRadius: '50%', background: accentColor }} />}
+                    </button>
+
+                    {feeds.map(feed => (
+                        <button
+                            key={feed.id}
+                            onClick={() => handleCustomFeedSelect(feed.id, feed.name)}
+                            style={{
+                                padding: '0.8rem',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: (customFeedEnabled && activeCustomFeedId === feed.id) ? accentColor : 'transparent',
+                                color: (customFeedEnabled && activeCustomFeedId === feed.id) ? '#000' : '#fff',
+                                textAlign: 'left',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                fontWeight: (customFeedEnabled && activeCustomFeedId === feed.id) ? 'bold' : 'normal',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}
+                        >
+                            <span>{feed.name}</span>
+                            {(customFeedEnabled && activeCustomFeedId === feed.id) && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#000' }} />}
+                        </button>
+                    ))}
+
+                    {feeds.length === 0 && (
+                        <div style={{ padding: '1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', fontStyle: 'italic', textAlign: 'center' }}>
+                            No saved feeds
+                        </div>
+                    )}
+                </div>
+
+                <div style={{ padding: '1rem' }}>
+                    <button
+                        onClick={() => {
+                            navigate('/custom-feeds/create');
+                            setIsOpen(false);
+                            setShowCustomSelector(false);
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.8rem',
+                            background: `${accentColor}20`,
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: accentColor,
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            width: '100%',
+                            justifyContent: 'center',
+                            transition: 'background 0.2s'
+                        }}
+                    >
+                        <FaPlus size={12} />
+                        CREATE NEW
+                    </button>
+                </div>
+
+            </div>
+
+            {/* Main Menu Drawer (Active) */}
+            <div style={drawerStyle} onClick={(e) => e.stopPropagation()}>
+
+                {/* Header Items */}
+                <div style={{
+                    position: 'absolute',
+                    top: 'max(0.75rem, env(safe-area-inset-top))',
+                    left: '1rem',
+                    right: '3.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                    alignItems: 'center',
+                    pointerEvents: 'auto',
+                    zIndex: 10002
+                }}>
+
+                    {/* Standard Feed Toggles - Visible when NOT custom feed enabled or always visible but disabled? */}
+                    {/* User wants them "back where they were". Originally they were separate buttons in the main header of the drawer. */}
+
+                    <div style={{ display: 'flex', width: '100%', gap: '0.4rem' }}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFollowingOnly();
+                                handleInteraction();
+                            }}
+                            style={{
+                                flex: 1,
+                                padding: '0.35rem 0.5rem',
+                                borderRadius: '8px',
+                                border: `1px solid ${accentColor}`,
+                                background: (followingOnly && !customFeedEnabled) ? accentColor : 'rgba(0,0,0,0.6)',
+                                color: (followingOnly && !customFeedEnabled) ? '#000' : accentColor,
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                cursor: customFeedEnabled ? 'default' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap',
+                                height: '32px',
+                                backdropFilter: 'blur(10px)',
+                                opacity: customFeedEnabled ? 0.5 : 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            disabled={customFeedEnabled}
+                        >
+                            {followingOnly ? 'FOLLOWING' : 'GLOBAL'}
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFeed();
+                                handleInteraction();
+                            }}
+                            style={{
+                                flex: 1,
+                                padding: '0.35rem 0.5rem',
+                                borderRadius: '8px',
+                                border: `1px solid ${accentColor}`,
+                                background: (currentFeed === 'art' && !customFeedEnabled) ? accentColor : 'rgba(0,0,0,0.6)',
+                                color: (currentFeed === 'art' && !customFeedEnabled) ? '#000' : accentColor,
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                cursor: customFeedEnabled ? 'default' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap',
+                                height: '32px',
+                                backdropFilter: 'blur(10px)',
+                                opacity: customFeedEnabled ? 0.5 : 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            disabled={customFeedEnabled}
+                        >
+                            {currentFeed === 'art' ? 'ART' : 'SOCIAL'}
+                        </button>
+                    </div>
+
+                    {/* Feed Options Trigger - Only visible on Home Feed */}
+                    {location.pathname === '/' && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowCustomSelector(!showCustomSelector);
+                                handleInteraction();
+                            }}
+                            style={{
+                                padding: '0.35rem 0.8rem',
+                                borderRadius: '8px',
+                                border: `1px solid ${accentColor}`,
+                                background: showCustomSelector ? accentColor : 'rgba(0,0,0,0.6)',
+                                color: showCustomSelector ? '#000' : accentColor,
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap',
+                                height: '32px',
+                                backdropFilter: 'blur(10px)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.4rem',
+                                width: '100%',
+                            }}
+                        >
+                            CUSTOM FEEDS
+                        </button>
+                    )}
+                </div>
+
+                {/* Context Options - Kept in main drawer but visualized as list */}
+                <div style={{ marginTop: '90px' }}> {/* Push down below header buttons + toggles */}
+                    <ContextOptionsSection
+                        currentContext={resolvedContext}
+                        postOwnerId={resolvedPostOwnerId}
+                        profileUserId={resolvedProfileUserId}
+                        onEditPost={handleEditPost}
+                        onDeletePost={handleDeletePost}
+                        onReportPost={handleReportPost}
+                        onReportProfile={handleReportProfile}
+                        onBlockUser={handleBlockUser}
+                        onCopyLink={handleCopyLink}
+                        onShareProfile={handleShareProfile}
+                    />
+                </div>
+
+                {/* Main Navigation List */}
+                <div style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    paddingTop: '0.5rem'
+                }}>
+                    <div onClick={() => handleNavClick('/')} style={navItemStyle}>
+                        <FaHome color="#7FFFD4" size={20} />
+                        {t('nav.home')}
+                    </div>
+
+                    <div onClick={() => handleNavClick('/search')} style={navItemStyle}>
+                        <FaSearch color="#7FFFD4" size={20} />
+                        {t('nav.search')}
+                    </div>
+
+                    <div onClick={() => handleNavClick('/create-post')} style={navItemStyle}>
+                        <FaPlusSquare color="#7FFFD4" size={20} />
+                        {t('nav.create')}
+                    </div>
+
+                    <div onClick={() => handleNavClick('/calendar')} style={navItemStyle}>
+                        <FaCalendarAlt color="#7FFFD4" size={20} />
+                        {t('nav.calendar')}
+                    </div>
+
+                    {(resolvedContext === 'profile' && resolvedProfileUserId === currentUser?.uid) ? (
+                        <div onClick={() => handleNavClick('/edit-profile')} style={navItemStyle}>
+                            <FaEdit color="#7FFFD4" size={20} />
+                            {t('settings.editProfile')}
+                        </div>
+                    ) : (
+                        <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
+                            <FaUserCircle color="#7FFFD4" size={20} />
+                            {t('settings.account')}
+                        </div>
+                    )}
+
+                    <div onClick={() => handleNavClick('/marketplace')} style={navItemStyle}>
+                        <FaStore color="#7FFFD4" size={20} />
+                        {t('nav.market')}
+                    </div>
+
+                    <div onClick={() => handleNavClick('/settings')} style={navItemStyle}>
+                        <FaCog color="#7FFFD4" size={20} />
+                        {t('settings.title')}
+                    </div>
+                </div>
+            </div >
+
             {/* Backdrop */}
-            {isOpen && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        inset: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        zIndex: 9998,
-                        backdropFilter: 'blur(2px)'
-                    }}
-                    onClick={() => setIsOpen(false)}
-                />
-            )}
+            {
+                isOpen && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.5)',
+                            zIndex: 9997, // Lowered behind panels
+                            backdropFilter: 'blur(2px)'
+                        }}
+                        onClick={() => setIsOpen(false)}
+                    />
+                )
+            }
 
             {/* Report Modal Integration */}
-            {showReportModal && (
-                <ReportModal
-                    isOpen={showReportModal}
-                    targetType={reportConfig.type}
-                    targetId={reportConfig.id}
-                    targetTitle={reportConfig.title}
-                    onClose={() => setShowReportModal(false)}
-                />
-            )}
+            {
+                showReportModal && (
+                    <ReportModal
+                        isOpen={showReportModal}
+                        targetType={reportConfig.type}
+                        targetId={reportConfig.id}
+                        targetTitle={reportConfig.title}
+                        onClose={() => setShowReportModal(false)}
+                    />
+                )
+            }
         </>
     );
 };

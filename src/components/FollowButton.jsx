@@ -4,7 +4,7 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc, Timestamp, s
 import { useAuth } from '@/context/AuthContext';
 import { FaUserPlus, FaUserCheck } from 'react-icons/fa';
 
-const FollowButton = ({ targetUserId, targetUserName }) => {
+const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
     const [isFollowing, setIsFollowing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [followDocId, setFollowDocId] = useState(null);
@@ -97,13 +97,14 @@ const FollowButton = ({ targetUserId, targetUserName }) => {
                 transition: 'all 0.3s ease',
                 opacity: loading ? 0.6 : 1,
                 fontSize: '0.95rem',
-                backdropFilter: 'blur(10px)'
+                backdropFilter: 'blur(10px)',
+                ...style // Allow overrides
             }}
             onMouseEnter={(e) => {
-                if (!loading) e.currentTarget.style.transform = 'translateY(-2px)';
+                if (!loading && !style.background) e.currentTarget.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
+                if (!style.background) e.currentTarget.style.transform = 'translateY(0)';
             }}
         >
             {isFollowing ? <FaUserCheck /> : <FaUserPlus />}

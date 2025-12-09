@@ -142,7 +142,10 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     );
                     const shopSnap = await getDocs(shopQuery);
                     if (isMountedRef.current) {
-                        setShopItems(shopSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        const allItems = shopSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        const isOwnProfile = currentUser && currentUser.uid === userId;
+                        const visibleItems = allItems.filter(item => isOwnProfile || item.available === true);
+                        setShopItems(visibleItems);
                     }
                 }
 

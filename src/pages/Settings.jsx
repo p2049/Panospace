@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar } from 'react-icons/fa';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -11,6 +10,8 @@ import ReportModal from '@/components/ReportModal';
 import { useBlock } from '@/hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '@/core/constants/nsfwTags';
 import { isFeatureEnabled } from '@/config/featureFlags';
+import { useFeedStore } from '@/core/store/useFeedStore';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar, FaUsers } from 'react-icons/fa';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Settings = () => {
     const { activePost } = useUI();
     const { blockUser } = useBlock();
     const [loading, setLoading] = useState(false);
+    const { currentFeed, switchToFeed, followingOnly, setFollowingOnly } = useFeedStore();
 
     // Language State
     const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -349,6 +351,40 @@ const Settings = () => {
                         onClick={toggleStarsOverlay}
                     />
                     <SettingsRow icon={FaPalette} label={t('settings.theme')} onClick={() => alert('Theme selection coming soon')} />
+                </div>
+
+                {/* Feed Preferences Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>FEED PREFERENCES</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <SettingsRow
+                        icon={FaUsers}
+                        label={followingOnly ? 'Default: Following Only' : 'Default: Global Feed'}
+                        onClick={() => {
+                            setFollowingOnly(!followingOnly);
+                            // Persisted automatically by useFeedStore
+                        }}
+                    />
+                    <SettingsRow
+                        icon={FaPalette}
+                        label={currentFeed === 'art' ? 'Default: Art Feed' : 'Default: Social Feed'}
+                        onClick={() => {
+                            switchToFeed(currentFeed === 'art' ? 'social' : 'art');
+                        }}
+                    />
                 </div>
 
 
