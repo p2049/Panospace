@@ -27,3 +27,11 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Security: Firebase/Google credentials - NEVER commit these!
+serviceAccountKey.json
+*-service-account*.json
+*.pem
+*.p12
+firebase-adminsdk*.json
+google-credentials*.json
