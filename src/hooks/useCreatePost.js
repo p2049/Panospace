@@ -5,7 +5,7 @@ import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc, de
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { PRINT_SIZES, STICKER_SIZES, calculateEarnings, calculateTieredPricing, calculateStickerPricing, getValidSizesForImage } from '@/core/utils/pricing';
+import { PRINT_PRODUCTS, STICKER_PRODUCTS, calculateEarnings, calculateTieredPricing, calculateStickerPricing, getValidSizesForImage } from '@/domain/shop/pricing';
 import { extractExifData } from '@/core/utils/exif';
 import { formatPrice } from '@/core/utils/helpers';
 import { AccountTypeService } from '@/core/services/firestore/users.service';
@@ -507,7 +507,7 @@ export const useCreatePost = () => {
                     // Using static imports instead of broken dynamic import
                     // const { calculateTieredPricing, calculateStickerPricing, PRINT_SIZES, STICKER_SIZES } = await import('../utils/printifyPricing');
 
-                    let printSizesConfig = PRINT_SIZES.filter((size) =>
+                    let printSizesConfig = PRINT_PRODUCTS.filter((size) =>
                         item.printSizes.includes(size.id)
                     ).map((size) => {
                         const pricing = calculateTieredPricing(size.id, item.productTier, isUltra);
@@ -522,7 +522,7 @@ export const useCreatePost = () => {
                     }).filter(Boolean);
 
                     if (item.includeStickers) {
-                        STICKER_SIZES.forEach(sticker => {
+                        STICKER_PRODUCTS.forEach(sticker => {
                             const pricing = calculateStickerPricing(sticker.id);
                             if (pricing) {
                                 printSizesConfig.push({

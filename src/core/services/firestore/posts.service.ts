@@ -13,7 +13,7 @@ import { db } from '@/firebase';
 /**
  * Fetch published posts for a user (for profile/feed display)
  */
-export const fetchPublishedPosts = async (userId, limitCount = 20) => {
+export const fetchPublishedPosts = async (userId: string, limitCount = 20) => {
     try {
         const postsRef = collection(db, 'posts');
         const q = query(
@@ -26,7 +26,7 @@ export const fetchPublishedPosts = async (userId, limitCount = 20) => {
         const snapshot = await getDocs(q);
         return snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(post => post.status !== 'draft');
+            .filter((post: any) => post.status !== 'draft');
     } catch (error) {
         console.error('Error fetching published posts:', error);
         return [];
@@ -36,7 +36,7 @@ export const fetchPublishedPosts = async (userId, limitCount = 20) => {
 /**
  * Fetch draft posts for a user
  */
-export const fetchDrafts = async (userId) => {
+export const fetchDrafts = async (userId: string) => {
     try {
         const postsRef = collection(db, 'posts');
         const q = query(
@@ -69,7 +69,7 @@ export const fetchFeedPosts = async (limitCount = 20) => {
         const snapshot = await getDocs(q);
         return snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(post => post.status !== 'draft');
+            .filter((post: any) => post.status !== 'draft');
     } catch (error) {
         console.error('Error fetching feed posts:', error);
         return [];

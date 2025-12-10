@@ -45,8 +45,11 @@
             "@/utils/*": [
                 "src/utils/*"
             ],
+            "@/types": [
+                "src/core/types/index.ts"
+            ],
             "@/types/*": [
-                "src/types/*"
+                "src/core/types/*"
             ],
             "@/constants/*": [
                 "src/constants/*"

@@ -19,9 +19,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 import type { ShopItem, Post, PostItem, PrintSize, Earnings } from '@/types';
-import { getPrintifyProducts } from '@/core/utils/pricing';
+import { getPrintifyProducts, calculateEarnings } from './pricing';
 const PRINT_SIZES = getPrintifyProducts();
-import { calculateEarnings } from './pricing';
 
 const SHOP_ITEMS_COLLECTION = 'shopItems';
 
@@ -45,15 +44,15 @@ export async function createShopItemsFromPost(
             .filter(size => item.printSizes?.includes(size.id))
             .map(size => {
                 const customPrice = item.customPrices?.[size.id];
-                const price = customPrice !== undefined ? Number(customPrice) : size.price;
+                const price = customPrice !== undefined ? Number(customPrice) : size.suggestedRetailPrice;
                 const earnings = calculateEarnings(price, size.id, authorIsUltra);
 
                 return {
                     id: size.id,
                     label: size.label,
                     price: price,
-                    artistEarningsCents: earnings.artistEarningsCents,
-                    platformFeeCents: earnings.platformCutCents,
+                    artistEarningsCents: Math.round(earnings.artistEarnings * 100),
+                    platformFeeCents: Math.round(earnings.platformEarnings * 100),
                     baseCostCents: size.baseCostCents,
                 };
             });

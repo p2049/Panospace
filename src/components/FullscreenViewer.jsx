@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaInfoCircle, FaCamera } from 'react-icons/fa';
 import { formatExifForDisplay } from '@/core/utils/exif';
+import { preloadImage } from '@/core/utils/imageCache';
 
 const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -29,6 +30,22 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
         setCurrentSlide(0);
         setShowInfo(false);
     }, [post.id]);
+
+    // Preload next/prev images
+    useEffect(() => {
+        if (!items || items.length <= 1) return;
+
+        const indicesToPreload = [
+            (currentSlide + 1) % items.length,
+            (currentSlide - 1 + items.length) % items.length
+        ];
+
+        indicesToPreload.forEach(index => {
+            const item = items[index];
+            const url = item?.url || (typeof item === 'string' ? item : null);
+            if (url) preloadImage(url);
+        });
+    }, [currentSlide, items]);
 
     const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
     const handleTouchEnd = (e) => {
@@ -125,6 +142,8 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
             <img
                 src={imageUrl}
                 alt={post.title || 'Post'}
+                loading="eager"
+                decoding="async"
                 style={{
                     width: '100%',
                     height: 'auto',

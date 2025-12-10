@@ -15,6 +15,11 @@ export type AccountType = 'artist' | 'standard';
 
 export type ShopStatus = 'none' | 'pending' | 'verified' | 'suspended';
 
+export interface ProfileTheme {
+    gradientId?: string;
+    unlockedGradients?: string[];
+}
+
 export interface UserProfile {
     uid: string;
     email: string;
@@ -46,6 +51,9 @@ export interface UserProfile {
         main: string[];
         niches: Record<string, string[]>;
     };
+
+    // Theme (from constants/gradients)
+    profileTheme?: ProfileTheme;
 
     // Social
     followers?: string[];
@@ -129,6 +137,18 @@ export interface Post {
 
     // Categorization
     tags: string[];
+    // Legacy / Convenience top-level accessors (often mirror items[0])
+    exif?: ExifData;
+    manualExif?: ExifData;
+
+    filmMetadata?: {
+        stock?: string;
+        format?: string;
+        iso?: number | string;
+        isFilm?: boolean;
+        cameraOverride?: string;
+        lensOverride?: string;
+    };
     location?: {
         city?: string;
         state?: string;
@@ -140,6 +160,7 @@ export interface Post {
     commentCount?: number;
     viewCount?: number; // NEW: Track impressions
     shareCount?: number; // NEW: Track viral potential
+    starRatings?: Record<string, number>; // Map of userId -> rating
 
     // Search
     searchKeywords: string[];

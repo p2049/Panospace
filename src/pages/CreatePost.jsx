@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCreatePost } from '@/hooks/useCreatePost';
 import { useCollections } from '@/hooks/useCollections';
-import { PRINT_TIERS } from '@/core/utils/pricing';
+import { PRINT_TIERS } from '@/domain/shop/pricing';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { useDraftSaving } from '@/hooks/useDraftSaving';
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaInfoCircle } from 'react-icons/fa';
+import { preloadImage } from '@/core/utils/imageCache';
 
 const FullscreenViewerMobile = ({ post, onClose, onNext, onPrev }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -13,6 +14,22 @@ const FullscreenViewerMobile = ({ post, onClose, onNext, onPrev }) => {
     }
 
     const totalSlides = items.length;
+
+    // Preload next/prev images
+    useEffect(() => {
+        if (!items || items.length <= 1) return;
+
+        const indicesToPreload = [
+            (currentSlide + 1) % items.length,
+            (currentSlide - 1 + items.length) % items.length
+        ];
+
+        indicesToPreload.forEach(index => {
+            const item = items[index];
+            const url = item?.url || (typeof item === 'string' ? item : null);
+            if (url) preloadImage(url);
+        });
+    }, [currentSlide, items]);
 
     const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
     const handleTouchEnd = (e) => {
@@ -65,6 +82,8 @@ const FullscreenViewerMobile = ({ post, onClose, onNext, onPrev }) => {
             <img
                 src={imageUrl}
                 alt={post.title || 'Post'}
+                loading="eager"
+                decoding="async"
                 style={{ maxWidth: '100%', maxHeight: '100vh', objectFit: 'contain' }}
                 onError={(e) => { e.target.src = ''; e.target.alt = 'Failed to load'; e.target.style.display = 'none'; }}
             />

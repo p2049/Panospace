@@ -39,7 +39,7 @@ import { canBypassShopSetup } from '@/config/devConfig';
 // GALLERIES
 // ============================================================================
 
-export const createGallery = async (galleryData, coverImageFile, userId, userProfile) => {
+export const createGallery = async (galleryData: any, coverImageFile: any, userId: string, userProfile: any) => {
     try {
         let coverImageUrl = null;
         if (coverImageFile) {
@@ -51,7 +51,7 @@ export const createGallery = async (galleryData, coverImageFile, userId, userPro
         const searchKeywords = [
             ...generateSearchKeywords(galleryData.title),
             ...generateSearchKeywords(galleryData.description),
-            ...(galleryData.requiredTags || []).map(tag => tag.toLowerCase()),
+            ...(galleryData.requiredTags || []).map((tag: any) => tag.toLowerCase()),
             ...generateSearchKeywords(userProfile.username || userProfile.displayName || '')
         ].filter(Boolean);
 
@@ -87,7 +87,7 @@ export const createGallery = async (galleryData, coverImageFile, userId, userPro
     }
 };
 
-export const getGallery = async (galleryId) => {
+export const getGallery = async (galleryId: string) => {
     try {
         const docRef = doc(db, 'galleries', galleryId);
         const docSnap = await getDoc(docRef);
@@ -101,7 +101,7 @@ export const getGallery = async (galleryId) => {
     }
 };
 
-export const updateGallery = async (galleryId, updates) => {
+export const updateGallery = async (galleryId: string, updates: any) => {
     try {
         const docRef = doc(db, 'galleries', galleryId);
         await updateDoc(docRef, {
@@ -114,7 +114,7 @@ export const updateGallery = async (galleryId, updates) => {
     }
 };
 
-export const deleteGallery = async (galleryId) => {
+export const deleteGallery = async (galleryId: string) => {
     try {
         const docRef = doc(db, 'galleries', galleryId);
         await deleteDoc(docRef);
@@ -124,7 +124,7 @@ export const deleteGallery = async (galleryId) => {
     }
 };
 
-export const inviteMembers = async (galleryId, userIds, invitedBy) => {
+export const inviteMembers = async (galleryId: string, userIds: string[], invitedBy: string) => {
     try {
         const galleryRef = doc(db, 'galleries', galleryId);
         await updateDoc(galleryRef, {
@@ -148,7 +148,7 @@ export const inviteMembers = async (galleryId, userIds, invitedBy) => {
     }
 };
 
-export const acceptInvitation = async (galleryId, userId) => {
+export const acceptInvitation = async (galleryId: string, userId: string) => {
     try {
         const galleryRef = doc(db, 'galleries', galleryId);
         await updateDoc(galleryRef, {
@@ -173,7 +173,7 @@ export const acceptInvitation = async (galleryId, userId) => {
     }
 };
 
-export const declineInvitation = async (galleryId, userId) => {
+export const declineInvitation = async (galleryId: string, userId: string) => {
     try {
         const galleryRef = doc(db, 'galleries', galleryId);
         await updateDoc(galleryRef, {
@@ -196,7 +196,7 @@ export const declineInvitation = async (galleryId, userId) => {
     }
 };
 
-export const addPostToGallery = async (galleryId, postId, userId) => {
+export const addPostToGallery = async (galleryId: string, postId: string, userId: string) => {
     try {
         const postsRef = collection(db, 'galleries', galleryId, 'posts');
         await addDoc(postsRef, {
@@ -217,7 +217,7 @@ export const addPostToGallery = async (galleryId, postId, userId) => {
     }
 };
 
-export const addCollectionToGallery = async (galleryId, collectionId, userId) => {
+export const addCollectionToGallery = async (galleryId: string, collectionId: string, userId: string) => {
     try {
         const collectionsRef = collection(db, 'galleries', galleryId, 'collections');
         await addDoc(collectionsRef, {
@@ -238,7 +238,7 @@ export const addCollectionToGallery = async (galleryId, collectionId, userId) =>
     }
 };
 
-export const getUserGalleries = async (userId) => {
+export const getUserGalleries = async (userId: string) => {
     try {
         const q = query(
             collection(db, 'galleries'),
@@ -253,7 +253,7 @@ export const getUserGalleries = async (userId) => {
     }
 };
 
-export const getMemberGalleries = async (userId) => {
+export const getMemberGalleries = async (userId: string) => {
     try {
         const q = query(
             collection(db, 'galleries'),
@@ -268,7 +268,7 @@ export const getMemberGalleries = async (userId) => {
     }
 };
 
-export const getGalleryPosts = async (galleryId) => {
+export const getGalleryPosts = async (galleryId: string) => {
     try {
         const postsRef = collection(db, 'galleries', galleryId, 'posts');
         const q = query(postsRef, orderBy('addedAt', 'desc'));
@@ -280,7 +280,7 @@ export const getGalleryPosts = async (galleryId) => {
     }
 };
 
-export const getGalleryCollections = async (galleryId) => {
+export const getGalleryCollections = async (galleryId: string) => {
     try {
         const collectionsRef = collection(db, 'galleries', galleryId, 'collections');
         const q = query(collectionsRef, orderBy('addedAt', 'desc'));
@@ -292,9 +292,9 @@ export const getGalleryCollections = async (galleryId) => {
     }
 };
 
-export const validateContentForGallery = (gallery, content) => {
+export const validateContentForGallery = (gallery: any, content: any) => {
     if (gallery.requiredTags && gallery.requiredTags.length > 0) {
-        const hasAllTags = gallery.requiredTags.every(tag =>
+        const hasAllTags = gallery.requiredTags.every((tag: any) =>
             content.tags && content.tags.includes(tag)
         );
         if (!hasAllTags) {
@@ -303,7 +303,7 @@ export const validateContentForGallery = (gallery, content) => {
     }
     if (gallery.requiredLocations && gallery.requiredLocations.length > 0) {
         const locationString = `${content.location?.city || ''} ${content.location?.state || ''} ${content.location?.country || ''}`.toLowerCase();
-        const hasLocation = gallery.requiredLocations.some(loc =>
+        const hasLocation = gallery.requiredLocations.some((loc: any) =>
             locationString.includes(loc.toLowerCase())
         );
         if (!hasLocation) {
@@ -317,7 +317,7 @@ export const validateContentForGallery = (gallery, content) => {
 // SHOPS (STUDIOS)
 // ============================================================================
 
-export const checkShopSetup = async (userId, userEmail = '') => {
+export const checkShopSetup = async (userId: string, userEmail: string = '') => {
     try {
         const canBypass = canBypassShopSetup(userId, userEmail);
         const userDoc = await getDoc(doc(db, 'users', userId));
@@ -341,7 +341,7 @@ export const checkShopSetup = async (userId, userEmail = '') => {
     }
 };
 
-export const completeShopSetup = async (userId, shopData) => {
+export const completeShopSetup = async (userId: string, shopData: any) => {
     try {
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
@@ -360,7 +360,7 @@ export const completeShopSetup = async (userId, shopData) => {
     }
 };
 
-export const getShopDrafts = async (userId) => {
+export const getShopDrafts = async (userId: string) => {
     try {
         const draftsQuery = query(
             collection(db, 'shopDrafts'),
@@ -375,7 +375,7 @@ export const getShopDrafts = async (userId) => {
     }
 };
 
-export const createShopDraft = async (draftData) => {
+export const createShopDraft = async (draftData: any) => {
     try {
         const draftRef = await addDoc(collection(db, 'shopDrafts'), {
             userId: draftData.userId,
@@ -397,7 +397,7 @@ export const createShopDraft = async (draftData) => {
     }
 };
 
-export const publishShopDraft = async (draftId, userId, copyrightConfirmed = false) => {
+export const publishShopDraft = async (draftId: string, userId: string, copyrightConfirmed = false) => {
     try {
         if (!copyrightConfirmed) {
             throw new Error('Copyright confirmation required to publish');
@@ -427,7 +427,7 @@ export const publishShopDraft = async (draftId, userId, copyrightConfirmed = fal
     }
 };
 
-export const unpublishShopProduct = async (draftId, userId) => {
+export const unpublishShopProduct = async (draftId: string, userId: string) => {
     try {
         const draftRef = doc(db, 'shopDrafts', draftId);
         const draftDoc = await getDoc(draftRef);
@@ -448,7 +448,7 @@ export const unpublishShopProduct = async (draftId, userId) => {
     }
 };
 
-export const deleteShopDraft = async (draftId, userId) => {
+export const deleteShopDraft = async (draftId: string, userId: string) => {
     try {
         const draftRef = doc(db, 'shopDrafts', draftId);
         const draftDoc = await getDoc(draftRef);

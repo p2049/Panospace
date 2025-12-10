@@ -37,7 +37,7 @@ const Signup = () => {
                 };
 
                 // Generate search keywords
-                const { generateUserSearchKeywords } = await import('../utils/searchKeywords');
+                const { generateUserSearchKeywords } = await import('@/core/utils/searchKeywords');
                 userData.searchKeywords = generateUserSearchKeywords(userData);
 
                 await setDoc(doc(db, 'users', userCredential.user.uid), userData);

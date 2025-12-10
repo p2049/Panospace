@@ -20,6 +20,7 @@ import '@/styles/Post.css';
 
 import { formatExifForDisplay } from '@/core/utils/exif';
 import { isNSFW, getUserNSFWPreference } from '@/core/constants/nsfwTags';
+import { preloadImage } from '@/core/utils/imageCache';
 
 const ExifDisplay = React.memo(({ exif }) => {
     const displayData = formatExifForDisplay(exif);
@@ -335,25 +336,47 @@ const Post = ({ post, priority = 'normal' }) => {
         alert("Link copied");
     };
 
+    // Preload next/prev images for instant swiping
+    useEffect(() => {
+        if (!items || items.length <= 1) return;
+
+        const indicesToPreload = [
+            (currentSlide + 1) % items.length,
+            (currentSlide - 1 + items.length) % items.length
+        ];
+
+        indicesToPreload.forEach(index => {
+            const item = items[index];
+            const url = item?.url || (typeof item === 'string' ? item : null);
+            if (url && typeof url === 'string') {
+                preloadImage(url);
+            }
+        });
+    }, [currentSlide, items]);
+
     // Helper to render content for both Single and Slideshow views
     const renderSlideContent = (item, index) => {
         if (!item) return null;
-
-        // REMOVED: Custom stack rendering. We now rely on 'item.url' which is the pre-generated collage.
-        // This ensures the complex cropping/layout logic from stackUtils is respected exactly.
 
         const url = item.url || item;
         const isUrl = typeof url === 'string' && url.match(/^http/);
 
         // --- STANDARD IMAGE RENDERING ---
         if (isUrl) {
-            // Default Single Image (Normal)
+            // Eager load current, next, and previous slides (handling wrapping)
+            const len = items.length;
+            const isNearby =
+                index === currentSlide ||
+                index === (currentSlide + 1) % len ||
+                index === (currentSlide - 1 + len) % len;
+
             const imageContent = (
                 <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                     <SmartImage
                         src={url}
                         alt={`Slide ${index + 1} `}
                         priority={index === 0 ? priority : 'low'}
+                        eager={isNearby}
                         objectFit="contain" // Standard fit
                         style={{ width: '100%', height: '100%' }}
                     />

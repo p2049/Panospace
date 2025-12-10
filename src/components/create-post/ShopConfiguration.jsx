@@ -1,5 +1,5 @@
 import React from 'react';
-import { PRINT_TIERS } from '@/core/utils/pricing';
+import { PRINT_TIERS } from '@/domain/shop/pricing';
 
 /**
  * ShopConfiguration Component

@@ -25,7 +25,7 @@ import { useStudioProjects } from '@/hooks/useProjects';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import ProjectCard from '@/components/ProjectCard';
 import { FaBriefcase } from 'react-icons/fa';
-import '@/styles/gallery-page';
+import '@/styles/gallery-page.css';
 
 const StudioPage = () => {
     const { id } = useParams();

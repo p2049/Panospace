@@ -29,6 +29,8 @@ const FilmStripCarousel = ({ images = [], className = '', showSprockets = true }
                                     src={item.url || item}
                                     alt={`Frame ${index + 1}`}
                                     className="film-frame-image"
+                                    loading="eager"
+                                    decoding="async"
                                 />
                             ) : (
                                 <div className="film-frame-text">

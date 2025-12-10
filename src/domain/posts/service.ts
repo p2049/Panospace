@@ -81,7 +81,7 @@ export async function createPost(
     });
 
     // Check user tier for Ultra status
-    const { getUserTier, USER_TIERS } = await import('../../services/monetizationService');
+    const { getUserTier, USER_TIERS } = await import('@/core/services/firestore/monetization.service');
     const tier = await getUserTier(userId);
     const isUltra = tier === USER_TIERS.ULTRA;
 

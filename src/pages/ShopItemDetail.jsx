@@ -13,7 +13,7 @@ import {
     getValidSizesForImage,
     getRetailPrice,
     calculateTieredPricing
-} from '@/core/utils/pricing';
+} from '@/domain/shop/pricing';
 
 import { formatPrice } from '@/core/utils/helpers';
 import { isFeatureEnabled } from '@/config/featureFlags';

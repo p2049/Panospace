@@ -38,7 +38,7 @@ export const BOOST_LEVELS = {
 /**
  * Get the monetization tier of a user
  */
-export const getUserTier = async (userId) => {
+export const getUserTier = async (userId: string) => {
     if (!userId) return USER_TIERS.FREE;
 
     const DEV_EMAILS = ['appreview@paxus.app', 'dev@paxus.app', 'admin@paxus.app'];
@@ -66,7 +66,7 @@ export const getUserTier = async (userId) => {
  * Subscribe user to Space Creator (formerly Ultra)
  * Cost: $5.00 / month
  */
-export const subscribeToUltra = async (userId) => {
+export const subscribeToUltra = async (userId: string) => {
     const PRICE = 5.00;
 
     try {
@@ -101,8 +101,8 @@ export const subscribeToUltra = async (userId) => {
 /**
  * Purchase a boost for a post
  */
-export const purchaseBoost = async (userId, postId, level = 1) => {
-    const boostConfig = BOOST_LEVELS[level] || BOOST_LEVELS[1];
+export const purchaseBoost = async (userId: string, postId: string, level = 1) => {
+    const boostConfig = (BOOST_LEVELS as any)[level] || BOOST_LEVELS[1];
     const priceInDollars = boostConfig.priceCents / 100;
 
     try {
@@ -137,7 +137,7 @@ export const purchaseBoost = async (userId, postId, level = 1) => {
 /**
  * Create a commission request
  */
-export const createCommission = async (editorId, buyerId, rawFileUrl, price, instructions = '') => {
+export const createCommission = async (editorId: string, buyerId: string, rawFileUrl: string, price: number, instructions = '') => {
     try {
         const commissionData = {
             editorId,
@@ -152,8 +152,8 @@ export const createCommission = async (editorId, buyerId, rawFileUrl, price, ins
 
         const docRef = await addDoc(collection(db, 'commissions'), commissionData);
 
-        const { default: WalletService } = await import('@/services/WalletService');
-        await WalletService.processCommissionPayment(buyerId, editorId, price, docRef.id);
+        const { WalletService } = await import('@/services/WalletService');
+        await WalletService.processCommissionPayment(buyerId, editorId, docRef.id, price, 'Commission Payment');
 
         return { id: docRef.id, ...commissionData };
     } catch (error) {
@@ -165,7 +165,7 @@ export const createCommission = async (editorId, buyerId, rawFileUrl, price, ins
 /**
  * Get commissions for a user
  */
-export const getCommissions = async (userId, role = 'editor') => {
+export const getCommissions = async (userId: string, role = 'editor') => {
     try {
         const q = query(
             collection(db, 'commissions'),
@@ -184,7 +184,7 @@ export const getCommissions = async (userId, role = 'editor') => {
 /**
  * Create a Digital Museum (Partner Feature)
  */
-export const createMuseum = async (partnerId, museumData) => {
+export const createMuseum = async (partnerId: string, museumData: any) => {
     try {
         const tier = await getUserTier(partnerId);
         if (tier !== USER_TIERS.PARTNER) throw new Error("Only partners can create museums");

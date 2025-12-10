@@ -8,10 +8,10 @@ import { useCreateCollection } from '@/hooks/useCollections';
 import { db } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import exifr from 'exifr';
-import { getPrintifyProducts, PRINT_TIERS, calculateBundlePricing } from '@/core/utils/pricing';
+import { PRINT_PRODUCTS, PRINT_TIERS, calculateBundlePricing } from '@/domain/shop/pricing';
 import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import PaywallModal from '@/components/monetization/PaywallModal';
-const PRINT_SIZES = getPrintifyProducts();
+const PRINT_SIZES = PRINT_PRODUCTS;
 
 import { createMagazine, calculateNextReleaseDate } from '@/services/magazineService';
 import ImageUploadPanel from '@/components/create-collection/ImageUploadPanel';
