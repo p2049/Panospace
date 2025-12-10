@@ -28,12 +28,13 @@
 
 .cyber-film-strip-scroll-container {
     display: flex;
-    height: auto;
-    max-height: 90vh;
+    height: 100%;
+    /* max-height removed to allow full screen fill */
     overflow-x: auto;
     overflow-y: hidden;
     gap: 0;
-    padding: 0 2rem 2rem 2rem;
+    padding: 0 2rem 1rem 2rem;
+    /* Adjusted bottom padding */
     align-items: center;
 
     /* Smooth scrolling & performance */
@@ -385,5 +386,25 @@
     .cyber-track.bottom .cyber-micro-text,
     .cyber-edge-code {
         bottom: 6px;
+    }
+}
+
+/* Instant Photo Responsive Sizing */
+.instant-photo-frame-wrapper {
+    flex: 0 0 32vw;
+    /* Desktop: ~3 items */
+}
+
+@media (max-width: 768px) {
+    .instant-photo-frame-wrapper {
+        flex: 0 0 85vw;
+        /* Mobile Portrait: ~1 item */
+    }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+    .instant-photo-frame-wrapper {
+        flex: 0 0 45vw;
+        /* Mobile Landscape: ~2 items */
     }
 }

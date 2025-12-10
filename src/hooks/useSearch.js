@@ -887,6 +887,72 @@ export const useSearch = () => {
         }
     }, []);
 
+    /**
+         * SEARCH SHOP ITEMS
+         * Strategy:
+         * - Query shopItems collection
+         * - Filter by status == 'active'
+         * - Support keyword/tag search
+         */
+    const searchShopItems = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { tags = [], sort = 'newest' } = filters;
+        const term = (searchTerm || '').toLowerCase().trim();
+        const words = term.split(/\s+/).filter(w => w.length > 0);
+        const primaryWord = words[0] || term;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const shopItemsRef = collection(db, 'shopItems');
+            let q;
+
+            // Base query always requires status == 'active'
+            const baseConstraints = [where('status', '==', 'active')];
+
+            if (tags.length > 0) {
+                // Filter by tags
+                q = query(shopItemsRef, ...baseConstraints, where('tags', 'array-contains', tags[0]), limit(50));
+            } else if (term) {
+                // Filter by keywords
+                q = query(shopItemsRef, ...baseConstraints, where('searchKeywords', 'array-contains', primaryWord), limit(50));
+            } else {
+                // Recent active items
+                q = query(shopItemsRef, ...baseConstraints, orderBy('createdAt', 'desc'), limit(50));
+            }
+
+            if (lastDoc) {
+                q = query(q, startAfter(lastDoc));
+            }
+
+            const snapshot = await getDocs(q);
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+            // Client-side filtering
+            let filtered = docs;
+
+            if (term) {
+                filtered = filtered.filter(item => {
+                    const searchableText = [
+                        item.title,
+                        item.description,
+                        ...(item.tags || [])
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    return words.every(w => searchableText.includes(w));
+                });
+            }
+
+            return { data: filtered, lastDoc: newLastDoc };
+        } catch (err) {
+            console.error('Shop item search error:', err);
+            setError(err);
+            return { data: [], lastDoc: null };
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     return {
         searchUsers,
         searchPosts,
@@ -895,6 +961,7 @@ export const useSearch = () => {
         searchContests,
         searchEvents,
         searchSpaceCards,
+        searchShopItems, // Export new function
         loading,
         error
     };

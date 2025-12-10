@@ -43,13 +43,19 @@ export const useEvents = (startDate, endDate) => {
             );
 
             // 2. Fetch Global Events
-            // Fetching ALL global events to ensure no index issues/filtering errors hide them.
-            // Client-side filtering is safe for this small dataset (~100 items).
             const globalQuery = query(collection(db, 'events_global'));
 
-            const [eventsSnapshot, globalSnapshotResult] = await Promise.allSettled([
+            // 3. Fetch App Events (Curated)
+            const appEventsQuery = query(
+                collection(db, 'events_app'),
+                where('visibleDate', '>=', Timestamp.fromDate(startDate)),
+                where('visibleDate', '<=', Timestamp.fromDate(endDate))
+            );
+
+            const [eventsSnapshot, globalSnapshotResult, appEventsResult] = await Promise.allSettled([
                 getDocs(eventsQuery),
-                getDocs(globalQuery)
+                getDocs(globalQuery),
+                getDocs(appEventsQuery)
             ]);
 
             const fetchedEvents = [];
@@ -67,6 +73,24 @@ export const useEvents = (startDate, endDate) => {
                 });
             } else {
                 console.error("Error fetching user events:", eventsSnapshot.reason);
+            }
+
+            // Process App Events
+            if (appEventsResult.status === 'fulfilled') {
+                appEventsResult.value.docs.forEach(doc => {
+                    const data = doc.data();
+                    let date = data.visibleDate?.toDate ? data.visibleDate.toDate() : new Date(data.visibleDate);
+
+                    fetchedEvents.push({
+                        id: doc.id,
+                        ...data,
+                        title: data.name, // Map name to title for calendar
+                        eventDate: date,
+                        isAppEvent: true,
+                        type: data.type || 'app_event',
+                        icon: data.category === 'daily' ? '📅' : (data.category === 'contest' ? '🏆' : '⭐')
+                    });
+                });
             }
 
             // Process Global Events

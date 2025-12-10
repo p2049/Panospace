@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/firebase';
-import { doc, deleteDoc, getDoc } from 'firebase/firestore';
-import { FaCamera, FaInfoCircle, FaUserCircle, FaMapMarkerAlt, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import { doc, deleteDoc, getDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { FaCamera, FaInfoCircle, FaUserCircle, FaMapMarkerAlt, FaTrash, FaExclamationTriangle, FaShoppingBag } from 'react-icons/fa';
 import LikeButton from './LikeButton';
 import FilmStripCarousel from './FilmStripCarousel';
 import FilmStripPost from './FilmStripPost';
+import InstantPhotoPost from './InstantPhotoPost';
+import InstantPhotoFrame from './InstantPhotoFrame';
 import SmartImage from './SmartImage';
 import DateStampOverlay from './DateStampOverlay';
 import SpaceCardBadge from './SpaceCardBadge';
@@ -96,6 +98,16 @@ const Post = ({ post, priority = 'normal' }) => {
 
     const currentItem = items[currentSlide] || items[0] || {};
     const useFilmStripMode = post.uiOverlays?.sprocketBorder === true;
+    const hasInstantBorder = post.uiOverlays?.instantPhotoBorder === true;
+
+    // Check for special rendering modes first (Top Level)
+    if (useFilmStripMode) {
+        return <FilmStripPost images={items} uiOverlays={post.uiOverlays} priority={priority} />;
+    }
+
+    if (hasInstantBorder) {
+        return <InstantPhotoPost post={post} images={items} uiOverlays={post.uiOverlays} priority={priority} />;
+    }
 
     // Intersection Observer to track active post
     useEffect(() => {
@@ -234,6 +246,65 @@ const Post = ({ post, priority = 'normal' }) => {
 
     // State for Details Sidebar
     const [showDetailsSidebar, setShowDetailsSidebar] = useState(false);
+    const [shopLinkTarget, setShopLinkTarget] = useState(null); // { type: 'item' | 'profile', id: string }
+
+    // Check for linked shop item or general shop existence
+    useEffect(() => {
+        if (showDetailsSidebar) {
+            const checkShopStatus = async () => {
+                const authorId = post.userId || post.authorId || post.uid;
+                if (!authorId) return;
+
+                try {
+                    const shopItemsRef = collection(db, 'shopItems');
+
+                    console.log("Checking Shop Status for:", authorId, "Post:", post.id, "SpaceCard:", post.spaceCardId);
+
+                    // 1. Check if THIS post is listed (by sourcePostId matching post.id OR post.spaceCardId)
+                    // We need to check both because ShopItems can link to either a Post or a SpaceCard.
+                    const checks = [post.id];
+                    if (post.spaceCardId) checks.push(post.spaceCardId);
+
+                    const specificItemQuery = query(
+                        shopItemsRef,
+                        where('ownerId', '==', authorId),
+                        where('sourcePostId', 'in', checks),
+                        where('status', '==', 'active'),
+                        limit(1)
+                    );
+                    const specificSnapshot = await getDocs(specificItemQuery);
+
+                    if (!specificSnapshot.empty) {
+                        console.log("Found Specific Item:", specificSnapshot.docs[0].id);
+                        setShopLinkTarget({ type: 'item', id: specificSnapshot.docs[0].id });
+                        return;
+                    } else {
+                        console.log("No specific item found.");
+                    }
+
+                    // 2. Fallback: Check if user has ANY active shop items
+                    const generalQuery = query(
+                        shopItemsRef,
+                        where('ownerId', '==', authorId),
+                        where('status', '==', 'active'),
+                        limit(1)
+                    );
+                    const generalSnapshot = await getDocs(generalQuery);
+
+                    if (!generalSnapshot.empty) {
+                        console.log("Found General Shop Items");
+                        setShopLinkTarget({ type: 'profile', id: authorId });
+                    } else {
+                        console.log("No active shop items found for user.");
+                        setShopLinkTarget(null);
+                    }
+                } catch (error) {
+                    console.error("Error checking shop status:", error);
+                }
+            };
+            checkShopStatus();
+        }
+    }, [showDetailsSidebar, post.userId, post.authorId, post.uid, post.id]);
 
     // Handlers
     const handleEditPost = () => {
@@ -264,6 +335,45 @@ const Post = ({ post, priority = 'normal' }) => {
         alert("Link copied");
     };
 
+    // Helper to render content for both Single and Slideshow views
+    const renderSlideContent = (item, index) => {
+        if (!item) return null;
+
+        // REMOVED: Custom stack rendering. We now rely on 'item.url' which is the pre-generated collage.
+        // This ensures the complex cropping/layout logic from stackUtils is respected exactly.
+
+        const url = item.url || item;
+        const isUrl = typeof url === 'string' && url.match(/^http/);
+
+        // --- STANDARD IMAGE RENDERING ---
+        if (isUrl) {
+            // Default Single Image (Normal)
+            const imageContent = (
+                <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                    <SmartImage
+                        src={url}
+                        alt={`Slide ${index + 1} `}
+                        priority={index === 0 ? priority : 'low'}
+                        objectFit="contain" // Standard fit
+                        style={{ width: '100%', height: '100%' }}
+                    />
+                    {post.uiOverlays?.quartzDate && (
+                        <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
+                    )}
+                </div>
+            );
+
+            return imageContent;
+        }
+
+        // --- TEXT/FALLBACK RENDERING ---
+        return (
+            <div style={{ color: '#fff', fontSize: '1.5rem', padding: '2rem', textAlign: 'center' }}>
+                {item.content || item.text || (typeof item === 'string' ? item : JSON.stringify(item))}
+            </div>
+        );
+    };
+
     return (
         <div
             ref={containerRef}
@@ -274,7 +384,6 @@ const Post = ({ post, priority = 'normal' }) => {
                 position: 'relative',
                 overflow: 'hidden',
                 backgroundColor: '#000',
-                // Prevent layout shift
                 willChange: 'transform',
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
@@ -296,7 +405,20 @@ const Post = ({ post, priority = 'normal' }) => {
                 </div>
             ) : items.length === 1 ? (
                 /* SINGLE IMAGE VIEW */
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', position: 'relative' }}>
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: (post.atmosphereBackground === 'cinematic-gradient')
+                        ? `radial-gradient(circle at center, ${post.gradientColor || '#1a4f3d'} 0%, #000000 90%)`
+                        : '#000',
+                    position: 'relative'
+                }}>
+                    {/* Render Image Content */}
+                    {renderSlideContent(items[0], 0)}
+
                     {/* NSFW Warning Overlay */}
                     {hasNSFWContent && !showNSFWContent && (
                         <div
@@ -337,126 +459,95 @@ const Post = ({ post, priority = 'normal' }) => {
                             </button>
                         </div>
                     )}
-                    {items[0].url || (typeof items[0] === 'string' && items[0].match(/^http/)) ? (
-                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                            <SmartImage
-                                src={items[0].url || items[0]}
-                                alt="Post content"
-                                priority={priority}
-                                objectFit="contain"
-                                style={{ width: '100%', height: '100%' }}
-                            />
-                            {post.uiOverlays?.quartzDate && (
-                                <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
-                            )}
-                        </div>
-                    ) : (
-                        <div style={{ color: '#fff', fontSize: '1.5rem', padding: '2rem', textAlign: 'center' }}>
-                            {items[0].content || items[0].text || (typeof items[0] === 'string' ? items[0] : JSON.stringify(items[0]))}
-                        </div>
-                    )}
-                </div>
-            ) : useFilmStripMode ? (
-                /* FILM STRIP MODE */
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <FilmStripPost images={items} uiOverlays={post.uiOverlays} priority={priority} />
                 </div>
             ) : (
-                /* MULTI-IMAGE SLIDESHOW */
+                /* MULTI-IMAGE CAROUSEL */
                 <div
                     style={{
                         width: '100%',
                         height: '100%',
                         position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: '#000',
-                        // Removed touchAction: 'pan-y' to restore feed scrolling
+                        overflow: 'hidden'
                     }}
-                // Removed global touch handlers from container that were blocking vertical scroll
-                // Swiping is now handled by buttons or could be re-added carefully if needed
-                // onTouchStart={onTouchStart}
-                // onTouchMove={onTouchMove}
-                // onTouchEnd={onTouchEnd}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
                 >
-                    {items[currentSlide].url || (typeof items[currentSlide] === 'string' && items[currentSlide].match(/^http/)) ? (
-                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                            <SmartImage
-                                src={items[currentSlide].url || items[currentSlide]}
-                                alt={`Slide ${currentSlide + 1}`}
-                                priority={priority}
-                                objectFit="contain"
-                                style={{ width: '100%', height: '100%' }}
-                            />
-                            {post.uiOverlays?.quartzDate && (
-                                <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
-                            )}
-                        </div>
-                    ) : (
-                        <div style={{ color: '#fff', fontSize: '1.5rem', padding: '2rem', textAlign: 'center' }}>
-                            {items[currentSlide].content || items[currentSlide].text || (typeof items[currentSlide] === 'string' ? items[currentSlide] : JSON.stringify(items[currentSlide]))}
-                        </div>
-                    )}
+                    {/* Slides Container */}
+                    <div
+                        style={{
+                            display: 'flex',
+                            width: '100%',
+                            height: '100%',
+                            transform: `translateX(-${currentSlide * 100}%)`,
+                            transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                        }}
+                    >
+                        {items.map((item, index) => (
+                            <div
+                                key={index}
+                                style={{
+                                    flex: '0 0 100%',
+                                    width: '100%',
+                                    height: '100%',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: '#000'
+                                }}
+                            >
+                                {renderSlideContent(item, index)}
+                            </div>
+                        ))}
+                    </div>
 
-                    {/* Navigation arrows */}
-                    {items.length > 1 && (
-                        <>
-                            {currentSlide > 0 && (
-                                <button
-                                    onClick={prevSlide}
-                                    style={{
-                                        position: 'absolute',
-                                        left: '20px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: 'rgba(255, 255, 255, 0.7)',
-                                        fontSize: '3rem',
-                                        fontWeight: '300',
-                                        cursor: 'pointer',
-                                        zIndex: 15,
-                                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
-                                        transition: 'all 0.2s ease',
-                                        padding: '0',
-                                        width: 'auto',
-                                        height: 'auto'
-                                    }}
-                                >
-                                    ‹
-                                </button>
-                            )}
-                            {currentSlide < items.length - 1 && (
-                                <button
-                                    onClick={nextSlide}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '20px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: 'rgba(255, 255, 255, 0.7)',
-                                        fontSize: '3rem',
-                                        fontWeight: '300',
-                                        cursor: 'pointer',
-                                        zIndex: 15,
-                                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
-                                        transition: 'all 0.2s ease',
-                                        padding: '0',
-                                        width: 'auto',
-                                        height: 'auto'
-                                    }}
-                                >
-                                    ›
-                                </button>
-                            )}
-                        </>
+                    {/* Navigation Arrows */}
+                    {currentSlide > 0 && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); prevSlide(); }}
+                            style={{
+                                position: 'absolute',
+                                left: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.7)',
+                                fontSize: '2.5rem',
+                                cursor: 'pointer',
+                                zIndex: 20,
+                                padding: '1rem',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            ‹
+                        </button>
+                    )}
+                    {currentSlide < items.length - 1 && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); nextSlide(); }}
+                            style={{
+                                position: 'absolute',
+                                right: '10px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.7)',
+                                fontSize: '2.5rem',
+                                cursor: 'pointer',
+                                zIndex: 20,
+                                padding: '1rem',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                            }}
+                        >
+                            ›
+                        </button>
                     )}
                 </div>
-            )
-            }
+            )}
+            {/* End of Items Ternary */}
 
             {/* Digital Goods Badges */}
             <div style={{
@@ -629,11 +720,11 @@ const Post = ({ post, priority = 'normal' }) => {
                         }}
                     >
                         <style>{`
-                        @keyframes slideInLeft {
-                            from { transform: translateX(-100%); opacity: 0; }
+@keyframes slideInLeft {
+                            from { transform: translateX(-100 %); opacity: 0; }
                             to { transform: translateX(0); opacity: 1; }
-                        }
-                    `}</style>
+}
+`}</style>
 
 
                         {/* Header / Close */}
@@ -724,6 +815,42 @@ const Post = ({ post, priority = 'normal' }) => {
 
                         {/* Post Options (Bottom) */}
                         <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+                            {/* Shop Link - Visible to ALL (with Smart Logic) */}
+                            {/* If owner: Always show (Manage/Visit) */}
+                            {/* If visitor: Only show if shopLinkTarget exists (Active items) */}
+                            {(shopLinkTarget || currentUser?.uid === (post.userId || post.authorId || post.uid)) && (
+                                <button
+                                    onClick={() => {
+                                        if (shopLinkTarget?.type === 'item') {
+                                            navigate(`/shop/${shopLinkTarget.id}`);
+                                        } else {
+                                            // Fallback to profile shop tab
+                                            const targetId = post.userId || post.authorId || post.uid;
+                                            navigate(`/profile/${targetId}?tab=shop`);
+                                        }
+                                    }}
+                                    style={{
+                                        padding: '0.8rem',
+                                        background: 'rgba(127, 255, 212, 0.1)',
+                                        border: '1px solid #7FFFD4',
+                                        borderRadius: '4px',
+                                        color: '#7FFFD4',
+                                        cursor: 'pointer',
+                                        textAlign: 'center',
+                                        marginBottom: '0.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    <FaShoppingBag />
+                                    {shopLinkTarget?.type === 'item' ? 'View in Shop' :
+                                        (currentUser?.uid === (post.userId || post.authorId || post.uid) ? 'My Shop' : 'Visit Shop')}
+                                </button>
+                            )}
 
                             {currentUser?.uid === post.userId ? (
                                 <>

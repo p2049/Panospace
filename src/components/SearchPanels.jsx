@@ -8,6 +8,7 @@ import { PARKS_DATA } from '@/core/constants/parksData';
 import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '@/core/constants/searchFilters';
 import { formatDateForDisplay, formatDateForInput } from '@/core/utils/dates';
 import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import CurrentAppEventsBox from '@/components/search/CurrentAppEventsBox';
 
 const SearchPanels = ({
     selectedTags,
@@ -202,6 +203,11 @@ const SearchPanels = ({
                     overflowX: 'hidden', // Prevent horizontal scrolling completely
                     padding: '0.5rem max(1.5rem, env(safe-area-inset-left)) 1.5rem max(1.5rem, env(safe-area-inset-right))'
                 }}>
+
+                    {/* Current App Events Box */}
+                    {(currentMode === 'posts' || currentMode === 'events') && (
+                        <CurrentAppEventsBox />
+                    )}
 
                     {/* Date Filter Panel - Show for Posts and Events */}
                     {(currentMode === 'posts' || currentMode === 'events') && (

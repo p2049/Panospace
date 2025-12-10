@@ -19,11 +19,27 @@ import { collection, query, where, orderBy, limit, getDocs } from 'firebase/fire
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
-import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge } from 'react-icons/fa';
+import { extractDominantHue } from '@/core/utils/colorUtils';
+import { generateStackPreview } from '@/core/utils/stackUtils';
 
 
 
 
+
+
+const StackThumbnail = ({ file }) => {
+    const [src, setSrc] = useState(null);
+    useEffect(() => {
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        setSrc(url);
+        return () => URL.revokeObjectURL(url);
+    }, [file]);
+
+    if (!src) return <div style={{ width: '100%', height: '100%', background: '#333' }}></div>;
+    return <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="thumbnail" />;
+};
 
 const CreatePost = () => {
     const { currentUser } = useAuth();
@@ -61,6 +77,32 @@ const CreatePost = () => {
     const [slides, setSlides] = useState([]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
+    // Cinematic Background State
+    const [atmosphereBackground, setAtmosphereBackground] = useState('black');
+    const [extractedColor, setExtractedColor] = useState(null);
+    const [calculatingColor, setCalculatingColor] = useState(false);
+
+    useEffect(() => {
+        if (slides.length === 1) {
+            const slide = slides[0];
+            // Use preview URL or create one temporarily
+            const src = slide.preview;
+            if (src) {
+                // Avoid re-extracting if we already have it for this specific slide? 
+                // Simple check: if extractedColor matches what we expect? 
+                // Actually, just re-run is safer for now, performance is handled by utility canvas size.
+                setCalculatingColor(true);
+                extractDominantHue(src).then(color => {
+                    setExtractedColor(color);
+                    setCalculatingColor(false);
+                });
+            }
+        } else {
+            // Revert to black for multi-post
+            if (atmosphereBackground !== 'black') setAtmosphereBackground('black');
+        }
+    }, [slides.length, slides[0]?.preview]); // Only re-run if length changes or first slide changes
+
     // Manual EXIF state
     const [showManualExif, setShowManualExif] = useState({});
 
@@ -90,7 +132,9 @@ const CreatePost = () => {
     });
 
     // Film UI Overlays State
-    const [enableSprocketOverlay, setEnableSprocketOverlay] = useState(true);
+    const [enableSprocketOverlay, setEnableSprocketOverlay] = useState(false);
+    const [enableInstantPhotoOverlay, setEnableInstantPhotoOverlay] = useState(false);
+    const [instantPhotoCount, setInstantPhotoCount] = useState(1); // 1, 2, or 3 images per slide
     const [filmMode, setFilmMode] = useState('continuous'); // 'continuous' or 'cut'
     const [enableQuartzDate, setEnableQuartzDate] = useState(false);
     const [enableRatings, setEnableRatings] = useState(true); // true = 5-star rating, false = simple like
@@ -100,12 +144,13 @@ const CreatePost = () => {
         const d = String(today.getDate());
         const m = String(today.getMonth() + 1);
         const y = String(today.getFullYear()).slice(2);
-        return `${m} ${d} '${y}`; // Default MM DD 'YY (US classic)
+        return `${d.padStart(2, '0')} ${m.padStart(2, '0')} ${y}`;
     });
-    const [quartzColor, setQuartzColor] = useState('#7FFFD4'); // PanoSpace signature green
-    const [quartzDateFormat, setQuartzDateFormat] = useState("MM DD 'YY"); // Default format (US classic)
+    const [quartzColor, setQuartzColor] = useState('#ffaa00');
+    const [quartzDateFormat, setQuartzDateFormat] = useState('DD MM YY');
 
     const [shareTitleAcrossImages, setShareTitleAcrossImages] = useState(true); // Share title across all images
+    const [isProcessingStack, setIsProcessingStack] = useState(false); // Loading state for stack generation
 
     // Digital Collectibles State
     const [createSpaceCard, setCreateSpaceCard] = useState(false);
@@ -117,6 +162,17 @@ const CreatePost = () => {
         editionSize: 100,
         collaborators: []
     });
+
+    // Toggle Handlers
+    const handleSprocketToggle = (val) => {
+        setEnableSprocketOverlay(val);
+        if (val) setEnableInstantPhotoOverlay(false);
+    };
+
+    const handleInstantPhotoToggle = (val) => {
+        setEnableInstantPhotoOverlay(val);
+        if (val) setEnableSprocketOverlay(false);
+    };
 
     // Handle file selection
     const handleFileSelect = (e) => {
@@ -203,6 +259,37 @@ const CreatePost = () => {
             setActiveSlideIndex(toIndex);
         } else if (activeSlideIndex === toIndex) {
             setActiveSlideIndex(fromIndex);
+        }
+    };
+
+    const reorderStackItems = async (slideIndex, itemIndex, direction) => {
+        const slide = slides[slideIndex];
+        if (!slide || slide.type !== 'stack' || !slide.items) return;
+
+        const toIndex = direction === 'left' ? itemIndex - 1 : itemIndex + 1;
+        if (toIndex < 0 || toIndex >= slide.items.length) return;
+
+        setIsProcessingStack(true);
+
+        try {
+            const newItems = [...slide.items];
+            // Swap
+            [newItems[itemIndex], newItems[toIndex]] = [newItems[toIndex], newItems[itemIndex]];
+
+            // Regenerate
+            const { previewUrl, blob } = await generateStackPreview(newItems, slide.layout);
+            const collageFile = new File([blob], `stack_${slide.layout}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+            updateSlide(slideIndex, {
+                items: newItems,
+                file: collageFile,
+                preview: previewUrl
+            });
+        } catch (err) {
+            console.error("Stack reorder error:", err);
+            alert("Failed to reorder: " + err.message);
+        } finally {
+            setIsProcessingStack(false);
         }
     };
 
@@ -367,13 +454,17 @@ const CreatePost = () => {
                 showInProfile: showInProfile,
                 uiOverlays: {
                     sprocketBorder: enableSprocketOverlay,
+                    instantPhotoBorder: enableInstantPhotoOverlay,
+                    instantPhotoCount: enableInstantPhotoOverlay ? instantPhotoCount : 1, // Store count
                     filmMode: filmMode, // 'continuous' or 'cut'
                     quartzDate: enableQuartzDate ? {
                         text: quartzDateString,
                         color: quartzColor,
                         format: quartzDateFormat
                     } : null
-                }
+                },
+                atmosphereBackground: slides.length === 1 ? atmosphereBackground : 'black',
+                gradientColor: slides.length === 1 ? extractedColor : null,
             }, processedSlides);
 
             // Create SpaceCard if requested
@@ -444,8 +535,60 @@ const CreatePost = () => {
     const getPublishButtonState = () => {
         if (loading) return { text: "Publishing...", disabled: true };
         if (slides.length === 0) return { text: "Add Images", action: () => fileInputRef.current?.click(), disabled: false };
-        if (!title.trim()) return { text: "Add Title", action: () => document.querySelector('input[placeholder="Write a title..."]')?.focus(), disabled: false };
+        // Title no longer required
         return { text: "Publish", action: handleSubmit, disabled: false };
+    };
+
+    // --- Stack Handler ---
+    const handleStackSelect = async (e, layout) => {
+        setIsProcessingStack(true);
+        try {
+            // Check slide limit
+            if (slides.length >= 10) {
+                alert("Maximum 10 slides allowed per post.");
+                return;
+            }
+
+            const files = Array.from(e.target.files);
+            if (files.length < 2) {
+                alert("Please select at least 2 images for a stack.");
+                return;
+            }
+            if (files.length > 4) {
+                alert("Maximum 4 images allowed per stack.");
+                return;
+            }
+
+            // Generate collage
+            const { previewUrl, blob } = await generateStackPreview(files, layout);
+
+            // Create a File object from the blob for the main "slide" image
+            const collageFile = new File([blob], `stack_${layout}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+            const newSlide = {
+                id: Date.now().toString(),
+                type: 'stack', // New Type
+                layout: layout,
+                items: files, // The original files
+                file: collageFile, // The collage (for upload/preview)
+                preview: previewUrl,
+                caption: '',
+                filter: 'normal',
+                aspectRatio: layout === 'vertical' ? 'auto' : 'auto', // Will be calculated
+            };
+
+            setSlides(prev => [...prev, newSlide]);
+            setActiveSlideIndex(slides.length); // Point to new slide
+
+            // Reset input
+            e.target.value = '';
+        } catch (err) {
+            alert(err.message);
+            console.error("Stack generation error:", err);
+            e.target.value = ''; // Reset input to allow retrying
+        } finally {
+            setIsProcessingStack(false);
+        }
     };
 
     return (
@@ -508,7 +651,7 @@ const CreatePost = () => {
                     <div className="dot-icon"><FaImages size={12} /></div>
                     <div className="dot-line"></div>
                 </div>
-                <div className={`progress-dot ${slides.length > 0 ? (title.trim().length > 0 ? 'completed' : 'active') : ''}`} title="Add Title">
+                <div className={`progress-dot ${slides.length > 0 ? (title.trim().length > 0 ? 'completed' : 'active') : ''}`} title="Add Title (Optional)">
                     <div className="dot-icon"><FaPen size={12} /></div>
                     <div className="dot-line"></div>
                 </div>
@@ -534,7 +677,99 @@ const CreatePost = () => {
             <div className="create-post-layout">
                 {/* LEFT COLUMN: Images, Previews, Tags */}
                 <div className="left-column">
-                    {/* 1. Image Carousel */}
+                    {/* Loading Indicator for Photo Processing */}
+                    {isProcessingStack && (
+                        <div style={{
+                            width: '100%',
+                            height: '2px',
+                            background: 'rgba(255,255,255,0.1)',
+                            marginBottom: '1rem',
+                            overflow: 'hidden',
+                            borderRadius: '2px',
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                width: '50%',
+                                height: '100%',
+                                background: 'var(--ice-mint)',
+                                position: 'absolute',
+                                animation: 'loading-line 1s infinite linear',
+                            }}></div>
+                            <style>{`
+                                @keyframes loading-line {
+                                    0% { left: -50%; width: 50%; }
+                                    50% { left: 25%; width: 75%; }
+                                    100% { left: 100%; width: 50%; }
+                                }
+                            `}</style>
+                        </div>
+                    )}
+
+                    {/* 1. Image Carousel & Stack Controls */}
+                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
+
+                        {/* Vertical Stack Button */}
+                        <label style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '8px',
+                            padding: '0.6rem 1rem',
+                            color: '#e0e0e0',
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            cursor: 'pointer', fontSize: '0.85rem',
+                            position: 'relative'
+                        }}>
+                            <FaArrowsAltV /> Vertical Stack
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleStackSelect(e, 'vertical')}
+                            />
+                        </label>
+
+                        {/* Horizontal Row Button */}
+                        <label style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '8px',
+                            padding: '0.6rem 1rem',
+                            color: '#e0e0e0',
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            cursor: 'pointer', fontSize: '0.85rem'
+                        }}>
+                            <FaArrowsAltH /> Horizontal Row
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleStackSelect(e, 'horizontal')}
+                            />
+                        </label>
+
+                        {/* Grid Collage Button */}
+                        <label style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '8px',
+                            padding: '0.6rem 1rem',
+                            color: '#e0e0e0',
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            cursor: 'pointer', fontSize: '0.85rem'
+                        }}>
+                            <FaThLarge /> Grid Collage
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleStackSelect(e, 'grid')}
+                            />
+                        </label>
+                    </div>
+
                     <ImageCarousel
                         slides={slides}
                         activeSlideIndex={activeSlideIndex}
@@ -633,6 +868,81 @@ const CreatePost = () => {
                             </button>
                         </div>
 
+                        {/* Cinematic Background Toggle (Single Photo Only) */}
+                        {slides.length === 1 && extractedColor && (
+                            <div className="form-section-item" style={{ marginBottom: '1.5rem', animation: 'fadeIn 0.3s ease' }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    marginBottom: '0.6rem',
+                                    paddingTop: '0.8rem',
+                                    borderTop: '1px solid rgba(255,255,255,0.05)'
+                                }}>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa', textTransform: 'uppercase' }}>
+                                        BACKGROUND STYLE
+                                    </span>
+                                    {calculatingColor && <span style={{ fontSize: '0.7rem', color: '#7FFFD4', fontStyle: 'italic' }}>Extracting color...</span>}
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+                                    {/* Black Option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setAtmosphereBackground('black')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.6rem',
+                                            borderRadius: '8px',
+                                            border: atmosphereBackground === 'black' ? '1px solid #fff' : '1px solid rgba(255,255,255,0.1)',
+                                            background: 'rgba(0,0,0,0.5)',
+                                            color: '#fff',
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#000', border: '1px solid #555' }}></div>
+                                        Standard
+                                    </button>
+
+                                    {/* Cinematic Gradient Option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setAtmosphereBackground('cinematic-gradient')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.6rem',
+                                            borderRadius: '8px',
+                                            border: atmosphereBackground === 'cinematic-gradient' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                            background: atmosphereBackground === 'cinematic-gradient' ? 'rgba(127, 255, 212, 0.1)' : 'rgba(0,0,0,0.5)',
+                                            color: atmosphereBackground === 'cinematic-gradient' ? '#7FFFD4' : '#888',
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.5rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: 12,
+                                            height: 12,
+                                            borderRadius: '50%',
+                                            background: `linear-gradient(135deg, ${extractedColor}, #000)`,
+                                            boxShadow: '0 0 4px rgba(0,0,0,0.5)'
+                                        }}></div>
+                                        Cinematic
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div style={{ marginBottom: '0.5rem' }}>
                             <input
                                 type="text"
@@ -728,7 +1038,7 @@ const CreatePost = () => {
                         setShowInProfile={setShowInProfile}
                     />
 
-                    {/* Film Control Center */}
+                    {/* Film Options Panel with added Instant Photo toggle */}
                     <FilmOptionsPanel
                         filmMetadata={filmMetadata}
                         setFilmMetadata={setFilmMetadata}
@@ -741,8 +1051,55 @@ const CreatePost = () => {
                         quartzDateFormat={quartzDateFormat}
                         setQuartzDateFormat={setQuartzDateFormat}
                         enableSprocketOverlay={enableSprocketOverlay}
-                        setEnableSprocketOverlay={setEnableSprocketOverlay}
+                        setEnableSprocketOverlay={handleSprocketToggle}
+                        enableInstantPhotoOverlay={enableInstantPhotoOverlay}
+                        setEnableInstantPhotoOverlay={handleInstantPhotoToggle}
                     />
+
+                    {/* Film Aesthetics Section (Minimal for Film Mode if needed, but most logic is in panel) */}
+                    <div className="form-section">
+                        <h3><FaPalette style={{ marginRight: '0.5rem', marginBottom: '-2px' }} /> Aesthetics</h3>
+
+                        {enableSprocketOverlay && (
+                            <div className="toggle-row">
+                                <span>Film Mode</span>
+                                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '2px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFilmMode('continuous')}
+                                        style={{
+                                            background: filmMode === 'continuous' ? 'var(--ice-mint)' : 'transparent',
+                                            color: filmMode === 'continuous' ? '#000' : '#888',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '0.4rem 0.8rem',
+                                            cursor: 'pointer',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Continuous
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFilmMode('cut')}
+                                        style={{
+                                            background: filmMode === 'cut' ? 'var(--ice-mint)' : 'transparent',
+                                            color: filmMode === 'cut' ? '#000' : '#888',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '0.4rem 0.8rem',
+                                            cursor: 'pointer',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600'
+                                        }}
+                                    >
+                                        Cut
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Rating System Toggle */}
                     <RatingSystemSelector
@@ -755,6 +1112,74 @@ const CreatePost = () => {
                     {activeSlide && (
                         <div className="form-section">
                             <h3>Image Settings</h3>
+
+                            {/* Stack Reordering Controls */}
+                            {activeSlide.type === 'stack' && activeSlide.items && (
+                                <div className="form-section" style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                                    <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginTop: 0, marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                                        Stack Order
+                                        <span style={{ fontSize: '0.7rem' }}>{activeSlide.items.length} items</span>
+                                    </h4>
+                                    <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                                        {activeSlide.items.map((file, idx) => (
+                                            <div key={idx} style={{
+                                                position: 'relative',
+                                                width: '60px',
+                                                flexShrink: 0,
+                                                opacity: isProcessingStack ? 0.5 : 1
+                                            }}>
+                                                <div style={{
+                                                    width: '60px',
+                                                    height: '60px',
+                                                    borderRadius: '8px',
+                                                    overflow: 'hidden',
+                                                    marginBottom: '0.2rem',
+                                                    border: '1px solid rgba(255,255,255,0.2)'
+                                                }}>
+                                                    <StackThumbnail file={file} />
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <button
+                                                        onClick={() => reorderStackItems(activeSlideIndex, idx, 'left')}
+                                                        disabled={idx === 0 || isProcessingStack}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.1)',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            color: '#fff',
+                                                            width: '28px',
+                                                            height: '24px',
+                                                            cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            opacity: idx === 0 ? 0.3 : 1
+                                                        }}
+                                                    >
+                                                        <FaChevronLeft size={10} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => reorderStackItems(activeSlideIndex, idx, 'right')}
+                                                        disabled={idx === activeSlide.items.length - 1 || isProcessingStack}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.1)',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            color: '#fff',
+                                                            width: '28px',
+                                                            height: '24px',
+                                                            cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            opacity: idx === activeSlide.items.length - 1 ? 0.3 : 1
+                                                        }}
+                                                    >
+                                                        <FaChevronRight size={10} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {isProcessingStack && <div style={{ fontSize: '0.7rem', color: 'var(--ice-mint)', marginTop: '0.5rem' }}>Updating stack...</div>}
+                                </div>
+                            )}
 
                             {/* Per-Image Title (only shown when shareTitleAcrossImages is false) */}
                             {!shareTitleAcrossImages && (

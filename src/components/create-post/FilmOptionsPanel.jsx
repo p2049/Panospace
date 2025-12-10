@@ -25,6 +25,10 @@ import { generateQuartzDateString, QUARTZ_DATE_FORMATS } from '@/core/utils/exif
  * @param {Function} setQuartzDateFormat - Handler to update date format
  * @param {boolean} enableSprocketOverlay - Whether film border is enabled
  * @param {Function} setEnableSprocketOverlay - Handler to toggle film border
+ * @param {boolean} enableInstantPhotoOverlay - Whether instant photo border is enabled
+ * @param {Function} setEnableInstantPhotoOverlay - Handler to toggle instant photo border
+ * @param {number} instantPhotoCount - Number of instant photos per slide (1-3)
+ * @param {Function} setInstantPhotoCount - Handler to set count
  */
 const FilmOptionsPanel = ({
     filmMetadata,
@@ -38,7 +42,9 @@ const FilmOptionsPanel = ({
     quartzDateFormat,
     setQuartzDateFormat,
     enableSprocketOverlay,
-    setEnableSprocketOverlay
+    setEnableSprocketOverlay,
+    enableInstantPhotoOverlay,
+    setEnableInstantPhotoOverlay
 }) => {
     return (
         <div className="form-section">
@@ -121,7 +127,7 @@ const FilmOptionsPanel = ({
                         />
                     </div>
 
-                    {/* Visuals Subsection */}
+                    {/* Visuals Subsection (Quartz Only) */}
                     <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(127, 255, 212, 0.2)' }}>
                         <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--ice-mint)', marginBottom: '0.5rem', opacity: 0.8 }}>
                             Visuals
@@ -129,7 +135,7 @@ const FilmOptionsPanel = ({
 
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                             {/* Date Stamp Toggle */}
-                            <div style={{ flex: 1, minWidth: '140px' }}>
+                            <div style={{ flex: 1.5, minWidth: '160px' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', lineHeight: '1' }}>
                                     <input
                                         type="checkbox"
@@ -220,8 +226,9 @@ const FilmOptionsPanel = ({
                                 )}
                             </div>
 
-                            {/* Film Border Toggle */}
-                            <div style={{ flex: 1, minWidth: '140px' }}>
+                            {/* Borders Column */}
+                            <div style={{ flex: 1, minWidth: '140px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                {/* Film Border Toggle */}
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', lineHeight: '1' }}>
                                     <input
                                         type="checkbox"
@@ -230,6 +237,17 @@ const FilmOptionsPanel = ({
                                         style={{ width: '18px', height: '18px', margin: 0, flexShrink: 0 }}
                                     />
                                     <span style={{ marginTop: '1px' }}>Film Strip Border</span>
+                                </label>
+
+                                {/* Instant Photo Toggle */}
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', lineHeight: '1' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={enableInstantPhotoOverlay}
+                                        onChange={(e) => setEnableInstantPhotoOverlay(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', margin: 0, flexShrink: 0 }}
+                                    />
+                                    <span style={{ marginTop: '1px' }}>Instant Photo UI</span>
                                 </label>
                             </div>
                         </div>

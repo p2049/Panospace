@@ -77,3 +77,8 @@ exports.postIntegrityCheck = postIntegrityCheck;
 const { manualCleanupBrokenPosts } = require('./manualCleanup');
 exports.manualCleanupBrokenPosts = manualCleanupBrokenPosts;
 
+// Shop Verification
+const { verifyUserShop } = require('./shopVerification');
+exports.verifyUserShop = verifyUserShop;
+
+

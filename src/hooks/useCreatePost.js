@@ -143,12 +143,29 @@ export const useCreatePost = () => {
                 const baseProgress = (i / totalSlides) * 100;
                 setProgress(Math.round(baseProgress));
 
-                if (slide.type === 'image') {
+                if (slide.type === 'image' || slide.type === 'stack') {
                     try {
+                        let stackImageUrls = [];
+
+                        // 0. If STACK, upload individual component images first
+                        if (slide.type === 'stack' && slide.items && slide.items.length > 0) {
+                            setProgress(Math.round(baseProgress + (1 / totalSlides) * 10));
+
+                            // Upload each stack item
+                            // We just need the raw URL, no thumbnails for sub-items needed usually (too heavy)
+                            // Actually, let's just upload them as standard "L2" files.
+                            for (let j = 0; j < slide.items.length; j++) {
+                                const itemFile = slide.items[j];
+                                const itemRef = ref(storage, `posts/${currentUser.uid}/stack_${Date.now()}_${j}_${itemFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`);
+                                const itemUrl = await uploadWithRetry(itemRef, itemFile);
+                                stackImageUrls.push(itemUrl);
+                            }
+                        }
+
                         // Generating thumbnails...
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 10)); // +10% for thumbnail gen
 
-                        // 1. Generate Thumbnails Client-Side
+                        // 1. Generate Thumbnails Client-Side (For the main file - collage or single)
                         let l0, l1, l2;
                         try {
                             const thumbs = await generateAllThumbnails(slide.file);
@@ -224,8 +241,8 @@ export const useCreatePost = () => {
                             slide.file.type === 'image/jpg' ||
                             slide.file.type === 'image/tiff';
 
-                        if (!isExifSupported) {
-                            // Skipping EXIF
+                        if (!isExifSupported || slide.type === 'stack') {
+                            // Skipping EXIF for stacks or unsupported
                         } else {
                             try {
                                 // ONE SHOT ONLY - 300ms timeout
@@ -273,7 +290,7 @@ export const useCreatePost = () => {
                         }
 
                         processedItems.push({
-                            type: 'image',
+                            type: slide.type, // 'image' or 'stack'
                             url: urlL2,
                             thumbnailUrl: urlL1 || urlL2, // Use L1 as thumbnail
                             tinyUrl: urlL0 || urlL1 || urlL2, // Use L0 as tiny placeholder
@@ -291,7 +308,12 @@ export const useCreatePost = () => {
                             dominantColor,
                             isLimitedEdition: slide.isLimitedEdition || false,
                             editionSize: slide.editionSize || 10,
-                            price: slide.price || 0
+                            price: slide.price || 0,
+
+                            // Stack Metadata
+                            isStack: slide.type === 'stack',
+                            stackLayout: slide.type === 'stack' ? slide.layout : null,
+                            stackImages: slide.type === 'stack' ? stackImageUrls : null
                         });
 
                     } catch (uploadError) {
@@ -345,11 +367,11 @@ export const useCreatePost = () => {
             // 3️⃣ Create main post document
             // ---------------------------------------------------------------
             const imageUrls = processedItems
-                .filter((i) => i.type === 'image')
+                .filter((i) => i.type === 'image' || i.type === 'stack')
                 .map((i) => i.url);
 
             const thumbnailUrls = processedItems
-                .filter((i) => i.type === 'image')
+                .filter((i) => i.type === 'image' || i.type === 'stack')
                 .map((i) => i.thumbnailUrl);
 
             const locationName = postData.location ?
@@ -418,7 +440,7 @@ export const useCreatePost = () => {
                 panoStackSettings: postData.panoStackSettings || null,
                 location: postData.location || null,
                 images: processedItems
-                    .filter((i) => i.type === 'image')
+                    .filter((i) => i.type === 'image' || i.type === 'stack')
                     .map((i) => ({
                         url: i.url,
                         thumbnailUrl: i.thumbnailUrl,
@@ -434,6 +456,10 @@ export const useCreatePost = () => {
                         height: i.height || null,
                         aspectRatio: i.aspectRatio || null,
                         allowCropped: i.allowCropped || false,
+                        // Stack Metadata
+                        isStack: i.isStack || false,
+                        stackLayout: i.stackLayout || null,
+                        stackImages: i.stackImages || null
                     })),
                 searchKeywords,
                 likeCount: 0,
@@ -441,7 +467,10 @@ export const useCreatePost = () => {
                 addToShop: processedItems.some((i) => i.addToShop === true),
                 moderationStatus: 'active',
                 status: status,
+                status: status,
                 type: postData.type || 'art', // Unified type field
+                atmosphereBackground: postData.atmosphereBackground || 'black',
+                gradientColor: postData.gradientColor || null,
             };
 
             const docRef = await addDoc(collection(db, 'posts'), postDoc);

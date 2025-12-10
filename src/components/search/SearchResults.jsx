@@ -30,7 +30,8 @@ const SearchResults = ({
     setSelectedFilm,
     setSelectedOrientation,
     setSelectedAspectRatio,
-    sortBy
+    sortBy,
+    isMarketplaceMode // NEW
 }) => {
     return (
         <>
@@ -55,15 +56,51 @@ const SearchResults = ({
                                 to { opacity: 1; transform: translateY(0); }
     }
     `}</style>
-                        {currentMode === 'posts' && results.posts.map(post => (
-                            <GridPostCard
-                                key={post.id}
-                                post={post}
-                                contextPosts={results.posts}
-                                selectedOrientation={selectedOrientation}
-                                selectedAspectRatio={selectedAspectRatio}
-                            />
-                        ))}
+                        {currentMode === 'posts' && results.posts.map(post => {
+                            if (isMarketplaceMode) {
+                                // If in marketplace mode, we expect 'post' to actually be a ShopItem or a Post with shop data?
+                                // For now, let's assume 'post' object has what we need OR we are reusing the post visual.
+                                // NOTE: Real implementation would require fetching 'shopItems' in Search.jsx.
+                                // For this step, I'm just adding the UI switch.
+                                // Let's render a "Shop Item Version" of the card.
+                                return (
+                                    <div key={post.id} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' }}>
+                                        <GridPostCard
+                                            post={post}
+                                            contextPosts={results.posts}
+                                            selectedOrientation={selectedOrientation}
+                                            selectedAspectRatio={selectedAspectRatio}
+                                        />
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            padding: '0.75rem',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)',
+                                            color: '#7FFFD4',
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            pointerEvents: 'none'
+                                        }}>
+                                            <span>${(Math.random() * 50 + 10).toFixed(2)}</span>
+                                            <span style={{ fontSize: '0.7rem', background: '#7FFFD4', color: '#000', padding: '2px 6px', borderRadius: '4px' }}>BUY</span>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return (
+                                <GridPostCard
+                                    key={post.id}
+                                    post={post}
+                                    contextPosts={results.posts}
+                                    selectedOrientation={selectedOrientation}
+                                    selectedAspectRatio={selectedAspectRatio}
+                                />
+                            );
+                        })}
                         {currentMode === 'users' && results.users.map(user => (
                             <UserCard key={user.id} user={user} />
                         ))}

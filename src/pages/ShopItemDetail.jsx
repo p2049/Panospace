@@ -23,7 +23,7 @@ const PRINT_SIZES = getPrintifyProducts();
 const ShopItemDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, userProfile } = useAuth(); // Added userProfile for check
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -44,6 +44,7 @@ const ShopItemDetail = () => {
     const [showAdvanced, setShowAdvanced] = useState(false); // 5. Batch Editor Toggle
     const [showWallPreview, setShowWallPreview] = useState(false); // 4. "Preview on Wall" Modal State
     const [activeSlide, setActiveSlide] = useState(0); // Slider State
+    const [showVerificationBlocker, setShowVerificationBlocker] = useState(false); // New blocker modal
 
     useEffect(() => {
         const fetchItem = async () => {
@@ -156,6 +157,12 @@ const ShopItemDetail = () => {
             };
 
             if (publish) {
+                // 4.1 Check Verification Status
+                if (!userProfile?.shopVerified) {
+                    setShowVerificationBlocker(true);
+                    setSaving(false);
+                    return;
+                }
                 updateData.available = true;
                 updateData.status = 'active';
             }
@@ -988,6 +995,68 @@ const ShopItemDetail = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 4.1 Verification Blocker Modal */}
+            {showVerificationBlocker && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.85)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000
+                }}>
+                    <div style={{
+                        background: '#1a1a1a',
+                        padding: '2rem',
+                        borderRadius: '16px',
+                        border: '1px solid #333',
+                        maxWidth: '400px',
+                        textAlign: 'center',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏪</div>
+                        <h2 style={{ color: '#fff', marginBottom: '0.5rem' }}>Set Up Your Shop</h2>
+                        <p style={{ color: '#ccc', marginBottom: '2rem', lineHeight: '1.5' }}>
+                            You can create drafts, but you need to verify your details and set up your shop before you can publish items for sale.
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                            <button
+                                onClick={() => navigate('/shop/setup')}
+                                style={{
+                                    padding: '0.8rem',
+                                    background: '#7FFFD4',
+                                    color: '#000',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                Set Up Shop <FaArrowLeft style={{ transform: 'rotate(180deg)' }} />
+                            </button>
+                            <button
+                                onClick={() => setShowVerificationBlocker(false)}
+                                style={{
+                                    padding: '0.8rem',
+                                    background: 'transparent',
+                                    color: '#888',
+                                    border: '1px solid #333',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Keep in Drafts
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

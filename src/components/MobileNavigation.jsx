@@ -22,7 +22,9 @@ import {
     FaCog,
     FaEdit,
     FaFilter,
-    FaPlus
+    FaPlus,
+    FaFire,
+    FaTrophy
 } from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
@@ -55,10 +57,12 @@ const MobileNavigation = () => {
 
 
     const [showCustomSelector, setShowCustomSelector] = useState(false);
+    const [showHubPanel, setShowHubPanel] = useState(false); // New Hub Panel
     const { feeds } = useCustomFeeds();
     const inactivityTimerRef = useRef(null);
 
-    // Auto-collapse logic
+    // Auto-collapse logic REMOVED as per user request
+    /*
     useEffect(() => {
         const checkInactivity = () => {
             // Close selector if inactive too
@@ -70,11 +74,14 @@ const MobileNavigation = () => {
         inactivityTimerRef.current = setInterval(checkInactivity, 1000);
         return () => clearInterval(inactivityTimerRef.current);
     }, [lastActivity, isOpen, showCustomSelector]);
+    */
 
+    // Close selector when clicking outside
     // Close selector when clicking outside
     useEffect(() => {
         if (!isOpen) {
             setShowCustomSelector(false);
+            setShowHubPanel(false);
         }
     }, [isOpen]);
 
@@ -175,6 +182,20 @@ const MobileNavigation = () => {
         handleInteraction();
     };
 
+    const toggleHubPanel = () => {
+        // Toggle Hub, ensure Custom Feeds is closed
+        if (!showHubPanel) setShowCustomSelector(false);
+        setShowHubPanel(!showHubPanel);
+        handleInteraction();
+    };
+
+    const toggleCustomFeedsPanel = () => {
+        // Toggle Custom Feeds, ensure Hub is closed
+        if (!showCustomSelector) setShowHubPanel(false);
+        setShowCustomSelector(!showCustomSelector);
+        handleInteraction();
+    };
+
     const handleCustomFeedSelect = (feedId, feedName) => {
         setActiveCustomFeed(feedId, feedName);
         setCustomFeedEnabled(true);
@@ -188,6 +209,8 @@ const MobileNavigation = () => {
         setShowCustomSelector(false);
         setIsOpen(false);
     };
+
+    // Close both when opening one? Logic handled in toggles.
 
     // Styling
     const menuButtonStyle = {
@@ -349,9 +372,9 @@ const MobileNavigation = () => {
                     <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM FEEDS</h3>
                 </div>
 
-                {/* Standard Feed Toggles REMOVED from Sidecar */}
+                {/* App-Curated Feeds Section REMOVED from Custom Panel - Moved to Hub */}
 
-                <div style={{ fontSize: '0.7rem', color: '#888', padding: '0 1rem 0.5rem 1rem' }}>SAVED FEEDS</div>
+                <div style={{ fontSize: '0.7rem', color: '#888', padding: '1rem 1rem 0.5rem 1rem' }}>SAVED FEEDS</div>
 
                 {/* Feeds List */}
                 <div style={{
@@ -450,6 +473,110 @@ const MobileNavigation = () => {
 
             </div>
 
+            {/* Hub Panel (New Secondary Panel) - Slides out to the left of the main drawer */}
+            {/* Uses same positioning logic as sidecar but controlled by showHubPanel */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                right: (isOpen && showHubPanel) ? '300px' : '-320px',
+                width: '260px',
+                height: '100vh',
+                background: '#111111',
+                borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+                transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: 9999,
+                paddingTop: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                pointerEvents: isOpen ? 'auto' : 'none'
+            }} onClick={(e) => e.stopPropagation()}>
+
+                <div style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>PANO HUB</h3>
+                </div>
+
+                <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+                    {/* Market */}
+                    <button
+                        onClick={() => handleNavClick('/marketplace')}
+                        style={{
+                            padding: '0.8rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: '#fff',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <FaStore size={16} color={accentColor} />
+                        <div>
+                            <div style={{ fontWeight: 'bold' }}>Market</div>
+                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Shop prints & gear</div>
+                        </div>
+                    </button>
+
+                    {/* Calendar */}
+                    <button
+                        onClick={() => handleNavClick('/calendar')}
+                        style={{
+                            padding: '0.8rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: '#fff',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <FaCalendarAlt size={16} color={accentColor} />
+                        <div>
+                            <div style={{ fontWeight: 'bold' }}>Calendar</div>
+                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Events & launches</div>
+                        </div>
+                    </button>
+
+                    {/* Events (Hub Link) */}
+                    <button
+                        onClick={() => handleNavClick('/events/all')}
+                        style={{
+                            padding: '0.8rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: '#fff',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <FaTrophy size={16} color={accentColor} />
+                        <div>
+                            <div style={{ fontWeight: 'bold' }}>Events</div>
+                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Curated feeds & contests</div>
+                        </div>
+                    </button>
+
+                </div>
+
+            </div>
+
             {/* Main Menu Drawer (Active) */}
             <div style={drawerStyle} onClick={(e) => e.stopPropagation()}>
 
@@ -535,15 +662,47 @@ const MobileNavigation = () => {
                         </button>
                     </div>
 
-                    {/* Feed Options Trigger - Only visible on Home Feed */}
-                    {location.pathname === '/' && (
+                    {/* Hub & Custom Feed Toggles */}
+                    <div style={{ display: 'flex', width: '100%', gap: '0.4rem', marginTop: '0.5rem' }}>
+                        {/* Hub Button */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setShowCustomSelector(!showCustomSelector);
-                                handleInteraction();
+                                toggleHubPanel();
                             }}
                             style={{
+                                flex: 1,
+                                padding: '0.35rem 0.8rem',
+                                borderRadius: '8px',
+                                border: `1px solid ${accentColor}`,
+                                background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
+                                color: showHubPanel ? '#000' : accentColor,
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap',
+                                height: '32px',
+                                backdropFilter: 'blur(10px)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.4rem'
+                            }}
+                        >
+                            <FaStore size={12} /> HUB
+                        </button>
+
+                        {/* Custom Feeds Button */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCustomFeedsPanel();
+                            }}
+                            style={{
+                                flex: 2, // Larger width
                                 padding: '0.35rem 0.8rem',
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
@@ -561,13 +720,12 @@ const MobileNavigation = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.4rem',
-                                width: '100%',
+                                gap: '0.4rem'
                             }}
                         >
-                            CUSTOM FEEDS
+                            <FaFilter size={12} /> CUSTOM FEEDS
                         </button>
-                    )}
+                    </div>
                 </div>
 
                 {/* Context Options - Kept in main drawer but visualized as list */}
@@ -607,27 +765,7 @@ const MobileNavigation = () => {
                         {t('nav.create')}
                     </div>
 
-                    <div onClick={() => handleNavClick('/calendar')} style={navItemStyle}>
-                        <FaCalendarAlt color="#7FFFD4" size={20} />
-                        {t('nav.calendar')}
-                    </div>
-
-                    {(resolvedContext === 'profile' && resolvedProfileUserId === currentUser?.uid) ? (
-                        <div onClick={() => handleNavClick('/edit-profile')} style={navItemStyle}>
-                            <FaEdit color="#7FFFD4" size={20} />
-                            {t('settings.editProfile')}
-                        </div>
-                    ) : (
-                        <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
-                            <FaUserCircle color="#7FFFD4" size={20} />
-                            {t('settings.account')}
-                        </div>
-                    )}
-
-                    <div onClick={() => handleNavClick('/marketplace')} style={navItemStyle}>
-                        <FaStore color="#7FFFD4" size={20} />
-                        {t('nav.market')}
-                    </div>
+                    {/* Market and Calendar Removed from Main List (Moved to Hub) */}
 
                     <div onClick={() => handleNavClick('/settings')} style={navItemStyle}>
                         <FaCog color="#7FFFD4" size={20} />

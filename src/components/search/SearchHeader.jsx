@@ -24,7 +24,9 @@ const SearchHeader = ({
     isSortDropdownOpen,
     setIsSortDropdownOpen,
     searchMode,
-    setSearchMode
+    setSearchMode,
+    isMarketplaceMode,
+    setIsMarketplaceMode
 }) => {
     const navigate = useNavigate();
     const { accentColor } = useThemeColors();
@@ -247,7 +249,7 @@ const SearchHeader = ({
                     {/* Phase 3 Fix: Art/Social Tabs - Banner Inline */}
                     {/* Phase 3 Fix: Single Toggle Button for Art/Social */}
                     {currentMode === 'posts' && (
-                        <div className="search-mode-tabs" style={{ flexShrink: 0 }}>
+                        <div className="search-mode-tabs" style={{ flexShrink: 0, display: 'flex', gap: '0.5rem' }}>
                             <button
                                 onClick={() => setSearchMode(searchMode === "art" ? "social" : "art")}
                                 style={{
@@ -268,12 +270,37 @@ const SearchHeader = ({
                                     gap: '0.4rem',
                                     boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none',
                                     height: '32px', // Enforce 32px
-                                    boxSizing: 'border-box',
-                                    display: 'flex',
-                                    alignItems: 'center'
+                                    boxSizing: 'border-box'
                                 }}
                             >
                                 {searchMode === 'art' ? 'ART' : 'SOCIAL'}
+                            </button>
+
+                            {/* Marketplace Toggle */}
+                            <button
+                                onClick={() => setIsMarketplaceMode(!isMarketplaceMode)}
+                                style={{
+                                    padding: '0.35rem 0.8rem',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${isMarketplaceMode ? '#7FFFD4' : 'rgba(255,255,255,0.3)'}`,
+                                    background: isMarketplaceMode ? 'rgba(127, 255, 212, 0.2)' : 'transparent',
+                                    color: isMarketplaceMode ? '#7FFFD4' : 'rgba(255,255,255,0.7)',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    whiteSpace: 'nowrap',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    boxShadow: isMarketplaceMode ? `0 0 10px rgba(127, 255, 212, 0.2)` : 'none',
+                                    height: '32px',
+                                    boxSizing: 'border-box'
+                                }}
+                            >
+                                {isMarketplaceMode ? '🛍️ MARKET' : '🛍️ SHOP'}
                             </button>
                         </div>
                     )}

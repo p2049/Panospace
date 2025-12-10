@@ -139,6 +139,7 @@ const Search = () => {
     const [selectedAspectRatio, setSelectedAspectRatio] = useState(null);
     const [sortBy, setSortBy] = useState('newest');
     const [searchMode, setSearchMode] = useState('art'); // Phase 3: Search Mode State ('art' | 'social')
+    const [isMarketplaceMode, setIsMarketplaceMode] = useState(false); // NEW: Marketplace Toggle
 
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'
     const [isSearching, setIsSearching] = useState(false);
@@ -196,7 +197,7 @@ const Search = () => {
     const [searchState, dispatch] = useReducer(searchReducer, initialSearchState);
     const { results, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards } = searchState;
 
-    const { searchUsers, searchPosts, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, loading } = useSearch();
+    const { searchUsers, searchPosts, searchShopItems, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, loading } = useSearch();
     const { followingList, fetchFollowing } = useFollowing(currentUser?.uid);
     const { blockedUsers } = useBlock();
 
@@ -300,38 +301,55 @@ const Search = () => {
 
             switch (currentMode) {
                 case 'posts': {
-                    let searchAuthorIds = followingOnly ? followingList : [];
+                    if (isMarketplaceMode) {
+                        // MARKETPLACE MODE
+                        const { data, lastDoc } = await searchShopItems(
+                            term,
+                            {
+                                tags: tags,
+                                sort: currentSortByRef.current
+                            },
+                            isLoadMore ? lastPostDoc : null
+                        );
+                        // Filter blocked users (shop owner)
+                        resultData = data.filter(item => !blockedUsers.has(item.ownerId));
+                        newLastDoc = lastDoc;
+                        hasMore = data.length > 0;
+                    } else {
+                        // STANDARD POSTS MODE
+                        let searchAuthorIds = followingOnly ? followingList : [];
 
-                    if (selectedMuseum) {
-                        const museumMemberIds = selectedMuseum.members || [];
-                        if (followingOnly) {
-                            // Intersection
-                            searchAuthorIds = searchAuthorIds.filter(id => museumMemberIds.includes(id));
-                        } else {
-                            searchAuthorIds = museumMemberIds;
+                        if (selectedMuseum) {
+                            const museumMemberIds = selectedMuseum.members || [];
+                            if (followingOnly) {
+                                // Intersection
+                                searchAuthorIds = searchAuthorIds.filter(id => museumMemberIds.includes(id));
+                            } else {
+                                searchAuthorIds = museumMemberIds;
+                            }
                         }
-                    }
 
-                    const { data, lastDoc } = await searchPosts(
-                        term,
-                        {
-                            tags: hasFilters ? tags : exploreTags,
-                            parkId: parkId,
-                            selectedDate: date,
-                            camera: currentSelectedCameraRef.current,
-                            film: currentSelectedFilmRef.current,
-                            orientation: currentSelectedOrientationRef.current,
-                            aspectRatio: currentSelectedAspectRatioRef.current,
-                            sort: hasFilters ? currentSortByRef.current : exploreSort,
-                            authorIds: searchAuthorIds,
-                            postType: searchMode // Phase 3: Pass searchMode to filter
-                        },
-                        isLoadMore ? lastPostDoc : null
-                    );
-                    // Filter blocked users
-                    resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
-                    newLastDoc = lastDoc;
-                    hasMore = data.length > 0;
+                        const { data, lastDoc } = await searchPosts(
+                            term,
+                            {
+                                tags: hasFilters ? tags : exploreTags,
+                                parkId: parkId,
+                                selectedDate: date,
+                                camera: currentSelectedCameraRef.current,
+                                film: currentSelectedFilmRef.current,
+                                orientation: currentSelectedOrientationRef.current,
+                                aspectRatio: currentSelectedAspectRatioRef.current,
+                                sort: hasFilters ? currentSortByRef.current : exploreSort,
+                                authorIds: searchAuthorIds,
+                                postType: searchMode // Phase 3: Pass searchMode to filter
+                            },
+                            isLoadMore ? lastPostDoc : null
+                        );
+                        // Filter blocked users
+                        resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
+                        newLastDoc = lastDoc;
+                        hasMore = data.length > 0;
+                    }
                     break;
                 }
 
@@ -491,7 +509,7 @@ const Search = () => {
             }
             isLoadingRef.current = false;
         }
-    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum, searchMode]);
+    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchShopItems, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum, searchMode, isMarketplaceMode]);
 
     // Update refs when search params change
     useEffect(() => {
@@ -685,6 +703,8 @@ const Search = () => {
                 setIsSortDropdownOpen={setIsSortDropdownOpen}
                 searchMode={searchMode}
                 setSearchMode={setSearchMode}
+                isMarketplaceMode={isMarketplaceMode} // NEW
+                setIsMarketplaceMode={setIsMarketplaceMode} // NEW
             />
 
             <SearchResults
@@ -692,8 +712,13 @@ const Search = () => {
                 currentMode={currentMode}
                 results={{
                     ...results,
+                    // Filter logic handled deep in SearchResults or here: 
+                    // If marketplace mode, we filter posts that are linked to active shop items?
+                    // Actually, the USER requested "Turn Explore into Marketplace Mode"
+                    // So we should pass isMarketplaceMode down to render Shop Item Cards instead of Post Cards.
                     posts: results.posts.filter(p => (p.type || 'art') === searchMode)
                 }}
+                isMarketplaceMode={isMarketplaceMode} // NEW
                 isMobile={isMobile}
                 selectedOrientation={selectedOrientation}
                 selectedAspectRatio={selectedAspectRatio}

@@ -178,7 +178,7 @@ const SmartImage = ({
     const containerStyle = {
         position: 'relative',
         overflow: 'hidden',
-        backgroundColor: '#000', // Pure black background
+        backgroundColor: 'transparent', // Changed from #000 to transparent to show parent gradient
         width: '100%',
         height: aspectRatio === 'auto' ? 'auto' : '100%'
     };

@@ -59,7 +59,8 @@ const CreateCardModal = ({ onClose, onCreated }) => {
     const [editionType, setEditionType] = useState(EDITION_TYPES.UNLIMITED);
     const [editionSize, setEditionSize] = useState(100);
     const [cardStyle, setCardStyle] = useState(CARD_STYLES.CLASSIC);
-    const [basePrice, setBasePrice] = useState(10);
+    // const [basePrice, setBasePrice] = useState(10); // Removed Selling Fields for now
+    const [addToShopDraft, setAddToShopDraft] = useState(false); // NEW: Shop Draft Toggle
 
     // Fetch posts when tab changes
     useEffect(() => {
@@ -286,7 +287,8 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                 editionSize: editionType === EDITION_TYPES.LIMITED ? editionSize : null,
                 linkedPostId: postId || selectedPost?.id || null,
                 cardStyle,
-                basePrice,
+                cardStyle,
+                basePrice: 0, // Force 0 or remove entirely if schema allows. We are removing selling fields.
                 // New Fields
                 cardType,
                 subjectTag: cardType === 'official' ? selectedTag : customTag,
@@ -295,6 +297,39 @@ const CreateCardModal = ({ onClose, onCreated }) => {
             };
 
             const newCard = await SpaceCardService.createCard(cardData);
+
+            // 2.2 Create Shop Draft if requested
+            if (addToShopDraft) {
+                try {
+                    const shopItemData = {
+                        ownerId: currentUser.uid,
+                        kind: "spacecard",
+                        status: "draft",
+                        sourcePostId: newCard.id, // Link to the newly created SpaceCard ID
+                        postRef: newCard.id, // Legacy compatibility
+                        title: title || "Untitled Space Card",
+                        description: description || "",
+                        imageUrl: finalFrontImage,
+                        tags: cardType === 'official' ? [selectedTag] : [customTag].filter(Boolean),
+                        baseCostCents: 0,
+                        markupCents: 0,
+                        priceCents: 0,
+                        currency: "USD",
+                        createdAt: serverTimestamp(),
+                        updatedAt: serverTimestamp(),
+                        available: false
+                    };
+
+                    // Add to 'shopItems' collection
+                    await addDoc(collection(db, 'shopItems'), shopItemData);
+                    console.log("Shop Item Draft Created for SpaceCard:", newCard.id);
+
+                } catch (shopError) {
+                    console.error("Error creating shop draft:", shopError);
+                    // Don't block the main success flow, just log it
+                }
+            }
+
             alert(`Card "${title}" created successfully!`);
             if (onCreated) onCreated(newCard);
             onClose();
@@ -1171,23 +1206,41 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                             )}
 
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Base Price (USD)</label>
-                                <input
-                                    type="number"
-                                    value={basePrice}
-                                    onChange={(e) => setBasePrice(parseFloat(e.target.value))}
-                                    min="0"
-                                    step="0.01"
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        background: '#222',
-                                        border: '1px solid #333',
-                                        borderRadius: '8px',
-                                        color: '#fff',
-                                        fontSize: '1rem'
-                                    }}
-                                />
+                                {/* SHOP INTEGRATION TOGGLE */}
+                                <div style={{
+                                    marginTop: '1.5rem',
+                                    padding: '1rem',
+                                    background: '#222',
+                                    borderRadius: '8px',
+                                    border: '1px solid #333'
+                                }}>
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={addToShopDraft}
+                                            onChange={(e) => setAddToShopDraft(e.target.checked)}
+                                            style={{
+                                                width: '18px',
+                                                height: '18px',
+                                                cursor: 'pointer',
+                                                accentColor: '#7FFFD4'
+                                            }}
+                                        />
+                                        <div>
+                                            <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: '#fff' }}>
+                                                Add to Shop as Draft
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: '#888' }}>
+                                                Create a draft listing in your shop to sell this card later.
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1222,7 +1275,8 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                     <div><strong>Discipline:</strong> {discipline}</div>
                                     <div><strong>Rarity:</strong> <span style={{ color: RARITY_TIERS[rarity].color }}>{rarity}</span></div>
                                     <div><strong>Edition:</strong> {editionType === EDITION_TYPES.LIMITED ? `Limited(${editionSize})` : editionType}</div>
-                                    <div><strong>Price:</strong> ${basePrice.toFixed(2)}</div>
+                                    <div><strong>Edition:</strong> {editionType === EDITION_TYPES.LIMITED ? `Limited(${editionSize})` : editionType}</div>
+                                    {/* <div><strong>Price:</strong> ${basePrice.toFixed(2)}</div> */}
                                     {description && <div><strong>Description:</strong> {description}</div>}
                                     <div style={{
                                         marginTop: '1rem',
@@ -1249,6 +1303,22 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                         }}>
                                             <FaRocket style={{ marginRight: '0.5rem' }} />
                                             A new post will also be created on your feed.
+                                        </div>
+                                    )}
+
+                                    {addToShopDraft && (
+                                        <div style={{
+                                            marginTop: '0.5rem',
+                                            padding: '1rem',
+                                            background: 'rgba(127, 255, 212, 0.1)',
+                                            border: '1px solid #7FFFD4',
+                                            borderRadius: '8px',
+                                            fontSize: '0.9rem',
+                                            display: 'flex',
+                                            alignItems: 'center'
+                                        }}>
+                                            <FaShoppingCart style={{ marginRight: '0.5rem' }} />
+                                            A draft item will be added to your shop.
                                         </div>
                                     )}
                                 </div>

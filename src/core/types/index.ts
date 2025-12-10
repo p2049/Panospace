@@ -13,6 +13,8 @@ import { Timestamp, DocumentReference } from 'firebase/firestore';
 
 export type AccountType = 'artist' | 'standard';
 
+export type ShopStatus = 'none' | 'pending' | 'verified' | 'suspended';
+
 export interface UserProfile {
     uid: string;
     email: string;
@@ -22,6 +24,22 @@ export interface UserProfile {
     bio?: string;
     accountType: AccountType; // NEW: Support dual account types
     linkedArtistId?: string; // NEW: Link standard users to artist profiles
+
+    // Shop & Marketplace (Authentication/Onboarding)
+    dateOfBirth?: string; // ISO date: "YYYY-MM-DD"
+    shopStatus?: ShopStatus;
+    shopVerified?: boolean; // derive: verified only when status === "verified"
+    shopLegalName?: string;
+    shopCountry?: string;
+    shopCity?: string;
+    shopRegion?: string;
+    shopPostalCode?: string;
+    shopAddressLine1?: string;
+    shopAddressLine2?: string;
+    shopTaxIdLast4?: string | null;
+    shopPayoutProvider?: 'stripe' | 'paypal' | 'none' | null;
+    shopPayoutSetupCompleted?: boolean;
+    shopRulesAcceptedAt?: string | null; // ISO timestamp
 
     // Disciplines (for artists)
     disciplines?: {
@@ -191,6 +209,9 @@ export interface Earnings {
     totalCents: number;
 }
 
+export type ShopItemKind = 'print' | 'spacecard' | 'magazine' | 'yearbook' | 'other';
+export type ShopItemStatus = 'draft' | 'active' | 'archived';
+
 export interface ShopItem {
     id: string;
     authorId: string;
@@ -198,14 +219,23 @@ export interface ShopItem {
     authorPhoto?: string;
 
     // Link to source post
-    postRef: string; // Post ID
+    postRef: string; // Post ID (Legacy/Primary link)
+    sourcePostId?: string; // Link back to the post / space card (New standard)
     postRefDoc?: DocumentReference; // Optional Firestore reference
 
     // Content
+    kind: ShopItemKind;
+    status: ShopItemStatus; // "draft" vs "active" is critical
     title: string;
     description?: string;
     imageUrl: string;
     tags: string[];
+
+    // Pricing (Base/Default)
+    baseCostCents: number;  // internal cost (from Printify/Printful or your catalog)
+    markupCents: number;    // artist markup
+    priceCents: number;     // = baseCostCents + markupCents (derived/store for performance)
+    currency: "USD";
 
     // Variants & Pricing
     printSizes: PrintSize[];
@@ -404,4 +434,39 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
     pageSize: number;
     totalPages?: number;
     hasMore: boolean;
+}
+
+// ============================================
+// APP EVENTS & CURATED CONTENT
+// ============================================
+
+export type AppEventCategory = "weekly" | "daily" | "contest" | "seasonal" | "special";
+export type AppEventType = "style_of_week" | "daily_feature" | "contest" | "special_event";
+
+export interface AppEvent {
+    id: string;
+    name: string;
+    tag: string; // e.g., "filmnoirweek" (no hash)
+    category: AppEventCategory;
+    type: AppEventType;
+    description: string;
+
+    // Dates
+    startDate: Timestamp;
+    endDate: Timestamp;
+    visibleDate: Timestamp; // When it appears in calendar/search
+
+    // Status
+    active: boolean;   // True when effectively "live"
+    archived: boolean; // True when moved to archive
+
+    // Metadata
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
+}
+
+export interface AppEventFeedItem {
+    postId: string;
+    createdAt: Timestamp;
+    score?: number; // Optional precomputed score for sorting
 }
