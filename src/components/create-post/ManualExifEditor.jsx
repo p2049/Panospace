@@ -28,11 +28,34 @@ const ManualExifEditor = ({
 }) => {
     return (
         <div className="exif-section">
-            <div className="exif-header">
-                <span><FaCamera /> Camera Data</span>
+            <div className="exif-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', color: '#7FFFD4' }}>
+                    <FaCamera /> Camera Data
+                </span>
                 <button
                     className="btn-edit-exif"
                     onClick={() => setShowManualExif(prev => ({ ...prev, [activeSlideIndex]: true }))}
+                    style={{
+                        background: 'rgba(127, 255, 212, 0.1)',
+                        border: '1px solid rgba(127, 255, 212, 0.3)',
+                        borderRadius: '6px',
+                        color: '#7FFFD4',
+                        padding: '0.4rem 0.8rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                    }}
+                    onMouseEnter={e => {
+                        e.target.style.background = 'rgba(127, 255, 212, 0.2)';
+                        e.target.style.borderColor = '#7FFFD4';
+                    }}
+                    onMouseLeave={e => {
+                        e.target.style.background = 'rgba(127, 255, 212, 0.1)';
+                        e.target.style.borderColor = 'rgba(127, 255, 212, 0.3)';
+                    }}
                 >
                     {hasExif ? 'Edit Data' : 'Add Data'}
                 </button>

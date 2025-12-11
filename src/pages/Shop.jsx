@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { useAuth } from '@/context/AuthContext';
 import { FaShoppingBag, FaTag } from 'react-icons/fa';
 import SmartImage from '@/components/SmartImage';
 import ShopItemCard from '@/components/ui/cards/ShopItemCard';
 import { PageSkeleton } from '@/components/ui/Skeleton';
+import CreateShopItemModal from '@/components/shop/CreateShopItemModal';
 
 // Helper to sanitize and validate shop items from Firestore
 const sanitizeShopItem = (raw) => {
@@ -55,34 +57,36 @@ const sanitizeShopItem = (raw) => {
 
 const Shop = () => {
     const navigate = useNavigate();
+    const { currentUser } = useAuth(); // Need auth context
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const fetchShopItems = async () => {
+        try {
+            const q = query(
+                collection(db, 'shopItems'),
+                orderBy('createdAt', 'desc'),
+                limit(20)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const fetchedItems = querySnapshot.docs
+                .map(doc => sanitizeShopItem({ id: doc.id, ...doc.data() }))
+                .filter(Boolean); // Filter out nulls (drafts, broken items)
+
+            setItems(fetchedItems);
+        } catch (err) {
+            console.error("Error fetching shop items:", err);
+            // Graceful error handling - don't crash, just show empty or error state
+            setError("Failed to load shop items.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchShopItems = async () => {
-            try {
-                const q = query(
-                    collection(db, 'shopItems'),
-                    orderBy('createdAt', 'desc'),
-                    limit(20)
-                );
-
-                const querySnapshot = await getDocs(q);
-                const fetchedItems = querySnapshot.docs
-                    .map(doc => sanitizeShopItem({ id: doc.id, ...doc.data() }))
-                    .filter(Boolean); // Filter out nulls (drafts, broken items)
-
-                setItems(fetchedItems);
-            } catch (err) {
-                console.error("Error fetching shop items:", err);
-                // Graceful error handling - don't crash, just show empty or error state
-                setError("Failed to load shop items.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchShopItems();
     }, []);
 
@@ -104,13 +108,29 @@ const Shop = () => {
         );
     }
 
+    // Determine if user can add items (shop enabled)
+    // NOTE: using currentUser check. Adjust property name if specific claim exists.
+    const canManageShop = currentUser && (currentUser.shopEnabled || currentUser.isShopEnabled);
+
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '80px' }}>
             {/* Header */}
-            <div style={{ padding: '2rem', borderBottom: '1px solid #222', position: 'sticky', top: 0, background: '#000', zIndex: 10 }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ padding: '2rem', borderBottom: '1px solid #222', position: 'sticky', top: 0, background: '#000', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                     <FaShoppingBag /> Shop
                 </h1>
+
+                {canManageShop && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        style={{
+                            background: 'var(--ice-mint)', color: '#000', border: 'none', borderRadius: '8px',
+                            padding: '0.6rem 1rem', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem'
+                        }}
+                    >
+                        + Add Item
+                    </button>
+                )}
             </div>
 
             {/* Grid */}
@@ -128,6 +148,18 @@ const Shop = () => {
                     </div>
                 )}
             </div>
+
+            {/* Create Modal */}
+            {isCreateModalOpen && (
+                <CreateShopItemModal
+                    onClose={() => setIsCreateModalOpen(false)}
+                    onCreated={() => {
+                        setIsCreateModalOpen(false);
+                        fetchShopItems(); // Refresh
+                        navigate('/shop-drafts'); // Optional: redirect to drafts if that's the flow
+                    }}
+                />
+            )}
         </div>
     );
 };

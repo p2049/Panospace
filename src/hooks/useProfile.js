@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, getDocs, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
+import { logger } from '@/core/utils/logger';
 
 /**
  * useProfile Hook
@@ -57,9 +58,28 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     const userDoc = await getDoc(doc(db, 'users', userId));
                     if (userDoc.exists()) {
                         userData = { id: userDoc.id, ...userDoc.data() };
+
+                        // --- MIGRATION: Ensure ONE SINGLE USERNAME ---
+                        if (!userData.username) {
+                            // Generate unique temp username locally to display immediately
+                            const baseName = (userData.displayName || 'user').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
+                            const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+                            const tempUsername = `${baseName}${randomSuffix}`;
+
+                            userData.username = tempUsername;
+                            userData.needsUsernameSelection = true;
+
+                            // Persist async (fire & forget)
+                            import('firebase/firestore').then(({ updateDoc, doc }) => {
+                                updateDoc(doc(db, 'users', userId), {
+                                    username: tempUsername,
+                                    needsUsernameSelection: true
+                                }).catch(err => console.error("Migration failed:", err));
+                            });
+                        }
                     }
                 } catch (e) {
-                    console.warn('Error fetching user doc:', e);
+                    logger.warn('Error fetching user doc:', e);
                 }
 
                 if (!userData && currentUser && userId === currentUser.uid) {
@@ -80,7 +100,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     setBadges([]);
                 }
             } catch (error) {
-                console.error('Error loading profile:', error);
+                logger.error('Error loading profile:', error);
             } finally {
                 if (isMountedRef.current) setLoading(false);
             }
@@ -108,7 +128,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     );
                     const postsSnap = await getDocs(userPostsQuery);
 
-                    console.log(`[useProfile] Fetched ${postsSnap.docs.length} raw posts for user ${userId}`);
+                    logger.log(`[useProfile] Fetched ${postsSnap.docs.length} raw posts for user ${userId}`);
 
                     if (isMountedRef.current) {
                         const filteredPosts = postsSnap.docs
@@ -121,13 +141,13 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                                 // 2. Filter showInProfile (TEMPORARILY DISABLED)
                                 const notHidden = true; // post.showInProfile !== false;
 
-                                if (!matchesType) console.log(`[useProfile] Filtered out post ${post.id}: wrong type (${postType} != ${feedType})`);
+                                if (!matchesType) logger.log(`[useProfile] Filtered out post ${post.id}: wrong type (${postType} != ${feedType})`);
                                 // if (!notHidden) console.log(`[useProfile] Filtered out post ${post.id}: hidden from profile`);
 
                                 return matchesType && notHidden;
                             });
 
-                        console.log(`[useProfile] Final posts count: ${filteredPosts.length}`);
+                        logger.log(`[useProfile] Final posts count: ${filteredPosts.length}`);
                         setPosts(filteredPosts.slice(0, 20)); // Limit back to 20
                     }
                 }
@@ -157,7 +177,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     }
                 }
             } catch (err) {
-                console.error(`Error fetching ${activeTab} data:`, err);
+                logger.error(`Error fetching ${activeTab} data:`, err);
             }
         };
 
@@ -179,7 +199,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     setBadges(badgesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
                 }
             } catch (err) {
-                console.error('Error fetching badges:', err);
+                logger.error('Error fetching badges:', err);
             }
         };
         fetchBadges();
@@ -208,7 +228,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     setFollowDocId(null);
                 }
             } catch (error) {
-                console.error('Error checking follow status:', error);
+                logger.error('Error checking follow status:', error);
             }
         };
 

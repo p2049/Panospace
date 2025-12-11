@@ -4,6 +4,7 @@ import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { logger } from "@/core/utils/logger";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,7 +33,7 @@ if (typeof window !== "undefined") {
             analytics = getAnalytics(app);
         }
     }).catch((err) => {
-        console.warn("Firebase Analytics not supported in this environment:", err.message);
+        logger.warn("Firebase Analytics not supported in this environment:", err.message);
     });
 }
 
@@ -44,25 +45,25 @@ if (typeof window !== "undefined" && window.location.hostname === "localhost") {
     // Auth Emulator
     if (import.meta.env.VITE_USE_AUTH_EMULATOR === 'true') {
         connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
-        console.log("✓ Connected to Auth Emulator");
+        logger.log("✓ Connected to Auth Emulator");
     }
 
     // Firestore Emulator
     if (import.meta.env.VITE_USE_FIRESTORE_EMULATOR === 'true') {
         connectFirestoreEmulator(db, "localhost", 8080);
-        console.log("✓ Connected to Firestore Emulator");
+        logger.log("✓ Connected to Firestore Emulator");
     }
 
     // Storage Emulator
     if (import.meta.env.VITE_USE_STORAGE_EMULATOR === 'true') {
         connectStorageEmulator(storage, "localhost", 9199);
-        console.log("✓ Connected to Storage Emulator");
+        logger.log("✓ Connected to Storage Emulator");
     }
 
     // Functions Emulator
     if (import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true') {
         connectFunctionsEmulator(functions, "localhost", 5001);
-        console.log("✓ Connected to Functions Emulator");
+        logger.log("✓ Connected to Functions Emulator");
     }
 }
 

@@ -5,6 +5,7 @@ import { FaStore, FaLock, FaCheck, FaExclamationTriangle, FaShieldAlt } from 're
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/firebase';
 import { countries } from 'countries-list';
+import PanoDateInput from '@/components/common/PanoDateInput';
 
 const countryOptions = Object.entries(countries).map(([code, data]) => ({
     code,
@@ -154,12 +155,14 @@ const ShopSetupPage = () => {
                 </p>
                 <div style={{ padding: '1.5rem', background: '#111', borderRadius: '12px', border: '1px solid #333', textAlign: 'left', width: '100%', maxWidth: '400px' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#888' }}>Date of Birth</label>
-                    <input
-                        type="date"
-                        name="dateOfBirth"
-                        value={formData.dateOfBirth}
-                        onChange={handleInputChange}
-                        style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #333', background: '#000', color: '#fff' }}
+                    <PanoDateInput
+                        selected={formData.dateOfBirth ? new Date(formData.dateOfBirth + 'T12:00:00') : null} // Add time to prevent timezone shift issues on pure dates
+                        onChange={(date) => {
+                            const dateString = date ? date.toISOString().split('T')[0] : '';
+                            setFormData(prev => ({ ...prev, dateOfBirth: dateString }));
+                        }}
+                        placeholder="Select Date of Birth"
+                        className="shop-setup-date-input"
                     />
                     <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
                         You must be at least 18 years old. This will not be shown publicly on your profile.

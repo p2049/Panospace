@@ -10,6 +10,7 @@ import SpaceCardBadge from './SpaceCardBadge';
 import SoundTagBadge from './SoundTagBadge';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { logger } from '@/core/utils/logger';
 import '@/styles/film-strip-post.css';
 
 /**
@@ -38,7 +39,7 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                     setAuthorPhoto(userDocSnap.data().photoURL);
                 }
             } catch (err) {
-                console.warn("Error fetching author photo", err);
+                logger.warn("Error fetching author photo", err);
             }
         };
         fetchAuthorPhoto();
@@ -67,21 +68,25 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
             <div className="cyber-film-strip-scroll-container" style={{
                 height: '100%',
                 width: '100%',
-                padding: '0 5vw 2rem 5vw', // Bottom padding for scrollbar
-                gap: '2rem',
-                // Center if 1 or 2 items so they appear in middle of screen
-                justifyContent: images.length <= 2 ? 'center' : 'flex-start',
-                alignItems: 'center'
+                // Hide scrollbar padding if items fit (<= 3)
+                padding: images.length <= 3 ? '0 5vw' : '0 5vw 2rem 5vw',
+                gap: '4rem', // Increased spacing
+                // Center if 3 or fewer items so they appear in middle of screen
+                justifyContent: images.length <= 3 ? 'center' : 'flex-start',
+                alignItems: 'center',
+                // Explicitly hide scrollbar if compact
+                overflowX: images.length <= 3 ? 'hidden' : 'auto'
             }}>
 
                 {images.map((item, index) => {
                     const url = item.url || item;
-                    const isUrl = typeof url === 'string' && url.match(/^http/);
+                    const isUrl = typeof url === 'string' && (url.startsWith('http') || url.startsWith('blob:'));
+                    const instantStyle = uiOverlays?.instantPhotoStyle || 'thick';
 
                     return (
                         <div
                             key={index}
-                            className="instant-photo-frame-wrapper"
+                            className={`instant-photo-frame-wrapper ${instantStyle === 'thin' ? 'thin' : ''}`}
                             style={{
                                 height: 'auto',
                                 display: 'flex',
@@ -89,7 +94,10 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                                 justifyContent: 'center'
                             }}
                         >
-                            <InstantPhotoFrame>
+                            <InstantPhotoFrame
+                                quartzDate={uiOverlays?.quartzDate}
+                                style={uiOverlays?.instantPhotoStyle || 'thick'} // Default to 'thick' for legacy posts
+                            >
                                 {isUrl ? (
                                     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                                         <SmartImage
@@ -100,9 +108,6 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                                             className="polaroid-image"
                                             style={{ width: '100%', height: '100%' }}
                                         />
-                                        {uiOverlays?.quartzDate && (
-                                            <DateStampOverlay quartzDate={uiOverlays.quartzDate} />
-                                        )}
                                     </div>
                                 ) : (
                                     <div style={{
@@ -247,19 +252,7 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
 
             {/* Actions (Bottom Right) */}
             <div className="post-actions-container">
-                {images.length > 1 && (
-                    <div style={{
-                        color: 'rgba(255, 255, 255, 0.85)',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        fontFamily: '"Rajdhani", monospace',
-                        letterSpacing: '1px',
-                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
-                        marginRight: '10px'
-                    }}>
-                        {images.length} PHOTOS
-                    </div>
-                )}
+                {/* Photo count removed */}
                 <LikeButton postId={post?.id} />
             </div>
         </div>

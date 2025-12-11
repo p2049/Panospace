@@ -387,7 +387,77 @@ const Settings = () => {
                     />
                 </div>
 
-
+                {/* Content Preferences Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>CONTENT PREFERENCES</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <div
+                        onClick={toggleNSFW}
+                        style={{
+                            width: '100%',
+                            height: '50px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0 20px',
+                            background: 'transparent',
+                            border: '1px solid rgba(110, 255, 216, 0.15)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #d8fff1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            marginBottom: '8px'
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <FaShieldAlt size={18} color="var(--accent, #6effd8)" />
+                            <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>Show Sensitive Content</span>
+                        </div>
+                        <div style={{
+                            width: '44px',
+                            height: '24px',
+                            borderRadius: '12px',
+                            background: showNSFW ? 'var(--accent, #6effd8)' : 'rgba(255,255,255,0.2)',
+                            position: 'relative',
+                            transition: 'background 0.2s'
+                        }}>
+                            <div style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#fff',
+                                position: 'absolute',
+                                top: '2px',
+                                left: showNSFW ? '22px' : '2px',
+                                transition: 'left 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                            }} />
+                        </div>
+                    </div>
+                    <p style={{
+                        fontSize: '0.8rem',
+                        color: 'var(--text-secondary, #6b7f78)',
+                        margin: '0 20px',
+                        opacity: 0.8
+                    }}>
+                        {showNSFW
+                            ? 'Sensitive content will be shown without warnings'
+                            : 'Sensitive content is hidden behind a warning overlay'}
+                    </p>
+                </div>
 
 
 

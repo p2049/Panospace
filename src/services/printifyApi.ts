@@ -5,6 +5,8 @@
  * Replaces legacy Printful API calls.
  */
 
+import { logger } from '@/core/utils/logger';
+
 const MOCK_DELAY = 500;
 
 export interface PrintifyOrderResponse {
@@ -37,7 +39,7 @@ export const printifyApi = {
      * Submit an order to Printify
      */
     async submitOrder(orderDetails: any): Promise<PrintifyOrderResponse> {
-        console.log('[Printify] Submitting order:', orderDetails);
+        logger.log('[Printify] Submitting order:', orderDetails);
         await new Promise(resolve => setTimeout(resolve, MOCK_DELAY));
 
         return {
@@ -64,7 +66,7 @@ export const printifyApi = {
      * Calculate shipping costs
      */
     async calculateShipping(address: any, items: any[]): Promise<ShippingCost> {
-        console.log('[Printify] Calculating shipping for:', { address, items });
+        logger.log('[Printify] Calculating shipping for:', { address, items });
         await new Promise(resolve => setTimeout(resolve, MOCK_DELAY));
 
         // Mock logic: $5 base + $1 per item
@@ -79,7 +81,7 @@ export const printifyApi = {
      * Sync a product to Printify (create blueprint)
      */
     async syncProduct(productData: any): Promise<SyncResponse> {
-        console.log('[Printify] Syncing product:', productData);
+        logger.log('[Printify] Syncing product:', productData);
         await new Promise(resolve => setTimeout(resolve, MOCK_DELAY));
 
         return {

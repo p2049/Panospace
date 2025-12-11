@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaCamera, FaTimes } from 'react-icons/fa';
+import { FaCamera, FaTimes, FaCalendarAlt } from 'react-icons/fa';
+import PanoDateInput from '@/components/common/PanoDateInput';
+
 import { validateExifData } from '@/core/utils/exif';
 
 /**
@@ -18,8 +20,17 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
     dateTime: '',
   });
 
-  // Pre-fill with existing EXIF if available
+  // Helper to get local ISO string (YYYY-MM-DDTHH:mm) prevents timezone shifting
+  const toLocalISOString = (date) => {
+    const pad = (num) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  // Pre-fill with existing EXIF if available, or default to now for date
   useEffect(() => {
+    // Default to current local time, not UTC
+    const defaultDate = toLocalISOString(new Date());
+
     if (existingExif) {
       setFormData({
         make: existingExif.make || '',
@@ -29,8 +40,11 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
         fNumber: existingExif.fNumber || '',
         exposureTime: existingExif.exposureTime || '',
         iso: existingExif.iso || '',
-        dateTime: existingExif.dateTime || '',
+        dateTime: existingExif.dateTime || defaultDate,
       });
+    } else {
+      // Initialize with default date if no existing data
+      setFormData(prev => ({ ...prev, dateTime: defaultDate }));
     }
   }, [existingExif]);
 
@@ -53,6 +67,8 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
 
     onSave(exifData);
   };
+
+
 
   return (
     <div className="manual-exif-form">
@@ -120,6 +136,7 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
             className="exif-input"
             min="1"
             max="2000"
+            step="1"
           />
         </div>
 
@@ -161,17 +178,19 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
             className="exif-input"
             min="50"
             max="409600"
+            step="50"
           />
         </div>
 
         {/* Shot Date */}
-        <div className="exif-form-field full-width">
+        <div className="exif-form-field full-width custom-datepicker-wrapper">
           <label>Shot Date</label>
-          <input
-            type="datetime-local"
-            value={formData.dateTime}
-            onChange={(e) => handleChange('dateTime', e.target.value)}
-            className="exif-input"
+          <PanoDateInput
+            selected={formData.dateTime ? new Date(formData.dateTime) : new Date()}
+            onChange={(date) => handleChange('dateTime', date ? toLocalISOString(date) : '')}
+            showTimeSelect
+            placeholder="Select date & time"
+            popperPlacement="top-end"
           />
         </div>
       </div>
@@ -192,6 +211,7 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
         </button>
       </div>
 
+      {/* Scoped styles for layout */}
       <style jsx>{`
         .manual-exif-form {
           background: var(--graphite);
@@ -265,6 +285,7 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
           color: #fff;
           font-size: 0.9rem;
           transition: border-color 0.2s, background 0.2s;
+          width: 100%;
         }
 
         .exif-input:focus {
@@ -275,15 +296,6 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
 
         .exif-input::placeholder {
           color: rgba(255, 255, 255, 0.3);
-        }
-
-        .exif-input[type="datetime-local"] {
-          color-scheme: dark;
-        }
-
-        .exif-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-          filter: invert(1);
-          cursor: pointer;
         }
 
         .exif-form-actions {
@@ -306,9 +318,6 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
         .exif-btn-secondary {
           background: transparent;
           border: 1px solid rgba(255, 255, 255, 0.2);
-          color: var(--slate);
-        }
-
         .exif-btn-secondary:hover {
           background: rgba(255, 255, 255, 0.05);
           color: #fff;
@@ -338,6 +347,204 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
             grid-column: 1;
           }
         }
+      `}</style>
+
+      {/* GLOBAL OVERRIDES FOR REACT-DATEPICKER POPAL */}
+      <style>{`
+         /* Force Input Text Color to Green */
+         .custom-datepicker-wrapper input.exif-input {
+             color: #7FFFD4 !important;
+             font-family: 'Rajdhani', sans-serif !important;
+             font-weight: 600 !important;
+             letter-spacing: 0.5px !important; /* Tighter letter spacing */
+             text-transform: uppercase !important;
+             font-size: 0.85rem !important; /* Smaller font to fit date string */
+             padding-right: 30px !important; /* Make room for icon */
+             white-space: nowrap !important;
+             overflow: hidden !important;
+             text-overflow: ellipsis !important;
+         }
+
+         /* Main Container */
+         .react-datepicker {
+            font-family: 'Rajdhani', sans-serif !important;
+            background-color: #0f0f0f !important;
+            border: 1px solid rgba(127, 255, 212, 0.3) !important;
+            border-radius: 12px !important;
+            color: #fff !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.95) !important;
+            font-size: 0.9rem !important;
+            display: flex !important;
+            overflow: hidden !important; /* Clip corners */
+         }
+         
+         /* Remove default triangle/arrow pointer */
+         .react-datepicker__triangle {
+             display: none !important;
+         }
+
+         /* Header Section (Month/Year) */
+         .react-datepicker__header {
+            background-color: #161616 !important;
+            border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+            padding: 12px 0 8px 0 !important;
+            position: relative !important;
+            width: 280px !important;
+         }
+         
+         /* Time Header Section */
+         .react-datepicker__header--time {
+             padding-top: 11px !important; /* Text down 1px more */
+             padding-bottom: 4px !important; /* Box border UP (reduced padding) */
+             padding-left: 0 !important;
+             padding-right: 15px !important;
+             width: 80px !important;
+         }
+
+         /* Navigation Arrows */
+         .react-datepicker__navigation {
+             top: 13px !important; /* Vertically align with text */
+             height: 24px !important; /* Increase hit area */
+             width: 24px !important;
+             overflow: visible !important;
+         }
+         .react-datepicker__navigation--previous { left: 10px !important; }
+         .react-datepicker__navigation--next { right: 10px !important; }
+         
+         .react-datepicker__navigation-icon::before {
+             border-color: #7FFFD4 !important;
+             border-width: 2px 2px 0 0 !important;
+             height: 8px !important;
+             width: 8px !important;
+             top: 6px !important; /* Center inside button */
+             left: 6px !important;
+         }
+
+         /* Header Text */
+         .react-datepicker__current-month, 
+         .react-datepicker-time__header {
+            color: #7FFFD4 !important;
+            font-family: 'Orbitron', sans-serif !important;
+            text-transform: uppercase !important;
+            letter-spacing: 2px !important;
+            font-size: 0.95rem !important;
+            margin: 0 !important;
+            line-height: 24px !important; /* Match arrow height */
+            display: inline-block !important; /* Ensure line-height works */
+         }
+
+         /* Day Grid Container */
+         .react-datepicker__month-container {
+            width: 280px !important;
+            background: #0f0f0f !important;
+         }
+         
+         .react-datepicker__month {
+             margin: 5px 10px 10px 10px !important; /* Tighter margins */
+         }
+
+         /* Day Names Row */
+         .react-datepicker__day-names {
+             margin-top: 5px !important;
+         }
+         .react-datepicker__day-name {
+            color: rgba(255,255,255,0.4) !important;
+            width: 2rem !important;
+            line-height: 2rem !important;
+            margin: 0.15rem !important;
+            font-size: 0.8rem !important;
+         }
+         
+         /* Individual Days */
+         .react-datepicker__day {
+            color: #fff !important; /* FORCE WHITE TEXT */
+            border-radius: 50% !important;
+            transition: all 0.2s !important;
+            width: 2rem !important;
+            line-height: 2rem !important;
+            margin: 0.15rem !important;
+            font-size: 0.9rem !important;
+            background-color: transparent !important;
+         }
+         
+         /* Selected Day & Today */
+         .react-datepicker__day:hover {
+            background-color: rgba(127, 255, 212, 0.15) !important;
+            color: #7FFFD4 !important;
+         }
+         
+         .react-datepicker__day--selected, 
+         .react-datepicker__day--keyboard-selected {
+            background-color: #7FFFD4 !important;
+            color: #000 !important; /* Black text on selected */
+            font-weight: 700 !important;
+            box-shadow: 0 0 15px rgba(127,255,212,0.4) !important; 
+         }
+         
+         /* Fix for blue default selection or today */
+         .react-datepicker__day--today {
+             border: 1px solid rgba(127, 255, 212, 0.5) !important;
+             color: #7FFFD4 !important;
+         }
+         .react-datepicker__day--selected.react-datepicker__day--today {
+             background-color: #7FFFD4 !important;
+             color: #000 !important;
+         }
+
+         .react-datepicker__day--outside-month {
+             color: rgba(255,255,255,0.1) !important;
+         }
+
+         /* Time Container */
+         .react-datepicker__time-container {
+            border-left: 1px solid rgba(255,255,255,0.08) !important;
+            background-color: #0f0f0f !important;
+            width: 80px !important;
+         }
+         
+         .react-datepicker__time-box {
+             border-radius: 0 !important;
+             width: 100% !important;
+             margin: 0 !important;
+         }
+         
+         /* Scrollbar Styling for Time List */
+         .react-datepicker__time-list {
+             background-color: #0f0f0f !important;
+             height: 230px !important; /* Reduce height to remove bottom space */
+             padding: 0 !important;
+         }
+         .react-datepicker__time-list::-webkit-scrollbar {
+             width: 4px;
+             background: #0f0f0f;
+         }
+         .react-datepicker__time-list::-webkit-scrollbar-thumb {
+             background: #333;
+             border-radius: 2px;
+         }
+
+         .react-datepicker__time-list-item {
+            color: #ccc !important;
+            height: 36px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 0.85rem !important;
+            transition: all 0.1s ease;
+         }
+         
+         .react-datepicker__time-list-item:hover {
+            background-color: rgba(127, 255, 212, 0.1) !important;
+            color: #fff !important;
+         }
+         
+         .react-datepicker__time-list-item--selected {
+            background-color: rgba(127, 255, 212, 0.2) !important;
+            color: #7FFFD4 !important;
+            font-weight: 700 !important;
+            border-left: 2px solid #7FFFD4 !important;
+         }
       `}</style>
     </div>
   );

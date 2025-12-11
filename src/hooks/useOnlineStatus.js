@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/core/utils/logger';
 
 /**
  * useOnlineStatus - Hook to detect online/offline status
@@ -9,12 +10,12 @@ export const useOnlineStatus = () => {
 
     useEffect(() => {
         const handleOnline = () => {
-            console.log('🟢 Connection restored');
+            logger.log('🟢 Connection restored');
             setIsOnline(true);
         };
 
         const handleOffline = () => {
-            console.log('🔴 Connection lost');
+            logger.log('🔴 Connection lost');
             setIsOnline(false);
         };
 

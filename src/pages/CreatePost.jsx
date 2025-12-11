@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCreatePost } from '@/hooks/useCreatePost';
 import { useCollections } from '@/hooks/useCollections';
-import { PRINT_TIERS } from '@/domain/shop/pricing';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { useDraftSaving } from '@/hooks/useDraftSaving';
 
@@ -12,16 +11,17 @@ import ImageCarousel from '@/components/create-post/ImageCarousel';
 import TagCategoryPanel from '@/components/create-post/TagCategoryPanel';
 import FilmOptionsPanel from '@/components/create-post/FilmOptionsPanel';
 import ManualExifEditor from '@/components/create-post/ManualExifEditor';
-import ShopConfiguration from '@/components/create-post/ShopConfiguration';
 import CollectionSelector from '@/components/create-post/CollectionSelector';
 import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
-import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft } from 'react-icons/fa';
+import Post from '@/components/Post';
 import { extractDominantHue } from '@/core/utils/colorUtils';
 import { generateStackPreview } from '@/core/utils/stackUtils';
+import { logger } from '@/core/utils/logger';
 
 
 
@@ -112,7 +112,7 @@ const CreatePost = () => {
 
     // Tag Panel State
     const [expandedCategories, setExpandedCategories] = useState({
-        aesthetic: true,
+        aesthetics: true,
         style: false,
         subject: false,
         technical: false
@@ -135,6 +135,7 @@ const CreatePost = () => {
     const [enableSprocketOverlay, setEnableSprocketOverlay] = useState(false);
     const [enableInstantPhotoOverlay, setEnableInstantPhotoOverlay] = useState(false);
     const [instantPhotoCount, setInstantPhotoCount] = useState(1); // 1, 2, or 3 images per slide
+    const [instantPhotoStyle, setInstantPhotoStyle] = useState('thin'); // 'thin' or 'thick'
     const [filmMode, setFilmMode] = useState('continuous'); // 'continuous' or 'cut'
     const [enableQuartzDate, setEnableQuartzDate] = useState(false);
     const [enableRatings, setEnableRatings] = useState(true); // true = 5-star rating, false = simple like
@@ -146,7 +147,7 @@ const CreatePost = () => {
         const y = String(today.getFullYear()).slice(2);
         return `${d.padStart(2, '0')} ${m.padStart(2, '0')} ${y}`;
     });
-    const [quartzColor, setQuartzColor] = useState('#ffaa00');
+    const [quartzColor, setQuartzColor] = useState('#7FFFD4');
     const [quartzDateFormat, setQuartzDateFormat] = useState('DD MM YY');
 
     const [shareTitleAcrossImages, setShareTitleAcrossImages] = useState(true); // Share title across all images
@@ -154,6 +155,7 @@ const CreatePost = () => {
 
     // Digital Collectibles State
     const [createSpaceCard, setCreateSpaceCard] = useState(false);
+    const [showFeedPreview, setShowFeedPreview] = useState(false);
     const [spaceCardData, setSpaceCardData] = useState({
         title: '',
         price: 0,
@@ -171,7 +173,12 @@ const CreatePost = () => {
 
     const handleInstantPhotoToggle = (val) => {
         setEnableInstantPhotoOverlay(val);
-        if (val) setEnableSprocketOverlay(false);
+        if (val) {
+            setEnableSprocketOverlay(false);
+            setQuartzColor('#333333'); // Dark Gray for white border
+        } else {
+            setQuartzColor('#7FFFD4'); // Revert to Ice Mint
+        }
     };
 
     // Handle file selection
@@ -195,9 +202,6 @@ const CreatePost = () => {
             file,
             preview: URL.createObjectURL(file),
             title: '', // Changed from caption to title
-            addToShop: false,
-            productTier: PRINT_TIERS.ECONOMY,
-            includeStickers: false,
             exif: null,
             manualExif: commonExif // Auto-fill with ALL EXIF fields from first slide
         }));
@@ -239,7 +243,11 @@ const CreatePost = () => {
 
     // Handle manual EXIF save for active slide
     const handleManualExifSave = (exifData) => {
-        updateSlide(activeSlideIndex, { manualExif: exifData });
+        // Safe Merge: Preserve any existing fields in manualExif that aren't in exifData
+        const existingManualExif = slides[activeSlideIndex].manualExif || {};
+        const mergedExif = { ...existingManualExif, ...exifData };
+
+        updateSlide(activeSlideIndex, { manualExif: mergedExif });
         setShowManualExif(prev => ({ ...prev, [activeSlideIndex]: false }));
     };
 
@@ -286,7 +294,7 @@ const CreatePost = () => {
                 preview: previewUrl
             });
         } catch (err) {
-            console.error("Stack reorder error:", err);
+            logger.error("Stack reorder error:", err);
             alert("Failed to reorder: " + err.message);
         } finally {
             setIsProcessingStack(false);
@@ -369,25 +377,13 @@ const CreatePost = () => {
         }
     };
 
-    // Handle "Add All to Shop"
-    const handleAddAllToShop = () => {
-        const allInShop = slides.every(s => s.addToShop);
-        const newState = !allInShop;
 
-        const updatedSlides = slides.map(slide => ({
-            ...slide,
-            addToShop: newState,
-            // Default to Economy if enabling and no tier set, otherwise keep existing
-            productTier: newState ? (slide.productTier || PRINT_TIERS.ECONOMY) : slide.productTier
-        }));
-        setSlides(updatedSlides);
-    };
 
     // Handle form submission
     const handleSubmit = async () => {
         // 🔒 DOUBLE-POST PREVENTION
         if (submittingRef.current || loading) {
-            console.warn('Submit blocked: already submitting');
+            logger.warn('Submit blocked: already submitting');
             return;
         }
         submittingRef.current = true;
@@ -424,24 +420,24 @@ const CreatePost = () => {
                 }
             }
         } catch (err) {
-            console.error('Error checking rate limit:', err);
+            logger.error('Error checking rate limit:', err);
             // Continue if check fails, don't block user for error
         }
 
         try {
-            console.log('🚀 Starting post creation...');
+            logger.log('🚀 Starting post creation...');
             // Get collection's postToFeed setting if a collection is selected
             const selectedCollection = selectedCollectionId
                 ? collections.find(c => c.id === selectedCollectionId)
                 : null;
 
-            console.log('📝 Processing slides...', slides.length);
+            logger.log('📝 Processing slides...', slides.length);
             // Apply shared title logic
             const processedSlides = shareTitleAcrossImages
                 ? slides.map(slide => ({ ...slide, title: title }))
                 : slides;
 
-            console.log('📤 Calling createPost...');
+            logger.log('📤 Calling createPost...');
             await createPost({
                 title,
                 tags,
@@ -453,18 +449,19 @@ const CreatePost = () => {
                 collectionPostToFeed: selectedCollection?.postToFeed ?? null,
                 showInProfile: showInProfile,
                 uiOverlays: {
-                    sprocketBorder: enableSprocketOverlay,
-                    instantPhotoBorder: enableInstantPhotoOverlay,
-                    instantPhotoCount: enableInstantPhotoOverlay ? instantPhotoCount : 1, // Store count
-                    filmMode: filmMode, // 'continuous' or 'cut'
+                    sprocketBorder: enableSprocketOverlay || false,
+                    instantPhotoBorder: enableInstantPhotoOverlay || false,
+                    instantPhotoCount: (enableInstantPhotoOverlay && instantPhotoCount) ? instantPhotoCount : 1,
+                    instantPhotoStyle: (enableInstantPhotoOverlay && instantPhotoStyle) ? instantPhotoStyle : 'thin',
+                    filmMode: filmMode || 'continuous',
                     quartzDate: enableQuartzDate ? {
-                        text: quartzDateString,
-                        color: quartzColor,
-                        format: quartzDateFormat
+                        text: quartzDateString || '',
+                        color: quartzColor || '#000000',
+                        format: quartzDateFormat || 'DD MM YY'
                     } : null
                 },
-                atmosphereBackground: slides.length === 1 ? atmosphereBackground : 'black',
-                gradientColor: slides.length === 1 ? extractedColor : null,
+                atmosphereBackground: (slides.length === 1 && atmosphereBackground) ? atmosphereBackground : 'black',
+                gradientColor: (slides.length === 1 && extractedColor) ? extractedColor : null,
             }, processedSlides);
 
             // Create SpaceCard if requested
@@ -510,7 +507,7 @@ const CreatePost = () => {
                         // console.log("SpaceCard created successfully");
                     }
                 } catch (cardError) {
-                    console.error("Error creating SpaceCard:", cardError);
+                    logger.error("Error creating SpaceCard:", cardError);
                     alert("Post created, but SpaceCard creation failed: " + cardError.message);
                 }
             }
@@ -522,7 +519,7 @@ const CreatePost = () => {
             // Navigate directly to feed without alert
             navigate('/');
         } catch (err) {
-            console.error('Error creating post:', err);
+            logger.error('Error creating post:', err);
             alert(`Failed to create post: ${err.message}`);
         } finally {
             submittingRef.current = false;
@@ -584,12 +581,77 @@ const CreatePost = () => {
             e.target.value = '';
         } catch (err) {
             alert(err.message);
-            console.error("Stack generation error:", err);
+            logger.error("Stack generation error:", err);
             e.target.value = ''; // Reset input to allow retrying
         } finally {
             setIsProcessingStack(false);
         }
     };
+
+    // --- Scroll Lock for Feed Preview ---
+    useEffect(() => {
+        if (showFeedPreview) {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+    }, [showFeedPreview]);
+
+    // --- Feed Preview Data and Overlay ---
+    const previewPostData = useMemo(() => {
+        return {
+            id: 'preview-id',
+            userId: currentUser?.uid,
+            username: currentUser?.displayName || 'Post Preview',
+            authorPhotoUrl: currentUser?.photoURL,
+            title: title,
+            location: location,
+            // Map slides to the structure Post expects
+            items: slides.map((s) => {
+                if (s.type === 'stack') {
+                    return {
+                        type: 'stack',
+                        url: s.preview,
+                        aspectRatio: s.aspectRatio,
+                        items: s.items
+                    };
+                }
+                return {
+                    type: 'image',
+                    url: s.preview,
+                    manualExif: s.manualExif,
+                };
+            }),
+            uiOverlays: {
+                sprocketBorder: enableSprocketOverlay,
+                instantPhotoBorder: enableInstantPhotoOverlay,
+                quartzDate: enableQuartzDate ? {
+                    text: quartzDateString,
+                    color: quartzColor,
+                    format: quartzDateFormat
+                } : null,
+                filmMode: filmMode,
+                instantPhotoStyle: instantPhotoStyle
+            },
+            atmosphereBackground: slides.length === 1 ? atmosphereBackground : 'black',
+            gradientColor: extractedColor,
+            spaceCardId: createSpaceCard ? 'preview-card' : null,
+            isSpaceCardCreator: true,
+            spaceCardRarity: spaceCardData.rarity,
+            tags: tags,
+            createdAt: { toDate: () => new Date() },
+            likes: 0,
+            comments: 0
+        };
+    }, [currentUser, title, location, slides, enableSprocketOverlay, enableInstantPhotoOverlay, enableQuartzDate, quartzDateString, quartzColor, quartzDateFormat, filmMode, instantPhotoStyle, atmosphereBackground, extractedColor, createSpaceCard, spaceCardData, tags]);
+
+
 
     return (
         <div className="create-post-container">
@@ -785,6 +847,33 @@ const CreatePost = () => {
                         moveSlide={moveSlide}
                         onAddMoreClick={() => fileInputRef.current?.click()}
                     />
+
+                    {/* FEED PREVIEW BUTTON */}
+                    {slides.length > 0 && (
+                        <button
+                            onClick={() => setShowFeedPreview(true)}
+                            style={{
+                                width: '100%',
+                                marginTop: '0.5rem',
+                                padding: '0.75rem',
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.9rem',
+                                transition: 'all 0.2s'
+                            }}
+                            className="preview-feed-btn"
+                        >
+                            <FaEye /> Feed Preview
+                        </button>
+                    )}
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -1054,52 +1143,11 @@ const CreatePost = () => {
                         setEnableSprocketOverlay={handleSprocketToggle}
                         enableInstantPhotoOverlay={enableInstantPhotoOverlay}
                         setEnableInstantPhotoOverlay={handleInstantPhotoToggle}
+                        instantPhotoStyle={instantPhotoStyle}
+                        setInstantPhotoStyle={setInstantPhotoStyle}
                     />
 
-                    {/* Film Aesthetics Section (Minimal for Film Mode if needed, but most logic is in panel) */}
-                    <div className="form-section">
-                        <h3><FaPalette style={{ marginRight: '0.5rem', marginBottom: '-2px' }} /> Aesthetics</h3>
 
-                        {enableSprocketOverlay && (
-                            <div className="toggle-row">
-                                <span>Film Mode</span>
-                                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '2px' }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFilmMode('continuous')}
-                                        style={{
-                                            background: filmMode === 'continuous' ? 'var(--ice-mint)' : 'transparent',
-                                            color: filmMode === 'continuous' ? '#000' : '#888',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            padding: '0.4rem 0.8rem',
-                                            cursor: 'pointer',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600'
-                                        }}
-                                    >
-                                        Continuous
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFilmMode('cut')}
-                                        style={{
-                                            background: filmMode === 'cut' ? 'var(--ice-mint)' : 'transparent',
-                                            color: filmMode === 'cut' ? '#000' : '#888',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            padding: '0.4rem 0.8rem',
-                                            cursor: 'pointer',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600'
-                                        }}
-                                    >
-                                        Cut
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
 
                     {/* Rating System Toggle */}
                     <RatingSystemSelector
@@ -1195,6 +1243,7 @@ const CreatePost = () => {
                                 </div>
                             )}
 
+
                             {/* EXIF Controls */}
                             <ManualExifEditor
                                 activeSlide={activeSlide}
@@ -1203,19 +1252,6 @@ const CreatePost = () => {
                                 setShowManualExif={setShowManualExif}
                                 handleManualExifSave={handleManualExifSave}
                                 hasExif={hasExif}
-                            />
-
-
-
-                            {/* Shop Configuration */}
-                            {/* Shop Configuration */}
-                            {/* Shop Configuration */}
-                            <ShopConfiguration
-                                activeSlide={activeSlide}
-                                activeSlideIndex={activeSlideIndex}
-                                slides={slides}
-                                updateSlide={updateSlide}
-                                handleAddAllToShop={handleAddAllToShop}
                             />
                         </div>
                     )}
@@ -1253,6 +1289,69 @@ const CreatePost = () => {
                     ))
                 }
             </div>
+
+            {/* FEED PREVIEW OVERLAY */}
+            {showFeedPreview && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100dvh', // Dynamic viewport height
+                    background: '#000',
+                    zIndex: 9999,
+                    overflow: 'hidden', // Lock scroll
+                    overscrollBehavior: 'none', // Prevent bounce
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    <div style={{
+                        position: 'absolute',
+                        top: 'max(env(safe-area-inset-top), 20px)',
+                        left: '20px',
+                        zIndex: 100,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        pointerEvents: 'auto'
+                    }}>
+                        <button
+                            onClick={() => setShowFeedPreview(false)}
+                            style={{
+                                background: 'rgba(0,0,0,0.6)',
+                                backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '50%',
+                                width: '44px',
+                                height: '44px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                            }}
+                        >
+                            <FaArrowLeft />
+                        </button>
+                        <span style={{
+                            color: 'rgba(255,255,255,0.8)',
+                            fontWeight: '600',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                            background: 'rgba(0,0,0,0.4)',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '20px'
+                        }}>
+                            Preview Mode
+                        </span>
+                    </div>
+                    {/* Render Post with full height/width */}
+                    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                        <Post post={previewPostData} priority="high" />
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes twinkle {

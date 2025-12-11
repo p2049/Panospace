@@ -4,6 +4,7 @@
 import { collection, getDocs, doc, updateDoc, query, where, limit } from 'firebase/firestore';
 import { db } from '@/core/firebase';
 import { extractDominantColor } from '@/core/utils/colors';
+import { logger } from '@/core/utils/logger';
 
 export class ColorBackfillTool {
     constructor() {
@@ -16,7 +17,7 @@ export class ColorBackfillTool {
 
     async backfillColors(batchSize = 10, onProgress = null) {
         if (this.isRunning) {
-            console.warn('⚠️ Backfill already running');
+            logger.warn('⚠️ Backfill already running');
             return;
         }
 
@@ -27,15 +28,15 @@ export class ColorBackfillTool {
         this.skipped = 0;
 
         try {
-            console.log('🎨 Starting Color Backfill');
-            console.log('='.repeat(60));
+            logger.log('🎨 Starting Color Backfill');
+            logger.log('='.repeat(60));
 
             // Get posts without dominantColor
             const postsRef = collection(db, 'posts');
             const q = query(postsRef, limit(batchSize));
             const snapshot = await getDocs(q);
 
-            console.log(`📊 Found ${snapshot.size} posts to check\n`);
+            logger.log(`📊 Found ${snapshot.size} posts to check\n`);
 
             for (const postDoc of snapshot.docs) {
                 this.processed++;
@@ -49,11 +50,11 @@ export class ColorBackfillTool {
                     status: 'processing'
                 };
 
-                console.log(`\n[${this.processed}/${snapshot.size}] Processing ${postId.substring(0, 10)}...`);
+                logger.log(`\n[${this.processed}/${snapshot.size}] Processing ${postId.substring(0, 10)}...`);
 
                 // Check if already has color
                 if (data.dominantColor) {
-                    console.log('  ⏭️ Already has color:', data.dominantColor);
+                    logger.log('  ⏭️ Already has color:', data.dominantColor);
                     this.skipped++;
                     progress.status = 'skipped';
                     if (onProgress) onProgress(progress);
@@ -67,7 +68,7 @@ export class ColorBackfillTool {
                     data.images?.[0]?.thumbnailUrl;
 
                 if (!imageUrl) {
-                    console.log('  ❌ No image URL found');
+                    logger.log('  ❌ No image URL found');
                     this.failed++;
                     progress.status = 'failed';
                     progress.error = 'No image URL';
@@ -75,14 +76,14 @@ export class ColorBackfillTool {
                     continue;
                 }
 
-                console.log('  🖼️ Extracting color from image...');
+                logger.log('  🖼️ Extracting color from image...');
 
                 try {
                     // Extract color using client-side function
                     const colorData = await extractDominantColor(imageUrl);
                     const dominantColor = colorData.hex;
 
-                    console.log('  ✅ Extracted color:', dominantColor);
+                    logger.log('  ✅ Extracted color:', dominantColor);
 
                     // Update Firestore
                     const postRef = doc(db, 'posts', postId);
@@ -90,13 +91,13 @@ export class ColorBackfillTool {
                         dominantColor: dominantColor
                     });
 
-                    console.log('  💾 Saved to Firestore');
+                    logger.log('  💾 Saved to Firestore');
                     this.succeeded++;
                     progress.status = 'success';
                     progress.color = dominantColor;
 
                 } catch (error) {
-                    console.error('  ❌ Failed:', error.message);
+                    logger.error('  ❌ Failed:', error.message);
                     this.failed++;
                     progress.status = 'failed';
                     progress.error = error.message;
@@ -108,14 +109,14 @@ export class ColorBackfillTool {
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
 
-            console.log('\n' + '='.repeat(60));
-            console.log('📊 BACKFILL COMPLETE');
-            console.log('='.repeat(60));
-            console.log(`Total processed: ${this.processed}`);
-            console.log(`✅ Succeeded: ${this.succeeded}`);
-            console.log(`❌ Failed: ${this.failed}`);
-            console.log(`⏭️ Skipped (already has color): ${this.skipped}`);
-            console.log('='.repeat(60));
+            logger.log('\n' + '='.repeat(60));
+            logger.log('📊 BACKFILL COMPLETE');
+            logger.log('='.repeat(60));
+            logger.log(`Total processed: ${this.processed}`);
+            logger.log(`✅ Succeeded: ${this.succeeded}`);
+            logger.log(`❌ Failed: ${this.failed}`);
+            logger.log(`⏭️ Skipped (already has color): ${this.skipped}`);
+            logger.log('='.repeat(60));
 
             return {
                 processed: this.processed,
@@ -125,7 +126,7 @@ export class ColorBackfillTool {
             };
 
         } catch (error) {
-            console.error('❌ Fatal error:', error);
+            logger.error('❌ Fatal error:', error);
             throw error;
         } finally {
             this.isRunning = false;

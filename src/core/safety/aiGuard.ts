@@ -120,6 +120,7 @@ export const generateRefactorPreview = (
  */
 export const assertCriticalLogic = (componentName: string, logicName: string) => {
     if (process.env.NODE_ENV === 'development') {
+        // Using console.log here is intentional - this is a dev-only guard assertion
         console.log(`🛡️ Guard: Verifying ${logicName} in ${componentName}... OK`);
     }
 };

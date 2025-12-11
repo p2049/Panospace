@@ -192,3 +192,12 @@ export const generateCalendarDays = (currentDate: Date): CalendarDay[] => {
 
     return days;
 };
+
+/**
+ * Stub for date migration utility
+ * TODO: Implement actual migration logic if needed
+ */
+export const migrateDateFormats = async (): Promise<{ success: boolean; updated: number; skipped: number; error?: string }> => {
+    console.warn('migrateDateFormats is a stub - not implemented');
+    return { success: true, updated: 0, skipped: 0 };
+};

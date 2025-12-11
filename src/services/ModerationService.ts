@@ -3,6 +3,9 @@ import {
     doc,
     getDoc,
     getDocs,
+    setDoc,
+    addDoc,
+    deleteDoc,
     runTransaction,
     collection,
     query,
@@ -16,7 +19,9 @@ import {
     type DocumentData,
     type Transaction
 } from 'firebase/firestore';
+
 import { MODERATION_THRESHOLDS, MODERATION_STATUS, REPORT_STATUS } from '@/core/constants/moderationConstants';
+import { logger } from '@/core/utils/logger';
 
 export interface ReportInput {
     reporterUid: string;
@@ -89,7 +94,7 @@ export const ModerationService = {
                 return reportRef.id;
             });
         } catch (error) {
-            console.error('Error submitting report:', error);
+            logger.error('Error submitting report:', error);
             throw error;
         }
     },
@@ -318,10 +323,10 @@ export const ModerationService = {
         try {
             // TODO: Implement notification system
             // For now, just log
-            console.log(`Notification: ${notificationType} for ${targetType} ${targetId}`);
+            logger.log(`Notification: ${notificationType} for ${targetType} ${targetId}`);
             return true;
         } catch (error) {
-            console.error('Error notifying creator:', error);
+            logger.error('Error notifying creator:', error);
             return false;
         }
     },
@@ -356,5 +361,152 @@ export const ModerationService = {
         // - Hive Moderation API
         // - Custom model
         return null;
+    },
+
+    // ==========================================
+    // USER BLOCKING & MUTING
+    // ==========================================
+
+    /**
+     * Block a user - their content will be hidden and they cannot interact with you
+     */
+    blockUser: async (blockerId: string, blockedUserId: string): Promise<void> => {
+        // TODO: Implement user blocking
+        // - Add to user's blockedUsers subcollection
+        // - Optionally notify the blocked user (app discretion)
+        // - Remove any existing follows between users
+        const blockerRef = doc(db, 'users', blockerId, 'blockedUsers', blockedUserId);
+        await setDoc(blockerRef, {
+            blockedAt: serverTimestamp(),
+            userId: blockedUserId
+        });
+        logger.log(`User ${blockerId} blocked user ${blockedUserId}`);
+    },
+
+    /**
+     * Unblock a previously blocked user
+     */
+    unblockUser: async (blockerId: string, blockedUserId: string): Promise<void> => {
+        // TODO: Implement user unblocking
+        const blockerRef = doc(db, 'users', blockerId, 'blockedUsers', blockedUserId);
+        await deleteDoc(blockerRef);
+        logger.log(`User ${blockerId} unblocked user ${blockedUserId}`);
+    },
+
+    /**
+     * Get list of users blocked by a specific user
+     */
+    getBlockedUsers: async (userId: string): Promise<string[]> => {
+        // TODO: Implement fetching blocked users list
+        const blockedRef = collection(db, 'users', userId, 'blockedUsers');
+        const snapshot = await getDocs(blockedRef);
+        return snapshot.docs.map(doc => doc.id);
+    },
+
+    /**
+     * Check if a user is blocked
+     */
+    isUserBlocked: async (blockerId: string, targetUserId: string): Promise<boolean> => {
+        const blockerRef = doc(db, 'users', blockerId, 'blockedUsers', targetUserId);
+        const snapshot = await getDoc(blockerRef);
+        return snapshot.exists();
+    },
+
+    /**
+     * Mute a user - hide their content from your feed without blocking
+     */
+    muteUser: async (muterId: string, mutedUserId: string): Promise<void> => {
+        // TODO: Implement user muting
+        // - Add to user's mutedUsers subcollection
+        // - Content from muted users filtered in feed queries
+        const muterRef = doc(db, 'users', muterId, 'mutedUsers', mutedUserId);
+        await setDoc(muterRef, {
+            mutedAt: serverTimestamp(),
+            userId: mutedUserId
+        });
+        logger.log(`User ${muterId} muted user ${mutedUserId}`);
+    },
+
+    /**
+     * Unmute a previously muted user
+     */
+    unmuteUser: async (muterId: string, mutedUserId: string): Promise<void> => {
+        // TODO: Implement user unmuting
+        const muterRef = doc(db, 'users', muterId, 'mutedUsers', mutedUserId);
+        await deleteDoc(muterRef);
+        logger.log(`User ${muterId} unmuted user ${mutedUserId}`);
+    },
+
+    /**
+     * Get list of users muted by a specific user
+     */
+    getMutedUsers: async (userId: string): Promise<string[]> => {
+        // TODO: Implement fetching muted users list
+        const mutedRef = collection(db, 'users', userId, 'mutedUsers');
+        const snapshot = await getDocs(mutedRef);
+        return snapshot.docs.map(doc => doc.id);
+    },
+
+    // ==========================================
+    // APPEALS
+    // ==========================================
+
+    /**
+     * Submit an appeal for a moderation action
+     */
+    appealReport: async (
+        reportId: string,
+        userId: string,
+        reason: string
+    ): Promise<string> => {
+        // TODO: Implement appeal submission
+        // - Create appeal document linked to original report
+        // - Notify moderation team
+        // - Track appeal status
+        const appealsRef = collection(db, 'moderationAppeals');
+        const appealDoc = await addDoc(appealsRef, {
+            reportId,
+            appealedBy: userId,
+            reason,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+        logger.log(`Appeal submitted for report ${reportId} by user ${userId}`);
+        return appealDoc.id;
+    },
+
+    /**
+     * Get appeals for a specific report
+     */
+    getAppealsForReport: async (reportId: string): Promise<any[]> => {
+        const appealsRef = collection(db, 'moderationAppeals');
+        const q = query(appealsRef, where('reportId', '==', reportId));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    },
+
+    /**
+     * Process an appeal (admin action)
+     */
+    processAppeal: async (
+        appealId: string,
+        decision: 'approved' | 'rejected',
+        moderatorId: string,
+        notes?: string
+    ): Promise<void> => {
+        // TODO: Implement appeal processing
+        // - Update appeal status
+        // - If approved, reverse the original moderation action
+        // - Notify the user of the decision
+        const appealRef = doc(db, 'moderationAppeals', appealId);
+        await updateDoc(appealRef, {
+            status: decision,
+            processedBy: moderatorId,
+            processedAt: serverTimestamp(),
+            notes: notes || null,
+            updatedAt: serverTimestamp()
+        });
+        logger.log(`Appeal ${appealId} ${decision} by moderator ${moderatorId}`);
     }
 };

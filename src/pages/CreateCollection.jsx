@@ -11,6 +11,7 @@ import exifr from 'exifr';
 import { PRINT_PRODUCTS, PRINT_TIERS, calculateBundlePricing } from '@/domain/shop/pricing';
 import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import PaywallModal from '@/components/monetization/PaywallModal';
+import { logger } from '@/core/utils/logger';
 const PRINT_SIZES = PRINT_PRODUCTS;
 
 import { createMagazine, calculateNextReleaseDate } from '@/services/magazineService';
@@ -138,7 +139,7 @@ const CreateCollection = () => {
                         };
                     }
                 } catch (err) {
-                    console.warn('EXIF extraction failed:', err);
+                    logger.warn('EXIF extraction failed:', err);
                 }
 
                 const img = new Image();

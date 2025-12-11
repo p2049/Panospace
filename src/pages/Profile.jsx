@@ -32,6 +32,7 @@ import { useThemeStore } from '@/core/store/useThemeStore';
 import { useFeedStore } from '@/core/store/useFeedStore';
 
 import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
+import SmartImage from '@/components/SmartImage';
 
 
 const Profile = () => {
@@ -327,7 +328,7 @@ const Profile = () => {
                         marginTop: '0', // Tightened to 0
                         marginBottom: '0'
                     }}>
-                        {/* Username */}
+                        {/* Username - Single Source of Truth */}
                         <h1 style={{
                             fontSize: layout.profile.usernameSize,
                             fontWeight: '800',
@@ -352,7 +353,7 @@ const Profile = () => {
                             wordBreak: 'break-word',
                             textAlign: 'center' // Explicitly center text
                         }}>
-                            {user.username || user.displayName}
+                            {user.username}
                         </h1>
 
                     </div>
@@ -868,12 +869,16 @@ const Profile = () => {
                                     }}
                                 >
                                     {(() => {
-                                        const thumbnail = post.images?.[0]?.url || (typeof post.images?.[0] === 'string' ? post.images[0] : null) || post.imageUrl || post.image;
-                                        return thumbnail ? (
-                                            <img
-                                                src={thumbnail}
+                                        const displaySrc = post.thumbnailUrl || post.images?.[0]?.thumbnailUrl || post.images?.[0]?.url || (typeof post.images?.[0] === 'string' ? post.images[0] : null) || post.imageUrl || post.image;
+                                        const previewSrc = post.previewUrl || post.images?.[0]?.previewUrl;
+
+                                        return displaySrc ? (
+                                            <SmartImage
+                                                src={displaySrc}
+                                                previewSrc={previewSrc}
+                                                thumbnailSrc={previewSrc}
                                                 alt=""
-                                                loading="lazy"
+                                                eager={false}
                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                             />
                                         ) : (
@@ -931,7 +936,12 @@ const Profile = () => {
                                         }}
                                     >
                                         {collection.coverImage ? (
-                                            <img src={collection.coverImage} alt={collection.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <SmartImage
+                                                src={collection.coverImage}
+                                                alt={collection.title}
+                                                eager={false}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '2rem' }}>
                                                 <FaLayerGroup />
@@ -1023,10 +1033,10 @@ const Profile = () => {
                                                     zIndex: 1
                                                 }}>
                                                     {(card.images?.front || card.imageUrl) && (
-                                                        <img
+                                                        <SmartImage
                                                             src={card.images?.front || card.imageUrl}
                                                             alt={card.title || card.name}
-                                                            loading="lazy"
+                                                            eager={false}
                                                             style={{
                                                                 width: '100%',
                                                                 height: '100%',
@@ -1149,7 +1159,12 @@ const Profile = () => {
                                     border: `3px solid ${badge.borderColor || '#7FFFD4'}`,
                                     position: 'relative'
                                 }}>
-                                    <img src={badge.imageUrl} alt={badge.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <SmartImage
+                                        src={badge.imageUrl}
+                                        alt={badge.title}
+                                        eager={false}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                 </div>
                             )}
                         />
@@ -1238,10 +1253,10 @@ const Profile = () => {
                                                         zIndex: 1
                                                     }}>
                                                         {(card.images?.front || card.imageUrl) && (
-                                                            <img
+                                                            <SmartImage
                                                                 src={card.images?.front || card.imageUrl}
                                                                 alt={card.title || card.name}
-                                                                loading="lazy"
+                                                                eager={false}
                                                                 style={{
                                                                     width: '100%',
                                                                     height: '100%',

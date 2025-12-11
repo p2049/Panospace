@@ -4,6 +4,8 @@ import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from '
 import { db } from '@/firebase';
 import { FaArrowLeft } from 'react-icons/fa';
 import Post from '@/components/Post';
+import VirtualizedPostContainer from '@/components/feed/VirtualizedPostContainer';
+import { logger } from '@/core/utils/logger';
 
 const PostDetail = () => {
     const { id } = useParams();
@@ -33,7 +35,7 @@ const PostDetail = () => {
 
                 const postDoc = await getDoc(doc(db, 'posts', id));
                 if (!postDoc.exists()) {
-                    console.warn('Post not found:', id);
+                    logger.warn('Post not found:', id);
                     setLoading(false);
                     return;
                 }
@@ -73,13 +75,13 @@ const PostDetail = () => {
 
                     setPosts(userPosts);
                 } catch (feedErr) {
-                    console.error("Error loading user feed, falling back to single post:", feedErr);
+                    logger.error("Error loading user feed, falling back to single post:", feedErr);
                     setPosts([selectedPost]);
                     setInitialPostIndex(0);
                 }
 
             } catch (err) {
-                console.error("Error loading posts:", err);
+                logger.error("Error loading posts:", err);
             } finally {
                 setLoading(false);
             }
@@ -118,7 +120,15 @@ const PostDetail = () => {
     }
 
     return (
-        <div style={{ height: '100vh', width: '100vw', background: '#000', position: 'relative' }}>
+        <div style={{
+            height: '100vh',
+            width: '100vw',
+            background: '#000',
+            position: 'relative',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'none'
+        }}>
             {/* Back Button */}
             <button
                 onClick={() => navigate(-1)}
@@ -144,22 +154,32 @@ const PostDetail = () => {
                 <FaArrowLeft />
             </button>
 
-            {/* Scrollable Feed */}
-            <div
-                ref={containerRef}
-                style={{
-                    height: '100vh',
-                    width: '100vw',
-                    overflowY: 'scroll',
-                    scrollSnapType: 'y mandatory',
-                    scrollBehavior: 'smooth'
-                }}
-            >
-                {posts.map((post) => (
-                    <div key={post.id} style={{ scrollSnapAlign: 'start' }}>
-                        <Post post={post} />
-                    </div>
-                ))}
+            {/* Styles for hiding scrollbar */}
+            <style>
+                {`
+                    .no-scrollbar::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .no-scrollbar {
+                         -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                `}
+            </style>
+
+            {/* Scrollable Feed - Virtualized */}
+            <div style={{ height: '100vh', width: '100vw', background: '#000' }}>
+                <VirtualizedPostContainer
+                    posts={posts}
+                    initialIndex={initialPostIndex}
+                    renderPost={(post, index, isCurrent) => (
+                        <Post
+                            post={post}
+                            displayMode="feed"
+                            priority={isCurrent ? 'high' : 'normal'}
+                        />
+                    )}
+                />
             </div>
         </div>
     );

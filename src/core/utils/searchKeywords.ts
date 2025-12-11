@@ -46,6 +46,11 @@ export const generateUserSearchKeywords = (user: Partial<UserProfile>): string[]
         generateSearchKeywords(user.displayName).forEach(k => keywords.add(k));
     }
 
+    // Add keywords from username
+    if ((user as any).username) {
+        generateSearchKeywords((user as any).username).forEach(k => keywords.add(k));
+    }
+
     // Add keywords from email (before @)
     if (user.email) {
         const emailPrefix = user.email.split('@')[0];

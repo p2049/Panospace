@@ -3,9 +3,10 @@
 
 import { db } from '@/core/firebase';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { logger } from '@/core/utils/logger';
 
 export const migrateDateFormats = async () => {
-    console.log('Starting date format migration...');
+    logger.log('Starting date format migration...');
 
     try {
         const postsRef = collection(db, 'posts');
@@ -39,7 +40,7 @@ export const migrateDateFormats = async () => {
                         });
 
                         updatedCount++;
-                        console.log(`Updated post ${postDoc.id}: "${oldText}" → "${newText}"`);
+                        logger.log(`Updated post ${postDoc.id}: "${oldText}" → "${newText}"`);
                     }
                 } else {
                     skippedCount++;
@@ -49,13 +50,13 @@ export const migrateDateFormats = async () => {
             }
         }
 
-        console.log(`Migration complete!`);
-        console.log(`Updated: ${updatedCount} posts`);
-        console.log(`Skipped: ${skippedCount} posts (no date stamp or already in new format)`);
+        logger.log(`Migration complete!`);
+        logger.log(`Updated: ${updatedCount} posts`);
+        logger.log(`Skipped: ${skippedCount} posts (no date stamp or already in new format)`);
 
         return { success: true, updated: updatedCount, skipped: skippedCount };
     } catch (error) {
-        console.error('Migration failed:', error);
+        logger.error('Migration failed:', error);
         return { success: false, error: error.message };
     }
 };

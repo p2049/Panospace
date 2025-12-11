@@ -20,7 +20,12 @@ const CollectionCard = ({ collection }) => {
         >
             <div style={{ aspectRatio: '1/1', background: '#111', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {collection.coverImage ? (
-                    <img src={collection.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img
+                        src={collection.coverImage}
+                        alt=""
+                        loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                 ) : (
                     <FaLayerGroup size={32} color="#444" />
                 )}

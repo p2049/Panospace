@@ -10,6 +10,7 @@ import { functions, db } from '@/firebase';
 import { collection, query, where, orderBy, limit, getDocs, startAfter, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useFollowing } from '@/hooks/useFollowing';
+import { logger } from '@/core/utils/logger';
 
 export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialPosts = false, followingOnly = false, customFeedEnabled = false, activeCustomFeedId = null) => {
     const [posts, setPosts] = useState([]);
@@ -39,7 +40,7 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                         setCustomFeedConfig(null);
                     }
                 } catch (e) {
-                    console.error("Error loading feed config", e);
+                    logger.error("Error loading feed config", e);
                 } finally {
                     setConfigLoading(false);
                 }
@@ -209,7 +210,7 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             }
 
         } catch (err) {
-            console.error('Error fetching feed:', err);
+            logger.error('Error fetching feed:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -279,7 +280,7 @@ export const usePreferenceLearning = () => {
             await onPostLikedFn({ postId });
         } catch (error) {
             // Suppress CORS/internal errors in dev to prevent console noise
-            console.warn('Engagement tracking failed (non-critical):', error.message);
+            logger.warn('Engagement tracking failed (non-critical):', error.message);
         }
     }, []);
 
@@ -287,7 +288,7 @@ export const usePreferenceLearning = () => {
         try {
             await onPostSavedFn({ postId });
         } catch (error) {
-            console.error('Error tracking save:', error);
+            logger.error('Error tracking save:', error);
         }
     }, []);
 
@@ -295,7 +296,7 @@ export const usePreferenceLearning = () => {
         try {
             await onPrintPurchasedFn({ postId });
         } catch (error) {
-            console.error('Error tracking purchase:', error);
+            logger.error('Error tracking purchase:', error);
         }
     }, []);
 

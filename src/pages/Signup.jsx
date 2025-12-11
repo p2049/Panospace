@@ -5,6 +5,7 @@ import StarBackground from '@/components/StarBackground';
 
 const Signup = () => {
     const [email, setEmail] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
     const { signup } = useAuth();
@@ -17,23 +18,44 @@ const Signup = () => {
         if (password !== passwordConfirm) {
             return setError('Passwords do not match');
         }
+
+        // Validate Username
+        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+        if (!usernameRegex.test(username)) {
+            return setError('Username must be 3-20 characters, alphanumeric or underscores.');
+        }
+
         try {
             setError('');
             setLoading(true);
+
+            // Import Firestore early for check
+            const { doc, setDoc, getDocs, collection, query, where } = await import('firebase/firestore');
+            const { db } = await import('../firebase');
+
+            // Unique Check
+            const q = query(collection(db, 'users'), where('username', '==', username));
+            const existing = await getDocs(q);
+            if (!existing.empty) {
+                setLoading(false);
+                return setError('Username is already taken.');
+            }
+
             const userCredential = await signup(email, password);
-            const username = email.split('@')[0];
+
             try {
+                // We keep displayName as username for Firebase Auth consistency, but app uses 'username' field
                 const { updateProfile } = await import('firebase/auth');
-                const { doc, setDoc } = await import('firebase/firestore');
-                const { db } = await import('../firebase');
                 await updateProfile(userCredential.user, { displayName: username });
+
                 const userData = {
-                    displayName: username,
+                    username: username, // Primary field
+                    displayName: username, // Legacy consistency
                     email: email,
                     photoURL: userCredential.user.photoURL || '',
                     createdAt: new Date().toISOString(),
                     bio: 'New Panospace Artist',
-                    accountType: 'art', // Default to art
+                    accountType: 'art',
                 };
 
                 // Generate search keywords
@@ -147,7 +169,6 @@ const Signup = () => {
             }
         }
       `}</style>
-
             <div style={cardStyle} className="signup-card">
                 <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
                     <h2 className="signup-title" style={{
@@ -180,6 +201,17 @@ const Signup = () => {
                 )}
                 <form onSubmit={handleSubmit} className="signup-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                     <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Email" className="y2k-input" />
+                    {/* NEW USERNAME INPUT */}
+                    <input
+                        type="text"
+                        value={username}
+                        onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        required
+                        placeholder="Username (a-z, 0-9, _)"
+                        className="y2k-input"
+                        minLength={3}
+                        maxLength={20}
+                    />
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password" className="y2k-input" />
                     <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required placeholder="Confirm Password" className="y2k-input" />
 

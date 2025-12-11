@@ -298,3 +298,14 @@ export const COLOR_PALETTE = [
     { name: 'Gray', hex: '#808080', hue: null },
     { name: 'White', hex: '#FFFFFF', hue: null }
 ];
+
+/**
+ * Stub for color backfill utility
+ * TODO: Implement actual backfill logic if needed
+ */
+export const colorBackfillTool = {
+    run: async (): Promise<{ success: boolean; processed: number; errors: number }> => {
+        console.warn('colorBackfillTool is a stub - not implemented');
+        return { success: true, processed: 0, errors: 0 };
+    }
+};

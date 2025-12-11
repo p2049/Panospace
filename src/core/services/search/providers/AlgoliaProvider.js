@@ -6,6 +6,7 @@
 
 import algoliasearch from 'algoliasearch/lite';
 import { SEARCH_INDICES } from '@/core/services/firestore/architecture';
+import { logger } from '@/core/utils/logger';
 
 export class AlgoliaProvider {
     constructor() {
@@ -20,7 +21,7 @@ export class AlgoliaProvider {
 
     _initialize() {
         if (!this.appId || !this.searchKey) {
-            console.warn('Algolia credentials not configured');
+            logger.warn('Algolia credentials not configured');
             return;
         }
 
@@ -34,9 +35,9 @@ export class AlgoliaProvider {
             });
 
             this.enabled = true;
-            console.log('✅ Algolia search provider initialized');
+            logger.log('✅ Algolia search provider initialized');
         } catch (error) {
-            console.error('Failed to initialize Algolia:', error);
+            logger.error('Failed to initialize Algolia:', error);
             this.enabled = false;
         }
     }
@@ -101,7 +102,7 @@ export class AlgoliaProvider {
             return this._formatResults(results);
 
         } catch (error) {
-            console.error('Algolia search error:', error);
+            logger.error('Algolia search error:', error);
             throw error;
         }
     }
@@ -134,7 +135,7 @@ export class AlgoliaProvider {
                 type: index
             }));
         } catch (error) {
-            console.error('Algolia suggest error:', error);
+            logger.error('Algolia suggest error:', error);
             return [];
         }
     }
@@ -166,7 +167,7 @@ export class AlgoliaProvider {
                 .map(([value, count]) => ({ value, count }))
                 .sort((a, b) => b.count - a.count);
         } catch (error) {
-            console.error('Algolia facets error:', error);
+            logger.error('Algolia facets error:', error);
             return [];
         }
     }

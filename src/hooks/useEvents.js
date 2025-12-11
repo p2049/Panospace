@@ -14,6 +14,7 @@ import {
     Timestamp
 } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { logger } from '@/core/utils/logger';
 
 /**
  * Hook for fetching events within a date range
@@ -72,7 +73,7 @@ export const useEvents = (startDate, endDate) => {
                     });
                 });
             } else {
-                console.error("Error fetching user events:", eventsSnapshot.reason);
+                logger.error("Error fetching user events:", eventsSnapshot.reason);
             }
 
             // Process App Events
@@ -124,7 +125,7 @@ export const useEvents = (startDate, endDate) => {
                     }
                 });
             } else {
-                console.warn("Global events access denied (Firestore Rules). Fallback data will be used.", globalSnapshotResult.reason);
+                logger.warn("Global events access denied (Firestore Rules). Fallback data will be used.", globalSnapshotResult.reason);
             }
 
             // Fallback: If DB is empty/failed, use fail-safe data so user sees calendar working
@@ -160,11 +161,11 @@ export const useEvents = (startDate, endDate) => {
             // Sort merged events
             fetchedEvents.sort((a, b) => a.eventDate - b.eventDate);
 
-            console.log("CALENDAR EVENTS:", fetchedEvents);
+            logger.log("CALENDAR EVENTS:", fetchedEvents);
             setEvents(fetchedEvents);
             setError(null);
         } catch (err) {
-            console.error('Error fetching events:', err);
+            logger.error('Error fetching events:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -239,7 +240,7 @@ export const useFollowingEvents = (creatorIds, startDate, endDate) => {
             setEvents(allEvents);
             setError(null);
         } catch (err) {
-            console.error('Error fetching following events:', err);
+            logger.error('Error fetching following events:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -278,7 +279,7 @@ export const useCreateEvent = () => {
             setLoading(false);
             return { id: docRef.id, ...newEvent };
         } catch (err) {
-            console.error('Error creating event:', err);
+            logger.error('Error creating event:', err);
             setError(err.message);
             setLoading(false);
             throw err;
@@ -304,7 +305,7 @@ export const useCreateEvent = () => {
             setLoading(false);
             return true;
         } catch (err) {
-            console.error('Error updating event:', err);
+            logger.error('Error updating event:', err);
             setError(err.message);
             setLoading(false);
             throw err;
@@ -321,7 +322,7 @@ export const useCreateEvent = () => {
             setLoading(false);
             return true;
         } catch (err) {
-            console.error('Error deleting event:', err);
+            logger.error('Error deleting event:', err);
             setError(err.message);
             setLoading(false);
             throw err;
@@ -365,7 +366,7 @@ export const useEvent = (eventId) => {
                 setError('Event not found');
             }
         } catch (err) {
-            console.error('Error fetching event:', err);
+            logger.error('Error fetching event:', err);
             setError(err.message);
         } finally {
             setLoading(false);

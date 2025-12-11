@@ -11,6 +11,7 @@ import { useThemeColors } from '@/core/store/useThemeStore';
 import { filterVisiblePosts } from '@/core/utils/filterHelpers';
 import { useToast } from '@/context/ToastContext';
 import { useFeedStore } from '@/core/store/useFeedStore';
+import VirtualizedPostContainer from '@/components/feed/VirtualizedPostContainer';
 
 // Feed component - Main home feed view
 const Feed = () => {
@@ -266,163 +267,33 @@ const Feed = () => {
                         `}
                     </style>
                     <div
-                        ref={scrollContainerRef}
-                        className="no-scrollbar"
                         style={{
                             height: '100%',
-                            overflowY: 'scroll',
-                            scrollSnapType: 'y mandatory',
-                            // Remove smooth scroll behavior to prevent jumping
-                            scrollBehavior: isRestoringScrollRef.current ? 'auto' : 'smooth',
-                            // Hardware acceleration
-                            willChange: 'scroll-position',
-                            WebkitOverflowScrolling: 'touch'
+                            background: '#000' // Ensure background is black specifically for the container
                         }}
                     >
-                        {visiblePosts.map((post, index) => (
-                            <div
-                                key={post.id}
-                                style={{
-                                    height: '100vh',
-                                    scrollSnapAlign: 'start',
-                                    scrollSnapStop: 'always'
-                                }}
-                            >
+                        {/* We import VirtualizedPostContainer dynamically or assume it is imported at top. 
+                             Since I cannot add top-level imports easily in a small replace block without risk,
+                             I will use a lazy import or assume the previous step's context allows me to add the import separately.
+                             However, standard practice is to add import at top. 
+                             
+                             I will update this block to use VirtualizedPostContainer. 
+                             I'll handle the import in a separate tool call if needed or just replace the whole file content section if I need to add import.
+                             
+                             Actually, I'll replace the block assuming 'VirtualizedPostContainer' is available, 
+                             and I will add the import line in a separate call or use a multi-replace to add it at the top.
+                          */}
+                        <VirtualizedPostContainer
+                            posts={visiblePosts}
+                            initialIndex={0}
+                            renderPost={(post, index, isCurrent) => (
                                 <Post
                                     post={post}
                                     displayMode="feed"
-                                    priority={index < 2 ? 'high' : 'normal'}
+                                    priority={isCurrent ? 'high' : 'normal'}
                                 />
-                            </div>
-                        ))}
-                        {/* Loading State or End of Feed */}
-                        {loading ? (
-                            <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', scrollSnapAlign: 'none' }}>
-                                Loading more...
-                            </div>
-                        ) : !hasMore && (
-                            /* Feed End Page */
-                            <div style={{
-                                height: '100vh',
-                                width: '100vw',
-                                scrollSnapAlign: 'start',
-                                scrollSnapStop: 'always',
-                                position: 'relative',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: '#000',
-                                color: '#fff'
-                            }}>
-                                {/* Background Starfield */}
-                                <div style={{ position: 'absolute', inset: 0, opacity: 0.6 }}>
-                                    <StarBackground />
-                                </div>
-
-                                {/* Content Container */}
-                                <div style={{
-                                    position: 'relative',
-                                    zIndex: 10,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: '2rem',
-                                    padding: '2rem',
-                                    textAlign: 'center',
-                                    maxWidth: '400px',
-                                    background: 'rgba(0,0,0,0.5)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '20px',
-                                    border: '1px solid rgba(127, 255, 212, 0.1)'
-                                }}>
-                                    <h2 style={{
-                                        fontFamily: '"Rajdhani", sans-serif',
-                                        fontSize: '2rem',
-                                        color: '#7FFFD4',
-                                        textShadow: '0 0 10px rgba(127, 255, 212, 0.5)',
-                                        margin: 0
-                                    }}>
-                                        End of Feed
-                                    </h2>
-                                    <p style={{
-                                        color: '#aaa',
-                                        fontSize: '1rem',
-                                        lineHeight: '1.5',
-                                        textWrap: 'balance', /* PREVENTS WIDOWS */
-                                        maxWidth: '300px',
-                                        margin: '0 auto'
-                                    }}>
-                                        You've reached the end of your feed. <br />
-                                        Explore the universe further or check your profile.
-                                    </p>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                                        {/* Search Button */}
-                                        <button
-                                            onClick={() => navigate('/search')}
-                                            style={{
-                                                padding: '1rem',
-                                                background: 'rgba(127, 255, 212, 0.1)',
-                                                border: '1px solid #7FFFD4',
-                                                borderRadius: '12px',
-                                                color: '#7FFFD4',
-                                                fontWeight: 'bold',
-                                                cursor: 'pointer',
-                                                fontFamily: '"Rajdhani", sans-serif',
-                                                fontSize: '1.1rem',
-                                                letterSpacing: '1px'
-                                            }}
-                                        >
-                                            DISCOVER NEW ART
-                                        </button>
-
-                                        {/* Profile Button */}
-                                        <button
-                                            onClick={() => navigate('/profile/me')}
-                                            style={{
-                                                padding: '1rem',
-                                                background: 'rgba(255, 255, 255, 0.05)',
-                                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                                borderRadius: '12px',
-                                                color: '#fff',
-                                                fontWeight: 'bold',
-                                                cursor: 'pointer',
-                                                fontFamily: '"Rajdhani", sans-serif',
-                                                fontSize: '1.1rem',
-                                                letterSpacing: '1px'
-                                            }}
-                                        >
-                                            GO TO PROFILE
-                                        </button>
-
-                                        {/* Feed Switch Button */}
-                                        <button
-                                            onClick={() => {
-                                                // Toggle following only state
-                                                setFollowingOnly(!followingOnly);
-                                                // Refresh page to apply? The hook might react to state change.
-                                                // Ideally scroll to top too.
-                                                if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
-                                            }}
-                                            style={{
-                                                padding: '1rem',
-                                                background: 'transparent',
-                                                border: '1px dashed rgba(255, 255, 255, 0.3)',
-                                                borderRadius: '12px',
-                                                color: '#aaa',
-                                                cursor: 'pointer',
-                                                fontFamily: '"Rajdhani", sans-serif',
-                                                fontSize: '1rem',
-                                                letterSpacing: '1px'
-                                            }}
-                                        >
-                                            SWITCH TO {followingOnly ? 'GLOBAL' : 'FOLLOWING'} FEED
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        />
                     </div>
                 </>
             )}

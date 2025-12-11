@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaImage } from 'react-icons/fa';
 import SmartImage from './SmartImage';
@@ -6,7 +6,7 @@ import { getDerivedDate } from '@/core/utils/dates';
 import SpaceCardBadge from './SpaceCardBadge';
 import SoundTagBadge from './SoundTagBadge';
 
-const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectRatio }) => {
+const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAspectRatio }) => {
     const navigate = useNavigate();
 
     // Helper to determine aspect ratio percentage
@@ -23,6 +23,12 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
 
     const paddingBottom = getPaddingBottom();
     const isFiltered = selectedOrientation || selectedAspectRatio;
+
+    // OPTIMIZATION: Prioritize thumbnail URL for grid views
+    // Fallback to full URL only if no thumbnail exists
+    const displaySrc = post.thumbnailUrl || post.images?.[0]?.thumbnailUrl || post.images?.[0]?.url || post.imageUrl;
+    // Use previewUrl for the blur placeholder if available
+    const placeholderSrc = post.previewUrl || post.images?.[0]?.previewUrl;
 
     return (
         <div
@@ -76,11 +82,11 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
                     width: '100%',
                     height: '100%'
                 }}>
-                    {post.images?.[0]?.url || post.imageUrl ? (
+                    {displaySrc ? (
                         <SmartImage
-                            src={post.images?.[0]?.url || post.imageUrl}
-                            previewSrc={post.images?.[0]?.previewUrl || post.previewUrl}
-                            thumbnailSrc={post.images?.[0]?.thumbnailUrl || post.thumbnailUrl}
+                            src={displaySrc}
+                            previewSrc={placeholderSrc}
+                            thumbnailSrc={placeholderSrc} // Use placeholder as thumbnail level
                             alt={post.title || ''}
                             aspectRatio="1/1"
                             objectFit="cover"
@@ -95,6 +101,7 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
                             showDateStamp={post.showDateStamp}
                             dateStampStyle={post.dateStampStyle}
                             date={getDerivedDate(post)}
+                            eager={false} // Ensure lazy loading
                         />
                     ) : (
                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -184,11 +191,11 @@ const GridPostCard = ({ post, contextPosts, selectedOrientation, selectedAspectR
                         zIndex: 2
                     }}
                 >
-                    {post.authorName || 'Anonymous'}
+                    {post.username || post.authorName || post.displayName || 'Anonymous'}
                 </div>
             </div>
         </div>
     );
-};
+});
 
 export default GridPostCard;

@@ -9,6 +9,7 @@ import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '@/core/
 import { formatDateForDisplay, formatDateForInput } from '@/core/utils/dates';
 import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import CurrentAppEventsBox from '@/components/search/CurrentAppEventsBox';
+import PanoDateInput from '@/components/common/PanoDateInput';
 
 const SearchPanels = ({
     selectedTags,
@@ -213,53 +214,11 @@ const SearchPanels = ({
                     {(currentMode === 'posts' || currentMode === 'events') && (
                         <div style={{ marginBottom: '0.8rem' }}>
                             <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
-                                {/* Calendar Icon on Left - Clickable */}
-                                <div
-                                    onClick={(e) => {
-                                        const input = e.currentTarget.nextElementSibling;
-                                        if (input) input.showPicker?.();
-                                    }}
-                                    style={{
-                                        position: 'absolute',
-                                        left: '0.75rem',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        cursor: 'pointer',
-                                        pointerEvents: 'auto',
-                                        filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.6))',
-                                        zIndex: 1
-                                    }}
-                                >
-                                    <ModernIcon icon={FaCalendar} size={14} glow={true} />
-                                </div>
-                                <input
-                                    ref={(el) => { if (el) el.dataset.dateInput = 'true'; }}
-                                    type="date"
-                                    value={selectedDate ? formatDateForInput(selectedDate) : ''}
-                                    onChange={(e) => {
-                                        if (e.target.value) {
-                                            onDateSelect(new Date(e.target.value + 'T00:00:00'));
-                                        } else {
-                                            onDateSelect(null);
-                                        }
-                                    }}
-                                    style={{
-                                        padding: '0.7rem 0.8rem 0.7rem 2.5rem',
-                                        background: 'rgba(0, 0, 0, 0.4)',
-                                        border: '1px solid rgba(127, 255, 212, 0.3)',
-                                        borderRadius: '16px',
-                                        color: '#fff',
-                                        fontSize: '0.85rem',
-                                        width: '100%',
-                                        boxSizing: 'border-box',
-                                        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(127, 255, 212, 0.05)',
-                                        fontFamily: 'var(--font-family-mono)',
-                                        letterSpacing: '0.05em',
-                                        transition: 'all 0.3s ease',
-                                        backdropFilter: 'blur(12px)',
-                                        WebkitBackdropFilter: 'blur(12px)'
-                                    }}
-                                    className="custom-date-input"
+                                <PanoDateInput
+                                    selected={selectedDate}
+                                    onChange={(date) => onDateSelect(date)}
+                                    placeholder="Filter by Date"
+                                    isClearable
                                 />
                             </div>
                         </div>
@@ -665,44 +624,7 @@ const SearchPanels = ({
                     background: rgba(127, 255, 212, 0.5);
                 }
 
-                /* Hide native date picker icon */
-                .custom-date-input::-webkit-calendar-picker-indicator {
-                    display: none;
-                    opacity: 0;
-                    pointer-events: none;
-                }
-                
-                
-                .custom-date-input::-webkit-inner-spin-button,
-                .custom-date-input::-webkit-clear-button {
-                    display: none;
-                }
 
-                /* Style the date input placeholder/value text */
-                .custom-date-input::-webkit-datetime-edit-fields-wrapper {
-                    font-family: var(--font-family-mono);
-                    letter-spacing: 0.08em;
-                }
-                
-                .custom-date-input::-webkit-datetime-edit-text {
-                    color: rgba(127, 255, 212, 0.4);
-                    font-family: var(--font-family-mono);
-                }
-                
-                .custom-date-input::-webkit-datetime-edit-month-field,
-                .custom-date-input::-webkit-datetime-edit-day-field,
-                .custom-date-input::-webkit-datetime-edit-year-field {
-                    color: #fff;
-                    font-family: var(--font-family-mono);
-                    letter-spacing: 0.05em;
-                }
-
-                @media (max-width: 768px) {
-                    .custom-date-input {
-                        max-width: 100% !important;
-                        width: calc(100% - 3.4rem) !important;
-                    }
-                }
 
                 @media (max-width: 768px) {
                     .filters-sidebar {

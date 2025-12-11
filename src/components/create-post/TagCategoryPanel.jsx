@@ -155,16 +155,17 @@ const TagCategoryPanel = ({
                 overflow: 'hidden'
             }}>
 
-                {Object.values(TAG_CATEGORIES).map(category => (
-                    <TagFilterPanel
-                        key={category.id}
-                        category={category}
-                        selectedTags={tags}
-                        onTagToggle={handleTagToggle}
-                        isExpanded={expandedCategories[category.id]}
-                        onToggleExpand={() => toggleCategory(category.id)}
-                    />
-                ))}
+                {Object.values(TAG_CATEGORIES)
+                    .map(category => (
+                        <TagFilterPanel
+                            key={category.id}
+                            category={category}
+                            selectedTags={tags}
+                            onTagToggle={handleTagToggle}
+                            isExpanded={expandedCategories[category.id]}
+                            onToggleExpand={() => toggleCategory(category.id)}
+                        />
+                    ))}
             </div>
         </div>
     );

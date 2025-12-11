@@ -13,6 +13,7 @@ import {
 import { getDerivedDate, isSameDate } from '@/core/utils/dates';
 import { SORT_OPTIONS } from '@/core/constants/searchFilters';
 import { sortPostsByTrending } from '@/core/utils/trendingAlgorithm';
+import { logger } from '@/core/utils/logger';
 
 export const useSearch = () => {
     const [loading, setLoading] = useState(false);
@@ -374,7 +375,7 @@ export const useSearch = () => {
                     const trendingResult = sortPostsByTrending(filtered);
                     filtered = trendingResult.posts;
                     // Optionally log which time period was used
-                    console.log(`Trending posts from: ${trendingResult.period}`);
+                    logger.log(`Trending posts from: ${trendingResult.period}`);
                 } else {
                     filtered.sort((a, b) => {
                         if (sort === 'newest' || sort === 'oldest') {

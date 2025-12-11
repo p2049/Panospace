@@ -26,6 +26,7 @@ import { db, storage } from '@/firebase';
 import type { Post, PostFormData, PostItem, CreatePostResult } from '@/types';
 import { generateSearchKeywords } from '@/domain/search/keywords';
 import { extractExifData } from './exif';
+import { logger } from '@/core/utils/logger';
 
 const POSTS_COLLECTION = 'posts';
 const MAX_IMAGES_PER_POST = 10;
@@ -246,7 +247,7 @@ export async function deletePost(postId: string, userId: string): Promise<void> 
         .map(item => {
             const imageRef = ref(storage, item.url!);
             return deleteObject(imageRef).catch(err => {
-                console.warn('Failed to delete image:', item.url, err);
+                logger.warn('Failed to delete image:', item.url, err);
             });
         });
 

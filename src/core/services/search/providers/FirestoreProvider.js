@@ -14,6 +14,7 @@ import {
     getDocs,
     startAfter
 } from 'firebase/firestore';
+import { logger } from '@/core/utils/logger';
 
 export class FirestoreProvider {
     constructor() {
@@ -113,7 +114,7 @@ export class FirestoreProvider {
             };
 
         } catch (error) {
-            console.error('Firestore search error:', error);
+            logger.error('Firestore search error:', error);
             throw error;
         }
     }
@@ -151,7 +152,7 @@ export class FirestoreProvider {
                 };
             });
         } catch (error) {
-            console.error('Firestore suggest error:', error);
+            logger.error('Firestore suggest error:', error);
             return [];
         }
     }
@@ -162,7 +163,7 @@ export class FirestoreProvider {
     async getFacets(index, facetName) {
         // Firestore doesn't support faceted search natively
         // This would require aggregation queries or pre-computed facets
-        console.warn('Faceted search not supported in Firestore fallback');
+        logger.warn('Faceted search not supported in Firestore fallback');
         return [];
     }
 

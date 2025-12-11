@@ -6,6 +6,8 @@
  * Actual retry logic to be implemented when services are available
  */
 
+import { logger } from '@/core/utils/logger';
+
 const QUEUE_KEY = 'panospace_offline_queue';
 
 export interface QueueItem {
@@ -35,7 +37,7 @@ class OfflineQueueService {
             const stored = localStorage.getItem(QUEUE_KEY);
             return stored ? JSON.parse(stored) : [];
         } catch (e) {
-            console.error('Failed to load offline queue:', e);
+            logger.error('Failed to load offline queue:', e);
             return [];
         }
     }
@@ -44,7 +46,7 @@ class OfflineQueueService {
         try {
             localStorage.setItem(QUEUE_KEY, JSON.stringify(this.queue));
         } catch (e) {
-            console.error('Failed to save offline queue:', e);
+            logger.error('Failed to save offline queue:', e);
         }
     }
 
@@ -64,7 +66,7 @@ class OfflineQueueService {
         this.queue.push(queueItem);
         this.saveQueue();
 
-        console.log(`📥 Queued ${type} action:`, metadata);
+        logger.log(`📥 Queued ${type} action:`, metadata);
         return queueItem.id;
     }
 
@@ -77,7 +79,7 @@ class OfflineQueueService {
 
         this.processing = true;
         const queueLength = this.queue.length;
-        console.log(`🔄 Processing ${queueLength} queued actions...`);
+        logger.log(`🔄 Processing ${queueLength} queued actions...`);
 
         // For now, just clear the queue
         // TODO: Implement actual retry logic when services are available
@@ -85,7 +87,7 @@ class OfflineQueueService {
         this.saveQueue();
 
         this.processing = false;
-        console.log(`✅ Queue cleared (${queueLength} actions)`);
+        logger.log(`✅ Queue cleared (${queueLength} actions)`);
 
         return {
             success: queueLength,
@@ -107,7 +109,7 @@ class OfflineQueueService {
     clearQueue(): void {
         this.queue = [];
         this.saveQueue();
-        console.log('🗑️ Queue cleared');
+        logger.log('🗑️ Queue cleared');
     }
 }
 

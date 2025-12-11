@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaImage, FaTimes, FaStore, FaCamera, FaPlus } from 'react-icons/fa';
+import { FaImage, FaTimes, FaCamera, FaPlus } from 'react-icons/fa';
 import ThumbnailStrip from './ThumbnailStrip';
 
 /**
@@ -107,17 +107,9 @@ const ImageCarousel = ({
                             </button>
 
                             <div className="overlay-bottom-bar">
-                                <label className="shop-toggle-small" onClick={(e) => e.stopPropagation()}>
-                                    <input
-                                        type="checkbox"
-                                        checked={slide.addToShop}
-                                        onChange={(e) => updateSlide(idx, { addToShop: e.target.checked })}
-                                    />
-                                    <FaStore /> Shop
-                                </label>
-                                {(slide.exif || slide.manualExif) && (
+                                {(slide.exif || slide.manualExif) ? (
                                     <span className="exif-badge"><FaCamera /></span>
-                                )}
+                                ) : <div></div>}
                             </div>
                         </div>
                     </div>

@@ -6,6 +6,7 @@ import InfiniteGrid from '@/components/InfiniteGrid';
 import StarBackground from '@/components/StarBackground';
 import { FaArrowLeft, FaFire, FaClock, FaTrophy, FaStar } from 'react-icons/fa';
 import { useThemeStore } from '@/core/store/useThemeStore';
+import { logger } from '@/core/utils/logger';
 
 const EventFeedPage = () => {
     const { eventId } = useParams();
@@ -50,7 +51,7 @@ const EventFeedPage = () => {
                 setEvent(data);
             } else {
                 // Event not found
-                console.warn("Event not found:", eventId);
+                logger.warn("Event not found:", eventId);
                 // navigate('/search'); // Optional: redirect
             }
         };

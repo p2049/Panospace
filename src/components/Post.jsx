@@ -21,6 +21,7 @@ import '@/styles/Post.css';
 import { formatExifForDisplay } from '@/core/utils/exif';
 import { isNSFW, getUserNSFWPreference } from '@/core/constants/nsfwTags';
 import { preloadImage } from '@/core/utils/imageCache';
+import { logger } from '@/core/utils/logger';
 
 const ExifDisplay = React.memo(({ exif }) => {
     const displayData = formatExifForDisplay(exif);
@@ -71,7 +72,7 @@ const Post = ({ post, priority = 'normal' }) => {
 
     // STABILITY: Early return if post is null/undefined
     if (!post) {
-        console.warn('Post component received null/undefined post');
+        logger.warn('Post component received null/undefined post');
         return null;
     }
 
@@ -103,7 +104,7 @@ const Post = ({ post, priority = 'normal' }) => {
 
     // Check for special rendering modes first (Top Level)
     if (useFilmStripMode) {
-        return <FilmStripPost images={items} uiOverlays={post.uiOverlays} priority={priority} />;
+        return <FilmStripPost images={items} uiOverlays={post.uiOverlays} priority={priority} postId={post.id} />;
     }
 
     if (hasInstantBorder) {
@@ -131,6 +132,30 @@ const Post = ({ post, priority = 'normal' }) => {
             observer.disconnect();
         };
     }, [post.id, setActivePost]); // Only depend on post.id
+
+    // EARLY FETCHING: Preload first 3 slides when approaching viewport
+    useEffect(() => {
+        if (!items || items.length === 0 || !containerRef.current) return;
+
+        const preloadObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        // Immediately preload first 3 slides
+                        items.slice(0, 3).forEach(item => {
+                            const url = item?.url || (typeof item === 'string' ? item : null);
+                            if (url && typeof url === 'string') preloadImage(url);
+                        });
+                        preloadObserver.disconnect();
+                    }
+                });
+            },
+            { rootMargin: '50% 0px 50% 0px' } // Start fetching when 50% of screen away
+        );
+
+        preloadObserver.observe(containerRef.current);
+        return () => preloadObserver.disconnect();
+    }, [items]);
 
     // BACKLOG FIX: Fetch Author Photo if missing
     // Old posts might not have the updated author photo URL.
@@ -164,7 +189,7 @@ const Post = ({ post, priority = 'normal' }) => {
                     }
                 }
             } catch (err) {
-                console.warn("Failed to fetch author photo fallback", err);
+                logger.warn("Failed to fetch author photo fallback", err);
             }
         };
 
@@ -259,7 +284,7 @@ const Post = ({ post, priority = 'normal' }) => {
                 try {
                     const shopItemsRef = collection(db, 'shopItems');
 
-                    console.log("Checking Shop Status for:", authorId, "Post:", post.id, "SpaceCard:", post.spaceCardId);
+                    logger.log("Checking Shop Status for:", authorId, "Post:", post.id, "SpaceCard:", post.spaceCardId);
 
                     // 1. Check if THIS post is listed (by sourcePostId matching post.id OR post.spaceCardId)
                     // We need to check both because ShopItems can link to either a Post or a SpaceCard.
@@ -276,11 +301,11 @@ const Post = ({ post, priority = 'normal' }) => {
                     const specificSnapshot = await getDocs(specificItemQuery);
 
                     if (!specificSnapshot.empty) {
-                        console.log("Found Specific Item:", specificSnapshot.docs[0].id);
+                        logger.log("Found Specific Item:", specificSnapshot.docs[0].id);
                         setShopLinkTarget({ type: 'item', id: specificSnapshot.docs[0].id });
                         return;
                     } else {
-                        console.log("No specific item found.");
+                        logger.log("No specific item found.");
                     }
 
                     // 2. Fallback: Check if user has ANY active shop items
@@ -293,14 +318,14 @@ const Post = ({ post, priority = 'normal' }) => {
                     const generalSnapshot = await getDocs(generalQuery);
 
                     if (!generalSnapshot.empty) {
-                        console.log("Found General Shop Items");
+                        logger.log("Found General Shop Items");
                         setShopLinkTarget({ type: 'profile', id: authorId });
                     } else {
-                        console.log("No active shop items found for user.");
+                        logger.log("No active shop items found for user.");
                         setShopLinkTarget(null);
                     }
                 } catch (error) {
-                    console.error("Error checking shop status:", error);
+                    logger.error("Error checking shop status:", error);
                 }
             };
             checkShopStatus();
@@ -336,14 +361,18 @@ const Post = ({ post, priority = 'normal' }) => {
         alert("Link copied");
     };
 
-    // Preload next/prev images for instant swiping
+    // Preload current, next, prev images for instant swiping
     useEffect(() => {
-        if (!items || items.length <= 1) return;
+        if (!items || items.length === 0) return;
 
-        const indicesToPreload = [
-            (currentSlide + 1) % items.length,
-            (currentSlide - 1 + items.length) % items.length
-        ];
+        // Preload Current + Next + Prev
+        // We include Current to ensure it's in the Map cache (preventing GC flicker)
+        const indicesToPreload = [currentSlide];
+
+        if (items.length > 1) {
+            indicesToPreload.push((currentSlide + 1) % items.length);
+            indicesToPreload.push((currentSlide - 1 + items.length) % items.length);
+        }
 
         indicesToPreload.forEach(index => {
             const item = items[index];
@@ -359,7 +388,7 @@ const Post = ({ post, priority = 'normal' }) => {
         if (!item) return null;
 
         const url = item.url || item;
-        const isUrl = typeof url === 'string' && url.match(/^http/);
+        const isUrl = typeof url === 'string' && (url.startsWith('http') || url.startsWith('blob:'));
 
         // --- STANDARD IMAGE RENDERING ---
         if (isUrl) {
@@ -378,7 +407,7 @@ const Post = ({ post, priority = 'normal' }) => {
                         priority={index === 0 ? priority : 'low'}
                         eager={isNearby}
                         objectFit="contain" // Standard fit
-                        style={{ width: '100%', height: '100%' }}
+                        style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
                     />
                     {post.uiOverlays?.quartzDate && (
                         <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
@@ -428,61 +457,87 @@ const Post = ({ post, priority = 'normal' }) => {
                 </div>
             ) : items.length === 1 ? (
                 /* SINGLE IMAGE VIEW */
-                <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: (post.atmosphereBackground === 'cinematic-gradient')
-                        ? `radial-gradient(circle at center, ${post.gradientColor || '#1a4f3d'} 0%, #000000 90%)`
-                        : '#000',
-                    position: 'relative'
-                }}>
-                    {/* Render Image Content */}
-                    {renderSlideContent(items[0], 0)}
+                (() => {
+                    const item = items[0];
+                    const aspectRatio = item.aspectRatio || (item.width && item.height ? item.width / item.height : null);
+                    const isCinematic = post.atmosphereBackground === 'cinematic-gradient';
 
-                    {/* NSFW Warning Overlay */}
-                    {hasNSFWContent && !showNSFWContent && (
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowNSFWContent(true);
-                            }}
-                            style={{
-                                position: 'absolute',
-                                inset: 0,
-                                background: 'rgba(0,0,0,0.95)',
-                                backdropFilter: 'blur(20px)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                zIndex: 100,
-                                padding: '2rem'
-                            }}
-                        >
-                            <FaExclamationTriangle size={64} color="#ff6b6b" style={{ marginBottom: '1.5rem' }} />
-                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#fff' }}>Sensitive Content</h3>
-                            <p style={{ color: '#aaa', marginBottom: '1.5rem', textAlign: 'center', maxWidth: '300px' }}>
-                                This post may contain sensitive or mature material
-                            </p>
-                            <button style={{
-                                padding: '0.75rem 1.5rem',
-                                background: '#7FFFD4',
-                                color: '#000',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                fontSize: '1rem'
-                            }}>
-                                Tap to View
-                            </button>
+                    return (
+                        <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#000',
+                            position: 'relative'
+                        }}>
+                            {/* Cinematic Gradient Layer */}
+                            {isCinematic && (
+                                <div style={{
+                                    position: 'absolute',
+                                    zIndex: 0,
+                                    ...(aspectRatio ? {
+                                        aspectRatio: `${aspectRatio}`,
+                                        width: '100%',
+                                        height: '100%',
+                                        maxHeight: '100%',
+                                        maxWidth: '100%'
+                                    } : {
+                                        inset: 0
+                                    }),
+                                    background: `radial-gradient(circle at center, ${post.gradientColor || '#1a4f3d'} 0%, #000000 90%)`
+                                }} />
+                            )}
+
+                            {/* Render Image Content */}
+                            <div style={{ zIndex: 1, width: '100%', height: '100%', flex: 1 }}>
+                                {renderSlideContent(items[0], 0)}
+                            </div>
+
+                            {/* NSFW Warning Overlay */}
+                            {hasNSFWContent && !showNSFWContent && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowNSFWContent(true);
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        background: 'rgba(0,0,0,0.95)',
+                                        backdropFilter: 'blur(20px)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        zIndex: 100,
+                                        padding: '2rem'
+                                    }}
+                                >
+                                    <FaExclamationTriangle size={64} color="#ff6b6b" style={{ marginBottom: '1.5rem' }} />
+                                    <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#fff' }}>Sensitive Content</h3>
+                                    <p style={{ color: '#aaa', marginBottom: '1.5rem', textAlign: 'center', maxWidth: '300px' }}>
+                                        This post may contain sensitive or mature material
+                                    </p>
+                                    <button style={{
+                                        padding: '0.75rem 1.5rem',
+                                        background: '#7FFFD4',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        fontSize: '1rem'
+                                    }}>
+                                        Tap to View
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    );
+                })()
             ) : (
                 /* MULTI-IMAGE CAROUSEL */
                 <div
@@ -567,6 +622,47 @@ const Post = ({ post, priority = 'normal' }) => {
                         >
                             ›
                         </button>
+                    )}
+
+                    {/* NSFW Warning Overlay for Carousel */}
+                    {hasNSFWContent && !showNSFWContent && (
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowNSFWContent(true);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(0,0,0,0.95)',
+                                backdropFilter: 'blur(20px)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                zIndex: 100,
+                                padding: '2rem'
+                            }}
+                        >
+                            <FaExclamationTriangle size={64} color="#ff6b6b" style={{ marginBottom: '1.5rem' }} />
+                            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#fff' }}>Sensitive Content</h3>
+                            <p style={{ color: '#aaa', marginBottom: '1.5rem', textAlign: 'center', maxWidth: '300px' }}>
+                                This post may contain sensitive or mature material
+                            </p>
+                            <button style={{
+                                padding: '0.75rem 1.5rem',
+                                background: '#7FFFD4',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                fontSize: '1rem'
+                            }}>
+                                Tap to View
+                            </button>
+                        </div>
                     )}
                 </div>
             )}

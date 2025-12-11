@@ -1,5 +1,6 @@
 // src/hooks/useDraftSaving.js
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/core/utils/logger';
 
 const DRAFT_KEY = 'panospace_post_draft';
 const DRAFT_EXPIRY_HOURS = 24;
@@ -24,7 +25,7 @@ export const useDraftSaving = () => {
             localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
             setHasDraft(true);
         } catch (error) {
-            console.warn('Failed to save draft:', error);
+            logger.warn('Failed to save draft:', error);
         }
     }, []);
 
@@ -44,7 +45,7 @@ export const useDraftSaving = () => {
 
             return draft.data;
         } catch (error) {
-            console.warn('Failed to load draft:', error);
+            logger.warn('Failed to load draft:', error);
             return null;
         }
     }, []);
@@ -55,7 +56,7 @@ export const useDraftSaving = () => {
             localStorage.removeItem(DRAFT_KEY);
             setHasDraft(false);
         } catch (error) {
-            console.warn('Failed to clear draft:', error);
+            logger.warn('Failed to clear draft:', error);
         }
     }, []);
 

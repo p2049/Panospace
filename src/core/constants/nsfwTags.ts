@@ -3,6 +3,8 @@
  * Tags that indicate sensitive or mature content
  */
 
+import { logger } from '@/core/utils/logger';
+
 export const NSFW_TAGS: string[] = [
     'nsfw',
     'explicit',
@@ -47,7 +49,7 @@ export const setUserNSFWPreference = (show: boolean): void => {
     try {
         localStorage.setItem('showNSFW', show.toString());
     } catch (e) {
-        console.error('Failed to save NSFW preference:', e);
+        logger.error('Failed to save NSFW preference:', e);
     }
 };
 

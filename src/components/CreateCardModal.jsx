@@ -14,6 +14,7 @@ import {
     getTagLabel
 } from '@/core/constants/officialCardCategories';
 import StarBackground from './StarBackground';
+import { logger } from '@/core/utils/logger';
 
 const CreateCardModal = ({ onClose, onCreated }) => {
     const { currentUser } = useAuth();
@@ -287,7 +288,6 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                 editionSize: editionType === EDITION_TYPES.LIMITED ? editionSize : null,
                 linkedPostId: postId || selectedPost?.id || null,
                 cardStyle,
-                cardStyle,
                 basePrice: 0, // Force 0 or remove entirely if schema allows. We are removing selling fields.
                 // New Fields
                 cardType,
@@ -322,10 +322,10 @@ const CreateCardModal = ({ onClose, onCreated }) => {
 
                     // Add to 'shopItems' collection
                     await addDoc(collection(db, 'shopItems'), shopItemData);
-                    console.log("Shop Item Draft Created for SpaceCard:", newCard.id);
+                    logger.log("Shop Item Draft Created for SpaceCard:", newCard.id);
 
                 } catch (shopError) {
-                    console.error("Error creating shop draft:", shopError);
+                    logger.error("Error creating shop draft:", shopError);
                     // Don't block the main success flow, just log it
                 }
             }

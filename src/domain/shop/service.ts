@@ -20,6 +20,7 @@ import {
 import { db } from '@/firebase';
 import type { ShopItem, Post, PostItem, PrintSize, Earnings } from '@/types';
 import { getPrintifyProducts, calculateEarnings } from './pricing';
+import { logger } from '@/core/utils/logger';
 const PRINT_SIZES = getPrintifyProducts();
 
 const SHOP_ITEMS_COLLECTION = 'shopItems';
@@ -58,7 +59,7 @@ export async function createShopItemsFromPost(
             });
 
         if (printSizes.length === 0) {
-            console.warn('No print sizes selected for shop item, skipping');
+            logger.warn('No print sizes selected for shop item, skipping');
             continue;
         }
 

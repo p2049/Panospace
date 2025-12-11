@@ -90,7 +90,8 @@ export const useCreatePost = () => {
             try {
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    authorName = userDoc.data().displayName;
+                    const data = userDoc.data();
+                    authorName = data.username || data.displayName;
                 }
             } catch (e) {
                 console.warn('Could not fetch user profile for name', e);
@@ -295,7 +296,7 @@ export const useCreatePost = () => {
                             thumbnailUrl: urlL1 || urlL2, // Use L1 as thumbnail
                             tinyUrl: urlL0 || urlL1 || urlL2, // Use L0 as tiny placeholder
                             caption: slide.caption || '',
-                            exif: finalExif || null,
+                            exif: finalExif ? JSON.parse(JSON.stringify(finalExif)) : null,
                             addToShop: slide.addToShop || false,
                             productTier: slide.productTier || 'economy',
                             includeStickers: slide.includeStickers || false,
@@ -424,15 +425,15 @@ export const useCreatePost = () => {
                 timeOfDayTags: postData.timeOfDayTags || [],
                 filmMetadata: postData.filmMetadata || null,
                 enableRatings: postData.enableRatings || false,
-                uiOverlays: postData.uiOverlays || null,
+                uiOverlays: postData.uiOverlays ? JSON.parse(JSON.stringify(postData.uiOverlays)) : null,
                 filmInfo: postData.filmMetadata?.isFilm ? {
-                    filmStock: postData.filmMetadata.stock,
-                    camera: postData.filmMetadata.cameraOverride,
-                    lens: postData.filmMetadata.lensOverride,
-                    iso: postData.filmMetadata.iso,
-                    format: postData.filmMetadata.format,
-                    scanner: postData.filmMetadata.scanner,
-                    notes: postData.filmMetadata.lab
+                    filmStock: postData.filmMetadata.stock || '',
+                    camera: postData.filmMetadata.cameraOverride || '',
+                    lens: postData.filmMetadata.lensOverride || '',
+                    iso: postData.filmMetadata.iso || '',
+                    format: postData.filmMetadata.format || '',
+                    scanner: postData.filmMetadata.scanner || '',
+                    notes: postData.filmMetadata.lab || ''
                 } : null,
                 postType: postData.postType || 'standard',
                 flipbookSettings: postData.flipbookSettings || null,

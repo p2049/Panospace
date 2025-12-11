@@ -2,13 +2,14 @@ import { collection, getDocs, deleteDoc, doc, updateDoc, query, orderBy, limit, 
 import { ref, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/firebase';
 import type { Post, ShopItem, UserProfile } from '@/types';
+import { logger } from '@/core/utils/logger';
 
 /**
  * Cleanup utility to delete posts whose images no longer exist in Storage
  * 🔒 OPTIMIZED: Now uses batch processing to avoid expensive full collection scans
  */
 export const cleanupOrphanedPosts = async (batchSize = 100) => {
-    console.log('🧹 Starting orphaned posts cleanup...');
+    logger.log('🧹 Starting orphaned posts cleanup...');
 
     let deletedCount = 0;
     let checkedCount = 0;
@@ -48,7 +49,7 @@ export const cleanupOrphanedPosts = async (batchSize = 100) => {
             const imageUrl = images?.[0]?.url || (post as any).imageUrl || (post as any).downloadURL;
 
             if (!imageUrl) {
-                console.log(`🗑️  Post ${postDoc.id} has no image URL, deleting...`);
+                logger.log(`🗑️  Post ${postDoc.id} has no image URL, deleting...`);
                 await deleteDoc(doc(db, 'posts', postDoc.id));
                 deletedCount++;
                 continue;
@@ -60,9 +61,9 @@ export const cleanupOrphanedPosts = async (batchSize = 100) => {
                 const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
 
                 if (!pathMatch) {
-                    console.log(`⚠️  Could not parse storage path for post ${postDoc.id}`);
+                    logger.log(`⚠️  Could not parse storage path for post ${postDoc.id}`);
                     if (imageUrl.includes('firebasestorage.googleapis.com')) {
-                        console.log(`🗑️  Deleting post ${postDoc.id} with malformed Firebase URL`);
+                        logger.log(`🗑️  Deleting post ${postDoc.id} with malformed Firebase URL`);
                         await deleteDoc(doc(db, 'posts', postDoc.id));
                         deletedCount++;
                     }
@@ -74,10 +75,10 @@ export const cleanupOrphanedPosts = async (batchSize = 100) => {
 
                 try {
                     await getDownloadURL(storageRef);
-                    console.log(`✅ Post ${postDoc.id} - image exists`);
+                    logger.log(`✅ Post ${postDoc.id} - image exists`);
                 } catch (storageError: any) {
                     if (storageError.code === 'storage/object-not-found') {
-                        console.log(`🗑️  Deleting orphaned post ${postDoc.id} - image not found`);
+                        logger.log(`🗑️  Deleting orphaned post ${postDoc.id} - image not found`);
                         await deleteDoc(doc(db, 'posts', postDoc.id));
                         deletedCount++;
                     } else {
@@ -85,23 +86,23 @@ export const cleanupOrphanedPosts = async (batchSize = 100) => {
                     }
                 }
             } catch (error: any) {
-                console.error(`❌ Error processing post ${postDoc.id}:`, error);
+                logger.error(`❌ Error processing post ${postDoc.id}:`, error);
                 errors.push({ postId: postDoc.id, error: error.message });
             }
         }
 
         lastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-        console.log(`📊 Progress: Checked ${checkedCount} posts, deleted ${deletedCount}`);
+        logger.log(`📊 Progress: Checked ${checkedCount} posts, deleted ${deletedCount}`);
     }
 
-    console.log(`\n📊 Cleanup Summary:`);
-    console.log(`   Posts checked: ${checkedCount}`);
-    console.log(`   Posts deleted: ${deletedCount}`);
-    console.log(`   Errors: ${errors.length}`);
+    logger.log(`\n📊 Cleanup Summary:`);
+    logger.log(`   Posts checked: ${checkedCount}`);
+    logger.log(`   Posts deleted: ${deletedCount}`);
+    logger.log(`   Errors: ${errors.length}`);
 
     if (errors.length > 0) {
-        console.log('\n❌ Errors encountered:');
-        errors.forEach(e => console.log(`   - Post ${e.postId}: ${e.error}`));
+        logger.log('\n❌ Errors encountered:');
+        errors.forEach(e => logger.log(`   - Post ${e.postId}: ${e.error}`));
     }
 
     return {
@@ -116,7 +117,7 @@ export const cleanupOrphanedPosts = async (batchSize = 100) => {
  * 🔒 OPTIMIZED: Batch processing
  */
 export const cleanupOrphanedShopItems = async (batchSize = 100) => {
-    console.log('🧹 Starting orphaned shop items cleanup...');
+    logger.log('🧹 Starting orphaned shop items cleanup...');
 
     let deletedCount = 0;
     let checkedCount = 0;
@@ -148,7 +149,7 @@ export const cleanupOrphanedShopItems = async (batchSize = 100) => {
             const imageUrl = item.imageUrl;
 
             if (!imageUrl) {
-                console.log(`🗑️  Shop item ${itemDoc.id} has no image URL, deleting...`);
+                logger.log(`🗑️  Shop item ${itemDoc.id} has no image URL, deleting...`);
                 await deleteDoc(doc(db, 'shopItems', itemDoc.id));
                 deletedCount++;
                 continue;
@@ -159,7 +160,7 @@ export const cleanupOrphanedShopItems = async (batchSize = 100) => {
                 const pathMatch = urlObj.pathname.match(/\/o\/(.+)/);
                 if (!pathMatch) {
                     if (imageUrl.includes('firebasestorage.googleapis.com')) {
-                        console.log(`🗑️  Deleting shop item ${itemDoc.id} with malformed Firebase URL`);
+                        logger.log(`🗑️  Deleting shop item ${itemDoc.id} with malformed Firebase URL`);
                         await deleteDoc(doc(db, 'shopItems', itemDoc.id));
                         deletedCount++;
                     }
@@ -171,26 +172,26 @@ export const cleanupOrphanedShopItems = async (batchSize = 100) => {
 
                 try {
                     await getDownloadURL(storageRef);
-                    console.log(`✅ Shop item ${itemDoc.id} - image exists`);
+                    logger.log(`✅ Shop item ${itemDoc.id} - image exists`);
                 } catch (storageError: any) {
                     if (storageError.code === 'storage/object-not-found') {
-                        console.log(`🗑️  Deleting orphaned shop item ${itemDoc.id}`);
+                        logger.log(`🗑️  Deleting orphaned shop item ${itemDoc.id}`);
                         await deleteDoc(doc(db, 'shopItems', itemDoc.id));
                         deletedCount++;
                     }
                 }
             } catch (error) {
-                console.error(`❌ Error processing shop item ${itemDoc.id}:`, error);
+                logger.error(`❌ Error processing shop item ${itemDoc.id}:`, error);
             }
         }
 
         lastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-        console.log(`📊 Progress: Checked ${checkedCount} shop items, deleted ${deletedCount}`);
+        logger.log(`📊 Progress: Checked ${checkedCount} shop items, deleted ${deletedCount}`);
     }
 
-    console.log(`\n📊 Shop Cleanup Summary:`);
-    console.log(`   Items checked: ${checkedCount}`);
-    console.log(`   Items deleted: ${deletedCount}`);
+    logger.log(`\n📊 Shop Cleanup Summary:`);
+    logger.log(`   Items checked: ${checkedCount}`);
+    logger.log(`   Items deleted: ${deletedCount}`);
 
     return { checked: checkedCount, deleted: deletedCount };
 };
@@ -200,7 +201,7 @@ export const cleanupOrphanedShopItems = async (batchSize = 100) => {
  * 🔒 OPTIMIZED: Batch processing
  */
 export const cleanupOrphanedUserImages = async (batchSize = 100) => {
-    console.log('🧹 Starting orphaned user images cleanup...');
+    logger.log('🧹 Starting orphaned user images cleanup...');
 
     let updatedCount = 0;
     let checkedCount = 0;
@@ -245,7 +246,7 @@ export const cleanupOrphanedUserImages = async (batchSize = 100) => {
 
                 if (!pathMatch) {
                     if (photoURL.includes('firebasestorage.googleapis.com')) {
-                        console.log(`🗑️  Removing malformed photo URL for user ${userDoc.id}`);
+                        logger.log(`🗑️  Removing malformed photo URL for user ${userDoc.id}`);
                         await updateDoc(doc(db, 'users', userDoc.id), {
                             photoURL: ''
                         });
@@ -259,10 +260,10 @@ export const cleanupOrphanedUserImages = async (batchSize = 100) => {
 
                 try {
                     await getDownloadURL(storageRef);
-                    console.log(`✅ User ${userDoc.id} - photo exists`);
+                    logger.log(`✅ User ${userDoc.id} - photo exists`);
                 } catch (storageError: any) {
                     if (storageError.code === 'storage/object-not-found') {
-                        console.log(`🗑️  Removing orphaned photo for user ${userDoc.id}`);
+                        logger.log(`🗑️  Removing orphaned photo for user ${userDoc.id}`);
                         await updateDoc(doc(db, 'users', userDoc.id), {
                             photoURL: ''
                         });
@@ -272,18 +273,18 @@ export const cleanupOrphanedUserImages = async (batchSize = 100) => {
                     }
                 }
             } catch (error: any) {
-                console.error(`❌ Error processing user ${userDoc.id}:`, error);
+                logger.error(`❌ Error processing user ${userDoc.id}:`, error);
                 errors.push({ userId: userDoc.id, error: error.message });
             }
         }
 
         lastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-        console.log(`📊 Progress: Checked ${checkedCount} users, updated ${updatedCount}`);
+        logger.log(`📊 Progress: Checked ${checkedCount} users, updated ${updatedCount}`);
     }
 
-    console.log(`\n📊 User Cleanup Summary:`);
-    console.log(`   Users checked: ${checkedCount}`);
-    console.log(`   Users updated: ${updatedCount}`);
+    logger.log(`\n📊 User Cleanup Summary:`);
+    logger.log(`   Users checked: ${checkedCount}`);
+    logger.log(`   Users updated: ${updatedCount}`);
 
     return {
         checked: checkedCount,

@@ -44,7 +44,9 @@ const FilmOptionsPanel = ({
     enableSprocketOverlay,
     setEnableSprocketOverlay,
     enableInstantPhotoOverlay,
-    setEnableInstantPhotoOverlay
+    setEnableInstantPhotoOverlay,
+    instantPhotoStyle,
+    setInstantPhotoStyle
 }) => {
     return (
         <div className="form-section">
@@ -249,6 +251,41 @@ const FilmOptionsPanel = ({
                                     />
                                     <span style={{ marginTop: '1px' }}>Instant Photo UI</span>
                                 </label>
+
+                                {enableInstantPhotoOverlay && (
+                                    <div style={{ paddingLeft: '1.5rem', display: 'flex', gap: '0.5rem', marginTop: '-0.2rem' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInstantPhotoStyle('thin')}
+                                            style={{
+                                                padding: '0.3rem 0.6rem',
+                                                fontSize: '0.75rem',
+                                                background: instantPhotoStyle === 'thin' ? 'rgba(127, 255, 212, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                border: instantPhotoStyle === 'thin' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.2)',
+                                                color: instantPhotoStyle === 'thin' ? '#7FFFD4' : '#aaa',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Thin Border
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInstantPhotoStyle('thick')}
+                                            style={{
+                                                padding: '0.3rem 0.6rem',
+                                                fontSize: '0.75rem',
+                                                background: instantPhotoStyle === 'thick' ? 'rgba(127, 255, 212, 0.2)' : 'rgba(255,255,255,0.05)',
+                                                border: instantPhotoStyle === 'thick' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.2)',
+                                                color: instantPhotoStyle === 'thick' ? '#7FFFD4' : '#aaa',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Thick Border
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

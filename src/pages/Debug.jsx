@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { logger } from '@/core/utils/logger';
 
 const Debug = () => {
     const [data, setData] = useState([]);
@@ -9,11 +10,11 @@ const Debug = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log("Running Debug Query...");
+                logger.log("Running Debug Query...");
                 const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
 
                 const snapshot = await getDocs(q);
-                console.log("Snapshot size:", snapshot.size);
+                logger.log("Snapshot size:", snapshot.size);
 
                 const posts = snapshot.docs.map(doc => ({
                     id: doc.id,
@@ -21,7 +22,7 @@ const Debug = () => {
                 }));
                 setData(posts);
             } catch (err) {
-                console.error("Debug Query Error:", err);
+                logger.error("Debug Query Error:", err);
                 setData({ error: err.message, code: err.code });
             } finally {
                 setLoading(false);

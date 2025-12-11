@@ -8,7 +8,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import PaywallModal from '@/components/monetization/PaywallModal';
-import '@/styles/create-gallery';
+import '@/styles/create-gallery.css';
 import StarBackground from '@/components/StarBackground';
 import { sanitizeTitle, sanitizeDescription } from '@/core/utils/sanitize';
 

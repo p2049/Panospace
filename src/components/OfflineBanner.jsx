@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaWifi, FaExclamationTriangle } from 'react-icons/fa';
 import useOnlineStatus from '@/hooks/useOnlineStatus';
 import { OfflineQueue } from '@/services/OfflineQueue';
+import { logger } from '@/core/utils/logger';
 
 /**
  * OfflineBanner - Minimal banner shown when connection is lost
@@ -43,7 +44,7 @@ const OfflineBanner = () => {
             const processOfflineQueue = async () => {
                 const queueLen = OfflineQueue.getQueueLength();
                 if (queueLen > 0) {
-                    console.log(`🔄 Processing ${queueLen} queued actions...`);
+                    logger.log(`🔄 Processing ${queueLen} queued actions...`);
                     await OfflineQueue.processQueue();
                     setQueueLength(0);
                 }

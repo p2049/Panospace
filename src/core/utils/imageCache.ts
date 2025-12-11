@@ -3,7 +3,7 @@
  * Lightweight singleton.
  */
 
-const loadedImages = new Set<string>();
+const loadedImages = new Map<string, HTMLImageElement | true>();
 
 /**
  * Check if an image is already loaded/decoded
@@ -17,28 +17,32 @@ export const isImageLoaded = (url: string | null | undefined): boolean => {
  * Mark an image as loaded
  */
 export const markImageLoaded = (url: string | null | undefined): void => {
-    if (url) loadedImages.add(url);
+    if (url) loadedImages.set(url, true);
 };
 
 /**
  * Preload an image URL
  * Uses new Image() to force browser download and decode
+ * Stores the image strictly in memory to prevent GC during transitions
  */
 export const preloadImage = (url: string | null | undefined): void => {
     if (!url || isImageLoaded(url)) return;
 
-    // Trigger download
+    // Trigger download & Store Reference
     const img = new Image();
+    img.decoding = 'async';
     img.src = url;
+
+    // Store in cache immediately
+    loadedImages.set(url, img);
+
     img.decode().then(() => {
-        markImageLoaded(url);
+        // Decoded successfully, keep in cache
     }).catch(() => {
-        // Fallback for decode error or non-supporting browsers,
-        // still mark as "attempted" or wait for onload?
-        // Just rely on onload
+        // Fallback or error, but we keep the reference if it loads eventually via onload
     });
 
     img.onload = () => {
-        markImageLoaded(url);
+        // Validated load
     };
 };

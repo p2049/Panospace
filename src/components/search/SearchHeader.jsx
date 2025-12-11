@@ -229,7 +229,6 @@ const SearchHeader = ({
                                 boxShadow: '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)',
                                 backdropFilter: 'blur(10px)',
                                 transition: 'all 0.3s ease',
-                                transition: 'all 0.3s ease',
                                 height: '32px', // Force height
                                 boxSizing: 'border-box'
                             }}
