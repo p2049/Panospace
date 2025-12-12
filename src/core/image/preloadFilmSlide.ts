@@ -9,7 +9,7 @@ import { preloadImage } from './imageLoader';
  * @param {Array|Object} images - Array of image objects or a single image object.
  * @returns {Promise} Resolves when all images in the slide are cached.
  */
-export const preloadFilmSlide = (images) => {
+export const preloadFilmSlide = (images: any) => {
     if (!images) return Promise.resolve();
 
     const imageList = Array.isArray(images) ? images : [images];

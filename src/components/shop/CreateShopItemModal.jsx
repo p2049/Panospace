@@ -7,7 +7,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { PRINT_TIERS } from '@/domain/shop/pricing';
 import { fetchPublishedPosts } from '@/core/services/firestore/posts.service';
 import { logger } from '@/core/utils/logger';
-import StarBackground from '../CreateCardModal/StarBackground';
+import StarBackground from '@/components/StarBackground';
 
 const CreateShopItemModal = ({ onClose, onCreated }) => {
     const { currentUser } = useAuth();

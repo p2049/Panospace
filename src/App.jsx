@@ -20,7 +20,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Feed = lazy(() => import('./pages/Feed'));
 const CreatePost = lazy(() => import('./pages/CreatePost'));
-const Profile = lazy(() => import('./pages/Profile'));
+const Profile = lazy(() => import("./pages/Profile.jsx"));
 const EditProfile = lazy(() => import('./pages/EditProfile'));
 const Search = lazy(() => import('./pages/Search'));
 const Legal = lazy(() => import('./pages/Legal'));

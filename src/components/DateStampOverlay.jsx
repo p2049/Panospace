@@ -1,7 +1,7 @@
 import React from 'react';
 import '@/styles/DateStampOverlay.css';
 
-const DateStampOverlay = ({ date, styleName = 'panospace', quartzDate = null }) => {
+const DateStampOverlay = ({ date, styleName = 'panospace', quartzDate = null, style = {} }) => {
     // If quartzDate is provided (from post.uiOverlays.quartzDate), use that instead
     if (quartzDate) {
         const quartzColor = quartzDate.color || '#00FF55'; // Default green like Fuji film
@@ -17,7 +17,8 @@ const DateStampOverlay = ({ date, styleName = 'panospace', quartzDate = null }) 
                 className="date-stamp-overlay quartz-date"
                 style={{
                     '--quartz-color': quartzColor,
-                    color: quartzColor
+                    color: quartzColor,
+                    ...style
                 }}
             >
                 {formattedText}

@@ -5,7 +5,7 @@ const admin = require('firebase-admin');
 if (!admin.apps.length) {
     admin.initializeApp({
         projectId: 'panospace-7v4ucn',
-        storageBucket: 'panospace-7v4ucn.firebasestorage.app'
+        storageBucket: 'panospace-7v4ucn.appspot.com'
     });
 }
 

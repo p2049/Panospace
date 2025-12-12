@@ -17,6 +17,16 @@ window.collection = collection;
 window.addDoc = addDoc;
 window.serverTimestamp = serverTimestamp;
 
+// Unregister service workers in development to prevent fetch interception issues
+if (import.meta.env.DEV && "serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(reg => {
+      reg.unregister();
+      console.log('[DEV] Service worker unregistered:', reg.scope);
+    });
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <GlobalErrorBoundary>
     <App />

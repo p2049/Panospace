@@ -8,7 +8,7 @@ const activeRequests = new Map();
  * Get variants for an image source based on context.
  * In a real implementation, this would append query params for a fast resizing service.
  */
-export const getImageVariants = (src, context) => {
+export const getImageVariants = (src: any, context: any) => {
     // Placeholder for backend resize logic
     // For now, return the original source as both low and high res 
     // unless a specific thumbnail convention exists.
@@ -22,7 +22,7 @@ export const getImageVariants = (src, context) => {
  * Preload an image with caching and request deduping.
  * Uses async decoding to prevent main thread blocking.
  */
-export const preloadImage = (src) => {
+export const preloadImage = (src: any) => {
     if (!src) return Promise.resolve();
     if (imageCache.has(src)) return Promise.resolve(imageCache.get(src));
     if (activeRequests.has(src)) return activeRequests.get(src);
@@ -42,7 +42,7 @@ export const preloadImage = (src) => {
             resolve(img);
         };
 
-        const handleError = (err) => {
+        const handleError = (err: any) => {
             activeRequests.delete(src);
             // Don't reject aggressively to prevent UI crashes, just resolve empty
             console.warn('Failed to preload image:', src);
@@ -65,11 +65,11 @@ export const preloadImage = (src) => {
 /**
  * Preload multiple variants if needed
  */
-export const preloadImageVariants = ({ lowResSrc, highResSrc }) => {
+export const preloadImageVariants = ({ lowResSrc, highResSrc }: any) => {
     return Promise.all([
         preloadImage(lowResSrc),
         preloadImage(highResSrc)
     ]);
 };
 
-export const isImageCached = (src) => imageCache.has(src);
+export const isImageCached = (src: any) => imageCache.has(src);

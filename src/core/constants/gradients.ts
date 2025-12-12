@@ -151,6 +151,15 @@ export const PROFILE_GRADIENTS: Record<string, ProfileGradient> = {
         topColor: '#7FFFD4',
         isDefault: false,
         unlockCondition: 'free'
+    },
+    'orbital': {
+        id: 'orbital',
+        name: 'Orbital',
+        description: 'Signature PanoSpace Cosmic',
+        background: 'linear-gradient(135deg, #0A1A3A 0%, #1B82FF 50%, #8CFFE9 100%)',
+        topColor: '#8CFFE9',
+        isDefault: false,
+        unlockCondition: 'free'
     }
 };
 

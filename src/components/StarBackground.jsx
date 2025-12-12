@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 
-const StarBackground = ({ starColor = '#7FFFD4', transparent = false }) => {
+const StarBackground = ({ starColor = '#7FFFD4', transparent = false, maskTop = false }) => {
     // Detect if device is mobile to save battery
     const [isMobile, setIsMobile] = useState(false);
 
@@ -71,7 +71,9 @@ const StarBackground = ({ starColor = '#7FFFD4', transparent = false }) => {
             pointerEvents: 'none',
             zIndex: 0,
             overflow: 'hidden',
-            background: transparent ? 'transparent' : 'radial-gradient(ellipse at center, rgba(10, 10, 20, 0.3) 0%, rgba(0, 0, 0, 0.95) 70%, #000 100%)'
+            background: transparent ? 'transparent' : 'radial-gradient(ellipse at center, rgba(10, 10, 20, 0.3) 0%, rgba(0, 0, 0, 0.95) 70%, #000 100%)',
+            maskImage: maskTop ? 'linear-gradient(to bottom, black 0%, black 40%, transparent 60%)' : 'none',
+            WebkitMaskImage: maskTop ? 'linear-gradient(to bottom, black 0%, black 40%, transparent 60%)' : 'none'
         }}>
             {/* Condition removed to show on mobile */}
             <>

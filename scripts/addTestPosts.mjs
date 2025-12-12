@@ -7,7 +7,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBnBrBp44WYvJpY7N5b5dPXHIRQ3FMJ2jU",
     authDomain: "panospace-7v4ucn.firebaseapp.com",
     projectId: "panospace-7v4ucn",
-    storageBucket: "panospace-7v4ucn.firebasestorage.app",
+    storageBucket: "panospace-7v4ucn.appspot.com",
     messagingSenderId: "418892086673",
     appId: "1:418892086673:web:58038b80f56ea6a4891a06"
 };

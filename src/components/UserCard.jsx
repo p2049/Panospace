@@ -2,6 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlanetUserIcon from '@/components/PlanetUserIcon';
 
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
+
 const UserCard = ({ user }) => {
     const navigate = useNavigate();
     return (
@@ -42,7 +44,7 @@ const UserCard = ({ user }) => {
                 )}
             </div>
             <h4 style={{ margin: '0 0 0.25rem 0', color: '#fff', fontSize: '1rem' }}>
-                {user.username || user.displayName || 'User'}
+                {renderCosmicUsername(user.username || user.displayName || 'User')}
             </h4>
         </div>
     );

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import StarBackground from '@/components/StarBackground';
 
+import { getRenderedUsernameLength, renderCosmicUsername } from '@/utils/usernameRenderer';
+
 const Signup = () => {
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
@@ -19,10 +21,19 @@ const Signup = () => {
             return setError('Passwords do not match');
         }
 
+
+
         // Validate Username
-        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+        // Allow alpha-numeric + cosmic symbols: @ . * / " _ % # ^ \ ? [ ] ( ) { } < -
+        const usernameRegex = /^[a-zA-Z0-9_@.*/"%#^\\?[\](){}< \-]+$/;
+
+        const renderedLen = getRenderedUsernameLength(username);
+        if (renderedLen < 3 || renderedLen > 20) {
+            return setError(`Username length must be 3-20 characters (currently ${renderedLen}).`);
+        }
+
         if (!usernameRegex.test(username)) {
-            return setError('Username must be 3-20 characters, alphanumeric or underscores.');
+            return setError('Username contains invalid characters.');
         }
 
         try {
@@ -205,12 +216,11 @@ const Signup = () => {
                     <input
                         type="text"
                         value={username}
-                        onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        onChange={e => setUsername(e.target.value.toLowerCase())} // Allow symbols, just lowercase
                         required
-                        placeholder="Username (a-z, 0-9, _)"
+                        placeholder="Username (letters, numbers, cosmic symbols)"
                         className="y2k-input"
-                        minLength={3}
-                        maxLength={20}
+                    // Validation handled in handleSubmit with getRenderedUsernameLength
                     />
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password" className="y2k-input" />
                     <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required placeholder="Confirm Password" className="y2k-input" />

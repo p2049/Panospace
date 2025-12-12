@@ -5,6 +5,7 @@ import SmartImage from './SmartImage';
 import { getDerivedDate } from '@/core/utils/dates';
 import SpaceCardBadge from './SpaceCardBadge';
 import SoundTagBadge from './SoundTagBadge';
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
 
 const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAspectRatio }) => {
     const navigate = useNavigate();
@@ -191,7 +192,7 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                         zIndex: 2
                     }}
                 >
-                    {post.username || post.authorName || post.displayName || 'Anonymous'}
+                    {renderCosmicUsername(post.username || post.authorName || post.displayName || 'Anonymous')}
                 </div>
             </div>
         </div>

@@ -14,6 +14,7 @@ import SearchHeader from '@/components/search/SearchHeader';
 import SearchModeTabs from '@/components/search/SearchModeTabs';
 import SearchFilters from '@/components/search/SearchFilters';
 import SearchResults from '@/components/search/SearchResults';
+import { convertSearchInput } from '@/utils/convertSearchInput';
 import { filterVisiblePosts, filterVisibleItems, filterVisibleUsers } from '@/core/utils/filterHelpers';
 
 
@@ -275,7 +276,7 @@ const Search = () => {
 
         try {
             // Use refs to get current search params
-            const term = currentSearchTermRef.current;
+            const term = convertSearchInput(currentSearchTermRef.current);
             const tags = currentSelectedTagsRef.current;
             const parkId = currentSelectedParkRef.current;
             const date = currentSelectedDateRef.current;

@@ -33,7 +33,10 @@ import { useFeedStore } from '@/core/store/useFeedStore';
 
 import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 import SmartImage from '@/components/SmartImage';
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
 
+
+import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
 
 const Profile = () => {
     const { id } = useParams();
@@ -178,9 +181,12 @@ const Profile = () => {
     const bannerGradientId = user?.profileTheme?.gradientId || 'aurora-horizon';
     const bannerGradient = getGradientCss(bannerGradientId);
 
-    // Calculate effective username color
     let effectiveUsernameColor = user?.profileTheme?.usernameColor || '#FFFFFF';
-    if (bannerMode === 'gradient') {
+    const isGradientMode = ['gradient', 'simple_gradient'].includes(bannerMode);
+
+    // Calculate contrast and other colors...
+    // (Note: I am not modifying the lines I don't need to. I will target specific blocks)
+    if (isGradientMode) {
         const currentGradient = getThemeGradient(bannerGradientId);
         if (currentGradient?.topColor && currentGradient.topColor === effectiveUsernameColor) {
             effectiveUsernameColor = '#FFFFFF';
@@ -189,7 +195,7 @@ const Profile = () => {
 
     const solidPlanetColor = (effectiveUsernameColor?.match(/#[0-9a-fA-F]{6}/) || [COLORS.iceMint])[0];
 
-    const isFadingToBlack = bannerMode === 'gradient' &&
+    const isFadingToBlack = isGradientMode &&
         (bannerGradientId?.endsWith('black') ||
             ['night-sky'].includes(bannerGradientId));
 
@@ -228,7 +234,7 @@ const Profile = () => {
             />
             {/* Header with Space Theme */}
             <div style={{
-                background: bannerMode === 'gradient' ? bannerGradient : COLORS.black,
+                background: isGradientMode ? bannerGradient : COLORS.black,
                 paddingTop: '0',
                 paddingBottom: '0', // Removed minimal padding
                 // Hide border if fading to black
@@ -242,12 +248,20 @@ const Profile = () => {
                 {(bannerMode === 'stars' || user.profileTheme?.useStarsOverlay) && (
                     <StarBackground
                         starColor={user.profileTheme?.starColor || COLORS.iceMint}
-                        transparent={bannerMode === 'gradient'}
+                        transparent={isGradientMode || bannerMode === 'neonGrid'}
+                        maskTop={bannerMode === 'neonGrid'}
                     />
                 )}
 
+                {/* Modular Banner Theme Renderer */}
+
+                <BannerThemeRenderer
+                    mode={bannerMode}
+                    color={user.profileTheme?.bannerColor || user.profileTheme?.borderColor || '#7FFFD4'}
+                />
+
                 {/* Gradient Polish Overlays (Noise + Vignette) - Only if gradient mode */}
-                {(bannerMode === 'gradient') && (
+                {(isGradientMode) && (
                     <>
 
 
@@ -353,7 +367,7 @@ const Profile = () => {
                             wordBreak: 'break-word',
                             textAlign: 'center' // Explicitly center text
                         }}>
-                            {user.username}
+                            {renderCosmicUsername(user.username, user.profileTheme?.borderColor, user.profileTheme?.textGlow)}
                         </h1>
 
                     </div>
@@ -843,7 +857,7 @@ const Profile = () => {
             </div >
 
             {/* Content */}
-            < div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
                 {activeTab === 'posts' && (
                     <>
 

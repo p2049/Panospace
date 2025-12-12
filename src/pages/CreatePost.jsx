@@ -615,11 +615,11 @@ const CreatePost = () => {
             // Map slides to the structure Post expects
             items: slides.map((s) => {
                 if (s.type === 'stack') {
+                    // For stacks, return the collage preview URL (not the items array)
                     return {
-                        type: 'stack',
-                        url: s.preview,
-                        aspectRatio: s.aspectRatio,
-                        items: s.items
+                        type: 'image', // Treat as image for rendering
+                        url: s.preview, // The generated collage blob URL
+                        aspectRatio: s.aspectRatio
                     };
                 }
                 return {
@@ -847,6 +847,76 @@ const CreatePost = () => {
                         moveSlide={moveSlide}
                         onAddMoreClick={() => fileInputRef.current?.click()}
                     />
+
+                    {/* Stack Order Settings - Below Image Preview */}
+                    {activeSlide?.type === 'stack' && activeSlide?.items && (
+                        <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontWeight: '600' }}>Stack Order</span>
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{activeSlide.items.length} items</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                                {activeSlide.items.map((file, idx) => (
+                                    <div key={idx} style={{
+                                        position: 'relative',
+                                        width: '70px',
+                                        flexShrink: 0,
+                                        opacity: isProcessingStack ? 0.5 : 1
+                                    }}>
+                                        <div style={{
+                                            width: '70px',
+                                            height: '70px',
+                                            borderRadius: '8px',
+                                            overflow: 'hidden',
+                                            marginBottom: '0.3rem',
+                                            border: '1px solid rgba(255,255,255,0.2)'
+                                        }}>
+                                            <StackThumbnail file={file} />
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.25rem' }}>
+                                            <button
+                                                onClick={() => reorderStackItems(activeSlideIndex, idx, 'left')}
+                                                disabled={idx === 0 || isProcessingStack}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.1)',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    color: '#fff',
+                                                    width: '32px',
+                                                    height: '26px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    opacity: idx === 0 ? 0.3 : 1,
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <FaChevronLeft size={10} />
+                                            </button>
+                                            <button
+                                                onClick={() => reorderStackItems(activeSlideIndex, idx, 'right')}
+                                                disabled={idx === activeSlide.items.length - 1 || isProcessingStack}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.1)',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    color: '#fff',
+                                                    width: '32px',
+                                                    height: '26px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    opacity: idx === activeSlide.items.length - 1 ? 0.3 : 1,
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <FaChevronRight size={10} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {isProcessingStack && <div style={{ fontSize: '0.75rem', color: 'var(--ice-mint)', marginTop: '0.5rem', textAlign: 'center' }}>Updating stack...</div>}
+                        </div>
+                    )}
 
                     {/* FEED PREVIEW BUTTON */}
                     {slides.length > 0 && (
@@ -1161,73 +1231,7 @@ const CreatePost = () => {
                         <div className="form-section">
                             <h3>Image Settings</h3>
 
-                            {/* Stack Reordering Controls */}
-                            {activeSlide.type === 'stack' && activeSlide.items && (
-                                <div className="form-section" style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                                    <h4 style={{ fontSize: '0.9rem', color: '#aaa', marginTop: 0, marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
-                                        Stack Order
-                                        <span style={{ fontSize: '0.7rem' }}>{activeSlide.items.length} items</span>
-                                    </h4>
-                                    <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                                        {activeSlide.items.map((file, idx) => (
-                                            <div key={idx} style={{
-                                                position: 'relative',
-                                                width: '60px',
-                                                flexShrink: 0,
-                                                opacity: isProcessingStack ? 0.5 : 1
-                                            }}>
-                                                <div style={{
-                                                    width: '60px',
-                                                    height: '60px',
-                                                    borderRadius: '8px',
-                                                    overflow: 'hidden',
-                                                    marginBottom: '0.2rem',
-                                                    border: '1px solid rgba(255,255,255,0.2)'
-                                                }}>
-                                                    <StackThumbnail file={file} />
-                                                </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <button
-                                                        onClick={() => reorderStackItems(activeSlideIndex, idx, 'left')}
-                                                        disabled={idx === 0 || isProcessingStack}
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.1)',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            color: '#fff',
-                                                            width: '28px',
-                                                            height: '24px',
-                                                            cursor: 'pointer',
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            opacity: idx === 0 ? 0.3 : 1
-                                                        }}
-                                                    >
-                                                        <FaChevronLeft size={10} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => reorderStackItems(activeSlideIndex, idx, 'right')}
-                                                        disabled={idx === activeSlide.items.length - 1 || isProcessingStack}
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.1)',
-                                                            border: 'none',
-                                                            borderRadius: '4px',
-                                                            color: '#fff',
-                                                            width: '28px',
-                                                            height: '24px',
-                                                            cursor: 'pointer',
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            opacity: idx === activeSlide.items.length - 1 ? 0.3 : 1
-                                                        }}
-                                                    >
-                                                        <FaChevronRight size={10} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {isProcessingStack && <div style={{ fontSize: '0.7rem', color: 'var(--ice-mint)', marginTop: '0.5rem' }}>Updating stack...</div>}
-                                </div>
-                            )}
+                            {/* Stack Reordering Controls - Moved to bottomSlot in PageHeader */}
 
                             {/* Per-Image Title (only shown when shareTitleAcrossImages is false) */}
                             {!shareTitleAcrossImages && (

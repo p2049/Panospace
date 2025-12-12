@@ -5,6 +5,8 @@ import { db } from '@/firebase';
 import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
+
 const FollowListModal = ({ isOpen, onClose, userId, type = 'followers', title }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -188,14 +190,15 @@ const FollowListModal = ({ isOpen, onClose, userId, type = 'followers', title })
                                                 {u.displayName}
                                             </div>
                                             <div style={{ fontSize: '0.75rem', color: '#666' }}>
-                                                @{u.username}
+                                                @{renderCosmicUsername(u.username)}
                                             </div>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
-                    )}
+                    )
+                    }
                 </div>
             </div>
         </div>

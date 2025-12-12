@@ -22,6 +22,8 @@ import { formatExifForDisplay } from '@/core/utils/exif';
 import { isNSFW, getUserNSFWPreference } from '@/core/constants/nsfwTags';
 import { preloadImage } from '@/core/utils/imageCache';
 import { logger } from '@/core/utils/logger';
+import { getQuartzDateStyle } from '@/core/utils/quartzDateUtils';
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
 
 const ExifDisplay = React.memo(({ exif }) => {
     const displayData = formatExifForDisplay(exif);
@@ -59,6 +61,38 @@ const ExifDisplay = React.memo(({ exif }) => {
         </div>
     );
 });
+
+// Wrapper to handle dynamic resizing relative to container
+// Uses the window size (since Post is 100vh/100vw) or containerRef if strictly passed
+const QuartzDateWrapper = ({ quartzDate, imageWidth, imageHeight, containerRef }) => {
+    // We use window size because Post is full viewport
+    // But sticking to containerRef is safer if layout changes
+    const [dimensions, setDimensions] = useState({ w: window.innerWidth, h: window.innerHeight });
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (containerRef?.current) {
+                setDimensions({
+                    w: containerRef.current.clientWidth,
+                    h: containerRef.current.clientHeight
+                });
+            } else {
+                setDimensions({ w: window.innerWidth, h: window.innerHeight });
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial
+
+        return () => window.removeEventListener('resize', handleResize);
+    }, [containerRef]);
+
+    const style = useMemo(() => {
+        return getQuartzDateStyle(dimensions.w, dimensions.h, imageWidth || dimensions.w, imageHeight || dimensions.h);
+    }, [dimensions.w, dimensions.h, imageWidth, imageHeight]);
+
+    return <DateStampOverlay quartzDate={quartzDate} style={style} />;
+};
 
 const Post = ({ post, priority = 'normal' }) => {
     const { currentUser } = useAuth();
@@ -388,7 +422,7 @@ const Post = ({ post, priority = 'normal' }) => {
         if (!item) return null;
 
         const url = item.url || item;
-        const isUrl = typeof url === 'string' && (url.startsWith('http') || url.startsWith('blob:'));
+        const isUrl = typeof url === 'string' && (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:'));
 
         // --- STANDARD IMAGE RENDERING ---
         if (isUrl) {
@@ -410,7 +444,13 @@ const Post = ({ post, priority = 'normal' }) => {
                         style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
                     />
                     {post.uiOverlays?.quartzDate && (
-                        <DateStampOverlay quartzDate={post.uiOverlays.quartzDate} />
+                        /* Use dynamic sizing to stick to image even in contain mode */
+                        <QuartzDateWrapper
+                            quartzDate={post.uiOverlays.quartzDate}
+                            imageWidth={item.width}
+                            imageHeight={item.height}
+                            containerRef={containerRef}
+                        />
                     )}
                 </div>
             );
@@ -798,7 +838,7 @@ const Post = ({ post, priority = 'normal' }) => {
                         textTransform: 'uppercase',
                         lineHeight: 1
                     }}>
-                        @{post.username || post.authorName || 'ANONYMOUS'}
+                        {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
                     </span>
 
                     {post.location && (post.location.city || post.location.country) && (

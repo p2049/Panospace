@@ -4,6 +4,7 @@ import { FaSearch, FaFilter } from 'react-icons/fa';
 import SearchFilters from './SearchFilters';
 import SearchModeTabs from './SearchModeTabs';
 import { useThemeColors } from '@/core/store/useThemeStore';
+import SearchEmojiPicker from '@/components/SearchEmojiPicker';
 
 const SearchHeader = ({
     isMobile,
@@ -30,6 +31,7 @@ const SearchHeader = ({
 }) => {
     const navigate = useNavigate();
     const { accentColor } = useThemeColors();
+    const [showPicker, setShowPicker] = React.useState(false);
 
     return (
         <div className="search-header" style={{
@@ -236,11 +238,14 @@ const SearchHeader = ({
                                 e.target.style.borderColor = 'var(--ice-mint)';
                                 e.target.style.boxShadow = '0 0 25px rgba(127, 255, 212, 0.15), inset 0 0 15px rgba(127, 255, 212, 0.1)';
                                 e.target.style.background = 'rgba(0, 0, 0, 0.8)';
+                                setShowPicker(true);
                             }}
                             onBlur={(e) => {
                                 e.target.style.borderColor = 'rgba(127, 255, 212, 0.3)';
                                 e.target.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(127, 255, 212, 0.05)';
                                 e.target.style.background = 'rgba(0, 0, 0, 0.6)';
+                                // Delay hiding so click registers
+                                setTimeout(() => setShowPicker(false), 200);
                             }}
                         />
                     </div>
@@ -466,6 +471,22 @@ const SearchHeader = ({
                     )}
                 </div>
             </div>
+
+
+            {/* Emoji Picker - Mobile Friendly & Reverse Map Search Logic */}
+            < SearchEmojiPicker
+                visible={showPicker}
+                isMobile={isMobile}
+                onSelect={(emoji) => {
+                    setSearchTerm(prev => prev + emoji);
+                    // Keep focus on input
+                    // We don't have direct ref easily available to the input unless I add one.
+                    // But preventDefault on the button usually keeps focus. 
+                    // If focusing lost, user can tap back. 
+                    // But requirement says "When user taps... inserts...".
+                    // Let's settle for functional update.
+                }}
+            />
         </div >
     );
 };

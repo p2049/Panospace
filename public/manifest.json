@@ -1,6 +1,6 @@
 {
-    "name": "PanoSpace",
-    "short_name": "PanoSpace",
+    "name": "Panospace",
+    "short_name": "Panospace",
     "description": "Visual Universe for Photography and Art",
     "start_url": "/",
     "display": "standalone",
@@ -9,10 +9,9 @@
     "orientation": "any",
     "icons": [
         {
-            "src": "/favicon.svg",
-            "sizes": "any",
-            "type": "image/svg+xml",
-            "purpose": "any maskable"
+            "src": "/app-icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
         }
     ]
 }

@@ -28,7 +28,7 @@ export const FilmSlideRenderer = {
         if (!ctx) throw new Error("Canvas context not supported");
 
         // 2. Load Image(s)
-        const imgSrc = images[0]; // Focusing on primary image for the slide
+        const imgSrc = images[0] || ""; // Focusing on primary image for the slide
         let imgBitmap: HTMLImageElement | ImageBitmap | null = null;
 
         try {

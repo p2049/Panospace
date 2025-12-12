@@ -12,7 +12,6 @@
     color: var(--quartz-color, #00FF55);
     font-family: "DSEG14", "DSEG7", "Courier New", monospace;
     font-size: 14px;
-    /* Fixed size - scales with image container */
     font-weight: 700;
     text-shadow: 0 0 1px currentColor, 1px 1px 1px rgba(0, 0, 0, 0.5);
     letter-spacing: 0.05em;
@@ -20,8 +19,10 @@
     -webkit-text-stroke: 0.2px currentColor;
     filter: contrast(1.1);
     position: absolute;
-    bottom: 8%;
-    right: 12%;
+    /* Use viewport units for consistent positioning across all image sizes */
+    bottom: 3vmin;
+    right: 3vmin;
+    white-space: nowrap;
 }
 
 /* Mobile adjustments */

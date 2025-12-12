@@ -85,19 +85,23 @@ const SmartImage = ({
 }) => {
     const containerRef = useRef(null);
 
-    // Initial state: If cached or eager, start at Level 2 (Full Res) logic immediately
-    const initialState = (eager || isImageLoaded(src)) ? 2 : 0;
-    const initialL2 = (eager || isImageLoaded(src));
+    // Data URIs are already full images, treat them as eager/loaded
+    const isDataUri = src && typeof src === 'string' && src.startsWith('data:');
+    const effectiveEager = eager || isDataUri;
+
+    // Initial state: If cached, eager, or data URI, start at Level 2 (Full Res) logic immediately
+    const initialState = (effectiveEager || isImageLoaded(src)) ? 2 : 0;
+    const initialL2 = (effectiveEager || isImageLoaded(src));
 
     const [loadLevel, setLoadLevel] = useState(initialState);
     const [isL2Loaded, setIsL2Loaded] = useState(initialL2);
-    const [isVisible, setIsVisible] = useState(eager); // Eager = always visible effectively
+    const [isVisible, setIsVisible] = useState(effectiveEager); // Eager = always visible effectively
 
     const currentSrc = isL2Loaded ? src : (loadLevel >= 1 && previewSrc ? previewSrc : thumbnailSrc);
 
     // Observers
     useEffect(() => {
-        if (!containerRef.current || eager) return; // Skip observers if eager
+        if (!containerRef.current || effectiveEager) return; // Skip observers if eager or data URI
 
         const virtualizerObserver = new IntersectionObserver(
             (entries) => {
