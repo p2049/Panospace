@@ -1,7 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
 import '@/styles/film-strip-post.css';
 import DateStampOverlay from './DateStampOverlay';
 import SmartImage from './SmartImage';
+import LikeButton from './LikeButton';
+import PlanetUserIcon from './PlanetUserIcon';
+import PostDetailsSidebar from './PostDetailsSidebar';
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
+import { FaMapMarkerAlt } from 'react-icons/fa';
 
 // Static sprockets renderer to avoid re-creation
 const Sprockets = React.memo(() => (
@@ -14,14 +22,14 @@ const Sprockets = React.memo(() => (
 ));
 
 const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFrameNumber, getEdgeCode, uiOverlays, postId }) => {
-    const [renderedSrc, setRenderedSrc] = React.useState(null);
+    const [renderedSrc, setRenderedSrc] = useState(null);
     const itemUrl = item.url || item;
     const isUrl = typeof itemUrl === 'string' && (itemUrl.startsWith('http') || itemUrl.startsWith('blob:'));
 
     // Cache Key
     const cacheKey = `${postId}_slide_${index}`;
 
-    React.useEffect(() => {
+    useEffect(() => {
         // 1. Check Cache
         import('@/core/film/FilmSlideCache').then(({ FilmSlideCache }) => {
             const cached = FilmSlideCache.get(cacheKey);
@@ -31,8 +39,7 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
             }
 
             // 2. Render if not cached & visible/near
-            // We only render text/borders for images. Text fallbacks use HTML.
-            if (isUrl && Math.abs(priority) <= 1 && !postId.toString().includes('preview')) { // Only render near items to save CPU, skip for preview
+            if (isUrl && Math.abs(priority) <= 1 && !postId.toString().includes('preview')) {
                 import('@/core/film/FilmSlideRenderer').then(({ FilmSlideRenderer }) => {
                     FilmSlideRenderer.renderSlide({
                         postId,
@@ -49,7 +56,6 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
         });
     }, [cacheKey, isUrl, priority, itemUrl, getFrameNumber, getEdgeCode, postId, index]);
 
-    // If we have a consolidated render, show that ONLY.
     if (renderedSrc) {
         return (
             <div className="cyber-frame-unit" style={{ background: '#000' }}>
@@ -65,17 +71,14 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
         );
     }
 
-    // Fallback: Dynamic HTML rendering (Original)
     return (
         <div className="cyber-frame-unit">
-            {/* Top Film Edge */}
             <div className="cyber-track top">
                 <span className="cyber-micro-text">{getStockName()}</span>
                 <span className="cyber-frame-number">{getFrameNumber(index)}</span>
                 <Sprockets />
             </div>
 
-            {/* Main Content Area */}
             <div className="cyber-content-row">
                 <div className="cyber-marker left">
                     <span className="vertical-text">{getFrameNumber(index)}</span>
@@ -110,11 +113,9 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
                 </div>
             </div>
 
-            {/* Bottom Film Edge */}
             <div className="cyber-track bottom">
                 <span className="cyber-edge-code">{getEdgeCode(index)}</span>
                 <Sprockets />
-                {/* SVG Icon simplified/removed in fallback or kept as original */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'absolute', bottom: '8px', right: '16px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
                         <use href="#filmPlanetIcon" />
@@ -128,38 +129,55 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
 
 /**
  * FilmStripPost - Authentic 35mm Film Edition
- * Realistic film structure with authentic markings and subtle grain.
  */
-const FilmStripPost = ({ images = [], uiOverlays = null, priority = 'normal', postId = 'preview' }) => {
-    // Generate authentic frame numbers (like real film: 22A, 23, 24A, etc.)
+const FilmStripPost = ({ post, images = [], uiOverlays = null, priority = 'normal', postId = 'preview' }) => {
+    const navigate = useNavigate();
+    const [showDetailsSidebar, setShowDetailsSidebar] = useState(false);
+    const [authorPhoto, setAuthorPhoto] = useState(
+        post?.authorPhotoUrl || post?.userPhotoUrl || post?.photoURL || null
+    );
+
+    // Fetch author photo if missing
+    useEffect(() => {
+        if (authorPhoto || !post?.userId) return;
+        const fetchAuthorPhoto = async () => {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', post.userId));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    setAuthorPhoto(data.photoURL || data.avatarUrl || data.profilePicture || null);
+                }
+            } catch (err) {
+                console.error('Error fetching author photo:', err);
+            }
+        };
+        fetchAuthorPhoto();
+    }, [authorPhoto, post?.userId]);
+
+    const handleAuthorClick = () => {
+        if (post?.userId) {
+            navigate(`/profile/${post.userId}`);
+        }
+    };
+
     const getFrameNumber = (index) => {
         const frameNum = index + 1;
         return frameNum % 2 === 0 ? `${frameNum}` : `${frameNum}A`;
     };
 
-    // Generate edge codes (authentic film marking system)
-    const getEdgeCode = (index) => {
-        return `K${(index + 100).toString()}`;
-    };
-
-    // Stock name - simple and clean
+    const getEdgeCode = (index) => `K${(index + 100).toString()}`;
     const getStockName = () => 'PANOSPACE';
 
-    // PRELOAD LOGIC: Film Strip is a continuous scroll, so we preload eagerly
-    // Moved here from previous step 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!images || images.length === 0) return;
-
-        // 1. Immediate: Preload visible items
         const initialLoad = images.slice(0, 3);
         import('@/core/image/preloadFilmSlide').then(({ preloadFilmSlide }) => {
             preloadFilmSlide(initialLoad);
         });
-
     }, [images]);
 
     return (
-        <div className="cyber-film-strip-wrapper">
+        <div className="cyber-film-strip-wrapper" style={{ position: 'relative' }}>
             {/* Global Defs for Icons */}
             <svg width="0" height="0" style={{ position: 'absolute' }}>
                 <defs>
@@ -176,16 +194,14 @@ const FilmStripPost = ({ images = [], uiOverlays = null, priority = 'normal', po
             </svg>
 
             <div className="cyber-film-strip-scroll-container">
-                {/* Film Leader (Start) */}
-                <div className="cyber-leader">
-                </div>
+                <div className="cyber-leader"></div>
 
                 {images.map((item, index) => (
                     <FilmFrameUnit
                         key={index}
                         item={item}
                         index={index}
-                        priority={index} // Pass index as simple priority proxy
+                        priority={index}
                         getStockName={getStockName}
                         getFrameNumber={getFrameNumber}
                         getEdgeCode={getEdgeCode}
@@ -194,10 +210,107 @@ const FilmStripPost = ({ images = [], uiOverlays = null, priority = 'normal', po
                     />
                 ))}
 
-                {/* Film Trailer (End) */}
-                <div className="cyber-leader trailer">
+                <div className="cyber-leader trailer"></div>
+            </div>
+
+            {/* Author Info Overlay (Bottom Left) */}
+            <div
+                className="author-overlay"
+                style={{
+                    position: 'absolute',
+                    bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
+                    left: '20px',
+                    display: 'flex',
+                    alignItems: 'stretch',
+                    background: 'rgba(0, 0, 0, 0.6)',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: '8px',
+                    zIndex: 10,
+                    width: 'fit-content',
+                    maxWidth: '300px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    overflow: 'hidden'
+                }}
+            >
+                {/* Author Photo */}
+                <div
+                    onClick={handleAuthorClick}
+                    style={{
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(255,255,255,0.05)',
+                        borderRight: '1px solid rgba(255,255,255,0.1)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    {authorPhoto ? (
+                        <img
+                            src={authorPhoto}
+                            alt={post?.username}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                    ) : null}
+                    <div style={{ display: authorPhoto ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                        <PlanetUserIcon size={28} color="#7FFFD4" />
+                    </div>
+                </div>
+
+                {/* Username */}
+                <div
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDetailsSidebar(true);
+                    }}
+                    style={{
+                        padding: '0.4rem 0.8rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        gap: '2px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <span style={{
+                        color: '#7FFFD4',
+                        fontWeight: '700',
+                        fontSize: '0.9rem',
+                        fontFamily: '"Rajdhani", monospace',
+                        letterSpacing: '1px',
+                        textTransform: 'uppercase',
+                        lineHeight: 1
+                    }}>
+                        {renderCosmicUsername(post?.username || post?.authorName || 'ANONYMOUS')}
+                    </span>
+                    {post?.location && (post.location.city || post.location.country) && (
+                        <span style={{ color: '#aaa', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'monospace', lineHeight: 1 }}>
+                            <FaMapMarkerAlt size={8} />
+                            {[post.location.city, post.location.country].filter(Boolean).join(', ').toUpperCase()}
+                        </span>
+                    )}
                 </div>
             </div>
+
+            {/* Actions (Bottom Right) */}
+            <div className="post-actions-container" style={{
+                position: 'absolute',
+                bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
+                right: '20px',
+                zIndex: 10
+            }}>
+                <LikeButton postId={post?.id || postId} />
+            </div>
+
+            {/* Post Details Sidebar */}
+            <PostDetailsSidebar
+                isVisible={showDetailsSidebar}
+                onClose={() => setShowDetailsSidebar(false)}
+                post={post}
+                items={images}
+            />
         </div>
     );
 };

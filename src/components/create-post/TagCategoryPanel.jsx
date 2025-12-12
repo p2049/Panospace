@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { FaPlus, FaTimes, FaHashtag } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaHashtag, FaSmile } from 'react-icons/fa';
 import TagFilterPanel from '@/components/TagFilterPanel';
 import { TAG_CATEGORIES, ALL_TAGS } from '@/core/constants/tagCategories';
+import CosmicEmojiPicker from '@/components/common/CosmicEmojiPicker';
+import CosmicText from '@/components/common/CosmicText';
+import { emojiToCode } from '@/utils/emojiToCodeMap';
 
 /**
  * TagCategoryPanel Component
@@ -24,151 +27,182 @@ const TagCategoryPanel = ({
     toggleCategory
 }) => {
     const [customTagInput, setCustomTagInput] = useState('');
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     // Filter tags to find ones that are NOT in the standard list
     // We use a Set for faster lookups
     const standardTagsSet = new Set(ALL_TAGS);
     const customTags = tags.filter(tag => !standardTagsSet.has(tag));
 
-    const handleAddCustomTag = (e) => {
+
+
+...
+
+const handleAddCustomTag = (e) => {
+    e.preventDefault();
+    if (!customTagInput.trim()) return;
+
+    let input = customTagInput;
+    // Convert emojis to codes
+    Object.entries(emojiToCode).forEach(([emoji, code]) => {
+        input = input.split(emoji).join(code);
+    });
+
+    // Normalize: lowercase, trim, replace spaces with dashes
+    const normalizedTag = input
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-');
+
+    if (normalizedTag) {
+        handleTagToggle(normalizedTag);
+        setCustomTagInput('');
+    }
+};
+
+const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
         e.preventDefault();
-        if (!customTagInput.trim()) return;
+        handleAddCustomTag(e);
+    }
+};
 
-        // Normalize: lowercase, trim, replace spaces with dashes
-        const normalizedTag = customTagInput
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, '-');
+return (
+    <div className="form-section" style={{ marginTop: '2rem' }}>
+        <h3>Tags & Categories</h3>
+        <p className="field-hint" style={{ marginBottom: '1rem' }}>
+            Select tags or add your own to help people find your work.
+        </p>
 
-        if (normalizedTag) {
-            handleTagToggle(normalizedTag);
-            setCustomTagInput('');
-        }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAddCustomTag(e);
-        }
-    };
-
-    return (
-        <div className="form-section" style={{ marginTop: '2rem' }}>
-            <h3>Tags & Categories</h3>
-            <p className="field-hint" style={{ marginBottom: '1rem' }}>
-                Select tags or add your own to help people find your work.
-            </p>
-
-            {/* Custom Tag Input */}
-            <div className="custom-tag-input-container" style={{ marginBottom: '1.5rem' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0.5rem 1rem',
-                    transition: 'all 0.2s ease'
-                }}>
-                    <FaHashtag color="rgba(255, 255, 255, 0.3)" size={14} style={{ marginRight: '0.5rem' }} />
-                    <input
-                        type="text"
-                        value={customTagInput}
-                        onChange={(e) => setCustomTagInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Add custom tag..."
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#fff',
-                            fontSize: '0.9rem',
-                            width: '100%',
-                            outline: 'none',
-                            fontFamily: 'var(--font-family-mono)'
-                        }}
-                    />
-                    <button
-                        onClick={handleAddCustomTag}
-                        disabled={!customTagInput.trim()}
-                        style={{
-                            background: customTagInput.trim() ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.1)',
-                            color: customTagInput.trim() ? '#000' : 'rgba(255, 255, 255, 0.3)',
-                            border: 'none',
-                            borderRadius: '4px',
-                            width: '24px',
-                            height: '24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: customTagInput.trim() ? 'pointer' : 'default',
-                            transition: 'all 0.2s ease',
-                            marginLeft: '0.5rem'
-                        }}
-                    >
-                        <FaPlus size={10} />
-                    </button>
-                </div>
-
-                {/* Display Custom Tags */}
-                {customTags.length > 0 && (
-                    <div className="custom-tags-list" style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '0.5rem',
-                        marginTop: '0.8rem'
-                    }}>
-                        {customTags.map(tag => (
-                            <button
-                                key={tag}
-                                onClick={() => handleTagToggle(tag)}
-                                style={{
-                                    background: 'rgba(127, 255, 212, 0.15)',
-                                    border: '1px solid var(--ice-mint)',
-                                    color: 'var(--ice-mint)',
-                                    padding: '0.4rem 0.8rem',
-                                    borderRadius: '6px',
-                                    fontSize: '0.75rem',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem',
-                                    transition: 'all 0.2s ease',
-                                    fontFamily: 'var(--font-family-mono)',
-                                    textTransform: 'uppercase',
-                                    fontWeight: 600,
-                                    boxShadow: '0 0 10px rgba(127, 255, 212, 0.1)'
-                                }}
-                            >
-                                {tag}
-                                <FaTimes size={10} style={{ opacity: 0.7 }} />
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            <div className="tags-container" style={{
-                width: '100%',
-                maxWidth: '100%',
-                boxSizing: 'border-box',
-                overflow: 'hidden'
+        {/* Custom Tag Input */}
+        <div className="custom-tag-input-container" style={{ marginBottom: '1.5rem' }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                padding: '0.5rem 1rem',
+                transition: 'all 0.2s ease'
             }}>
-
-                {Object.values(TAG_CATEGORIES)
-                    .map(category => (
-                        <TagFilterPanel
-                            key={category.id}
-                            category={category}
-                            selectedTags={tags}
-                            onTagToggle={handleTagToggle}
-                            isExpanded={expandedCategories[category.id]}
-                            onToggleExpand={() => toggleCategory(category.id)}
-                        />
-                    ))}
+                <FaHashtag color="rgba(255, 255, 255, 0.3)" size={14} style={{ marginRight: '0.5rem' }} />
+                <input
+                    type="text"
+                    value={customTagInput}
+                    onChange={(e) => setCustomTagInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Add custom tag..."
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '0.9rem',
+                        width: '100%',
+                        outline: 'none',
+                        fontFamily: 'var(--font-family-mono)'
+                    }}
+                />
+                <button
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    style={{
+                        background: 'transparent',
+                        color: showEmojiPicker ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.5)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '24px', height: '24px', marginRight: '0.5rem' // Margin before Plus
+                    }}
+                >
+                    <FaSmile size={16} />
+                </button>
+                <button
+                    onClick={handleAddCustomTag}
+                    disabled={!customTagInput.trim()}
+                    style={{
+                        background: customTagInput.trim() ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.1)',
+                        color: customTagInput.trim() ? '#000' : 'rgba(255, 255, 255, 0.3)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: customTagInput.trim() ? 'pointer' : 'default',
+                        transition: 'all 0.2s ease',
+                        marginLeft: '0.2rem'
+                    }}
+                >
+                    <FaPlus size={10} />
+                </button>
             </div>
+
+            <CosmicEmojiPicker
+                visible={showEmojiPicker}
+                onSelect={(emoji) => setCustomTagInput(prev => prev + emoji)}
+                style={{ marginBottom: '1rem' }}
+            />
+
+            {/* Display Custom Tags */}
+            {customTags.length > 0 && (
+                <div className="custom-tags-list" style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                    marginTop: '0.8rem'
+                }}>
+                    {customTags.map(tag => (
+                        <button
+                            key={tag}
+                            onClick={() => handleTagToggle(tag)}
+                            style={{
+                                background: 'rgba(127, 255, 212, 0.15)',
+                                border: '1px solid var(--ice-mint)',
+                                color: 'var(--ice-mint)',
+                                padding: '0.4rem 0.8rem',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                transition: 'all 0.2s ease',
+                                fontFamily: 'var(--font-family-mono)',
+                                textTransform: 'uppercase',
+                                fontWeight: 600,
+                                boxShadow: '0 0 10px rgba(127, 255, 212, 0.1)'
+                            }}
+                        >
+
+                            <CosmicText text={tag} />
+                            <FaTimes size={10} style={{ opacity: 0.7 }} />
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
-    );
+
+        <div className="tags-container" style={{
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+        }}>
+
+            {Object.values(TAG_CATEGORIES)
+                .map(category => (
+                    <TagFilterPanel
+                        key={category.id}
+                        category={category}
+                        selectedTags={tags}
+                        onTagToggle={handleTagToggle}
+                        isExpanded={expandedCategories[category.id]}
+                        onToggleExpand={() => toggleCategory(category.id)}
+                    />
+                ))}
+        </div>
+    </div>
+);
 };
 
 export default TagCategoryPanel;

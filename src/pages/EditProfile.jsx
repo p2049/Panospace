@@ -753,18 +753,23 @@ const EditProfile = () => {
                             Let's keep it but styling might need tweak. 
                             Actually, 'stars' IS a mode now.
                         */}
-                        {(bannerMode === 'gradient' || bannerMode === 'neonGrid') && (
-                            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <input
-                                    type="checkbox"
-                                    id="useStarsOverlay"
-                                    checked={useStarsOverlay}
-                                    onChange={(e) => setUseStarsOverlay(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: '#7FFFD4', cursor: 'pointer' }}
-                                />
-                                <label htmlFor="useStarsOverlay" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
-                                    Overlay Stars
-                                </label>
+                        {/* Stars Overlay & Color - Expanded to Cities & Oceans */}
+                        {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
+                            <div style={{ marginBottom: '1rem' }}>
+                                <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="useStarsOverlay"
+                                        checked={useStarsOverlay}
+                                        onChange={(e) => setUseStarsOverlay(e.target.checked)}
+                                        style={{ width: '16px', height: '16px', accentColor: '#7FFFD4', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="useStarsOverlay" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
+                                        {bannerMode.startsWith('city') ? 'Show Stars' : 'Overlay Stars'}
+                                    </label>
+                                </div>
+
+
                             </div>
                         )}
 

@@ -8,6 +8,7 @@ import LikeButton from './LikeButton';
 import FilmStripCarousel from './FilmStripCarousel';
 import FilmStripPost from './FilmStripPost';
 import InstantPhotoPost from './InstantPhotoPost';
+import PostDetailsSidebar from './PostDetailsSidebar';
 import InstantPhotoFrame from './InstantPhotoFrame';
 import SmartImage from './SmartImage';
 import DateStampOverlay from './DateStampOverlay';
@@ -138,7 +139,7 @@ const Post = ({ post, priority = 'normal' }) => {
 
     // Check for special rendering modes first (Top Level)
     if (useFilmStripMode) {
-        return <FilmStripPost images={items} uiOverlays={post.uiOverlays} priority={priority} postId={post.id} />;
+        return <FilmStripPost post={post} images={items} uiOverlays={post.uiOverlays} priority={priority} postId={post.id} />;
     }
 
     if (hasInstantBorder) {
@@ -738,13 +739,11 @@ const Post = ({ post, priority = 'normal' }) => {
             </div>
 
             {/* Title Overlay */}
-            {
-                post.title && (
-                    <div className="post-title-overlay">
-                        <h2 className="post-title-text">{post.title}</h2>
-                    </div>
-                )
-            }
+            {post.title && (
+                <div className="post-title-overlay">
+                    <h2 className="post-title-text">{renderCosmicUsername(post.title)}</h2>
+                </div>
+            )}
 
             {/* Author Info & Location - REDESIGNED */}
             <div
@@ -851,233 +850,13 @@ const Post = ({ post, priority = 'normal' }) => {
             </div>
 
             {/* DETAILS SIDEBAR */}
-            {
-                showDetailsSidebar && (
-                    <div
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            bottom: 0,
-                            width: '300px',
-                            maxWidth: '80vw',
-                            background: 'rgba(10, 10, 10, 0.95)', // Solid/Dark for readability
-                            backdropFilter: 'blur(15px)',
-                            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-                            zIndex: 1000, // Above everything in post
-                            // Improved padding for safe areas and alignment
-                            paddingTop: 'max(1rem, env(safe-area-inset-top))',
-                            paddingLeft: 'max(2.8rem, env(safe-area-inset-left))', // Increased by ~25px to move right
-                            paddingRight: '1.5rem',
-                            paddingBottom: '2rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1.5rem',
-                            overflowY: 'auto',
-                            animation: 'slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                        }}
-                    >
-                        <style>{`
-@keyframes slideInLeft {
-                            from { transform: translateX(-100 %); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-}
-`}</style>
-
-
-                        {/* Header / Close */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                {/* Green Planet Logo */}
-                                <h3 style={{ margin: 0, marginLeft: '40px', color: '#7FFFD4', fontFamily: '"Orbitron", sans-serif', letterSpacing: '2px', lineHeight: 1 }}>POST INFO</h3>
-                            </div>
-                            <button
-                                onClick={() => setShowDetailsSidebar(false)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: '#7FFFD4', // Ice Mint
-                                    cursor: 'pointer',
-                                    padding: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    width: '24px',
-                                    height: '24px',
-                                    filter: 'drop-shadow(0 0 6px rgba(127, 255, 212, 0.5))' // Glow effect
-                                }}
-                            >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Content Section */}
-
-                        {/* Tags */}
-                        {post.tags && post.tags.length > 0 && (
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                                    <FaInfoCircle color="#7FFFD4" size={14} /> TAGS
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                    {post.tags.map(tag => (
-                                        <span
-                                            key={tag}
-                                            onClick={(e) => handleTagClick(tag, e)}
-                                            style={{
-                                                background: 'rgba(127, 255, 212, 0.1)',
-                                                border: '1px solid rgba(127, 255, 212, 0.3)',
-                                                padding: '4px 10px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.75rem',
-                                                color: '#7FFFD4',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Exif Data */}
-                        {items[currentSlide]?.exif && (
-                            <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                                    <FaCamera color="#7FFFD4" size={14} /> SHOT DETAILS
-                                </div>
-                                <div style={{
-                                    background: 'rgba(255,255,255,0.03)',
-                                    padding: '1rem',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8rem',
-                                    color: '#ccc',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.4rem'
-                                }}>
-                                    {formatExifForDisplay(items[currentSlide].exif)?.camera && <div><strong style={{ color: '#fff' }}>Camera:</strong> {formatExifForDisplay(items[currentSlide].exif).camera}</div>}
-                                    {formatExifForDisplay(items[currentSlide].exif)?.lens && <div><strong style={{ color: '#fff' }}>Lens:</strong> {formatExifForDisplay(items[currentSlide].exif).lens}</div>}
-                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
-                                        {formatExifForDisplay(items[currentSlide].exif)?.specs.map((spec, i) => (
-                                            <span key={i} style={{ background: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem' }}>{spec}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Post Options (Bottom) */}
-                        <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-
-                            {/* Shop Link - Visible to ALL (with Smart Logic) */}
-                            {/* If owner: Always show (Manage/Visit) */}
-                            {/* If visitor: Only show if shopLinkTarget exists (Active items) */}
-                            {(shopLinkTarget || currentUser?.uid === (post.userId || post.authorId || post.uid)) && (
-                                <button
-                                    onClick={() => {
-                                        if (shopLinkTarget?.type === 'item') {
-                                            navigate(`/shop/${shopLinkTarget.id}`);
-                                        } else {
-                                            // Fallback to profile shop tab
-                                            const targetId = post.userId || post.authorId || post.uid;
-                                            navigate(`/profile/${targetId}?tab=shop`);
-                                        }
-                                    }}
-                                    style={{
-                                        padding: '0.8rem',
-                                        background: 'rgba(127, 255, 212, 0.1)',
-                                        border: '1px solid #7FFFD4',
-                                        borderRadius: '4px',
-                                        color: '#7FFFD4',
-                                        cursor: 'pointer',
-                                        textAlign: 'center',
-                                        marginBottom: '0.5rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem',
-                                        fontWeight: 'bold'
-                                    }}
-                                >
-                                    <FaShoppingBag />
-                                    {shopLinkTarget?.type === 'item' ? 'View in Shop' :
-                                        (currentUser?.uid === (post.userId || post.authorId || post.uid) ? 'My Shop' : 'Visit Shop')}
-                                </button>
-                            )}
-
-                            {currentUser?.uid === post.userId ? (
-                                <>
-                                    <button onClick={handleEditPost} style={{ padding: '0.8rem', background: '#333', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                                        Edit Post
-                                    </button>
-                                    <button onClick={() => {
-                                        if (window.confirm("Delete this post?")) {
-                                            deleteDoc(doc(db, "posts", post.id)).then(() => navigate('/'));
-                                        }
-                                    }} style={{ padding: '0.8rem', background: 'rgba(255,0,0,0.2)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left' }}>
-                                        Delete Post
-                                    </button>
-                                </>
-                            ) : (
-                                <>
-                                    {/* Follow Button */}
-                                    <div style={{ marginBottom: '0.5rem' }}>
-                                        <FollowButton
-                                            targetUserId={post.userId}
-                                            targetUserName={post.username}
-                                            style={{
-                                                width: '100%',
-                                                justifyContent: 'center',
-                                                background: 'transparent',
-                                                border: '1px solid #7FFFD4',
-                                                color: '#7FFFD4',
-                                                padding: '0.8rem',
-                                                borderRadius: '4px'
-                                            }}
-                                        />
-                                    </div>
-
-                                    <button onClick={handleReportPost} style={{ padding: '0.8rem', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#ccc', cursor: 'pointer', textAlign: 'left' }}>
-                                        Report Post
-                                    </button>
-                                    <button onClick={handleBlockUser} style={{ padding: '0.8rem', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#ccc', cursor: 'pointer', textAlign: 'left' }}>
-                                        Block User
-                                    </button>
-                                </>
-                            )}
-                            <button onClick={handleCopyLink} style={{ padding: '0.8rem', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#7FFFD4', cursor: 'pointer', textAlign: 'left' }}>
-                                Copy Link
-                            </button>
-                        </div>
-
-                    </div>
-                )
-            }
-
-            {/* Backdrop for sidebar */}
-            {
-                showDetailsSidebar && (
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDetailsSidebar(false);
-                        }}
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.6)',
-                            zIndex: 999, // Below sidebar
-                            backdropFilter: 'blur(2px)'
-                        }}
-                    />
-                )
-            }
+            <PostDetailsSidebar
+                isVisible={showDetailsSidebar}
+                onClose={() => setShowDetailsSidebar(false)}
+                post={post}
+                items={items}
+                currentSlide={currentSlide}
+            />
 
 
             {/* Like Button & Slide Counter */}

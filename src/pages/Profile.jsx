@@ -186,10 +186,28 @@ const Profile = () => {
 
     // Calculate contrast and other colors...
     // (Note: I am not modifying the lines I don't need to. I will target specific blocks)
-    if (isGradientMode) {
-        const currentGradient = getThemeGradient(bannerGradientId);
-        if (currentGradient?.topColor && currentGradient.topColor === effectiveUsernameColor) {
-            effectiveUsernameColor = '#FFFFFF';
+    // --- SMART CONTRAST CHECK ---
+    // Ensure username is visible against the background
+    if (effectiveUsernameColor) {
+        const uc = effectiveUsernameColor.toLowerCase();
+
+        // 1. Simple Gradient: Direct Color Match
+        if (bannerMode === 'simple_gradient') {
+            const bg = user.profileTheme?.bannerColor?.toLowerCase();
+            if (bg && uc === bg) effectiveUsernameColor = '#FFFFFF';
+        }
+        // 2. Presets: Check if color is part of the gradient definition (excluding white)
+        else if (bannerMode === 'gradient') {
+            const grad = getThemeGradient(bannerGradientId);
+            if (grad?.background?.toLowerCase().includes(uc) && uc !== '#ffffff') {
+                effectiveUsernameColor = '#FFFFFF';
+            }
+        }
+        // 3. Dark Themes (City, Ocean, Stars, Neon): Clash with Black/Dark
+        else if (['stars', 'neonGrid', 'cyberpunkLines'].includes(bannerMode) || bannerMode.startsWith('city') || bannerMode.startsWith('ocean')) {
+            if (['#000000', '#050505', '#000', '#111', '#0a0a0a'].includes(uc)) {
+                effectiveUsernameColor = '#FFFFFF';
+            }
         }
     }
 
@@ -244,8 +262,8 @@ const Profile = () => {
                 position: 'relative'
             }}>
                 {/* Animated Stars Background - Only if enabled */}
-                {/* Animated Stars Background - Only if enabled */}
-                {(bannerMode === 'stars' || user.profileTheme?.useStarsOverlay) && (
+                {/* Animated Stars Background - Only if enabled (Delegate to BannerRenderer for City/Ocean) */}
+                {(bannerMode === 'stars' || (user.profileTheme?.useStarsOverlay && !bannerMode.startsWith('city') && !bannerMode.startsWith('ocean'))) && (
                     <StarBackground
                         starColor={user.profileTheme?.starColor || COLORS.iceMint}
                         transparent={isGradientMode || bannerMode === 'neonGrid'}
@@ -258,6 +276,10 @@ const Profile = () => {
                 <BannerThemeRenderer
                     mode={bannerMode}
                     color={user.profileTheme?.bannerColor || user.profileTheme?.borderColor || '#7FFFD4'}
+                    starSettings={{
+                        enabled: user.profileTheme?.useStarsOverlay,
+                        color: user.profileTheme?.starColor
+                    }}
                 />
 
                 {/* Gradient Polish Overlays (Noise + Vignette) - Only if gradient mode */}

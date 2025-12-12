@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCamera, FaInfoCircle } from 'react-icons/fa';
+import PostDetailsSidebar from './PostDetailsSidebar';
 import InstantPhotoFrame from './InstantPhotoFrame';
 import SmartImage from './SmartImage';
 import DateStampOverlay from './DateStampOverlay';
@@ -11,6 +12,7 @@ import SoundTagBadge from './SoundTagBadge';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { logger } from '@/core/utils/logger';
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import '@/styles/film-strip-post.css';
 
 /**
@@ -21,6 +23,7 @@ import '@/styles/film-strip-post.css';
  */
 const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'normal' }) => {
     const navigate = useNavigate();
+    const [showDetailsSidebar, setShowDetailsSidebar] = useState(false);
     const [authorPhoto, setAuthorPhoto] = useState(
         post?.authorPhotoUrl || post?.userPhotoUrl || post?.userAvatar || post?.profileImage || null
     );
@@ -168,7 +171,7 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
             {/* Title Overlay */}
             {post?.title && (
                 <div className="post-title-overlay">
-                    <h2 className="post-title-text">{post.title}</h2>
+                    <h2 className="post-title-text">{renderCosmicUsername(post.title)}</h2>
                 </div>
             )}
 
@@ -220,7 +223,10 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
 
                 {/* Username */}
                 <div
-                    onClick={handleAuthorClick}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDetailsSidebar(true);
+                    }}
                     style={{
                         padding: '0.4rem 0.8rem',
                         display: 'flex',
@@ -239,7 +245,7 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                         textTransform: 'uppercase',
                         lineHeight: 1
                     }}>
-                        @{post?.username || post?.authorName || 'ANONYMOUS'}
+                        {renderCosmicUsername(post?.username || post?.authorName || 'ANONYMOUS')}
                     </span>
                     {post?.location && (
                         <span style={{ color: '#aaa', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'monospace', lineHeight: 1 }}>
@@ -255,6 +261,14 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                 {/* Photo count removed */}
                 <LikeButton postId={post?.id} />
             </div>
+            {/* Sidebar */}
+            <PostDetailsSidebar
+                isVisible={showDetailsSidebar}
+                onClose={() => setShowDetailsSidebar(false)}
+                post={post}
+                items={images}
+            />
+
         </div>
     );
 };

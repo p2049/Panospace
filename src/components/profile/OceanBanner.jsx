@@ -84,7 +84,7 @@ const OCEAN_THEMES = {
     }
 };
 
-const OceanBanner = ({ themeId }) => {
+const OceanBanner = ({ themeId, starSettings }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
@@ -134,8 +134,12 @@ const OceanBanner = ({ themeId }) => {
         ctx.globalAlpha = 1.0;
 
         // 2. STARS
-        if (theme.atmosphere.stars) {
-            ctx.fillStyle = COLORS.iceWhite;
+        const showStars = (starSettings?.enabled !== undefined) ? starSettings.enabled : theme.atmosphere.stars;
+
+        if (showStars) {
+            const starClr = starSettings?.color || COLORS.iceWhite;
+            ctx.fillStyle = starClr;
+
             for (let i = 0; i < 600; i++) {
                 const sx = rand() * width;
                 const sy = rand() * (horizonY * 0.85); // Stay above haze
@@ -150,7 +154,7 @@ const OceanBanner = ({ themeId }) => {
                     ctx.beginPath();
                     ctx.moveTo(sx - flareSize, sy); ctx.lineTo(sx + flareSize, sy); // Horiz
                     ctx.moveTo(sx, sy - flareSize); ctx.lineTo(sx, sy + flareSize); // Vert
-                    ctx.strokeStyle = COLORS.iceWhite;
+                    ctx.strokeStyle = starClr;
                     ctx.lineWidth = 0.5;
                     ctx.stroke();
                     // Core
@@ -201,20 +205,84 @@ const OceanBanner = ({ themeId }) => {
             ctx.stroke();
         };
 
-        // 3.5 VOLCANO LOGIC (Special Case)
+        // 3.5 PALM RENDERER (Helper)
+        const drawDetailedPalm = (px, py, scale, flip) => {
+            // TRUNK (Tapered & Filled)
+            ctx.fillStyle = '#020102'; // Deep contour
+            ctx.beginPath();
+            const lean = flip ? -100 : 100; // More dramatic lean
+            const trunkHeight = 450 * scale; // Taller
+            const topX = px + lean * scale;
+            const topY = py - trunkHeight;
+
+            // Draw tapered trunk path
+            const baseWidth = 30 * scale;
+            const topWidth = 8 * scale;
+
+            ctx.moveTo(px - baseWidth / 2, py);
+            // Left side curve
+            ctx.quadraticCurveTo(px + lean / 3, py - trunkHeight / 2, topX - topWidth / 2, topY);
+            // Top cut
+            ctx.lineTo(topX + topWidth / 2, topY);
+            // Right side curve
+            ctx.quadraticCurveTo(px + lean / 3 + baseWidth, py - trunkHeight / 2, px + baseWidth / 2, py);
+            ctx.fill();
+
+            // LEAVES (Elongated Football Shapes)
+            const lx = topX;
+            const ly = topY;
+            // Fan of angles
+            const angles = [-0.5, 0, 0.5, 1.0, 1.5, 2.5, 3.0, 3.5, 4.0];
+
+            ctx.fillStyle = '#000804'; // Slightly greener black for leaves if we wanted, but silhouette is standard
+
+            angles.forEach(ang => {
+                const rad = ang + (flip ? Math.PI : 0);
+                const leafLen = (220 + rand() * 60) * scale;
+                const leafWidth = 20 * scale; // Width of the "football"
+
+                // Calculate Tip with Gravity Droop
+                const droopFactor = 0.6;
+                const tipX = lx + Math.cos(rad) * leafLen;
+                const tipY = ly + Math.sin(rad) * leafLen * droopFactor + (leafLen * 0.3); // Droop down
+
+                // Calculate Control Point (Midpoint + Arch)
+                // We act as if the leaf arches OUT first then falss
+                const midX = (lx + tipX) / 2;
+                const midY = (ly + tipY) / 2 - (leafLen * 0.2); // Arch up
+
+                // Perpendicular vector for width
+                const dx = tipX - lx;
+                const dy = tipY - ly;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                const px = (-dy / len) * leafWidth;
+                const pyVector = (dx / len) * leafWidth; // renamed to avoid clash with py arg
+
+                ctx.beginPath();
+                ctx.moveTo(lx, ly);
+                // Top Curve (arches higher)
+                ctx.quadraticCurveTo(midX + px, midY + pyVector, tipX, tipY);
+                // Bottom Curve (arches lower)
+                ctx.quadraticCurveTo(midX - px, midY - pyVector, lx, ly);
+                ctx.fill();
+            });
+        };
+
+        // 3.6 VOLCANO LOGIC (Special Case)
         if (theme.land?.type === 'volcano') {
-            const cx = width / 2;
-            // 1. Main Mountain Body (Lowered Peak: 500 -> 350, Wider Base)
-            drawFractalMountain(horizonY, '#050101', 350, 5, cx - 800, cx + 800);
+            // VOLCANO ON RIGHT
+            const cx = width * 0.75;
+            // 1. Mountain Body (Smaller: Peak 250, Base 500)
+            drawFractalMountain(horizonY, '#050101', 250, 4, cx - 500, cx + 500);
 
             // 2. Multi-Stream Lava Flow System
-            const craterY = horizonY - 300; // New lower crater height
-            const streams = 5; // Multiple rivers
+            const craterY = horizonY - 210; // New lower crater height for smaller volcano
+            const streams = 4; // Fewer rivers
 
             for (let i = 0; i < streams; i++) {
                 // Fan out flows slightly
-                const startOffset = (i - (streams / 2)) * 20;
-                const endOffset = (i - (streams / 2)) * 120 + (rand() - 0.5) * 80;
+                const startOffset = (i - (streams / 2)) * 15;
+                const endOffset = (i - (streams / 2)) * 80 + (rand() - 0.5) * 40;
 
                 // Gradient for this flow (Heat map: White -> Pink -> Transparent)
                 const lava = ctx.createLinearGradient(cx, craterY, cx + endOffset, horizonY);
@@ -228,42 +296,50 @@ const OceanBanner = ({ themeId }) => {
                 ctx.moveTo(cx + startOffset, craterY);
 
                 // Organic curves down the slope
-                const cp1x = cx + startOffset + (endOffset * 0.3) + (rand() - 0.5) * 40;
-                const cp1y = craterY + 80;
-                const cp2x = cx + startOffset + (endOffset * 0.7) + (rand() - 0.5) * 40;
-                const cp2y = craterY + 180;
+                const cp1x = cx + startOffset + (endOffset * 0.3) + (rand() - 0.5) * 30;
+                const cp1y = craterY + 60;
+                const cp2x = cx + startOffset + (endOffset * 0.7) + (rand() - 0.5) * 30;
+                const cp2y = craterY + 140;
 
                 // Left bank path
-                ctx.quadraticCurveTo(cp1x - 15, cp1y, cp2x - 25, cp2y);
-                ctx.lineTo(cx + endOffset - 40, horizonY);
+                ctx.quadraticCurveTo(cp1x - 10, cp1y, cp2x - 15, cp2y);
+                ctx.lineTo(cx + endOffset - 25, horizonY);
                 // River width at bottom
-                ctx.lineTo(cx + endOffset + 40, horizonY);
+                ctx.lineTo(cx + endOffset + 25, horizonY);
                 // Right bank path
-                ctx.quadraticCurveTo(cp2x + 25, cp2y, cp1x + 15, cp1y);
-                ctx.lineTo(cx + startOffset + 15, craterY);
+                ctx.quadraticCurveTo(cp2x + 15, cp2y, cp1x + 10, cp1y);
+                ctx.lineTo(cx + startOffset + 10, craterY);
                 ctx.fill();
             }
 
             // 3. Eruption Glow & Sparks (Magma Chamber Effect)
-            const erupt = ctx.createRadialGradient(cx, craterY, 10, cx, craterY, 400);
+            const erupt = ctx.createRadialGradient(cx, craterY, 5, cx, craterY, 250);
             erupt.addColorStop(0, COLORS.stellarOrange);
             erupt.addColorStop(0.2, 'rgba(255, 92, 138, 0.4)'); // Solar Pink mist
             erupt.addColorStop(1, 'transparent');
             ctx.fillStyle = erupt;
             ctx.globalAlpha = 0.7;
-            ctx.beginPath(); ctx.arc(cx, craterY, 400, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx, craterY, 250, 0, Math.PI * 2); ctx.fill();
             ctx.globalAlpha = 1.0;
 
             // Volcanic Debris/Sparks
             ctx.fillStyle = '#FFF';
-            for (let k = 0; k < 60; k++) {
-                const sx = cx + (rand() - 0.5) * 150;
-                const sy = craterY - rand() * 250;
-                const sz = rand() * 3;
+            for (let k = 0; k < 40; k++) {
+                const sx = cx + (rand() - 0.5) * 100;
+                const sy = craterY - rand() * 150;
+                const sz = rand() * 2.5;
                 ctx.globalAlpha = rand();
                 ctx.beginPath(); ctx.arc(sx, sy, sz, 0, Math.PI * 2); ctx.fill();
             }
             ctx.globalAlpha = 1.0;
+
+            // --- TROPICAL ISLAND ON LEFT ---
+            const ix = width * 0.2;
+            // Island Base
+            drawFractalMountain(horizonY, '#020102', 120, 3, ix - 300, ix + 300);
+            // Single Palm Tree on Island
+            drawDetailedPalm(ix - 50, horizonY, 0.8, false);
+            drawDetailedPalm(ix + 80, horizonY + 20, 0.6, true);
         }
         else if (theme.land?.type === 'fractal_mountains') {
             // Left Range
@@ -411,67 +487,6 @@ const OceanBanner = ({ themeId }) => {
 
         // 6. PALMS (If theme requests - handled separately from fractal mountains)
         if (theme.land?.type === 'palms') {
-            const drawDetailedPalm = (px, py, scale, flip) => {
-                // TRUNK (Tapered & Filled)
-                ctx.fillStyle = '#020102'; // Deep contour
-                ctx.beginPath();
-                const lean = flip ? -100 : 100; // More dramatic lean
-                const trunkHeight = 450 * scale; // Taller
-                const topX = px + lean * scale;
-                const topY = py - trunkHeight;
-
-                // Draw tapered trunk path
-                const baseWidth = 30 * scale;
-                const topWidth = 8 * scale;
-
-                ctx.moveTo(px - baseWidth / 2, py);
-                // Left side curve
-                ctx.quadraticCurveTo(px + lean / 3, py - trunkHeight / 2, topX - topWidth / 2, topY);
-                // Top cut
-                ctx.lineTo(topX + topWidth / 2, topY);
-                // Right side curve
-                ctx.quadraticCurveTo(px + lean / 3 + baseWidth, py - trunkHeight / 2, px + baseWidth / 2, py);
-                ctx.fill();
-
-                // LEAVES (Elongated Football Shapes)
-                const lx = topX;
-                const ly = topY;
-                // Fan of angles
-                const angles = [-0.5, 0, 0.5, 1.0, 1.5, 2.5, 3.0, 3.5, 4.0];
-
-                ctx.fillStyle = '#000804'; // Slightly greener black for leaves if we wanted, but silhouette is standard
-
-                angles.forEach(ang => {
-                    const rad = ang + (flip ? Math.PI : 0);
-                    const leafLen = (220 + rand() * 60) * scale;
-                    const leafWidth = 20 * scale; // Width of the "football"
-
-                    // Calculate Tip with Gravity Droop
-                    const droopFactor = 0.6;
-                    const tipX = lx + Math.cos(rad) * leafLen;
-                    const tipY = ly + Math.sin(rad) * leafLen * droopFactor + (leafLen * 0.3); // Droop down
-
-                    // Calculate Control Point (Midpoint + Arch)
-                    // We act as if the leaf arches OUT first then falss
-                    const midX = (lx + tipX) / 2;
-                    const midY = (ly + tipY) / 2 - (leafLen * 0.2); // Arch up
-
-                    // Perpendicular vector for width
-                    const dx = tipX - lx;
-                    const dy = tipY - ly;
-                    const len = Math.sqrt(dx * dx + dy * dy);
-                    const px = (-dy / len) * leafWidth;
-                    const pyVector = (dx / len) * leafWidth; // renamed to avoid clash with py arg
-
-                    ctx.beginPath();
-                    ctx.moveTo(lx, ly);
-                    // Top Curve (arches higher)
-                    ctx.quadraticCurveTo(midX + px, midY + pyVector, tipX, tipY);
-                    // Bottom Curve (arches lower)
-                    ctx.quadraticCurveTo(midX - px, midY - pyVector, lx, ly);
-                    ctx.fill();
-                });
-            };
             // Raised bases: 'height' instead of 'height+50' to show more trunk
             drawDetailedPalm(150, height, 1.2, false);
             drawDetailedPalm(width - 100, height, 1.4, true);
@@ -501,7 +516,7 @@ const OceanBanner = ({ themeId }) => {
 
         setBgImage(canvas.toDataURL());
 
-    }, [themeId]);
+    }, [themeId, starSettings]);
 
     return (
         <div style={{

@@ -46,27 +46,29 @@ export const BANNER_TYPES = [
         needsColor: true,
         description: 'Classic Mario atmospheric depth'
     },
-    {
-        id: 'ocean_depths',
-        label: 'Pano Ocean',
-        previewGradient: 'linear-gradient(to bottom, #7FFFD4, #1B82FF, #000)',
-        needsColor: false, // Fixed palette
-        description: 'Signature PanoSpace deep sea'
-    },
-    {
-        id: 'orbital',
-        label: 'Orbital',
-        previewGradient: 'linear-gradient(135deg, #0A1A3A 0%, #1B82FF 50%, #8CFFE9 100%)',
-        needsColor: false,
-        description: 'Planetary rim light & cosmic depth'
-    },
+
+
     // --- CITYSCAPE PACK ---
     {
         id: 'city_vaporwave',
-        label: 'Vaporwave City',
+        label: 'Galaxy City',
         previewGradient: 'linear-gradient(to bottom, #5A3FFF, #FFB7D5)',
         needsColor: false,
-        description: 'Neon sunset & dreamy vibes'
+        description: 'Cosmic metropolis & ring planet'
+    },
+    {
+        id: 'city_space',
+        label: 'Space City',
+        previewGradient: 'linear-gradient(to bottom, #000000, #1B82FF)',
+        needsColor: false,
+        description: 'Futuristic NASA-punk horizon'
+    },
+    {
+        id: 'city_lunar',
+        label: 'Lunar City',
+        previewGradient: 'linear-gradient(to bottom, #000, #FFF)',
+        needsColor: false,
+        description: 'NASA Moon Base & Earthrise'
     },
     {
         id: 'city_realistic',
@@ -77,7 +79,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'city_retrowave',
-        label: 'Retrowave Sun',
+        label: 'Ocean City',
         previewGradient: 'linear-gradient(to bottom, #2A0E61, #FF5C8A)',
         needsColor: false,
         description: 'Split-sun retro horizon'
@@ -90,47 +92,35 @@ export const BANNER_TYPES = [
         description: 'Holograms & wet streets'
     },
     {
-        id: 'city_minimal',
-        label: 'Minimal City',
-        previewGradient: 'linear-gradient(to bottom, #7FDBFF, #F2F7FA)',
+        id: 'city_realistic_day',
+        label: 'Realistic City',
+        previewGradient: 'linear-gradient(to bottom, #000, #1b263b)',
         needsColor: false,
-        description: 'Clean silhouette skyline'
+        description: 'Realistic night skyline'
     },
     {
-        id: 'city_anime',
-        label: 'Anime Town',
+        id: 'city_color',
+        label: 'Color City',
         previewGradient: 'linear-gradient(to bottom, #1B82FF, #dbeafe)',
         needsColor: false,
-        description: 'Cozy mountain village vibe'
+        description: 'Multi-color modern skyline'
     },
     {
         id: 'city_desert',
-        label: 'Synth Desert',
+        label: 'Desert City',
         previewGradient: 'linear-gradient(to bottom, #2A0E61, #FF914D)',
         needsColor: false,
         description: 'Neon city on dunes'
     },
     {
         id: 'city_glitch',
-        label: 'Glitch Metro',
-        previewGradient: 'linear-gradient(to bottom, #000, #7FFFD4)',
+        label: 'System Glitch',
+        previewGradient: 'linear-gradient(to right, #000, #7FFFD4, #FF5C8A, #1B82FF)',
         needsColor: false,
-        description: 'Chaotic data-moshed sky'
+        description: 'Chaotic digital corruption'
     },
-    {
-        id: 'city_aero',
-        label: 'Aero Citadel',
-        previewGradient: 'linear-gradient(to bottom, #1B82FF, #8CFFE9)',
-        needsColor: false,
-        description: 'Floating minty islands'
-    },
-    {
-        id: 'city_smog',
-        label: 'Neon Smog',
-        previewGradient: 'linear-gradient(to bottom, #2A0E61, #111)',
-        needsColor: false,
-        description: 'Industrial heavy atmosphere'
-    },
+
+
     {
         id: 'city_holo',
         label: 'Holo Grid',
@@ -181,6 +171,13 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Fireworks over the bay'
     },
+    {
+        id: 'panospace_beyond',
+        label: 'PanoSpace Beyond',
+        previewGradient: 'linear-gradient(to bottom, #2A0E61 0%, #5A3FFF 50%, #000 100%)',
+        needsColor: false,
+        description: 'Neo-Gothic Future Megacity'
+    },
 
     // --- OCEAN PACK ---
     {
@@ -211,13 +208,7 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Glowing neon water'
     },
-    {
-        id: 'ocean_storm_electric',
-        label: 'Electric Storm',
-        previewGradient: 'linear-gradient(to bottom, #001a33, #1B82FF)',
-        needsColor: false,
-        description: 'Lightning & teal rain'
-    },
+
     {
         id: 'ocean_tropical_emerald',
         label: 'Emerald Tropical',

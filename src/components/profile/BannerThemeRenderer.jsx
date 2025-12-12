@@ -5,7 +5,7 @@ import React from 'react';
 import CityscapeBanner from './CityscapeBanner';
 import OceanBanner from './OceanBanner';
 
-const BannerThemeRenderer = ({ mode, color }) => {
+const BannerThemeRenderer = ({ mode, color, starSettings }) => {
     const overlayStyle = {
         position: 'absolute',
         inset: 0,
@@ -13,6 +13,24 @@ const BannerThemeRenderer = ({ mode, color }) => {
         zIndex: 0,
         overflow: 'hidden'
     };
+
+    // ... (rest is unchanged) ...
+
+    // 5. CITYSCAPE PACK
+    if (mode.startsWith('city') || mode === 'panospace_beyond') {
+        return <CityscapeBanner themeId={mode} starSettings={starSettings} />;
+    }
+
+    // 6. OCEAN PACK
+    if (mode.startsWith('ocean') && mode !== 'ocean_depths') {
+        return <OceanBanner themeId={mode} starSettings={starSettings} />;
+    }
+
+    // ... (rest of file) is managed by subsequent replaces or assumed fine if not touched
+    // I need to be careful not to wipe the file if I target lines 8-15.
+    // I will use specific targets for signature and call site.
+
+
 
     // 1. CYBERPUNK LINES - Futurstic HUD style
     if (mode === 'cyberpunkLines') {
@@ -301,15 +319,7 @@ const BannerThemeRenderer = ({ mode, color }) => {
         );
     }
 
-    // 5. CITYSCAPE PACK
-    if (mode.startsWith('city')) {
-        return <CityscapeBanner themeId={mode} />;
-    }
 
-    // 6. OCEAN PACK
-    if (mode.startsWith('ocean')) {
-        return <OceanBanner themeId={mode} />;
-    }
 
     // 4. PANO OCEAN - Signature Deep Sea Palette
     if (mode === 'ocean_depths') {

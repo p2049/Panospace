@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '@/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
-import { FaArrowLeft, FaTags, FaMapMarkerAlt, FaSave } from 'react-icons/fa';
+import { FaArrowLeft, FaTags, FaMapMarkerAlt, FaSave, FaSmile } from 'react-icons/fa';
 import Toast from '@/components/Toast';
+import CosmicEmojiPicker from '@/components/common/CosmicEmojiPicker';
 import { generateSearchKeywords } from '@/core/utils/searchKeywords';
 
 const EditPost = () => {
@@ -19,7 +20,9 @@ const EditPost = () => {
     const [title, setTitle] = useState('');
     const [tags, setTags] = useState('');
     const [location, setLocation] = useState({ city: '', state: '', country: '' });
+
     const [showToast, setShowToast] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     useEffect(() => {
         const fetchPost = async () => {
@@ -170,13 +173,26 @@ const EditPost = () => {
 
                     {/* Tags */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ color: '#888', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaTags /> Tags</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label style={{ color: '#888', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FaTags /> Tags</label>
+                            <button
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                style={{ background: 'transparent', border: 'none', color: showEmojiPicker ? '#7FFFD4' : '#666', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                                <FaSmile size={16} />
+                            </button>
+                        </div>
                         <input
                             type="text"
                             placeholder="nature, portrait, b&w"
                             value={tags}
                             onChange={(e) => setTags(e.target.value)}
                             style={{ background: 'transparent', border: 'none', borderBottom: '1px solid #333', color: '#fff', fontSize: '1rem', padding: '0.5rem', outline: 'none' }}
+                        />
+                        <CosmicEmojiPicker
+                            visible={showEmojiPicker}
+                            onSelect={(emoji) => setTags(prev => prev + emoji)}
+                            style={{ marginTop: '0.5rem' }}
                         />
                     </div>
 
