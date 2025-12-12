@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { FaTimes, FaImage, FaStar, FaInfoCircle, FaRocket, FaFileAlt, FaUpload } from 'react-icons/fa';
+import { FaTimes, FaImage, FaStar, FaInfoCircle, FaRocket, FaFileAlt, FaUpload, FaShoppingCart } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { SpaceCardService, RARITY_TIERS, EDITION_TYPES, CARD_DISCIPLINES, CARD_STYLES } from '@/services/SpaceCardService';
 import { fetchPublishedPosts, fetchDrafts } from '@/core/services/firestore/posts.service';

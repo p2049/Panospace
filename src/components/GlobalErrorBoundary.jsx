@@ -178,7 +178,7 @@ class GlobalErrorBoundary extends React.Component {
                         </p>
 
                         {/* Error Details (Development Mode) */}
-                        {process.env.NODE_ENV === 'development' && this.state.error && (
+                        {import.meta.env.DEV && this.state.error && (
                             <details style={{
                                 marginBottom: '2rem',
                                 textAlign: 'left',
@@ -268,7 +268,7 @@ class GlobalErrorBoundary extends React.Component {
                         </div>
 
                         {/* Error Count (Development Mode) */}
-                        {process.env.NODE_ENV === 'development' && this.state.errorCount > 1 && (
+                        {import.meta.env.DEV && this.state.errorCount > 1 && (
                             <p style={{
                                 marginTop: '1.5rem',
                                 fontSize: '0.9rem',

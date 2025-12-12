@@ -839,13 +839,6 @@ const Post = ({ post, priority = 'normal' }) => {
                     }}>
                         {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
                     </span>
-
-                    {post.location && (post.location.city || post.location.country) && (
-                        <span style={{ color: '#aaa', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'monospace', lineHeight: 1 }}>
-                            <FaMapMarkerAlt size={8} />
-                            {[post.location.city, post.location.country].filter(Boolean).join(', ').toUpperCase()}
-                        </span>
-                    )}
                 </div>
             </div>
 

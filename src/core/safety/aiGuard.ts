@@ -119,7 +119,7 @@ export const generateRefactorPreview = (
  * Application code can call this in debug mode to ensure AI hasn't stripped critical logic.
  */
 export const assertCriticalLogic = (componentName: string, logicName: string) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
         // Using console.log here is intentional - this is a dev-only guard assertion
         console.log(`🛡️ Guard: Verifying ${logicName} in ${componentName}... OK`);
     }
