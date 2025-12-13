@@ -19,6 +19,7 @@ import { getRenderedUsernameLength, renderCosmicUsername, CHAR_MAP, PATTERNS } f
 import BannerTypeSelector from '@/components/edit-profile/BannerTypeSelector';
 import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
+import { invalidateProfileCache } from '@/hooks/useProfile';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -435,6 +436,9 @@ const EditProfile = () => {
             });
 
             await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
+
+            // Invalidate cache so Profile page refetches
+            invalidateProfileCache(currentUser.uid);
 
             showToast('Profile updated successfully!', 'success');
             navigate('/profile/me');

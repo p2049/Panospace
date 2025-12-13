@@ -137,7 +137,9 @@ export const useSearch = () => {
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('User search error:', err);
-            setError(err);
+            if (err.code !== 'permission-denied') {
+                setError(err);
+            }
             return { data: [], lastDoc: null };
         } finally {
             setLoading(false);
@@ -402,7 +404,9 @@ export const useSearch = () => {
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Post search error:', err);
-            setError(err);
+            if (err.code !== 'permission-denied') {
+                setError(err);
+            }
             return { data: [], lastDoc: null };
         } finally {
             setLoading(false);
@@ -523,7 +527,9 @@ export const useSearch = () => {
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Gallery search error:', err);
-            setError(err);
+            if (err.code !== 'permission-denied') {
+                setError(err);
+            }
             return { data: [], lastDoc: null };
         } finally {
             setLoading(false);
@@ -618,7 +624,9 @@ export const useSearch = () => {
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Collection search error:', err);
-            setError(err);
+            if (err.code !== 'permission-denied') {
+                setError(err);
+            }
             return { data: [], lastDoc: null };
         } finally {
             setLoading(false);
@@ -705,7 +713,9 @@ export const useSearch = () => {
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Contest search error:', err);
-            setError(err);
+            if (err.code !== 'permission-denied') {
+                setError(err);
+            }
             return { data: [], lastDoc: null };
         } finally {
             setLoading(false);
@@ -787,7 +797,9 @@ export const useSearch = () => {
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Event search error:', err);
-            setError(err);
+            if (err.code !== 'permission-denied') {
+                setError(err);
+            }
             return { data: [], lastDoc: null };
         } finally {
             setLoading(false);

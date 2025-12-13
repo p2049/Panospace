@@ -210,8 +210,14 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             }
 
         } catch (err) {
-            logger.error('Error fetching feed:', err);
-            setError(err.message);
+            if (err.code === 'permission-denied') {
+                logger.warn('Feed permission denied, resolving to empty state');
+                setPosts([]);
+                setError(null);
+            } else {
+                logger.error('Error fetching feed:', err);
+                setError(err.message);
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);

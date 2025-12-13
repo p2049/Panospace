@@ -13,7 +13,7 @@ import {
 import type { AppEvent, AppEventFeedItem } from '@/core/types';
 import { normalizeAppEvent } from '@/core/schemas/firestoreModels';
 
-const EVENTS_COLLECTION = 'events_app';
+const EVENTS_COLLECTION = 'events';
 
 export const EventService = {
     /**

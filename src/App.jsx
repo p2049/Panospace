@@ -191,6 +191,7 @@ const AnimatedRoutes = () => {
             <MotionWrapper><CreateGallery /></MotionWrapper>
           </PrivateRoute>
         } />
+        <Route path="/create-gallery" element={<Navigate to="/gallery/create" replace />} />
         <Route path="/gallery/:id" element={<MotionWrapper><GalleryDetail /></MotionWrapper>} />
         <Route path="/parks" element={
           <PrivateRoute>

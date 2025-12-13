@@ -378,31 +378,7 @@ service cloud.firestore {
 
 
     // NOTE: blockedUsers rules are now nested under /users/{userId} above
-    // ============================================
-    // EVENTS COLLECTION (Community Calendar)
-    // ============================================
-    match /events/{eventId} {
-      // Public read for all events
-      allow read: if true;
-      
-      // Authenticated users can create events
-      allow create: if request.auth != null &&
-                     request.resource.data.creatorId == request.auth.uid &&
-                     request.resource.data.keys().hasAll(['creatorId', 'title', 'eventDate', 'createdAt']) &&
-                     request.resource.data.title is string &&
-                     request.resource.data.title.size() > 0 &&
-                     request.resource.data.title.size() <= 100 &&
-                     request.resource.data.eventDate is timestamp &&
-                     request.resource.data.createdAt is timestamp;
-      
-      // Users can update/delete only their own events
-      allow update, delete: if request.auth != null &&
-                               resource.data.creatorId == request.auth.uid;
-      
-      // Validate event type
-      allow write: if !request.resource.data.keys().hasAny(['eventType']) ||
-                     request.resource.data.eventType in ['contest', 'seasonal', 'drop', 'user', 'scheduled_post', 'scheduled_collection'];
-    }
+
       
     // ============================================
     match /posts/{postId}/comments/{commentId} {
@@ -421,38 +397,7 @@ service cloud.firestore {
 
     // ============================================
     // CONTESTS COLLECTION (Full System)
-    // ============================================
-    match /contests/{contestId} {
-      // Public read for all contests
-      allow read: if true;
-      
-      // Authenticated users can create contests
-      allow create: if request.auth != null &&
-                     request.resource.data.creatorUid == request.auth.uid &&
-                     request.resource.data.keys().hasAll(['title', 'startAt', 'endAt', 'entryType', 'status', 'createdAt']) &&
-                     request.resource.data.entryType in ['free', 'paid'] &&
-                     request.resource.data.status in ['upcoming', 'active', 'closed'];
-      
-      // Only creator can update/delete
-      allow update, delete: if request.auth != null &&
-                               resource.data.creatorUid == request.auth.uid;
-      
-      // Entries subcollection
-      match /entries/{entryId} {
-        // Public read for entries
-        allow read: if true;
-        
-        // Users can create their own entries
-        allow create: if request.auth != null &&
-                       request.resource.data.userId == request.auth.uid &&
-                       request.resource.data.keys().hasAll(['userId', 'postId', 'submittedAt']) &&
-                       request.resource.data.submittedAt is timestamp;
-        
-        // Users can delete their own entries (before contest closes)
-        allow delete: if request.auth != null &&
-                       resource.data.userId == request.auth.uid;
-      }
-    }
+
 
     // ============================================
     // USER INTEGRITY SCORES (Anti-Cheat)
@@ -508,43 +453,7 @@ service cloud.firestore {
     // ============================================
     // SPACE CARDS (NFT-like Collectibles)
     // ============================================
-    match /spaceCards/{cardId} {
-      allow read: if true;
-      
-      // Authenticated users can create cards with proper validation
-      allow create: if request.auth != null &&
-                     request.resource.data.creatorUid == request.auth.uid &&
-                     request.resource.data.keys().hasAll(['creatorUid', 'creatorName', 'images', 'title', 'rarity', 'editionType', 'createdAt']) &&
-                     request.resource.data.creatorUid is string &&
-                     request.resource.data.creatorName is string &&
-                     request.resource.data.images is map &&
-                     request.resource.data.images.front is string &&
-                     request.resource.data.title is string &&
-                     request.resource.data.rarity is string &&
-                     request.resource.data.editionType is string &&
-                     request.resource.data.createdAt is timestamp;
-      
-      // Allow update if creator OR if just updating stats (minting/listing)
-      allow update: if request.auth != null && (
-        resource.data.creatorUid == request.auth.uid || 
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mintedCount', 'stats', 'updatedAt'])
-      );
-    }
 
-    match /spaceCardOwnership/{ownershipId} {
-      allow read: if true;
-      
-      // Create: Only for self (minting)
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      
-      // Update: Owner listing for sale OR Buyer purchasing
-      allow update: if request.auth != null && (
-        // Owner updating (e.g. listing for sale)
-        resource.data.ownerId == request.auth.uid ||
-        // Buyer purchasing (taking ownership)
-        (request.resource.data.ownerId == request.auth.uid && resource.data.forSale == true)
-      );
-    }
 
 
     // USER SUBCOLLECTIONS (continued)

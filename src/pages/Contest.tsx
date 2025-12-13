@@ -50,6 +50,13 @@ const Contest = () => {
         }
     };
 
+    const monthName = new Date(2024, (stats?.currentMonth || 1) - 1).toLocaleDateString('en-US', { month: 'long' });
+
+    // Countdown for current month
+    const targetDate = stats ? new Date(stats.currentYear, stats.currentMonth, 0) : null;
+    const { total } = useCountdown(targetDate);
+    const daysRemaining = Math.ceil(total / (1000 * 60 * 60 * 24));
+
     if (loading) {
         return (
             <div style={{ minHeight: '100vh', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -58,12 +65,7 @@ const Contest = () => {
         );
     }
 
-    const monthName = new Date(2024, (stats?.currentMonth || 1) - 1).toLocaleDateString('en-US', { month: 'long' });
 
-    // Countdown for current month
-    const targetDate = stats ? new Date(stats.currentYear, stats.currentMonth, 0) : null;
-    const { total } = useCountdown(targetDate);
-    const daysRemaining = Math.ceil(total / (1000 * 60 * 60 * 24));
 
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem' }}>

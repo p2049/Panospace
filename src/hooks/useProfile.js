@@ -5,6 +5,8 @@ import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import { logger } from '@/core/utils/logger';
 
+const PROFILE_CACHE = {};
+
 /**
  * useProfile Hook
  * 
@@ -83,6 +85,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                 // Proceed to clear other states?
                 // Original logic cleared states when user changed.
                 // If we switched users, 'user' state is null initially, so we are fine.
+                setLoading(false);
                 return;
             }
 
@@ -336,3 +339,10 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
         setSpaceCards
     };
 };
+
+export const invalidateProfileCache = (userId) => {
+    if (PROFILE_CACHE[userId]) {
+        delete PROFILE_CACHE[userId];
+    }
+};
+
