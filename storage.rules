@@ -21,20 +21,16 @@ service firebase.storage {
       allow read: if true;
       
       // Users can only upload their own profile photo
-      // Validate file size (max 5MB) and type (images only)
+      // Validate file size (max 10MB) and type (images only)
       allow write: if request.auth != null && 
                      request.auth.uid == userId &&
-                     request.resource.size < 5 * 1024 * 1024 &&  // 5MB limit
+                     request.resource.size < 10 * 1024 * 1024 &&  // 10MB limit (Increased from 5MB)
                      request.resource.contentType.matches('image/.*');
     }
     
     // Space Cards - PUBLIC READ
     match /spacecards/{userId}/{allPaths=**} {
-      // Public read for space cards
       allow read: if true;
-      
-      // Users can only upload their own space cards
-      // Validate file size (max 10MB) and type (images only)
       allow write: if request.auth != null && 
                      request.auth.uid == userId &&
                      request.resource.size < 10 * 1024 * 1024 &&
@@ -77,8 +73,40 @@ service firebase.storage {
                      request.resource.contentType.matches('image/.*');
     }
     
+    // Galleries (Studios) - PUBLIC READ
+    // Added based on usage in studios.service.ts
+    match /galleries/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+
     // Magazines - PUBLIC READ
+    // Covers uploaded by Owner: magazines/{ownerId}/...
     match /magazines/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+
+    // Magazine Issues - PUBLIC READ
+    // Path: magazines/{magazineId}/issues/{userId}/...
+    match /magazines/{magazineId}/issues/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
+    }
+
+    // Magazine Submissions - PUBLIC READ
+    // Path: magazines/{magazineId}/submissions/{userId}/...
+    // Allows any auth user to upload to their OWN submission folder within a magazine
+    match /magazines/{magazineId}/submissions/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && 
                      request.auth.uid == userId &&
@@ -87,6 +115,7 @@ service firebase.storage {
     }
     
     // Museums - PUBLIC READ
+    // Includes Covers: museums/{ownerId}/...
     match /museums/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && 
@@ -94,12 +123,16 @@ service firebase.storage {
                      request.resource.size < 10 * 1024 * 1024 &&
                      request.resource.contentType.matches('image/.*');
     }
-    
-    // TEMPORARY: Catch-all rule for debugging
-    // TODO: Remove this once the issue is resolved
-    match /{allPaths=**} {
+
+    // Museum Exhibits - PUBLIC READ
+    // Path: exhibits/{museumId}/{userId}/...
+    // Enforces that the uploader puts their own UID in the path
+    match /exhibits/{museumId}/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && 
+                     request.auth.uid == userId &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType.matches('image/.*');
     }
   }
 }

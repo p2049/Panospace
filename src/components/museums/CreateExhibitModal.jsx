@@ -45,7 +45,7 @@ const CreateExhibitModal = ({ isOpen, onClose, museumId }) => {
 
         try {
             // 1. Upload Image
-            const fileName = `exhibits/${museumId}/${Date.now()}_${image.name}`;
+            const fileName = `exhibits/${museumId}/${currentUser.uid}/${Date.now()}_${image.name}`;
             const storageRef = ref(storage, fileName);
             await uploadBytes(storageRef, image);
             const imageUrl = await getDownloadURL(storageRef);

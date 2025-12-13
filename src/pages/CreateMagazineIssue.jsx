@@ -208,7 +208,7 @@ const CreateMagazineIssue = () => {
             const uploadedSlides = [];
             for (let i = 0; i < slides.length; i++) {
                 const slide = slides[i];
-                const fileName = `magazines/${magazineId}/issues/${Date.now()}_slide_${i.toString().padStart(3, '0')}_${slide.file.name}`;
+                const fileName = `magazines/${magazineId}/issues/${currentUser.uid}/${Date.now()}_slide_${i.toString().padStart(3, '0')}_${slide.file.name}`;
                 const storageRef = ref(storage, fileName);
 
                 await uploadBytes(storageRef, slide.file);
