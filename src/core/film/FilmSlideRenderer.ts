@@ -66,7 +66,6 @@ export const FilmSlideRenderer = {
             if (imgRatio > targetRatio) {
                 drawH = contentHeight;
                 drawW = contentHeight * imgRatio;
-                displayPosition:
                 offsetX = (width - drawW) / 2;
                 offsetY = trackHeight;
             } else {

@@ -263,10 +263,10 @@ const Profile = () => {
             }}>
                 {/* Animated Stars Background - Only if enabled */}
                 {/* Animated Stars Background - Only if enabled (Delegate to BannerRenderer for City/Ocean) */}
-                {(bannerMode === 'stars' || bannerMode === 'brand_stars' || (user.profileTheme?.useStarsOverlay && !bannerMode.startsWith('city') && !bannerMode.startsWith('ocean'))) && (
+                {(bannerMode === 'stars' || (user.profileTheme?.useStarsOverlay && !bannerMode.startsWith('city') && !bannerMode.startsWith('ocean'))) && (
                     <StarBackground
-                        starColor={user.profileTheme?.starColor || COLORS.iceMint}
-                        multiColor={bannerMode === 'brand_stars'}
+                        starColor={user.profileTheme?.starColor === 'brand' ? '#7FFFD4' : (user.profileTheme?.starColor || COLORS.iceMint)}
+                        multiColor={user.profileTheme?.starColor === 'brand'}
                         transparent={isGradientMode || bannerMode === 'neonGrid'}
                         maskTop={bannerMode === 'neonGrid'}
                     />
@@ -825,7 +825,11 @@ const Profile = () => {
                                 style={{
                                     flex: '0 0 auto',
                                     height: isMobile ? '1.5rem' : '2rem', // Match username height (1.5rem)
-                                    padding: isMobile ? '0 12px' : '0 1.5rem',
+                                    // Use only longhand padding to avoid React style warning
+                                    paddingTop: '2px', // Micro-adjustment for visual centering of all-caps font
+                                    paddingBottom: '0',
+                                    paddingLeft: isMobile ? '12px' : '1.5rem',
+                                    paddingRight: isMobile ? '12px' : '1.5rem',
                                     boxSizing: 'border-box',
                                     background: 'transparent',
                                     border: 'none',
@@ -834,11 +838,7 @@ const Profile = () => {
                                     alignItems: 'center',
                                     gap: '0.5rem',
                                     fontSize: isMobile ? '0.75rem' : '0.9rem',
-
-                                    // Font adjustments to remove "weird padding" from high-ascent fonts
                                     lineHeight: '1',
-                                    paddingTop: '2px', // Micro-adjustment for visual centering of all-caps font
-
                                     fontWeight: isSelected ? '700' : '500',
                                     fontFamily: 'var(--font-family-heading)',
                                     letterSpacing: '0.05em',

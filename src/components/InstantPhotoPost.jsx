@@ -13,7 +13,7 @@ import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { logger } from '@/core/utils/logger';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
-import '@/styles/film-strip-post.css';
+import '@/styles/instant-photo-post.css';
 
 /**
  * InstantPhotoPost
@@ -67,19 +67,14 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                 : '#000',
             overflow: 'hidden'
         }}>
-            {/* Scroll Container leveraging Film Strip CSS for the scrollbar */}
-            <div className="cyber-film-strip-scroll-container" style={{
-                height: '100%',
-                width: '100%',
-                // Hide scrollbar padding if items fit (<= 3)
-                padding: images.length <= 3 ? '0 5vw' : '0 5vw 2rem 5vw',
-                gap: '4rem', // Increased spacing
-                // Center if 3 or fewer items so they appear in middle of screen
-                justifyContent: images.length <= 3 ? 'center' : 'flex-start',
-                alignItems: 'center',
-                // Explicitly hide scrollbar if compact
-                overflowX: images.length <= 3 ? 'hidden' : 'auto'
-            }}>
+            {/* Scroll Container - Dedicated Class for Instant Photos */}
+            <div
+                className={`instant-photo-scroll-container ${images.length <= 3 ? 'instant-compact' : ''} ${images.length === 1 ? 'instant-single' : ''}`}
+                style={{
+                    // Style mostly handled by CSS now, but keeping overrides if needed
+                    height: '100%',
+                    width: '100%',
+                }}>
 
                 {images.map((item, index) => {
                     const url = item.url || item;

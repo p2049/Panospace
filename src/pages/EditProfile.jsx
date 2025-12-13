@@ -926,21 +926,48 @@ const EditProfile = () => {
                                             )}
 
                                             {/* Preview stars */}
-                                            {[...Array(5)].map((_, i) => (
-                                                <div
-                                                    key={i}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        width: '2px',
-                                                        height: '2px',
-                                                        background: option.color, // Works for gradient string too on div background
-                                                        borderRadius: '50%',
-                                                        top: `${20 + i * 15}%`,
-                                                        left: `${15 + i * 15}%`,
-                                                        boxShadow: option.color.includes('gradient') ? 'none' : `0 0 3px ${option.color}`
-                                                    }}
-                                                />
-                                            ))}
+                                            {option.color === 'brand' ? (
+                                                // Multi-color brand stars preview
+                                                <>
+                                                    <style>{`
+                                                        @keyframes star-preview-twinkle-1 { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+                                                        @keyframes star-preview-twinkle-2 { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+                                                    `}</style>
+                                                    {['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D'].map((c, i) => (
+                                                        <div
+                                                            key={i}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                width: '3px',
+                                                                height: '3px',
+                                                                background: c,
+                                                                borderRadius: '50%',
+                                                                top: `${15 + i * 14}%`,
+                                                                left: `${12 + i * 16}%`,
+                                                                boxShadow: `0 0 4px ${c}`,
+                                                                animation: `star-preview-twinkle-${(i % 2) + 1} ${1.2 + i * 0.2}s infinite`
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </>
+                                            ) : (
+                                                // Single color stars preview
+                                                [...Array(5)].map((_, i) => (
+                                                    <div
+                                                        key={i}
+                                                        style={{
+                                                            position: 'absolute',
+                                                            width: '2px',
+                                                            height: '2px',
+                                                            background: option.color, // Works for gradient string too on div background
+                                                            borderRadius: '50%',
+                                                            top: `${20 + i * 15}%`,
+                                                            left: `${15 + i * 15}%`,
+                                                            boxShadow: option.color.includes('gradient') ? 'none' : `0 0 3px ${option.color}`
+                                                        }}
+                                                    />
+                                                ))
+                                            )}
                                         </div>
                                         <div style={{
                                             padding: '0.4rem',

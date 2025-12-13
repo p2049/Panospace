@@ -119,22 +119,31 @@ const OceanBanner = ({ themeId, starSettings }) => {
             ctx.fillRect(0, 0, width, yStop);
         };
 
-        // 1. SKY RENDER
-        drawGradient(theme.sky, horizonY + 50);
+        // 1. SKY RENDER (Skip if using brand stars - let them show through)
+        const useBrandStars = starSettings?.color === 'brand' && starSettings?.enabled;
 
-        // 1.5. HORIZON HAZE (Atmospheric perspective)
-        const skyBottomColor = Array.isArray(theme.sky) ? theme.sky[theme.sky.length - 1] : theme.sky;
-        const haze = ctx.createLinearGradient(0, horizonY - 100, 0, horizonY + 50);
-        haze.addColorStop(0, 'transparent');
-        haze.addColorStop(0.6, skyBottomColor); // Peak haze at horizon
-        haze.addColorStop(1, 'transparent');
-        ctx.fillStyle = haze;
-        ctx.globalAlpha = 0.6;
-        ctx.fillRect(0, horizonY - 100, width, 150);
-        ctx.globalAlpha = 1.0;
+        if (!useBrandStars) {
+            drawGradient(theme.sky, horizonY + 50);
+        } else {
+            // Clear canvas for transparent sky, stars will show through
+            ctx.clearRect(0, 0, width, horizonY + 50);
+        }
 
-        // 2. STARS
-        const showStars = (starSettings?.enabled !== undefined) ? starSettings.enabled : theme.atmosphere.stars;
+        // 1.5. HORIZON HAZE (Atmospheric perspective) - Skip if brand stars
+        if (!useBrandStars) {
+            const skyBottomColor = Array.isArray(theme.sky) ? theme.sky[theme.sky.length - 1] : theme.sky;
+            const haze = ctx.createLinearGradient(0, horizonY - 100, 0, horizonY + 50);
+            haze.addColorStop(0, 'transparent');
+            haze.addColorStop(0.6, skyBottomColor); // Peak haze at horizon
+            haze.addColorStop(1, 'transparent');
+            ctx.fillStyle = haze;
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(0, horizonY - 100, width, 150);
+            ctx.globalAlpha = 1.0;
+        }
+
+        // 2. STARS - Skip if brand stars (rendered by React component)
+        const showStars = !useBrandStars && ((starSettings?.enabled !== undefined) ? starSettings.enabled : theme.atmosphere.stars);
 
         if (showStars) {
             const starClr = starSettings?.color || COLORS.iceWhite;
@@ -518,18 +527,38 @@ const OceanBanner = ({ themeId, starSettings }) => {
 
     }, [themeId, starSettings]);
 
+    // Check if brand multi-color stars should be shown
+    const useBrandStars = starSettings?.enabled && starSettings?.color === 'brand';
+
     return (
         <div style={{
-            position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none'
+            position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none',
+            background: '#000', // Black base for when canvas is transparent
         }}>
+            {/* LAYER 1: Brand Stars - Rendered FIRST (behind everything) */}
+            {useBrandStars && (
+                <StarBackground
+                    multiColor={true}
+                    transparent={true}
+                />
+            )}
+
+            {/* LAYER 2: Ocean Canvas - Scene renders ON TOP of stars */}
+            {/* Canvas sky is transparent when brand stars enabled, so stars show through */}
             <div style={{
+                position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
                 backgroundImage: `url(${bgImage})`,
-                backgroundSize: 'cover', backgroundPosition: 'center'
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                zIndex: 1, // Above stars
             }} />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
         </div>
     );
 };
 
+// Import StarBackground for brand color support
+import StarBackground from '@/components/StarBackground';
+
 export default OceanBanner;
+

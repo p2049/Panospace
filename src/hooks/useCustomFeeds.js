@@ -12,14 +12,17 @@ export const useCustomFeeds = () => {
     const { activeCustomFeedId, setCustomFeedEnabled, setActiveCustomFeed, customFeedEnabled } = useFeedStore();
 
     useEffect(() => {
-        if (!currentUser) {
+        // Use uid as stable dependency (not the full user object)
+        const userId = currentUser?.uid;
+
+        if (!userId) {
             setFeeds([]);
             setLoading(false);
             return;
         }
 
         setLoading(true);
-        const feedsRef = collection(db, 'users', currentUser.uid, 'customFeeds');
+        const feedsRef = collection(db, 'users', userId, 'customFeeds');
         const q = query(feedsRef, orderBy('createdAt', 'desc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -36,7 +39,7 @@ export const useCustomFeeds = () => {
         });
 
         return () => unsubscribe();
-    }, [currentUser]);
+    }, [currentUser?.uid]); // Stable primitive dependency
 
     // Validation helper
     // If exact active feed is deleted, disable custom feed mode

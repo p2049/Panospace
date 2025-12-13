@@ -16,6 +16,21 @@ service cloud.firestore {
       // Validate user data structure
       allow write: if request.resource.data.keys().hasAll(['displayName']) &&
                      request.resource.data.displayName is string;
+      
+      // ----------------------------------------
+      // USER SUBCOLLECTIONS (nested for proper listen access)
+      // ----------------------------------------
+      
+      // Custom Feeds - supports onSnapshot listeners
+      match /customFeeds/{feedId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Blocked Users - supports getDocs queries
+      match /blockedUsers/{blockedUserId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
     // ============================================
@@ -361,46 +376,8 @@ service cloud.firestore {
       );
     }
 
-    // ============================================
-    // USER SUBCOLLECTIONS
-    // ============================================
-    match /users/{userId}/blockedUsers/{blockId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      // Read based on visibility
-      allow read: if resource.data.visibility == 'public' ||
-                    (request.auth != null && resource.data.ownerId == request.auth.uid) ||
-                    (request.auth != null && resource.data.visibility == 'followers');
-      
-      // Authenticated users can create collections
-      allow create: if request.auth != null &&
-                     request.resource.data.ownerId == request.auth.uid &&
-                     request.resource.data.keys().hasAll(['title', 'ownerId', 'createdAt', 'visibility']) &&
-                     request.resource.data.title is string &&
-                     request.resource.data.ownerId is string &&
-                     request.resource.data.createdAt is timestamp &&
-                     request.resource.data.visibility in ['public', 'followers', 'private'] &&
-                     (!request.resource.data.keys().hasAny(['items']) || request.resource.data.items is list) &&
-                     (!request.resource.data.keys().hasAny(['postRefs']) || request.resource.data.postRefs is list);
-      
-      // Users can update/delete only their own collections
-      allow update, delete: if request.auth != null &&
-                               resource.data.ownerId == request.auth.uid;
-      
-      // Validate items array (max 10 items at creation)
-      allow write: if !request.resource.data.keys().hasAny(['items']) ||
-                     (request.resource.data.items is list &&
-                      request.resource.data.items.size() <= 10);
-      
-      // Validate postRefs array (no limit on posts added)
-      allow write: if !request.resource.data.keys().hasAny(['postRefs']) ||
-                     request.resource.data.postRefs is list;
-      
-      // Validate shopSettings
-      allow write: if !request.resource.data.keys().hasAny(['shopSettings']) ||
-                     (request.resource.data.shopSettings is map &&
-                      request.resource.data.shopSettings.showInStore is bool);
-    }
 
+    // NOTE: blockedUsers rules are now nested under /users/{userId} above
     // ============================================
     // EVENTS COLLECTION (Community Calendar)
     // ============================================
@@ -569,13 +546,9 @@ service cloud.firestore {
       );
     }
 
-    // ============================================
-    // USER SUBCOLLECTIONS
-    // ============================================
-    match /users/{userId}/blockedUsers/{blockId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
 
+    // USER SUBCOLLECTIONS (continued)
+    // ============================================
     match /users/{userId}/purchases/{purchaseId} {
       allow read: if true; // Publicly visible on profile
       allow write: if false; // Managed by backend
@@ -612,10 +585,7 @@ service cloud.firestore {
       allow write: if false; // Managed by backend
     }
 
-    // CUSTOM FEEDS (User preferences)
-    match /users/{userId}/customFeeds/{feedId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
+    // NOTE: customFeeds rules are now nested under /users/{userId} above
 
     // ============================================
     // GALLERIES COLLECTION (Collaborative Spaces)

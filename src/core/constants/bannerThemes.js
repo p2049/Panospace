@@ -6,12 +6,6 @@ export const BANNER_TYPES = [
         description: 'Classic cosmic starfield'
     },
     {
-        id: 'brand_stars',
-        label: 'Brand Stars',
-        previewGradient: 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D)',
-        description: 'All PanoSpace brand colors'
-    },
-    {
         id: 'nebula',
         label: 'Nebula',
         previewGradient: 'linear-gradient(135deg, #2D1B4E, #000000)',

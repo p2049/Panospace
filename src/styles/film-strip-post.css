@@ -395,37 +395,7 @@
     }
 }
 
-/* Instant Photo Responsive Sizing */
-.instant-photo-frame-wrapper {
-    flex: 0 0 29vw;
-    /* Desktop: Fits 3 items snugly */
-}
-
-/* Thin Border Variant - Smaller Sizing */
-.instant-photo-frame-wrapper.thin {
-    flex: 0 0 28vw;
-    /* Desktop: Fits 3 items snugly */
-}
-
-@media (max-width: 768px) {
-    .instant-photo-frame-wrapper {
-        flex: 0 0 80vw;
-        /* Mobile Portrait: ~1 item */
-    }
-
-    .instant-photo-frame-wrapper.thin {
-        flex: 0 0 70vw;
-        /* Mobile: Smaller (~1.5 items visible) */
-    }
-}
-
-@media (max-width: 768px) and (orientation: landscape) {
-    .instant-photo-frame-wrapper {
-        flex: 0 0 45vw;
-        /* Mobile Landscape: ~2 items */
-    }
-
-    .instant-photo-frame-wrapper.thin {
-        flex: 0 0 35vw;
-    }
-}
+/* ========================================
+   END OF 35mm FILM STRIP STYLES
+   Instant Photo styles are now in 'instant-photo-post.css'.
+   ======================================== */

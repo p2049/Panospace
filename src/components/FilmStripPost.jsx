@@ -56,20 +56,39 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
         });
     }, [cacheKey, isUrl, priority, itemUrl, getFrameNumber, getEdgeCode, postId, index]);
 
+    // NOTE: Pre-rendering via FilmSlideRenderer is disabled because it causes sizing issues.
+    // Always use the full film frame structure below instead.
+    // The renderedSrc functionality can be re-enabled once the canvas sizing is fixed.
+
+    /*
     if (renderedSrc) {
         return (
-            <div className="cyber-frame-unit" style={{ background: '#000' }}>
+            <div 
+                className="cyber-frame-unit" 
+                style={{ 
+                    background: '#000',
+                    overflow: 'hidden',
+                    maxHeight: '100%'
+                }}
+            >
                 <SmartImage
                     src={renderedSrc}
                     alt={`Film Frame ${index + 1}`}
                     context="filmSlide"
                     priority={Math.abs(priority) <= 2 ? 'high' : 'normal'}
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
-                    fillContainer
+                    objectFit="contain"
+                    style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        maxHeight: '100%',
+                        display: 'block',
+                        objectFit: 'contain'
+                    }}
                 />
             </div>
         );
     }
+    */
 
     return (
         <div className="cyber-frame-unit">

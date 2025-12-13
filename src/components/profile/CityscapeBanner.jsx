@@ -354,19 +354,27 @@ function renderCityToCanvas(canvas, themeId, starSettings) {
         return `rgb(${r},${g},${b})`;
     };
 
-    // 1. DRAW SKY
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-    // Ensure sky is defined
-    const skyColors = theme.sky || [COLORS.black, COLORS.darkNebula];
-    skyColors.forEach((color, idx) => {
-        skyGrad.addColorStop(idx / (skyColors.length - 1), color);
-    });
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, width, height);
+    // 1. DRAW SKY (Skip if using brand stars - let them show through)
+    const useBrandStars = starSettings?.color === 'brand' && starSettings?.enabled;
 
-    // 2. STARS (Back layer)
+    if (!useBrandStars) {
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+        // Ensure sky is defined
+        const skyColors = theme.sky || [COLORS.black, COLORS.darkNebula];
+        skyColors.forEach((color, idx) => {
+            skyGrad.addColorStop(idx / (skyColors.length - 1), color);
+        });
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, height);
+    } else {
+        // Fill with transparent so stars can show through, but keep a dark base
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        ctx.clearRect(0, 0, width, height);
+    }
+
+    // 2. STARS (Back layer) - Skip if brand stars (rendered by React component)
     // Logic: If user explicit choice (starSettings) exists, use it. Else use theme default.
-    const showStars = (starSettings?.enabled !== undefined) ? starSettings.enabled : theme.atmosphere.stars;
+    const showStars = !useBrandStars && ((starSettings?.enabled !== undefined) ? starSettings.enabled : theme.atmosphere.stars);
 
     if (showStars) {
         const sColor = starSettings?.color || '#FFF';
@@ -1224,14 +1232,24 @@ function renderCityToCanvas(canvas, themeId, starSettings) {
     return dataURL;
 }
 
+// Import StarBackground for brand color support
+import StarBackground from '@/components/StarBackground';
+
 const CityscapeBanner = ({ themeId, starSettings }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
+    // Check if brand multi-color stars should be shown
+    const useBrandStars = starSettings?.enabled && starSettings?.color === 'brand';
+
     useEffect(() => {
-        const bg = renderCityToCanvas(canvasRef.current, themeId, starSettings);
+        // If using brand stars, skip canvas stars rendering for that setting
+        const modifiedSettings = useBrandStars
+            ? { ...starSettings, skipCanvasStars: true }
+            : starSettings;
+        const bg = renderCityToCanvas(canvasRef.current, themeId, modifiedSettings);
         setBgImage(bg);
-    }, [themeId, starSettings]);
+    }, [themeId, starSettings, useBrandStars]);
 
     return (
         <div style={{
@@ -1239,13 +1257,27 @@ const CityscapeBanner = ({ themeId, starSettings }) => {
             inset: 0,
             overflow: 'hidden',
             pointerEvents: 'none',
+            background: '#000', // Black base for when canvas is transparent
         }}>
+            {/* LAYER 1: Brand Stars - Rendered FIRST (behind everything) */}
+            {useBrandStars && (
+                <StarBackground
+                    multiColor={true}
+                    transparent={true}
+                />
+            )}
+
+            {/* LAYER 2: City Canvas - Buildings render ON TOP of stars */}
+            {/* Canvas sky is transparent when brand stars enabled, so stars show through */}
             <div style={{
+                position: 'absolute',
+                inset: 0,
                 width: '100%',
                 height: '100%',
                 backgroundImage: `url(${bgImage})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center bottom',
+                zIndex: 1, // Above stars
             }} />
             <canvas ref={canvasRef} style={{ display: 'none' }} />
         </div>
@@ -1253,3 +1285,4 @@ const CityscapeBanner = ({ themeId, starSettings }) => {
 };
 
 export default CityscapeBanner;
+

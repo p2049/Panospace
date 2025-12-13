@@ -1,0 +1,148 @@
+/**
+ * INSTANT PHOTO POST STYLES
+ * 
+ * Aesthetic: Authentic Instant Photo (Polaroid) Look.
+ * Separated from 35mm Film Strip styles.
+ */
+
+:root {
+    --electric-green: #7FFFD4;
+    --electric-glow: 0 0 12px rgba(127, 255, 212, 0.4);
+}
+
+/* ========================================
+   SCROLL CONTAINER
+   ======================================== */
+
+.instant-photo-scroll-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 4rem;
+    padding: 0 5vw 2rem 5vw;
+
+    /* Scrollbar Styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--electric-green) #111;
+
+    /* Interaction */
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    will-change: transform, scroll-position;
+}
+
+.instant-photo-scroll-container::-webkit-scrollbar {
+    height: 6px;
+    display: block;
+}
+
+.instant-photo-scroll-container::-webkit-scrollbar-track {
+    background: #0a0a0a;
+    border-top: 1px solid #222;
+}
+
+.instant-photo-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--electric-green);
+    border-radius: 0;
+    box-shadow: var(--electric-glow);
+}
+
+/* COMPACT MODE (<= 3 Images) - Desktop */
+.instant-photo-scroll-container.instant-compact {
+    justify-content: center;
+    overflow-x: hidden;
+    scroll-snap-type: none;
+}
+
+/* SINGLE IMAGE MODE - Always Centered */
+.instant-photo-scroll-container.instant-single {
+    justify-content: center !important;
+    overflow-x: hidden !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    scroll-snap-type: none !important;
+}
+
+/* ========================================
+   FRAME WRAPPERS
+   ======================================== */
+
+.instant-photo-frame-wrapper {
+    flex: 0 0 29vw;
+    /* Desktop: Fits 3 items snugly */
+}
+
+.instant-photo-frame-wrapper.thin {
+    flex: 0 0 28vw;
+    /* Thin variant */
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS
+   ======================================== */
+
+@media (max-width: 768px) {
+    .instant-photo-scroll-container {
+        padding: 0 20px 1rem 20px;
+        gap: 20px;
+    }
+
+    /* Single Image: Force Center */
+    .instant-photo-scroll-container.instant-single {
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 0 !important;
+    }
+
+    /* Frame Sizing */
+    .instant-photo-frame-wrapper {
+        flex: 0 0 80vw;
+        /* Mobile Portrait: ~1 item */
+    }
+
+    .instant-photo-frame-wrapper.thin {
+        flex: 0 0 70vw;
+    }
+}
+
+/* Mobile Portrait Specifics */
+@media (max-width: 768px) and (orientation: portrait) {
+
+    /* Multi-image Alignment */
+    .instant-photo-scroll-container.instant-compact {
+        justify-content: flex-start;
+        /* Scrollable from left */
+        padding-left: 20px;
+        padding-right: 20px;
+        overflow-x: auto;
+    }
+
+    /* Re-affirm single centering */
+    .instant-photo-scroll-container.instant-single {
+        justify-content: center !important;
+        padding: 0 !important;
+    }
+}
+
+/* Mobile Landscape Specifics */
+@media (max-width: 768px) and (orientation: landscape) {
+    .instant-photo-frame-wrapper {
+        flex: 0 0 30vw;
+        /* Fit more items */
+    }
+
+    .instant-photo-frame-wrapper.thin {
+        flex: 0 0 35vw;
+    }
+
+    .instant-photo-scroll-container.instant-compact {
+        justify-content: flex-start;
+    }
+
+    .instant-photo-scroll-container.instant-single {
+        justify-content: center !important;
+    }
+}
