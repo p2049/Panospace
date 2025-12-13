@@ -39,7 +39,7 @@ export const PostPrefetchManager = {
                 const urlsToLoad: string[] = [];
 
                 // Items/Slides/Images array (handles multi-slide and film strips)
-                const items = post.images || post.items || post.slides || [];
+                const items = post.items || post.images || post.slides || [];
 
                 // If it has items, determine how many to preload
                 if (Array.isArray(items) && items.length > 0) {

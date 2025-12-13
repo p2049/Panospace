@@ -30,19 +30,8 @@ export const sanitize = (input: any, { allowNewLines = true, maxLength = null }:
     }
 
     // 3. Remove dangerous control characters
-    // We keep:
-    // - \x09 (Tab)
-    // - \x0A (Line Feed)
-    // - \x0D (Carriage Return)
-    // - \x20-\x7E (Printable ASCII)
-    // - \x80-\uFFFF (Unicode, including Emojis)
-    // We remove:
-    // - \x00-\x08 (Null, Bell, Backspace, etc.)
-    // - \x0B (Vertical Tab)
-    // - \x0C (Form Feed)
-    // - \x0E-\x1F (Shift Out/In, Device Controls)
-    // - \x7F (Delete)
-    text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    // Using simple unicode ranges to avoid invalid regex errors in strict environments
+    text = text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 
     // 4. Handle Zalgo / Excessive Combining Characters
     // Normalizing to NFKC (Compatibility Decomposition, followed by Canonical Composition)

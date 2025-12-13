@@ -89,134 +89,136 @@ export interface ExtractedColor {
  * Extract dominant color from an image
  */
 export const extractDominantColor = async (imageSource: string | File | Blob): Promise<ExtractedColor> => {
-    return new Promise(async (resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
+    return new Promise((resolve, reject) => {
+        (async () => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
 
-        img.onload = () => {
-            try {
-                // Create canvas
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    reject(new Error('Canvas context not available'));
-                    return;
-                }
-
-                // Resize for performance (max 100x100)
-                const maxSize = 100;
-                const scale = Math.min(maxSize / img.width, maxSize / img.height);
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
-
-                // Draw image
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                // Get image data
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const pixels = imageData.data;
-
-                // Color buckets for quantization
-                const colorMap: Record<string, number> = {};
-                const skipPixels = 5; // Sample every 5th pixel for performance
-
-                // Collect colors
-                for (let i = 0; i < pixels.length; i += 4 * skipPixels) {
-                    const r = pixels[i] || 0;
-                    const g = pixels[i + 1] || 0;
-                    const b = pixels[i + 2] || 0;
-                    const a = pixels[i + 3] || 0;
-
-                    // Skip transparent pixels
-                    if (a < 125) continue;
-
-                    // Skip very dark or very light pixels (likely shadows/highlights)
-                    const brightness = (r + g + b) / 3;
-                    if (brightness < 20 || brightness > 235) continue;
-
-                    // Quantize to reduce color variations (group similar colors)
-                    const quantize = 30;
-                    const qr = Math.round(r / quantize) * quantize;
-                    const qg = Math.round(g / quantize) * quantize;
-                    const qb = Math.round(b / quantize) * quantize;
-
-                    const key = `${qr},${qg},${qb}`;
-                    colorMap[key] = (colorMap[key] || 0) + 1;
-                }
-
-                // Find most common color
-                let maxCount = 0;
-                let dominantColor: string | null = null;
-
-                for (const [color, count] of Object.entries(colorMap)) {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        dominantColor = color;
-                    }
-                }
-
-                if (!dominantColor) {
-                    // Fallback to center pixel
-                    const centerX = Math.floor(canvas.width / 2);
-                    const centerY = Math.floor(canvas.height / 2);
-                    const centerIndex = (centerY * canvas.width + centerX) * 4;
-                    dominantColor = `${pixels[centerIndex]},${pixels[centerIndex + 1]},${pixels[centerIndex + 2]}`;
-                }
-
-                const parts = dominantColor.split(',').map(Number);
-                const r = parts[0] || 0;
-                const g = parts[1] || 0;
-                const b = parts[2] || 0;
-                const hex = rgbToHex(r, g, b);
-                const hsl = rgbToHsl(r, g, b);
-
-                resolve({
-                    hex,
-                    rgb: { r, g, b },
-                    hsl
-                });
-            } catch (error) {
-                reject(error);
-            }
-        };
-
-        img.onerror = () => {
-            reject(new Error('Failed to load image'));
-        };
-
-        // Handle different input types
-        if (typeof imageSource === 'string') {
-            // For URLs (especially Firebase Storage), fetch as blob first to avoid CORS taint
-            if (imageSource.startsWith('http')) {
+            img.onload = () => {
                 try {
-                    const response = await fetch(imageSource);
-                    const blob = await response.blob();
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        if (e.target?.result) {
-                            img.src = e.target.result as string;
+                    // Create canvas
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        reject(new Error('Canvas context not available'));
+                        return;
+                    }
+
+                    // Resize for performance (max 100x100)
+                    const maxSize = 100;
+                    const scale = Math.min(maxSize / img.width, maxSize / img.height);
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+
+                    // Draw image
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Get image data
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const pixels = imageData.data;
+
+                    // Color buckets for quantization
+                    const colorMap: Record<string, number> = {};
+                    const skipPixels = 5; // Sample every 5th pixel for performance
+
+                    // Collect colors
+                    for (let i = 0; i < pixels.length; i += 4 * skipPixels) {
+                        const r = pixels[i] || 0;
+                        const g = pixels[i + 1] || 0;
+                        const b = pixels[i + 2] || 0;
+                        const a = pixels[i + 3] || 0;
+
+                        // Skip transparent pixels
+                        if (a < 125) continue;
+
+                        // Skip very dark or very light pixels (likely shadows/highlights)
+                        const brightness = (r + g + b) / 3;
+                        if (brightness < 20 || brightness > 235) continue;
+
+                        // Quantize to reduce color variations (group similar colors)
+                        const quantize = 30;
+                        const qr = Math.round(r / quantize) * quantize;
+                        const qg = Math.round(g / quantize) * quantize;
+                        const qb = Math.round(b / quantize) * quantize;
+
+                        const key = `${qr},${qg},${qb}`;
+                        colorMap[key] = (colorMap[key] || 0) + 1;
+                    }
+
+                    // Find most common color
+                    let maxCount = 0;
+                    let dominantColor: string | null = null;
+
+                    for (const [color, count] of Object.entries(colorMap)) {
+                        if (count > maxCount) {
+                            maxCount = count;
+                            dominantColor = color;
                         }
-                    };
-                    reader.onerror = () => reject(new Error('Failed to read blob'));
-                    reader.readAsDataURL(blob);
-                } catch (fetchError: any) {
-                    reject(new Error(`Failed to fetch image: ${fetchError.message}`));
-                }
-            } else {
-                img.src = imageSource;
-            }
-        } else if (imageSource instanceof File || imageSource instanceof Blob) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    img.src = e.target.result as string;
+                    }
+
+                    if (!dominantColor) {
+                        // Fallback to center pixel
+                        const centerX = Math.floor(canvas.width / 2);
+                        const centerY = Math.floor(canvas.height / 2);
+                        const centerIndex = (centerY * canvas.width + centerX) * 4;
+                        dominantColor = `${pixels[centerIndex]},${pixels[centerIndex + 1]},${pixels[centerIndex + 2]}`;
+                    }
+
+                    const parts = dominantColor.split(',').map(Number);
+                    const r = parts[0] || 0;
+                    const g = parts[1] || 0;
+                    const b = parts[2] || 0;
+                    const hex = rgbToHex(r, g, b);
+                    const hsl = rgbToHsl(r, g, b);
+
+                    resolve({
+                        hex,
+                        rgb: { r, g, b },
+                        hsl
+                    });
+                } catch (error) {
+                    reject(error);
                 }
             };
-            reader.onerror = () => reject(new Error('Failed to read file'));
-            reader.readAsDataURL(imageSource);
-        } else {
-            reject(new Error('Invalid image source'));
-        }
+
+            img.onerror = () => {
+                reject(new Error('Failed to load image'));
+            };
+
+            // Handle different input types
+            if (typeof imageSource === 'string') {
+                // For URLs (especially Firebase Storage), fetch as blob first to avoid CORS taint
+                if (imageSource.startsWith('http')) {
+                    try {
+                        const response = await fetch(imageSource);
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            if (e.target?.result) {
+                                img.src = e.target.result as string;
+                            }
+                        };
+                        reader.onerror = () => reject(new Error('Failed to read blob'));
+                        reader.readAsDataURL(blob);
+                    } catch (fetchError: any) {
+                        reject(new Error(`Failed to fetch image: ${fetchError.message}`));
+                    }
+                } else {
+                    img.src = imageSource;
+                }
+            } else if (imageSource instanceof File || imageSource instanceof Blob) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (e.target?.result) {
+                        img.src = e.target.result as string;
+                    }
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(imageSource);
+            } else {
+                reject(new Error('Invalid image source'));
+            }
+        })().catch(reject);
     });
 };
 

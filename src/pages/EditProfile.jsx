@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase
 import { db, storage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/context/ToastContext';
 import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
 import { ART_DISCIPLINES } from '@/core/constants/artDisciplines';
 import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '@/core/constants/gradients';
@@ -14,7 +15,7 @@ import { generateUserSearchKeywords } from '@/core/utils/searchKeywords';
 import { sanitizeDisplayName, sanitizeBio } from '@/core/utils/sanitize';
 import ImageCropper from '@/components/ImageCropper';
 import CosmicGuideModal from '@/components/CosmicGuideModal';
-import { getRenderedUsernameLength } from '@/utils/usernameRenderer';
+import { getRenderedUsernameLength, renderCosmicUsername, CHAR_MAP, PATTERNS } from '@/utils/usernameRenderer';
 import BannerTypeSelector from '@/components/edit-profile/BannerTypeSelector';
 import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
@@ -22,6 +23,7 @@ import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 const EditProfile = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     // Mock Premium Status check - In real app, check user subscription status
     const isPremiumUser = currentUser?.isPremium || false;
 
@@ -150,6 +152,30 @@ const EditProfile = () => {
                 [discipline]: [...(prev[discipline] || []), niche]
             }));
         }
+    };
+
+    const usernameInputRef = useRef(null);
+
+    const handleInsertSymbol = (symbolCode) => {
+        const input = usernameInputRef.current;
+        if (!input) return;
+
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+
+        // Insert symbol at cursor
+        const newValue = username.substring(0, start) + symbolCode + username.substring(end);
+
+        // Update state
+        setUsername(newValue);
+
+        // Restore cursor position after the inserted symbol
+        // Need to wait for render or standard React batched update? 
+        // Typically safest is requestAnimationFrame or setTimeout for cursor moves after state change in controlled inputs
+        setTimeout(() => {
+            input.focus();
+            input.setSelectionRange(start + symbolCode.length, start + symbolCode.length);
+        }, 0);
     };
 
     const [selectedFile, setSelectedFile] = useState(null);
@@ -410,10 +436,11 @@ const EditProfile = () => {
 
             await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
 
+            showToast('Profile updated successfully!', 'success');
             navigate('/profile/me');
         } catch (error) {
             console.error("Save failed:", error);
-            alert("Could not save profile: " + error.message);
+            showToast("Could not save profile: " + error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -542,28 +569,100 @@ const EditProfile = () => {
                     <div className="form-group">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                             <label style={{ display: 'block', color: '#7FFFD4', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Username</label>
-                            <button
-                                type="button"
-                                onClick={() => setShowSymbolGuide(true)}
-                                style={{
-                                    background: 'rgba(127, 255, 212, 0.1)',
-                                    border: '1px solid rgba(127, 255, 212, 0.3)',
-                                    borderRadius: '12px',
-                                    padding: '4px 10px',
-                                    color: '#7FFFD4',
-                                    fontSize: '0.7rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    textTransform: 'uppercase'
-                                }}
-                            >
-                                <FaInfoCircle size={10} /> Symbol Chart
-                            </button>
+
+                            {/* Live Character Count */}
+                            <span style={{ fontSize: '0.7rem', color: '#666' }}>
+                                {getRenderedUsernameLength(username)} / 20
+                            </span>
                         </div>
+
+                        {/* LIVE VISUAL PREVIEW */}
+                        <div style={{
+                            padding: '1rem',
+                            background: '#1a1a1a',
+                            border: '1px solid #333',
+                            borderRadius: '12px',
+                            marginBottom: '1rem',
+                            textAlign: 'center',
+                            minHeight: '60px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <span style={{
+                                fontSize: '1.5rem',
+                                fontWeight: '800',
+                                fontFamily: 'var(--font-family-heading)',
+                                color: usernameColor,
+                                textShadow: textGlow ? `0 0 10px ${usernameColor}80` : 'none'
+                            }}>
+                                {renderCosmicUsername(username, bannerColor, textGlow)}
+                            </span>
+                        </div>
+
+                        {/* EMOJI SCROLLBAR */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '0.75rem',
+                            overflowX: 'auto',
+                            padding: '0.5rem 0',
+                            marginBottom: '0.75rem',
+                            maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
+                            WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
+                        }}>
+                            {/* Render PATTERNS first (multi-char) */}
+                            {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
+                                <button
+                                    key={`pat-${i}`}
+                                    type="button"
+                                    onClick={() => handleInsertSymbol(p.pattern)}
+                                    style={{
+                                        flex: '0 0 auto',
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(127, 255, 212, 0.2)',
+                                        background: 'rgba(127, 255, 212, 0.05)',
+                                        fontSize: '1.2rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    {p.replacement}
+                                </button>
+                            ))}
+                            {/* Render CHAR_MAP symbols */}
+                            {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
+                                <button
+                                    key={`char-${i}`}
+                                    type="button"
+                                    onClick={() => handleInsertSymbol(char)}
+                                    style={{
+                                        flex: '0 0 auto',
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(127, 255, 212, 0.2)',
+                                        background: 'rgba(127, 255, 212, 0.05)',
+                                        fontSize: '1.2rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Hidden Inputs (Logic) */}
                         <input
+                            ref={usernameInputRef}
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value.toLowerCase())}
@@ -660,7 +759,7 @@ const EditProfile = () => {
                             justifyContent: 'flex-start',
                             maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
                         }}>
-                            {ALL_COLORS.filter(c => c.color !== '#000000').map(option => {
+                            {ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand').map(option => {
                                 const isPremiumLocked = option.isPremium && !isPremiumUser;
                                 const backgroundStyle = option.color.includes('gradient')
                                     ? { background: option.color }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useUI } from '@/context/UIContext';
+import { useActivePost } from '@/context/ActivePostContext';
 import { useBlock } from '@/hooks/useBlock';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -37,7 +37,7 @@ const MobileNavigation = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { currentUser } = useAuth();
-    const { activePost } = useUI();
+    const { activePost } = useActivePost();
     const { blockUser } = useBlock();
     const { t } = useTranslation();
 

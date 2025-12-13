@@ -1,3 +1,4 @@
+import { normalizeUserProfile, normalizePost, normalizeShopItem } from '@/core/schemas/firestoreModels';
 import { useState, useEffect, useRef } from 'react';
 import { doc, getDoc, getDocs, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -39,6 +40,9 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
         };
     }, []);
 
+    // --- CACHE IMPLEMENTATION ---
+    // Global cache to persist across route changes (mounting/unmounting)
+
     // Fetch user document
     useEffect(() => {
         const fetchUser = async () => {
@@ -47,17 +51,50 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                 return;
             }
 
-            // If we already have the user and it matches target, don't refetch
-            if (user && user.id === userId) return;
+            // CACHE HIT: User Data
+            if (PROFILE_CACHE[userId]?.user) {
+                // If we already have this user in memory, use it
+                // We typically assume user profile data doesn't change every second
+                setUser(PROFILE_CACHE[userId].user);
+
+                // If it's the current user, we might want to ensure it's up to date with AuthContext, but simpler is fine
+                // Only stop loading if we also have the tab data we need (handled in next effect)
+                // But this effect only manages 'user'.
+                // We'll let the next effect handle 'loading' state for tab content.
+            }
+
+            // Always attempt fetch if not fully complete or if we want to be fresh?
+            // Prompt says: "Open post -> close post -> NO refetch".
+            // So strictly use cache.
+            if (PROFILE_CACHE[userId]?.user) {
+                // Do nothing, we set it above.
+                // Unless we want to support background refresh? 
+                // For "Stabilization", let's trust cache.
+            } else {
+                setLoading(true);
+                // ... FETCH LOGIC ...
+            }
+
+            // To avoid massive rewrite of the logic below, I will structure it to check cache first,
+            // else proceed.
+
+            if (PROFILE_CACHE[userId]?.user && PROFILE_CACHE[userId].user.id === userId) {
+                setUser(PROFILE_CACHE[userId].user);
+                // Proceed to clear other states?
+                // Original logic cleared states when user changed.
+                // If we switched users, 'user' state is null initially, so we are fine.
+                return;
+            }
 
             try {
+                // loading is set true in the else block above or we need to ensure it
                 setLoading(true);
                 let userData = null;
 
                 try {
                     const userDoc = await getDoc(doc(db, 'users', userId));
                     if (userDoc.exists()) {
-                        userData = { id: userDoc.id, ...userDoc.data() };
+                        userData = normalizeUserProfile(userDoc);
 
                         // --- MIGRATION: Ensure ONE SINGLE USERNAME ---
                         if (!userData.username) {
@@ -93,7 +130,12 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
 
                 if (isMountedRef.current) {
                     setUser(userData);
-                    // Reset data when user changes
+
+                    // Update Cache
+                    if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                    PROFILE_CACHE[userId].user = userData;
+
+                    // Reset data when user changes (only if not in cache, which implies new fetch)
                     setPosts([]);
                     setShopItems([]);
                     setSpaceCards([]);
@@ -102,6 +144,8 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
             } catch (error) {
                 logger.error('Error loading profile:', error);
             } finally {
+                // Only set loading false if we are not waiting for tab data?
+                // The original code set loading false here. 
                 if (isMountedRef.current) setLoading(false);
             }
         };
@@ -113,6 +157,17 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
     useEffect(() => {
         const fetchTabData = async () => {
             if (!user || !userId || !isMountedRef.current) return;
+
+            const cacheKey = `${activeTab}_${feedType}`;
+
+            // CACHE HIT: Tab Data
+            if (PROFILE_CACHE[userId]?.tabs?.[cacheKey]) {
+                const cached = PROFILE_CACHE[userId].tabs[cacheKey];
+                if (activeTab === 'posts') setPosts(cached);
+                if (activeTab === 'shop') setShopItems(cached);
+                if (activeTab === 'cards') setSpaceCards(cached);
+                return;
+            }
 
             try {
                 // Posts - only show posts that are marked to show in profile
@@ -132,7 +187,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
 
                     if (isMountedRef.current) {
                         const filteredPosts = postsSnap.docs
-                            .map(d => ({ id: d.id, ...d.data() }))
+                            .map(normalizePost)
                             .filter(post => {
                                 // 1. Filter by Type (Handle legacy posts)
                                 const postType = post.type || 'art';
@@ -148,7 +203,13 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                             });
 
                         logger.log(`[useProfile] Final posts count: ${filteredPosts.length}`);
-                        setPosts(filteredPosts.slice(0, 20)); // Limit back to 20
+                        const finalPosts = filteredPosts.slice(0, 20);
+                        setPosts(finalPosts); // Limit back to 20
+
+                        // Cache It
+                        if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                        if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
+                        PROFILE_CACHE[userId].tabs[cacheKey] = finalPosts;
                     }
                 }
 
@@ -162,10 +223,15 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     );
                     const shopSnap = await getDocs(shopQuery);
                     if (isMountedRef.current) {
-                        const allItems = shopSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        const allItems = shopSnap.docs.map(normalizeShopItem);
                         const isOwnProfile = currentUser && currentUser.uid === userId;
                         const visibleItems = allItems.filter(item => isOwnProfile || item.available === true);
                         setShopItems(visibleItems);
+
+                        // Cache It
+                        if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                        if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
+                        PROFILE_CACHE[userId].tabs[cacheKey] = visibleItems;
                     }
                 }
 
@@ -174,6 +240,11 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                     const userCards = await SpaceCardService.getOwnedCards(userId);
                     if (isMountedRef.current) {
                         setSpaceCards(userCards);
+
+                        // Cache It
+                        if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                        if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
+                        PROFILE_CACHE[userId].tabs[cacheKey] = userCards;
                     }
                 }
             } catch (err) {
@@ -187,7 +258,18 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
     // Fetch badges separately since they are shown in header
     useEffect(() => {
         const fetchBadges = async () => {
-            if (!user || !userId || badges.length > 0) return;
+            if (!user || !userId) return;
+
+            // Note: Badges are rarely refreshed, using strict cache is fine
+            if (PROFILE_CACHE[userId]?.badges) {
+                if (badges.length === 0) {
+                    setBadges(PROFILE_CACHE[userId].badges);
+                }
+                return;
+            }
+
+            if (badges.length > 0) return;
+
             try {
                 const badgesQuery = query(
                     collection(db, 'users', userId, 'badges'),
@@ -196,7 +278,12 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                 );
                 const badgesSnap = await getDocs(badgesQuery);
                 if (isMountedRef.current) {
-                    setBadges(badgesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    const badgesData = badgesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setBadges(badgesData);
+
+                    // Cache
+                    if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                    PROFILE_CACHE[userId].badges = badgesData;
                 }
             } catch (err) {
                 logger.error('Error fetching badges:', err);

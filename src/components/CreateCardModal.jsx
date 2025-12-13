@@ -144,7 +144,7 @@ const CreateCardModal = ({ onClose, onCreated }) => {
 
     const handlePostSelect = (post) => {
         setSelectedPost(post);
-        setFrontImage(post.downloadURL || post.images?.[0]?.url);
+        setFrontImage(post.downloadURL || post.items?.[0]?.url || post.images?.[0]?.url);
         setUploadedFile(null);
         setUploadPreview('');
         // Reset image position to center
@@ -529,7 +529,7 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                                 }}
                                             >
                                                 <img
-                                                    src={post.downloadURL || post.images?.[0]?.url}
+                                                    src={post.downloadURL || post.items?.[0]?.url || post.images?.[0]?.url}
                                                     alt={post.title}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 />

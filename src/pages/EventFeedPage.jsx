@@ -99,16 +99,50 @@ const EventFeedPage = () => {
                 // Optimization: Only fetch first 20, then load more. InfiniteGrid handles pagination?
                 // InfiniteGrid typically takes `items` prop. 
 
-                const { doc, getDoc } = await import('firebase/firestore');
+                // Optimized Batch Fetching (avoid N+1)
+                const { collection, query, where, documentId, getDocs } = await import('firebase/firestore');
                 const { db } = await import('@/firebase');
 
-                const loadedPosts = await Promise.all(fetchedPostIds.slice(0, 50).map(async (pid) => {
-                    // This is N reads, not ideal for unrelated detailed read, but fine for prototype.
-                    const d = await getDoc(doc(db, 'posts', pid));
-                    return d.exists() ? { id: d.id, ...d.data() } : null;
+                // Firestore 'in' query limit is 30 (or 10 in some contexts, but 30 is generally safe for IDs)
+                // Actually limit is 30 for 'in' with other filters, but simple 'in' allows up to 30. 
+                // Wait, 'in' limit is 30? No, it's 30 for inequality filter combinations, but 10 for 'array-contains-any'.
+                // 'in' operator can take up to 30 items? Actually, the limit for 'in' is 30.
+                // Let's use batches of 30 to be safe.
+
+                const idsToFetch = fetchedPostIds.slice(0, 50); // Fetch top 50
+                const chunks = [];
+                const CHUNK_SIZE = 30; // Firestore limit for 'in' queries is 30
+
+                for (let i = 0; i < idsToFetch.length; i += CHUNK_SIZE) {
+                    chunks.push(idsToFetch.slice(i, i + CHUNK_SIZE));
+                }
+
+                const loadedPosts = [];
+
+                // Fetch in parallel batches
+                await Promise.all(chunks.map(async (chunk) => {
+                    if (chunk.length === 0) return;
+                    try {
+                        const postsRef = collection(db, 'posts');
+                        // Use documentId() to query by ID list
+                        const q = query(postsRef, where(documentId(), 'in', chunk));
+                        const snapshot = await getDocs(q);
+
+                        snapshot.docs.forEach(doc => {
+                            loadedPosts.push({ id: doc.id, ...doc.data() });
+                        });
+                    } catch (e) {
+                        logger.error("Error fetching post batch:", e);
+                    }
                 }));
 
-                setPosts(loadedPosts.filter(p => p !== null));
+                // Restore order based on fetchedPostIds (since Firestore doesn't return in order of 'in' array)
+                const postMap = new Map(loadedPosts.map(p => [p.id, p]));
+                const orderedPosts = idsToFetch
+                    .map(id => postMap.get(id))
+                    .filter(post => post !== undefined); // Filter out missing/null
+
+                setPosts(orderedPosts);
             } else {
                 setPosts([]);
             }

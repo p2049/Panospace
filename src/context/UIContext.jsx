@@ -1,17 +1,23 @@
 import React, { createContext, useContext, useState } from 'react';
 
-const UIContext = createContext();
+const UIContext = createContext(null);
 
 export const useUI = () => {
-    return useContext(UIContext);
+    const context = useContext(UIContext);
+    if (!context) {
+        throw new Error('useUI must be used within a UIProvider');
+    }
+    return context;
 };
 
 export const UIProvider = ({ children }) => {
-    const [activePost, setActivePost] = useState(null);
+    // This context is now reserved for PURE UI state (modals, themes, generic flags)
+    // NOT data state like activePost.
+
+    // Example: const [themeMode, setThemeMode] = useState('dark');
 
     const value = {
-        activePost,
-        setActivePost
+        // ... any future UI state
     };
 
     return (

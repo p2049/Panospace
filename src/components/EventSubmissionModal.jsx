@@ -82,7 +82,7 @@ const EventSubmissionModal = ({ isOpen, onClose, eventId, eventTitle, isExpired 
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                             {posts.map(post => {
-                                const imgUrl = post.imageUrl || post.images?.[0]?.url;
+                                const imgUrl = post.items?.[0]?.url || post.imageUrl || post.images?.[0]?.url;
                                 const isSelected = selectedPost?.id === post.id;
                                 return (
                                     <div

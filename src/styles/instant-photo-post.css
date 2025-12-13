@@ -14,7 +14,7 @@
    SCROLL CONTAINER
    ======================================== */
 
-.instant-photo-scroll-container {
+.post-ui--instant .instant-photo-scroll-container {
     display: flex;
     align-items: center;
     width: 100%;
@@ -34,31 +34,31 @@
     will-change: transform, scroll-position;
 }
 
-.instant-photo-scroll-container::-webkit-scrollbar {
+.post-ui--instant .instant-photo-scroll-container::-webkit-scrollbar {
     height: 6px;
     display: block;
 }
 
-.instant-photo-scroll-container::-webkit-scrollbar-track {
+.post-ui--instant .instant-photo-scroll-container::-webkit-scrollbar-track {
     background: #0a0a0a;
     border-top: 1px solid #222;
 }
 
-.instant-photo-scroll-container::-webkit-scrollbar-thumb {
+.post-ui--instant .instant-photo-scroll-container::-webkit-scrollbar-thumb {
     background: var(--electric-green);
     border-radius: 0;
     box-shadow: var(--electric-glow);
 }
 
 /* COMPACT MODE (<= 3 Images) - Desktop */
-.instant-photo-scroll-container.instant-compact {
+.post-ui--instant .instant-photo-scroll-container.instant-compact {
     justify-content: center;
     overflow-x: hidden;
     scroll-snap-type: none;
 }
 
 /* SINGLE IMAGE MODE - Always Centered */
-.instant-photo-scroll-container.instant-single {
+.post-ui--instant .instant-photo-scroll-container.instant-single {
     justify-content: center !important;
     overflow-x: hidden !important;
     padding: 0 !important;
@@ -70,12 +70,12 @@
    FRAME WRAPPERS
    ======================================== */
 
-.instant-photo-frame-wrapper {
+.post-ui--instant .instant-photo-frame-wrapper {
     flex: 0 0 29vw;
     /* Desktop: Fits 3 items snugly */
 }
 
-.instant-photo-frame-wrapper.thin {
+.post-ui--instant .instant-photo-frame-wrapper.thin {
     flex: 0 0 28vw;
     /* Thin variant */
 }
@@ -85,25 +85,25 @@
    ======================================== */
 
 @media (max-width: 768px) {
-    .instant-photo-scroll-container {
+    .post-ui--instant .instant-photo-scroll-container {
         padding: 0 20px 1rem 20px;
         gap: 20px;
     }
 
     /* Single Image: Force Center */
-    .instant-photo-scroll-container.instant-single {
+    .post-ui--instant .instant-photo-scroll-container.instant-single {
         justify-content: center !important;
         align-items: center !important;
         padding: 0 !important;
     }
 
     /* Frame Sizing */
-    .instant-photo-frame-wrapper {
+    .post-ui--instant .instant-photo-frame-wrapper {
         flex: 0 0 80vw;
         /* Mobile Portrait: ~1 item */
     }
 
-    .instant-photo-frame-wrapper.thin {
+    .post-ui--instant .instant-photo-frame-wrapper.thin {
         flex: 0 0 70vw;
     }
 }
@@ -112,7 +112,7 @@
 @media (max-width: 768px) and (orientation: portrait) {
 
     /* Multi-image Alignment */
-    .instant-photo-scroll-container.instant-compact {
+    .post-ui--instant .instant-photo-scroll-container.instant-compact {
         justify-content: flex-start;
         /* Scrollable from left */
         padding-left: 20px;
@@ -121,7 +121,7 @@
     }
 
     /* Re-affirm single centering */
-    .instant-photo-scroll-container.instant-single {
+    .post-ui--instant .instant-photo-scroll-container.instant-single {
         justify-content: center !important;
         padding: 0 !important;
     }
@@ -129,20 +129,20 @@
 
 /* Mobile Landscape Specifics */
 @media (max-width: 768px) and (orientation: landscape) {
-    .instant-photo-frame-wrapper {
+    .post-ui--instant .instant-photo-frame-wrapper {
         flex: 0 0 30vw;
         /* Fit more items */
     }
 
-    .instant-photo-frame-wrapper.thin {
+    .post-ui--instant .instant-photo-frame-wrapper.thin {
         flex: 0 0 35vw;
     }
 
-    .instant-photo-scroll-container.instant-compact {
+    .post-ui--instant .instant-photo-scroll-container.instant-compact {
         justify-content: flex-start;
     }
 
-    .instant-photo-scroll-container.instant-single {
+    .post-ui--instant .instant-photo-scroll-container.instant-single {
         justify-content: center !important;
     }
 }

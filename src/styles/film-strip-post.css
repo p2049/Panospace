@@ -14,7 +14,7 @@
     --electric-glow: 0 0 12px rgba(127, 255, 212, 0.4);
 }
 
-.cyber-film-strip-wrapper {
+.post-ui--film35.cyber-film-strip-wrapper {
     width: 100%;
     height: 100%;
     background: #020202;
@@ -26,7 +26,7 @@
     transform: translateZ(0);
 }
 
-.cyber-film-strip-scroll-container {
+.post-ui--film35 .cyber-film-strip-scroll-container {
     display: flex;
     height: 100%;
     /* max-height removed to allow full screen fill */
@@ -51,24 +51,24 @@
 }
 
 /* Scrollbar Styling */
-.cyber-film-strip-scroll-container::-webkit-scrollbar {
+.post-ui--film35 .cyber-film-strip-scroll-container::-webkit-scrollbar {
     height: 6px;
     display: block;
 }
 
-.cyber-film-strip-scroll-container::-webkit-scrollbar-track {
+.post-ui--film35 .cyber-film-strip-scroll-container::-webkit-scrollbar-track {
     background: #0a0a0a;
     border-top: 1px solid #222;
 }
 
-.cyber-film-strip-scroll-container::-webkit-scrollbar-thumb {
+.post-ui--film35 .cyber-film-strip-scroll-container::-webkit-scrollbar-thumb {
     background: var(--electric-green);
     border-radius: 0;
     box-shadow: var(--electric-glow);
 }
 
 /* Frame Unit */
-.cyber-frame-unit {
+.post-ui--film35 .cyber-frame-unit {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -85,7 +85,7 @@
 }
 
 /* Data Tracks (Top/Bottom) - Film Edges with Sprockets */
-.cyber-track {
+.post-ui--film35 .cyber-track {
     height: 44px;
     display: flex;
     align-items: center;
@@ -100,13 +100,13 @@
     background: linear-gradient(180deg, #0d0d0d 0%, #080808 50%, #0d0d0d 100%);
 }
 
-.cyber-track.bottom {
+.post-ui--film35 .cyber-track.bottom {
     border-bottom: none;
     border-top: 1px solid rgba(0, 0, 0, 0.5);
 }
 
 /* Sprockets - Perfectly Aligned 35mm Perforations (RESTORED) */
-.cyber-sprockets {
+.post-ui--film35 .cyber-sprockets {
     display: flex;
     gap: 18px;
     flex-grow: 1;
@@ -114,7 +114,7 @@
     align-items: center;
 }
 
-.cyber-sprockets span {
+.post-ui--film35 .cyber-sprockets span {
     width: 22px;
     height: 30px;
     background: #000;
@@ -127,7 +127,7 @@
 }
 
 /* Micro Text - Authentic Edge Markings */
-.cyber-micro-text {
+.post-ui--film35 .cyber-micro-text {
     position: absolute;
     font-family: 'Courier New', monospace;
     font-size: 9px;
@@ -142,18 +142,18 @@
     /* Prevent text selection */
 }
 
-.cyber-track.top .cyber-micro-text {
+.post-ui--film35 .cyber-track.top .cyber-micro-text {
     top: 8px;
     left: 16px;
 }
 
-.cyber-track.bottom .cyber-micro-text {
+.post-ui--film35 .cyber-track.bottom .cyber-micro-text {
     bottom: 8px;
     right: 16px;
 }
 
 /* Frame Number - Right side of top track */
-.cyber-frame-number {
+.post-ui--film35 .cyber-frame-number {
     position: absolute;
     top: 8px;
     right: 16px;
@@ -169,7 +169,7 @@
 }
 
 /* Edge Code - Left side of bottom track */
-.cyber-edge-code {
+.post-ui--film35 .cyber-edge-code {
     position: absolute;
     bottom: 8px;
     left: 16px;
@@ -184,7 +184,7 @@
 }
 
 /* Content Row */
-.cyber-content-row {
+.post-ui--film35 .cyber-content-row {
     display: flex;
     height: 55vh;
     min-height: 350px;
@@ -195,7 +195,7 @@
 }
 
 /* Side Markers - Frame Numbers */
-.cyber-marker {
+.post-ui--film35 .cyber-marker {
     width: 28px;
     display: flex;
     align-items: center;
@@ -205,7 +205,7 @@
 }
 
 /* Frame Divider Line */
-.cyber-marker::after {
+.post-ui--film35 .cyber-marker::after {
     content: '';
     position: absolute;
     height: 100%;
@@ -214,7 +214,7 @@
     opacity: 0.4;
 }
 
-.vertical-text {
+.post-ui--film35 .vertical-text {
     writing-mode: vertical-rl;
     text-orientation: mixed;
     color: var(--electric-green);
@@ -230,7 +230,7 @@
 }
 
 /* Image Container - FIXED RATIO 3:2 (RESTORED) */
-.cyber-image-container {
+.post-ui--film35 .cyber-image-container {
     width: 82.5vh;
     /* 3:2 ratio relative to height (55vh) */
     min-width: 525px;
@@ -247,7 +247,7 @@
 }
 
 /* Image - AUTHENTIC CROP (RESTORED) */
-.cyber-image {
+.post-ui--film35 .cyber-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -258,7 +258,7 @@
 }
 
 /* Text Fallback */
-.cyber-text-fallback {
+.post-ui--film35 .cyber-text-fallback {
     color: var(--electric-green);
     font-family: 'Rajdhani', sans-serif;
     font-size: 1.5rem;
@@ -270,7 +270,7 @@
 }
 
 /* Leader/Trailer - Film Ends */
-.cyber-leader {
+.post-ui--film35 .cyber-leader {
     height: calc(55vh + 88px);
     min-height: 438px;
     width: 140px;
@@ -280,40 +280,40 @@
     flex-shrink: 0;
 }
 
-.cyber-leader.trailer {
+.post-ui--film35 .cyber-leader.trailer {
     clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 5% 90%, 0 80%, 5% 70%, 0 60%, 5% 50%, 0 40%, 5% 30%, 0 20%, 5% 10%);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .cyber-content-row {
+    .post-ui--film35 .cyber-content-row {
         height: 40vh;
         min-height: 250px;
     }
 
-    .cyber-image-container {
+    .post-ui--film35 .cyber-image-container {
         width: 60vh;
         /* Use min() to ensure it fits on small screens like iPhone SE (375px) */
         min-width: min(375px, 90vw);
         max-width: none;
     }
 
-    .cyber-leader {
+    .post-ui--film35 .cyber-leader {
         height: calc(40vh + 88px);
         min-height: 338px;
         width: 80px;
         /* Smaller leader on mobile */
     }
 
-    .cyber-film-strip-scroll-container {
+    .post-ui--film35 .cyber-film-strip-scroll-container {
         padding: 0 1rem 1rem 1rem;
     }
 
-    .cyber-sprockets {
+    .post-ui--film35 .cyber-sprockets {
         gap: 12px;
     }
 
-    .cyber-sprockets span {
+    .post-ui--film35 .cyber-sprockets span {
         width: 16px;
         height: 22px;
     }
@@ -321,17 +321,17 @@
 
 /* iPad Optimization */
 @media (min-width: 769px) and (max-width: 1024px) {
-    .cyber-content-row {
+    .post-ui--film35 .cyber-content-row {
         height: 50vh;
         min-height: 300px;
     }
 
-    .cyber-image-container {
+    .post-ui--film35 .cyber-image-container {
         width: 75vh;
         min-width: 450px;
     }
 
-    .cyber-leader {
+    .post-ui--film35 .cyber-leader {
         height: calc(50vh + 88px);
         min-height: 388px;
         width: 100px;
@@ -340,25 +340,25 @@
 
 /* Landscape Mobile Optimization */
 @media (max-height: 500px) and (orientation: landscape) {
-    .cyber-content-row {
+    .post-ui--film35 .cyber-content-row {
         height: 55vh;
         min-height: 160px;
         max-height: 280px;
     }
 
-    .cyber-image-container {
+    .post-ui--film35 .cyber-image-container {
         width: 82.5vh;
         min-width: 240px;
         max-width: 420px;
     }
 
     /* Adjust tracks for smaller landscape view */
-    .cyber-track {
+    .post-ui--film35 .cyber-track {
         height: 34px;
         padding: 0 10px;
     }
 
-    .cyber-leader {
+    .post-ui--film35 .cyber-leader {
         height: calc(55vh + 68px);
         /* 55vh + 2*34px */
         min-height: 228px;
@@ -367,30 +367,30 @@
     }
 
     /* Scale down sprockets */
-    .cyber-sprockets {
+    .post-ui--film35 .cyber-sprockets {
         gap: 12px;
     }
 
-    .cyber-sprockets span {
+    .post-ui--film35 .cyber-sprockets span {
         width: 16px;
         height: 22px;
         border-radius: 3px;
     }
 
     /* Scale down text */
-    .cyber-micro-text,
-    .cyber-frame-number,
-    .cyber-edge-code {
+    .post-ui--film35 .cyber-micro-text,
+    .post-ui--film35 .cyber-frame-number,
+    .post-ui--film35 .cyber-edge-code {
         font-size: 7px;
     }
 
-    .cyber-track.top .cyber-micro-text,
-    .cyber-frame-number {
+    .post-ui--film35 .cyber-track.top .cyber-micro-text,
+    .post-ui--film35 .cyber-frame-number {
         top: 6px;
     }
 
-    .cyber-track.bottom .cyber-micro-text,
-    .cyber-edge-code {
+    .post-ui--film35 .cyber-track.bottom .cyber-micro-text,
+    .post-ui--film35 .cyber-edge-code {
         bottom: 6px;
     }
 }

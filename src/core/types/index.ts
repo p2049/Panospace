@@ -21,6 +21,7 @@ export interface ProfileTheme {
 }
 
 export interface UserProfile {
+    id: string; // Alias for uid, consistent with other models
     uid: string;
     email: string;
     displayName: string;
@@ -126,6 +127,9 @@ export interface Post {
     authorId: string;
     authorName: string;
     authorPhoto?: string;
+
+    // Type (Art vs Social)
+    type?: 'art' | 'social';
 
     // Content
     title: string;
@@ -483,7 +487,7 @@ export interface AppEvent {
 
     // Metadata
     createdAt: Timestamp;
-    updatedAt: Timestamp;
+    updatedAt?: Timestamp;
 }
 
 export interface AppEventFeedItem {

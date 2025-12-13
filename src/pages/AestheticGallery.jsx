@@ -84,7 +84,7 @@ const AestheticStudio = () => {
                                 onClick={() => navigate(`/post/${post.id}`)}
                                 style={{ width: '100%', height: '100%' }}
                             >
-                                <img src={post.images[0]?.url} alt={post.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={post.items?.[0]?.url || post.images?.[0]?.url || post.imageUrl} alt={post.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             </div>
                         )}
                     />

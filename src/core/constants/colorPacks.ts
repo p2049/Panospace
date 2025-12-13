@@ -7,7 +7,7 @@ export interface ColorOption {
 }
 
 export const FREE_COLOR_PACK: ColorOption[] = [
-    { id: 'brand-colors', name: 'Brand Colors', color: 'brand', isPremium: false, isGradient: true }, // Special: multi-color stars
+    { id: 'brand-colors', name: 'Rainbow', color: 'brand', isPremium: false, isGradient: true }, // Special: multi-color stars
     { id: 'aurora-blue', name: 'Aurora Blue', color: '#7FDBFF', isPremium: false },
     { id: 'ion-blue', name: 'Ion Blue', color: '#1B82FF', isPremium: false },
     { id: 'nebula-pink', name: 'Nebula Pink', color: '#FFB7D5', isPremium: false },

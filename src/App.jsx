@@ -276,32 +276,36 @@ const AnimatedRoutes = () => {
   );
 };
 
+import { ActivePostProvider } from './context/ActivePostContext';
+
 function App() {
   return (
     <GlobalErrorBoundary>
       <AuthProvider>
         <UserCacheProvider>
-          <UIProvider>
+          <ActivePostProvider>
             <ToastProvider>
-              <HelmetProvider>
-                <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                  <OrientationGuard>
-                    {/* Offline Banner - Global */}
-                    <OfflineBanner />
+              <UIProvider>
+                <HelmetProvider>
+                  <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <OrientationGuard>
+                      {/* Offline Banner - Global */}
+                      <OfflineBanner />
 
-                    <div className="app-container">
-                      <Suspense fallback={<AppLoading />}>
-                        <AnimatedRoutes />
-                      </Suspense>
+                      <div className="app-container">
+                        <Suspense fallback={<AppLoading />}>
+                          <AnimatedRoutes />
+                        </Suspense>
 
-                      <MobileNavigation />
-                    </div>
-                  </OrientationGuard>
-                </Router>
-                <ToastManager />
-              </HelmetProvider>
+                        <MobileNavigation />
+                      </div>
+                    </OrientationGuard>
+                  </Router>
+                  <ToastManager />
+                </HelmetProvider>
+              </UIProvider>
             </ToastProvider>
-          </UIProvider>
+          </ActivePostProvider>
         </UserCacheProvider>
       </AuthProvider>
     </GlobalErrorBoundary>

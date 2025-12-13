@@ -182,6 +182,18 @@ const SearchResults = ({
                             }}>
                                 No results found for {currentMode === 'galleries' ? 'studios' : currentMode}. Try adjusting your filters.
                             </p>
+                            {currentMode === 'events' && (
+                                <p style={{
+                                    fontFamily: "'Rajdhani', sans-serif",
+                                    fontSize: '0.9rem',
+                                    color: '#7FFFD4',
+                                    marginTop: '-1rem',
+                                    marginBottom: '1.5rem',
+                                    opacity: 0.8
+                                }}>
+                                    No active events right now? Try switching to 'All' or checking back later.
+                                </p>
+                            )}
                             <PSButton
                                 variant="glass"
                                 size="lg"

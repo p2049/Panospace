@@ -27,9 +27,9 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
 
     // OPTIMIZATION: Prioritize thumbnail URL for grid views
     // Fallback to full URL only if no thumbnail exists
-    const displaySrc = post.thumbnailUrl || post.images?.[0]?.thumbnailUrl || post.images?.[0]?.url || post.imageUrl;
+    const displaySrc = post.thumbnailUrl || post.items?.[0]?.thumbnailUrl || post.items?.[0]?.url || post.imageUrl;
     // Use previewUrl for the blur placeholder if available
-    const placeholderSrc = post.previewUrl || post.images?.[0]?.previewUrl;
+    const placeholderSrc = post.previewUrl || post.items?.[0]?.previewUrl;
 
     return (
         <div

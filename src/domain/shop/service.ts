@@ -21,8 +21,9 @@ import { db } from '@/firebase';
 import type { ShopItem, Post, PostItem, PrintSize, Earnings } from '@/types';
 import { getPrintifyProducts, calculateEarnings } from './pricing';
 import { logger } from '@/core/utils/logger';
-const PRINT_SIZES = getPrintifyProducts();
+import { normalizeShopItem } from '@/core/schemas/firestoreModels';
 
+const PRINT_SIZES = getPrintifyProducts();
 const SHOP_ITEMS_COLLECTION = 'shopItems';
 
 /**
@@ -105,10 +106,7 @@ export async function getShopItemById(shopItemId: string): Promise<ShopItem | nu
         return null;
     }
 
-    return {
-        id: docSnap.id,
-        ...docSnap.data(),
-    } as ShopItem;
+    return normalizeShopItem(docSnap);
 }
 
 /**
@@ -121,10 +119,7 @@ export async function getShopItemsByPost(postId: string): Promise<ShopItem[]> {
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as ShopItem[];
+    return snapshot.docs.map(normalizeShopItem);
 }
 
 /**
@@ -142,10 +137,7 @@ export async function getShopItemsByAuthor(
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as ShopItem[];
+    return snapshot.docs.map(normalizeShopItem);
 }
 
 /**

@@ -10,25 +10,10 @@ import {
     orderBy,
     Timestamp
 } from 'firebase/firestore';
+import type { AppEvent, AppEventFeedItem } from '@/core/types';
+import { normalizeAppEvent } from '@/core/schemas/firestoreModels';
 
 const EVENTS_COLLECTION = 'events_app';
-
-export interface AppEvent {
-    id: string;
-    active: boolean;
-    visibleDate: Timestamp;
-    title?: string;
-    description?: string;
-    // Add other properties as they are discovered or needed
-    archived?: boolean;
-    [key: string]: any; // Allow flexibility for now
-}
-
-export interface EventFeedPost {
-    postId: string;
-    score?: number;
-    createdAt?: Timestamp;
-}
 
 export const EventService = {
     /**
@@ -49,7 +34,8 @@ export const EventService = {
             );
 
             const snapshot = await getDocs(q);
-            const events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppEvent));
+            // Use normalizeAppEvent to ensure contract compliance
+            const events = snapshot.docs.map(normalizeAppEvent);
 
             // Filter client-side for visibleDate <= now
             return events.filter(e => e.visibleDate.toMillis() <= now.toMillis());
@@ -68,7 +54,7 @@ export const EventService = {
             const docRef = doc(db, EVENTS_COLLECTION, eventId);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                return { id: docSnap.id, ...docSnap.data() } as AppEvent;
+                return normalizeAppEvent(docSnap);
             }
             return null;
         } catch (error) {
@@ -103,7 +89,7 @@ export const EventService = {
 
             // We have IDs, now we need to fetch the actual posts (or the feed item might contain basic data)
             // It's better to fetch the full posts from the 'posts' collection using IDs
-            const postIds = snapshot.docs.map(d => (d.data() as EventFeedPost).postId);
+            const postIds = snapshot.docs.map(d => (d.data() as AppEventFeedItem).postId);
 
             if (postIds.length === 0) return [];
 

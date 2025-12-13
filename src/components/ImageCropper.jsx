@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FaCheck, FaTimes, FaMinus, FaPlus, FaUndo } from 'react-icons/fa';
 
 const CROP_SIZE = 280;
@@ -130,11 +131,12 @@ const ImageCropper = ({ imageSrc, onCrop, onCancel }) => {
         }, 'image/jpeg', 0.9);
     };
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.95)',
+            background: 'rgba(0,0,0,0.85)',
+            backdropFilter: 'blur(5px)',
             zIndex: 99999,
             display: 'flex',
             flexDirection: 'column',
@@ -238,7 +240,8 @@ const ImageCropper = ({ imageSrc, onCrop, onCancel }) => {
                     <FaCheck /> Save Photo
                 </button>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

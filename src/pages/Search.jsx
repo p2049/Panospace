@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useSearch } from '@/hooks/useSearch';
+import { useSearch, SEARCH_CACHE } from '@/hooks/useSearch';
 import { useFollowing } from '@/hooks/useFollowing';
 import { useBlock } from '@/hooks/useBlock';
 import { parseDateFromURL } from '@/core/utils/dates';
@@ -266,21 +266,59 @@ const Search = () => {
 
         const currentRequestId = ++searchRequestId.current;
 
-        // Only set searching to true if this is a new search (not a callback recreation)
+        // Use refs to get current search params
+        const term = convertSearchInput(currentSearchTermRef.current);
+        const tags = currentSelectedTagsRef.current;
+        const parkId = currentSelectedParkRef.current;
+        const date = currentSelectedDateRef.current;
+
+        // --- CACHE KEY GENERATION ---
+        // Create a unique deterministic key identifying this search configuration
+        const cacheKey = JSON.stringify({
+            mode: currentMode,
+            term,
+            tags,
+            parkId,
+            date,
+            museumId: selectedMuseum?.id,
+            camera: currentSelectedCameraRef.current,
+            film: currentSelectedFilmRef.current,
+            orientation: currentSelectedOrientationRef.current,
+            aspectRatio: currentSelectedAspectRatioRef.current,
+            sortBy: currentSortByRef.current,
+            followingOnly,
+            searchMode, // Art/Social
+            isMarketplaceMode
+        });
+
+        // --- CACHE CHECK (Only for fresh searches, not load more) ---
         if (!isLoadMore) {
+            if (SEARCH_CACHE[cacheKey]) {
+                // Restore from cache immediately
+                dispatch({
+                    type: 'SET_RESULTS',
+                    payload: SEARCH_CACHE[cacheKey].results,
+                    isLoadMore: false,
+                    // Restore pagination cursors
+                    ...SEARCH_CACHE[cacheKey].cursors,
+                    // Restore 'hasMore' flags
+                    ...SEARCH_CACHE[cacheKey].hasMoreFlags
+                });
+
+                setIsSearching(false);
+                setHasSearched(true);
+                return;
+            }
+
             isLoadingRef.current = true;
             setIsSearching(true);
             setHasSearched(true);
             setError(null);
+        } else {
+            isLoadingRef.current = true;
         }
 
         try {
-            // Use refs to get current search params
-            const term = convertSearchInput(currentSearchTermRef.current);
-            const tags = currentSelectedTagsRef.current;
-            const parkId = currentSelectedParkRef.current;
-            const date = currentSelectedDateRef.current;
-
             // Check if we're in Explore mode (no filters)
             const hasFilters = term || tags.length > 0 || parkId || date ||
                 currentSelectedCameraRef.current || currentSelectedFilmRef.current ||
@@ -478,6 +516,60 @@ const Search = () => {
                 events: currentMode === 'events' ? resultData : [],
                 spacecards: currentMode === 'spacecards' ? resultData : [],
                 museums: currentMode === 'museums' ? resultData : []
+            };
+
+            // --- UPDATE CACHE ---
+            // If isLoadMore, we need to append to the existing cache entry
+            let finalResults = payload;
+
+            if (isLoadMore && SEARCH_CACHE[cacheKey]) {
+                // Must manually merge because payload only contains NEW data, but cache should store TOTAL data
+                // Or easier: we just store the accumulated state from the Dispatch?
+                // Dispatch updates local state. 
+                // We don't have access to the *next* state synchronously here easily without digging into reducer logic.
+                // But we know 'resultData' is the new chunk.
+                // We can update cache with resultData appended to previous cache data.
+
+                const prevResults = SEARCH_CACHE[cacheKey].results;
+                finalResults = {
+                    posts: [...prevResults.posts, ...payload.posts],
+                    users: [...prevResults.users, ...payload.users],
+                    galleries: [...prevResults.galleries, ...payload.galleries],
+                    collections: [...prevResults.collections, ...payload.collections],
+                    contests: [...prevResults.contests, ...payload.contests],
+                    events: [...prevResults.events, ...payload.events],
+                    spacecards: [...prevResults.spacecards, ...payload.spacecards],
+                    museums: [...prevResults.museums, ...payload.museums]
+                };
+            } else if (isLoadMore) {
+                // Edge case: Loading more but cache was cleared?
+                // Just fallback to not caching or start fresh
+                finalResults = payload; // Incorrect for loadMore but safety fallback
+            }
+
+            // Store in Cache
+            SEARCH_CACHE[cacheKey] = {
+                results: finalResults,
+                cursors: {
+                    lastPostDoc: currentMode === 'posts' ? newLastDoc : (isLoadMore ? lastPostDoc : null), // Logic needs to match reducer
+                    lastUserDoc: currentMode === 'users' ? newLastDoc : (isLoadMore ? lastUserDoc : null),
+                    lastGalleryDoc: currentMode === 'galleries' ? newLastDoc : (isLoadMore ? lastGalleryDoc : null),
+                    lastCollectionDoc: currentMode === 'collections' ? newLastDoc : (isLoadMore ? lastCollectionDoc : null),
+                    lastContestDoc: currentMode === 'contests' ? newLastDoc : (isLoadMore ? lastContestDoc : null),
+                    lastEventDoc: currentMode === 'events' ? newLastDoc : (isLoadMore ? lastEventDoc : null),
+                    lastSpaceCardDoc: currentMode === 'spacecards' ? newLastDoc : (isLoadMore ? lastSpaceCardDoc : null),
+                    lastMuseumDoc: currentMode === 'museums' ? newLastDoc : (isLoadMore ? lastMuseumDoc : null),
+                },
+                hasMoreFlags: {
+                    hasMorePosts: currentMode === 'posts' ? hasMore : (isLoadMore ? hasMorePosts : true),
+                    hasMoreUsers: currentMode === 'users' ? hasMore : (isLoadMore ? hasMoreUsers : true),
+                    hasMoreGalleries: currentMode === 'galleries' ? hasMore : (isLoadMore ? hasMoreGalleries : true),
+                    hasMoreCollections: currentMode === 'collections' ? hasMore : (isLoadMore ? hasMoreCollections : true),
+                    hasMoreContests: currentMode === 'contests' ? hasMore : (isLoadMore ? hasMoreContests : true),
+                    hasMoreEvents: currentMode === 'events' ? hasMore : (isLoadMore ? hasMoreEvents : true),
+                    hasMoreSpaceCards: currentMode === 'spacecards' ? hasMore : (isLoadMore ? hasMoreSpaceCards : true),
+                    hasMoreMuseums: currentMode === 'museums' ? hasMore : (isLoadMore ? hasMoreMuseums : true),
+                }
             };
 
             dispatch({

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { useUI } from '@/context/UIContext';
+import { useActivePost } from '@/context/ActivePostContext';
 import ReportModal from '@/components/ReportModal';
 import { useBlock } from '@/hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '@/core/constants/nsfwTags';
@@ -15,9 +16,10 @@ import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, Fa
 
 const Settings = () => {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const { currentUser, logout } = useAuth();
     const { t, i18n } = useTranslation();
-    const { activePost } = useUI();
+    const { activePost } = useActivePost();
     const { blockUser } = useBlock();
     const [loading, setLoading] = useState(false);
     const { currentFeed, switchToFeed, followingOnly, setFollowingOnly } = useFeedStore();
@@ -54,8 +56,10 @@ const Settings = () => {
             try {
                 const userRef = doc(db, 'users', currentUser.uid);
                 await updateDoc(userRef, { language: langCode });
+                showToast('Language updated!', 'success');
             } catch (error) {
                 console.error("Error saving language preference:", error);
+                showToast('Failed to save language preference', 'error');
             }
         }
     };

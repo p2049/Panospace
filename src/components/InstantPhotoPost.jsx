@@ -55,18 +55,20 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
     };
 
     return (
-        <div style={{
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-            backgroundColor: (post?.atmosphereBackground === 'cinematic-gradient')
-                ? 'transparent' // We'll set the gradient on the container or a wrapper
-                : '#000',
-            background: (post?.atmosphereBackground === 'cinematic-gradient')
-                ? `radial-gradient(circle at center, ${post.gradientColor || '#1a4f3d'} 0%, #000000 90%)`
-                : '#000',
-            overflow: 'hidden'
-        }}>
+        <div
+            className="post-ui--instant"
+            style={{
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                backgroundColor: (post?.atmosphereBackground === 'cinematic-gradient')
+                    ? 'transparent' // We'll set the gradient on the container or a wrapper
+                    : '#000',
+                background: (post?.atmosphereBackground === 'cinematic-gradient')
+                    ? `radial-gradient(circle at center, ${post.gradientColor || '#1a4f3d'} 0%, #000000 90%)`
+                    : '#000',
+                overflow: 'hidden'
+            }}>
             {/* Scroll Container - Dedicated Class for Instant Photos */}
             <div
                 className={`instant-photo-scroll-container ${images.length <= 3 ? 'instant-compact' : ''} ${images.length === 1 ? 'instant-single' : ''}`}

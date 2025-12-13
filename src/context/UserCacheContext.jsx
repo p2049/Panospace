@@ -1,3 +1,4 @@
+import { normalizeUserProfile } from '@/core/schemas/firestoreModels';
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -35,7 +36,7 @@ export const UserCacheProvider = ({ children }) => {
         try {
             const userDoc = await getDoc(doc(db, 'users', userId));
             if (userDoc.exists()) {
-                const userData = { id: userDoc.id, ...userDoc.data() };
+                const userData = normalizeUserProfile(userDoc);
                 setUsers(prev => ({ ...prev, [userId]: userData }));
                 return userData;
             }

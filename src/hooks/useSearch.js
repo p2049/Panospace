@@ -15,6 +15,10 @@ import { SORT_OPTIONS } from '@/core/constants/searchFilters';
 import { sortPostsByTrending } from '@/core/utils/trendingAlgorithm';
 import { logger } from '@/core/utils/logger';
 
+// Global cache for search results
+export const SEARCH_CACHE = {};
+
+
 export const useSearch = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -303,7 +307,7 @@ export const useSearch = () => {
                 filtered = filtered.filter(post => {
                     // Strictly calculate from dimensions (Prioritize first image)
                     // We ignore post.orientation to ensure visual accuracy based on the actual image
-                    const firstImage = post.images?.[0];
+                    const firstImage = post.items?.[0] || post.images?.[0];
                     const width = Number(firstImage?.width || post.width || post.exif?.pixelXDimension || 0);
                     const height = Number(firstImage?.height || post.height || post.exif?.pixelYDimension || 0);
 
@@ -325,7 +329,7 @@ export const useSearch = () => {
             // Aspect Ratio filter (approximate)
             if (aspectRatio) {
                 filtered = filtered.filter(post => {
-                    const firstImage = post.images?.[0];
+                    const firstImage = post.items?.[0] || post.images?.[0];
                     const width = Number(firstImage?.width || post.width || post.exif?.pixelXDimension || 0);
                     const height = Number(firstImage?.height || post.height || post.exif?.pixelYDimension || 0);
 

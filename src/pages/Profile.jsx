@@ -906,8 +906,8 @@ const Profile = () => {
                                     }}
                                 >
                                     {(() => {
-                                        const displaySrc = post.thumbnailUrl || post.images?.[0]?.thumbnailUrl || post.images?.[0]?.url || (typeof post.images?.[0] === 'string' ? post.images[0] : null) || post.imageUrl || post.image;
-                                        const previewSrc = post.previewUrl || post.images?.[0]?.previewUrl;
+                                        const displaySrc = post.thumbnailUrl || post.items?.[0]?.thumbnailUrl || post.items?.[0]?.url || post.imageUrl || post.image;
+                                        const previewSrc = post.previewUrl || post.items?.[0]?.previewUrl;
 
                                         return displaySrc ? (
                                             <SmartImage

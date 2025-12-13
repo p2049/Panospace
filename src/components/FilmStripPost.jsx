@@ -196,7 +196,7 @@ const FilmStripPost = ({ post, images = [], uiOverlays = null, priority = 'norma
     }, [images]);
 
     return (
-        <div className="cyber-film-strip-wrapper" style={{ position: 'relative' }}>
+        <div className="post-ui--film35 cyber-film-strip-wrapper" style={{ position: 'relative' }}>
             {/* Global Defs for Icons */}
             <svg width="0" height="0" style={{ position: 'absolute' }}>
                 <defs>

@@ -27,6 +27,7 @@ import type { Post, PostFormData, PostItem, CreatePostResult } from '@/types';
 import { generateSearchKeywords } from '@/domain/search/keywords';
 import { extractExifData } from './exif';
 import { logger } from '@/core/utils/logger';
+import { normalizePost } from '@/core/schemas/firestoreModels';
 
 const POSTS_COLLECTION = 'posts';
 const MAX_IMAGES_PER_POST = 10;
@@ -107,10 +108,14 @@ export async function createPost(
 
     const docRef = await addDoc(collection(db, POSTS_COLLECTION), postData);
 
+    // We can use normalizePost here too if we fetched it, but constructing it manually is fine for the return
+    // provided we match the shape.
     const post: Post = {
         ...postData,
         id: docRef.id,
         createdAt: Timestamp.now(),
+        // Manual construction here is safe as we just created it with known data. 
+        // But better to be typesafe.
     } as unknown as Post;
 
     // Shop items will be created by Cloud Function trigger
@@ -130,10 +135,7 @@ export async function getPostById(postId: string): Promise<Post | null> {
         return null;
     }
 
-    return {
-        id: docSnap.id,
-        ...docSnap.data(),
-    } as Post;
+    return normalizePost(docSnap);
 }
 
 /**
@@ -156,10 +158,7 @@ export async function getPostsByAuthor(
     }
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as Post[];
+    return snapshot.docs.map(normalizePost);
 }
 
 /**
@@ -180,10 +179,7 @@ export async function getRecentPosts(
     }
 
     const snapshot = await getDocs(q);
-    const posts = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as Post[];
+    const posts = snapshot.docs.map(normalizePost);
 
     const lastDoc = snapshot.docs.length > 0
         ? snapshot.docs[snapshot.docs.length - 1]
@@ -210,14 +206,16 @@ export async function updatePost(
     let searchKeywords: string[] | undefined;
     if (updates.title || updates.tags || updates.location) {
         const postDoc = await getDoc(docRef);
-        const currentPost = postDoc.data() as Post;
-
-        searchKeywords = generateSearchKeywords({
-            displayName: currentPost.authorName,
-            title: updates.title || currentPost.title,
-            tags: updates.tags || currentPost.tags,
-            location: updates.location || currentPost.location,
-        });
+        // Safely get data for keyword generation
+        if (postDoc.exists()) {
+            const currentPost = normalizePost(postDoc);
+            searchKeywords = generateSearchKeywords({
+                displayName: currentPost.authorName,
+                title: updates.title || currentPost.title,
+                tags: updates.tags || currentPost.tags,
+                location: updates.location || currentPost.location,
+            });
+        }
     }
 
     await updateDoc(docRef, {

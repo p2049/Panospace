@@ -22,40 +22,8 @@ const Feed = () => {
     const lastScrollPositionRef = useRef(0);
     const isRestoringScrollRef = useRef(false);
 
-    // Pass currentFeed to hook if dual feeds enabled, otherwise null (show all)
-    // NOTE: usePersonalizedFeed expects boolean for showSocialPosts, but we're moving to currentFeed
-    // For now, we'll map currentFeed 'social' to true, 'art' to false if the hook logic supports it.
-    // However, the hook likely needs 'currentFeed' string or we adapt here.
-    // Based on previous code: showSocialPosts (bool)
+    // Pass currentFeed to hook if dual feeds enabled
 
-    // Import store at top level first! (I will need to add import in next step if not present, but I can't do multiple edits here easily without context)
-    // Actually, I should update the state usage.
-
-    // Changing local state to store state
-    // const [showSocialPosts, setShowSocialPosts] = useState(false); -> remove this
-    // const { currentFeed } = useFeedStore(); -> add this
-
-    // Logic:
-    // If currentFeed is 'social', showSocialPosts = true
-    // If currentFeed is 'art', showSocialPosts = false
-
-    // But I can't inject imports here. I will just update this block to use the store hook ASSUMING I will add the import.
-    // Wait, I should add the import first or do it all in one go if possible.
-    // I can't add import here because it's line 1.
-
-    // I made a mistake in planning. I need to add the import first.
-    // I'll skip this tool call and do the import first.
-
-    // RE-EVALUATING: I have valid tool calls above.
-
-    // Actually, I can use `useFeedStore` directly if imported.
-    // Let's modify the usage of `usePersonalizedFeed` to use `useFeedStore`.
-    // I will simply assume I will add `import { useFeedStore } from '@/core/store/useFeedStore';` at the top.
-
-    // BUT, I'll update the replacement content to just use a property specific to this block.
-    // I'll pause and add the import first in a separate 'replace' check.
-
-    // For this specific block:
     const { currentFeed, followingOnly, customFeedEnabled, activeCustomFeedId } = useFeedStore();
     const showSocialPosts = currentFeed === 'social';
 

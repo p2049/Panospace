@@ -468,7 +468,6 @@ export const useCreatePost = () => {
                 addToShop: processedItems.some((i) => i.addToShop === true),
                 moderationStatus: 'active',
                 status: status,
-                status: status,
                 type: postData.type || 'art', // Unified type field
                 atmosphereBackground: postData.atmosphereBackground || 'black',
                 gradientColor: postData.gradientColor || null,
@@ -516,7 +515,7 @@ export const useCreatePost = () => {
                         return {
                             id: size.id,
                             label: size.label,
-                            price: Number(formatPrice(pricing.finalPrice)),
+                            price: pricing.finalPrice, // FIX: Use raw number, not formatted string
                             artistEarningsCents: Math.round(pricing.artistProfit * 100),
                             platformFeeCents: Math.round(pricing.platformProfit * 100),
                         };

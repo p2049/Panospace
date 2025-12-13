@@ -64,7 +64,7 @@ const CollectionDetail = () => {
                     batchResults.forEach(snapshot => {
                         snapshot.docs.forEach(postDoc => {
                             const postData = postDoc.data();
-                            const postImages = postData.images || postData.items || [];
+                            const postImages = postData.items || postData.images || [];
 
                             postImages.forEach(img => {
                                 images.push({
@@ -419,9 +419,9 @@ const CollectionDetail = () => {
                                             onMouseEnter={(e) => e.currentTarget.style.borderColor = '#7FFFD4'}
                                             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'transparent'}
                                         >
-                                            {post.images?.[0]?.url || post.imageUrl ? (
+                                            {post.items?.[0]?.url || post.images?.[0]?.url || post.imageUrl ? (
                                                 <SmartImage
-                                                    src={post.images?.[0]?.url || post.imageUrl}
+                                                    src={post.items?.[0]?.url || post.images?.[0]?.url || post.imageUrl}
                                                     alt={post.title}
                                                 />
                                             ) : (

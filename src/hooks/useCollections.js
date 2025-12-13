@@ -17,6 +17,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 
+const COLLECTIONS_CACHE = {}; // { userId: collections[] }
+const SINGLE_COLLECTION_CACHE = {}; // { collectionId: collectionData }
+
 /**
  * Hook for managing user collections
  * @param {string} userId - User ID to fetch collections for
@@ -45,17 +48,33 @@ export const useCollections = (userId) => {
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // Update Cache
+            COLLECTIONS_CACHE[userId] = fetchedCollections;
+
             setCollections(fetchedCollections);
             setError(null);
         } catch (err) {
-            console.error('Error fetching collections:', err);
-            setError(err.message);
+            if (err.code === 'permission-denied') {
+                console.warn('[useCollections] Permission denied. Returning empty list.');
+                setCollections([]);
+                setError(null); // Do not expose error to UI to avoid spam/retries
+            } else {
+                console.error('Error fetching collections:', err);
+                setError(err.message);
+            }
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
+        // Cache Check
+        if (userId && COLLECTIONS_CACHE[userId]) {
+            setCollections(COLLECTIONS_CACHE[userId]);
+            setLoading(false);
+            return;
+        }
         refetch();
     }, [userId]);
 
@@ -92,6 +111,13 @@ export const useCreateCollection = () => {
 
             const docRef = await addDoc(collection(db, 'collections'), newCollection);
 
+            // Invalidate/Update Cache if owner known?
+            // Since we don't easily know the ownerId here without parsing, simply letting cache stale is acceptable 
+            // typically user will see it appended locally or refetch
+            if (COLLECTIONS_CACHE[collectionData.ownerId]) {
+                delete COLLECTIONS_CACHE[collectionData.ownerId]; // Simple Invalidation
+            }
+
             setLoading(false);
             return { id: docRef.id, ...newCollection };
         } catch (err) {
@@ -114,6 +140,12 @@ export const useCreateCollection = () => {
 
             await updateDoc(doc(db, 'collections', collectionId), updateData);
 
+            // Invalidate Single Cache
+            if (SINGLE_COLLECTION_CACHE[collectionId]) {
+                // Update or delete? Delete forces refetch which ensures freshness
+                delete SINGLE_COLLECTION_CACHE[collectionId];
+            }
+
             setLoading(false);
             return true;
         } catch (err) {
@@ -130,6 +162,9 @@ export const useCreateCollection = () => {
             setError(null);
 
             await deleteDoc(doc(db, 'collections', collectionId));
+
+            // Invalidate Single Cache
+            delete SINGLE_COLLECTION_CACHE[collectionId];
 
             setLoading(false);
             return true;
@@ -150,6 +185,8 @@ export const useCreateCollection = () => {
                 updatedAt: serverTimestamp()
             });
 
+            if (SINGLE_COLLECTION_CACHE[collectionId]) delete SINGLE_COLLECTION_CACHE[collectionId];
+
             return true;
         } catch (err) {
             console.error('Error adding post to collection:', err);
@@ -165,6 +202,8 @@ export const useCreateCollection = () => {
                 postRefs: arrayRemove(postId),
                 updatedAt: serverTimestamp()
             });
+
+            if (SINGLE_COLLECTION_CACHE[collectionId]) delete SINGLE_COLLECTION_CACHE[collectionId];
 
             return true;
         } catch (err) {
@@ -189,6 +228,8 @@ export const useCreateCollection = () => {
                 items: updatedItems,
                 updatedAt: serverTimestamp()
             });
+
+            if (SINGLE_COLLECTION_CACHE[collectionId]) delete SINGLE_COLLECTION_CACHE[collectionId];
 
             return true;
         } catch (err) {
@@ -228,7 +269,11 @@ export const useCollection = (collectionId) => {
             const collectionDoc = await getDoc(doc(db, 'collections', collectionId));
 
             if (collectionDoc.exists()) {
-                setCollection({ id: collectionDoc.id, ...collectionDoc.data() });
+                const data = { id: collectionDoc.id, ...collectionDoc.data() };
+                setCollection(data);
+
+                // Update Cache
+                SINGLE_COLLECTION_CACHE[collectionId] = data;
             } else {
                 setError('Collection not found');
             }
@@ -241,6 +286,12 @@ export const useCollection = (collectionId) => {
     };
 
     useEffect(() => {
+        // Cache Check
+        if (collectionId && SINGLE_COLLECTION_CACHE[collectionId]) {
+            setCollection(SINGLE_COLLECTION_CACHE[collectionId]);
+            setLoading(false);
+            return;
+        }
         refetch();
     }, [collectionId]);
 

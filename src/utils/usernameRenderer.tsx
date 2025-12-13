@@ -8,7 +8,7 @@ import React from 'react';
  */
 
 // 1. Symbol Mapping
-const CHAR_MAP: Record<string, string> = {
+export const CHAR_MAP: Record<string, string> = {
     '@': '🪐',
     '.': '🌙',
     '*': '⭐',
@@ -23,7 +23,7 @@ const CHAR_MAP: Record<string, string> = {
 };
 
 // 2. Pattern Mapping (Order matters: longer patterns first if overlapping)
-const PATTERNS = [
+export const PATTERNS = [
     { pattern: '<()', replacement: '☀️' },
     { pattern: '-()', replacement: '🌸' },
     { pattern: '[]', replacement: '📷' },
@@ -31,10 +31,10 @@ const PATTERNS = [
     { pattern: '{}', replacement: '🎨' },
     { pattern: ':)', replacement: '🙂' },
     { pattern: '<3', replacement: '❤️' },
-    { pattern: '(:)', replacement: '🎵' },
     { pattern: '(0)', replacement: '🛸' },
     { pattern: '(8)', replacement: '👽' },
     { pattern: '(@)', replacement: '🌌' },
+    { pattern: '(:)', replacement: '🎵' },
     { pattern: '<', replacement: ' ' }
 ];
 
