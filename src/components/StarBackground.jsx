@@ -1,6 +1,16 @@
 import React, { useMemo, useState, useEffect } from 'react';
 
-const StarBackground = ({ starColor = '#7FFFD4', transparent = false, maskTop = false }) => {
+// PanoSpace Brand Colors
+const BRAND_COLORS = ['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D', '#FFB7D5'];
+
+const StarBackground = ({ starColor = '#7FFFD4', multiColor = false, transparent = false, maskTop = false }) => {
+    // Get a color for a star - if multiColor, pick randomly from brand palette
+    const getStarColor = (index) => {
+        if (multiColor) {
+            return BRAND_COLORS[index % BRAND_COLORS.length];
+        }
+        return starColor;
+    };
     // Detect if device is mobile to save battery
     const [isMobile, setIsMobile] = useState(false);
 
@@ -81,101 +91,108 @@ const StarBackground = ({ starColor = '#7FFFD4', transparent = false, maskTop = 
                         @keyframes slow-twinkle {
                             0% { opacity: 0.7; transform: scale(1); }
                             80% { opacity: 0.7; transform: scale(1); }
-                            90% { opacity: 1; transform: scale(1.3); box-shadow: 0 0 8px ${starColor}; }
+                            90% { opacity: 1; transform: scale(1.3); }
                             100% { opacity: 0.7; transform: scale(1); }
                         }
                         @keyframes emerge-twinkle {
                             0%, 85%, 100% { opacity: 0; transform: scale(0.5); }
-                            92% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 6px ${starColor}; }
+                            92% { opacity: 1; transform: scale(1.2); }
                         }
                         .star-item {
                             position: absolute;
-                            background: ${starColor};
                             border-radius: 50%;
                             backface-visibility: hidden;
                             transform: translateZ(0);
                         }
-                        .star-far {
-                            box-shadow: 0 0 2px ${starColor};
-                        }
-                        .star-mid {
-                            box-shadow: 0 0 4px ${starColor};
-                        }
-                        .star-near {
-                            box-shadow: 0 0 6px ${starColor}, 0 0 12px ${starColor};
-                        }
-                        .star-hidden {
-                            box-shadow: 0 0 4px ${starColor};
-                        }
                     `}</style>
 
                 {/* Far layer - steady background stars */}
-                {starLayers.far.map((star) => (
-                    <div
-                        key={star.id}
-                        className="star-item star-far"
-                        style={{
-                            width: `${star.size}px`,
-                            height: `${star.size}px`,
-                            top: `${star.top}%`,
-                            left: `${star.left}%`,
-                            opacity: 0.6,
-                            animation: `slow-twinkle ${Math.random() * 10 + 12}s ease-in-out infinite`,
-                            animationDelay: `${Math.random() * 20}s`
-                        }}
-                    />
-                ))}
+                {starLayers.far.map((star, i) => {
+                    const color = getStarColor(i);
+                    return (
+                        <div
+                            key={star.id}
+                            className="star-item"
+                            style={{
+                                width: `${star.size}px`,
+                                height: `${star.size}px`,
+                                top: `${star.top}%`,
+                                left: `${star.left}%`,
+                                opacity: 0.6,
+                                background: color,
+                                boxShadow: `0 0 2px ${color}`,
+                                animation: `slow-twinkle ${Math.random() * 10 + 12}s ease-in-out infinite`,
+                                animationDelay: `${Math.random() * 20}s`
+                            }}
+                        />
+                    );
+                })}
 
                 {/* Mid layer - occasional twinkle */}
-                {starLayers.mid.map((star) => (
-                    <div
-                        key={star.id}
-                        className="star-item star-mid"
-                        style={{
-                            width: `${star.size}px`,
-                            height: `${star.size}px`,
-                            top: `${star.top}%`,
-                            left: `${star.left}%`,
-                            opacity: 0.7,
-                            animation: `slow-twinkle ${Math.random() * 8 + 10}s ease-in-out infinite`,
-                            animationDelay: `${Math.random() * 15}s`
-                        }}
-                    />
-                ))}
+                {starLayers.mid.map((star, i) => {
+                    const color = getStarColor(i + 30); // Offset to get different colors
+                    return (
+                        <div
+                            key={star.id}
+                            className="star-item"
+                            style={{
+                                width: `${star.size}px`,
+                                height: `${star.size}px`,
+                                top: `${star.top}%`,
+                                left: `${star.left}%`,
+                                opacity: 0.7,
+                                background: color,
+                                boxShadow: `0 0 4px ${color}`,
+                                animation: `slow-twinkle ${Math.random() * 8 + 10}s ease-in-out infinite`,
+                                animationDelay: `${Math.random() * 15}s`
+                            }}
+                        />
+                    );
+                })}
 
                 {/* Near layer - brighter, more active */}
-                {starLayers.near.map((star) => (
-                    <div
-                        key={star.id}
-                        className="star-item star-near"
-                        style={{
-                            width: `${star.size}px`,
-                            height: `${star.size}px`,
-                            top: `${star.top}%`,
-                            left: `${star.left}%`,
-                            opacity: 0.8,
-                            animation: `slow-twinkle ${Math.random() * 6 + 8}s ease-in-out infinite`,
-                            animationDelay: `${Math.random() * 10}s`
-                        }}
-                    />
-                ))}
+                {starLayers.near.map((star, i) => {
+                    const color = getStarColor(i + 55); // Offset to get different colors
+                    return (
+                        <div
+                            key={star.id}
+                            className="star-item"
+                            style={{
+                                width: `${star.size}px`,
+                                height: `${star.size}px`,
+                                top: `${star.top}%`,
+                                left: `${star.left}%`,
+                                opacity: 0.8,
+                                background: color,
+                                boxShadow: `0 0 6px ${color}, 0 0 12px ${color}`,
+                                animation: `slow-twinkle ${Math.random() * 6 + 8}s ease-in-out infinite`,
+                                animationDelay: `${Math.random() * 10}s`
+                            }}
+                        />
+                    );
+                })}
 
                 {/* Hidden layer - emerge from nowhere */}
-                {starLayers.hidden.map((star) => (
-                    <div
-                        key={star.id}
-                        className="star-item star-hidden"
-                        style={{
-                            width: `${star.size}px`,
-                            height: `${star.size}px`,
-                            top: `${star.top}%`,
-                            left: `${star.left}%`,
-                            opacity: 0,
-                            animation: `emerge-twinkle ${star.animationDuration}s ease-in-out infinite`,
-                            animationDelay: `${star.animationDelay}s`
-                        }}
-                    />
-                ))}
+                {starLayers.hidden.map((star, i) => {
+                    const color = getStarColor(i + 70); // Offset to get different colors
+                    return (
+                        <div
+                            key={star.id}
+                            className="star-item"
+                            style={{
+                                width: `${star.size}px`,
+                                height: `${star.size}px`,
+                                top: `${star.top}%`,
+                                left: `${star.left}%`,
+                                opacity: 0,
+                                background: color,
+                                boxShadow: `0 0 4px ${color}`,
+                                animation: `emerge-twinkle ${star.animationDuration}s ease-in-out infinite`,
+                                animationDelay: `${star.animationDelay}s`
+                            }}
+                        />
+                    );
+                })}
             </>
         </div>
     );

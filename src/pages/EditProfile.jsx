@@ -222,12 +222,19 @@ const EditProfile = () => {
             // 1. Handle Image Upload
             if (selectedFile) {
                 try {
-                    const storageRef = ref(storage, `profile_photos/${currentUser.uid}_${Date.now()}`);
+                    // CRITICAL: Path must match storage.rules structure: profile_photos/{userId}/{filename}
+                    const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_profile`);
+                    console.log('[EditProfile] Uploading to:', storageRef.fullPath);
                     await uploadBytes(storageRef, selectedFile);
                     newPhotoURL = await getDownloadURL(storageRef);
+                    console.log('[EditProfile] Upload success, URL:', newPhotoURL);
                 } catch (uploadError) {
-                    console.error("Image upload failed:", uploadError);
-                    alert("Failed to upload image, but saving profile data.");
+                    console.error("[EditProfile] Image upload failed:", uploadError);
+                    console.error("[EditProfile] Error code:", uploadError.code);
+                    console.error("[EditProfile] Error message:", uploadError.message);
+                    alert("Failed to upload image: " + (uploadError.message || "Unknown error"));
+                    setLoading(false);
+                    return; // Don't save profile if upload failed
                 }
             }
 

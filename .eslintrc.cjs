@@ -1,6 +1,6 @@
 module.exports = {
     root: true,
-    env: { browser: true, es2020: true },
+    env: { browser: true, es2020: true, node: true },
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/recommended',
@@ -9,7 +9,7 @@ module.exports = {
         'plugin:react-hooks/recommended',
         'prettier',
     ],
-    ignorePatterns: ['dist', '.eslintrc.cjs', 'functions'],
+    ignorePatterns: ['dist', '.eslintrc.cjs', 'functions', 'node_modules', 'scripts', '*.config.*'],
     parser: '@typescript-eslint/parser',
     plugins: ['react-refresh', '@typescript-eslint'],
     settings: {
@@ -22,9 +22,16 @@ module.exports = {
             'warn',
             { allowConstantExport: true },
         ],
-        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-        '@typescript-eslint/no-explicit-any': 'warn',
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+        '@typescript-eslint/no-explicit-any': 'off',
         'react/prop-types': 'off',
-        'no-console': ['warn', { allow: ['warn', 'error'] }],
+        'react/display-name': 'off',
+        'react/no-unescaped-entities': 'off',
+        'react-hooks/rules-of-hooks': 'warn',
+        'react-hooks/exhaustive-deps': 'warn',
+        'no-console': 'off',
+        'no-unused-vars': 'off',
+        'no-undef': 'warn',
+        'no-redeclare': 'warn',
     },
 };

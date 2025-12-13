@@ -263,9 +263,10 @@ const Profile = () => {
             }}>
                 {/* Animated Stars Background - Only if enabled */}
                 {/* Animated Stars Background - Only if enabled (Delegate to BannerRenderer for City/Ocean) */}
-                {(bannerMode === 'stars' || (user.profileTheme?.useStarsOverlay && !bannerMode.startsWith('city') && !bannerMode.startsWith('ocean'))) && (
+                {(bannerMode === 'stars' || bannerMode === 'brand_stars' || (user.profileTheme?.useStarsOverlay && !bannerMode.startsWith('city') && !bannerMode.startsWith('ocean'))) && (
                     <StarBackground
                         starColor={user.profileTheme?.starColor || COLORS.iceMint}
+                        multiColor={bannerMode === 'brand_stars'}
                         transparent={isGradientMode || bannerMode === 'neonGrid'}
                         maskTop={bannerMode === 'neonGrid'}
                     />
