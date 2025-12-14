@@ -743,27 +743,12 @@ const MobileNavigation = () => {
                     </div>
                 </div>
 
-                {/* Context Options - Kept in main drawer but visualized as list */}
-                <div style={{ marginTop: '1rem' }}> {/* Push down below header buttons + toggles */}
-                    <ContextOptionsSection
-                        currentContext={resolvedContext}
-                        postOwnerId={resolvedPostOwnerId}
-                        profileUserId={resolvedProfileUserId}
-                        onEditPost={handleEditPost}
-                        onDeletePost={handleDeletePost}
-                        onReportPost={handleReportPost}
-                        onReportProfile={handleReportProfile}
-                        onBlockUser={handleBlockUser}
-                        onCopyLink={handleCopyLink}
-                        onShareProfile={handleShareProfile}
-                    />
-                </div>
-
                 {/* Main Navigation List */}
                 <div style={{
                     flex: 1,
                     overflowY: 'auto',
-                    paddingTop: '0.5rem'
+                    paddingTop: '0.5rem',
+                    marginTop: '1.5rem' // Ensure clearance from header buttons
                 }}>
                     <div onClick={() => handleNavClick('/')} style={navItemStyle}>
                         <FaHome color="#7FFFD4" size={20} />
