@@ -762,7 +762,7 @@ const MobileNavigation = () => {
 
                     <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
                         <FaUserCircle color="#7FFFD4" size={20} />
-                        {t('nav.profile') || 'Profile'}
+                        Account
                     </div>
 
                     {/* Market and Calendar Removed from Main List (Moved to Hub) */}
