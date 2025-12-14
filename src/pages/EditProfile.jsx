@@ -251,7 +251,8 @@ const EditProfile = () => {
             if (selectedFile) {
                 try {
                     // CRITICAL: Path must match storage.rules structure: profile_photos/{userId}/{filename}
-                    const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_profile`);
+                    // Fixed filename 'profile_current' ensures only one file exists per user (overwrites old)
+                    const storageRef = ref(storage, `profile_photos/${currentUser.uid}/profile_current`);
                     logger.log('[EditProfile] Uploading to:', storageRef.fullPath);
                     await uploadBytes(storageRef, selectedFile);
                     newPhotoURL = await getDownloadURL(storageRef);
@@ -464,9 +465,10 @@ const EditProfile = () => {
             const postsRef = collection(db, 'posts');
             let qPosts;
             try {
-                qPosts = query(postsRef, where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(50));
+                // Increased limit to 500 to cover more history since we overwrite the file now
+                qPosts = query(postsRef, where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(500));
             } catch (e) {
-                qPosts = query(postsRef, where('userId', '==', uid), limit(50));
+                qPosts = query(postsRef, where('userId', '==', uid), limit(500));
             }
 
             // Execute query safely
@@ -475,7 +477,7 @@ const EditProfile = () => {
                 postSnaps = await getDocs(qPosts);
             } catch (e) {
                 // If index missing error, fallback to unsorted
-                const qFallback = query(postsRef, where('userId', '==', uid), limit(50));
+                const qFallback = query(postsRef, where('userId', '==', uid), limit(500));
                 postSnaps = await getDocs(qFallback);
             }
 
@@ -495,7 +497,7 @@ const EditProfile = () => {
 
             // 2. Comments
             const commentsRef = collection(db, 'comments');
-            const qComments = query(commentsRef, where('userId', '==', uid), limit(50));
+            const qComments = query(commentsRef, where('userId', '==', uid), limit(500));
             const commentSnaps = await getDocs(qComments);
 
             commentSnaps.forEach(doc => {
