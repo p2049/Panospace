@@ -227,6 +227,7 @@ const Settings = () => {
     const SettingsRow = ({ icon: Icon, label, onClick, isDestructive = false, showChevron = true }) => (
         <button
             onClick={onClick}
+            type="button"
             style={{
                 width: '100%',
                 height: '50px',
@@ -240,7 +241,13 @@ const Settings = () => {
                 color: isDestructive ? '#ff4444' : 'var(--text-primary, #d8fff1)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                marginBottom: '8px'
+                marginBottom: '8px',
+                // CRITICAL: Ensure clickability
+                pointerEvents: 'auto',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                position: 'relative',
+                zIndex: 1
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.background = isDestructive ? 'rgba(255, 68, 68, 0.05)' : 'rgba(110, 255, 216, 0.05)';
@@ -253,11 +260,11 @@ const Settings = () => {
                 e.currentTarget.style.boxShadow = 'none';
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'none' }}>
                 <Icon size={18} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} />
                 <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>{label}</span>
             </div>
-            {showChevron && <FaChevronRight size={14} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} />}
+            {showChevron && <FaChevronRight size={14} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} style={{ pointerEvents: 'none' }} />}
         </button>
     );
 
@@ -408,7 +415,8 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <div
+                    <button
+                        type="button"
                         onClick={toggleNSFW}
                         style={{
                             width: '100%',
@@ -423,10 +431,16 @@ const Settings = () => {
                             color: 'var(--text-primary, #d8fff1)',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            marginBottom: '8px'
+                            marginBottom: '8px',
+                            // CRITICAL: Ensure clickability
+                            pointerEvents: 'auto',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            position: 'relative',
+                            zIndex: 1
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'none' }}>
                             <FaShieldAlt size={18} color="var(--accent, #6effd8)" />
                             <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>Show Sensitive Content</span>
                         </div>
@@ -436,7 +450,8 @@ const Settings = () => {
                             borderRadius: '12px',
                             background: showNSFW ? 'var(--accent, #6effd8)' : 'rgba(255,255,255,0.2)',
                             position: 'relative',
-                            transition: 'background 0.2s'
+                            transition: 'background 0.2s',
+                            pointerEvents: 'none'
                         }}>
                             <div style={{
                                 width: '20px',
@@ -450,7 +465,7 @@ const Settings = () => {
                                 boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                             }} />
                         </div>
-                    </div>
+                    </button>
                     <p style={{
                         fontSize: '0.8rem',
                         color: 'var(--text-secondary, #6b7f78)',

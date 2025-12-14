@@ -13,6 +13,8 @@ import { generateSearchKeywords } from '@/core/utils/searchKeywords';
 import { extractDominantColor } from '@/core/utils/colors';
 import { generateAllThumbnails } from '@/core/utils/thumbnailGenerator';
 import { sanitizeTitle, sanitizeDescription, sanitizeTag } from '@/core/utils/sanitize';
+import { logger } from '@/core/utils/logger';
+import { getMaxImageSize, getMaxImageSizeMB, formatFileSizeMB, validateImageSize } from '@/core/constants/imageLimits';
 
 // ---------------------------------------------------------------------------
 // Hook: useCreatePost
@@ -28,15 +30,74 @@ export const useCreatePost = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
+    // Helper: Parse Firebase Storage error code for user-friendly message
+    const getStorageErrorMessage = (error, slideIndex) => {
+        const code = error.code || '';
+        const message = error.message || '';
+
+        // Firebase Storage error codes
+        if (code === 'storage/unauthorized' || code === 'storage/unauthenticated') {
+            // This means storage rules blocked the upload - likely size limit, content type, or path issue
+            return `Image ${slideIndex + 1} upload blocked by storage rules. Check: file size (<10MB), file type (images only), or try logging out and back in.`;
+        }
+        if (code === 'storage/quota-exceeded') {
+            return `Image ${slideIndex + 1} upload failed: Storage quota exceeded. Please contact support.`;
+        }
+        if (code === 'storage/canceled') {
+            return `Image ${slideIndex + 1} upload was canceled. Please try again.`;
+        }
+        if (code === 'storage/retry-limit-exceeded') {
+            return `Image ${slideIndex + 1} upload failed after multiple retries. Please check your connection.`;
+        }
+        if (code === 'storage/invalid-checksum') {
+            return `Image ${slideIndex + 1} was corrupted during upload. Please try again.`;
+        }
+        if (code === 'storage/object-not-found') {
+            return `Image ${slideIndex + 1} upload verification failed. Please try again.`;
+        }
+        if (code === 'storage/unknown') {
+            return `Image ${slideIndex + 1} upload failed due to an unknown error. Please try again.`;
+        }
+
+        // Network errors
+        if (message.includes('network') || message.includes('fetch') || message.includes('Failed to fetch') || message.includes('ERR_NETWORK')) {
+            return `Image ${slideIndex + 1} upload failed: Network error. Please check your connection.`;
+        }
+
+        // Timeout
+        if (message.includes('timeout') || message.includes('Timeout')) {
+            return `Image ${slideIndex + 1} upload timed out. Please try again with a smaller image or better connection.`;
+        }
+
+        // File too large (caught by rules)
+        if (message.includes('size') || message.includes('too large') || code.includes('size')) {
+            return `Image ${slideIndex + 1} is too large. Maximum size is 10MB.`;
+        }
+
+        // Invalid file type
+        if (message.includes('content-type') || message.includes('contentType')) {
+            return `Image ${slideIndex + 1} has an invalid file type. Only images are allowed.`;
+        }
+
+        // Generic fallback with actual error
+        return `Image ${slideIndex + 1} upload failed: ${message || 'Unknown error'}`;
+    };
+
     // Helper: Upload with Retry
     const uploadWithRetry = async (storageRef, file, metadata = {}, retries = 3) => {
+        let lastError = null;
+
         for (let i = 0; i < retries; i++) {
             try {
                 const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
                 // Add timeout protection (60 seconds per upload)
                 const uploadPromise = new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed', null, reject, resolve);
+                    uploadTask.on('state_changed',
+                        null,
+                        (error) => reject(error), // Properly capture Firebase error
+                        () => resolve(uploadTask.snapshot)
+                    );
                 });
 
                 const timeoutPromise = new Promise((_, reject) =>
@@ -46,11 +107,24 @@ export const useCreatePost = () => {
                 await Promise.race([uploadPromise, timeoutPromise]);
                 return await getDownloadURL(storageRef);
             } catch (err) {
-                console.warn(`Upload attempt ${i + 1} failed:`, err);
+                lastError = err;
+                logger.warn(`Upload attempt ${i + 1} failed:`, err.code || err.message, err);
+
+                // Don't retry for permission errors - they won't succeed
+                if (err.code === 'storage/unauthorized' || err.code === 'storage/unauthenticated') {
+                    throw err;
+                }
+
+                // Don't retry for quota errors
+                if (err.code === 'storage/quota-exceeded') {
+                    throw err;
+                }
+
                 if (i === retries - 1) throw err;
                 await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); // Exponential backoff
             }
         }
+        throw lastError;
     };
 
     // -----------------------------------------------------------------------
@@ -68,7 +142,7 @@ export const useCreatePost = () => {
 
         try {
             if (!currentUser) {
-                console.error('❌ No current user!');
+                logger.error('❌ No current user!');
                 throw new Error('Must be logged in');
             }
             // User authenticated
@@ -94,7 +168,7 @@ export const useCreatePost = () => {
                     authorName = data.username || data.displayName;
                 }
             } catch (e) {
-                console.warn('Could not fetch user profile for name', e);
+                logger.warn('Could not fetch user profile for name', e);
             }
 
             // Fallback to Firebase Auth if Firestore failed
@@ -118,7 +192,7 @@ export const useCreatePost = () => {
                     isUltra = userDoc.data().isUltra || false;
                 }
             } catch (e) {
-                console.warn('Could not fetch user profile for Ultra check', e);
+                logger.warn('Could not fetch user profile for Ultra check', e);
             }
 
             // Get user's account type for feed filtering
@@ -126,7 +200,7 @@ export const useCreatePost = () => {
             try {
                 authorAccountType = await AccountTypeService.getAccountType(currentUser.uid);
             } catch (e) {
-                console.warn('Could not fetch account type, using default', e);
+                logger.warn('Could not fetch account type, using default', e);
             }
 
             // ---------------------------------------------------------------
@@ -146,19 +220,49 @@ export const useCreatePost = () => {
 
                 if (slide.type === 'image' || slide.type === 'stack') {
                     try {
+                        // PRE-UPLOAD VALIDATION: Check file meets tier-based size limits BEFORE upload
+                        // isUltra was fetched earlier - use it to determine tier limit
+                        const sizeValidation = validateImageSize(slide.file.size, isUltra);
+
+                        if (!sizeValidation.isValid) {
+                            const tierName = isUltra ? 'Premium' : 'Free';
+                            throw new Error(
+                                `Image ${i + 1} is too large (${sizeValidation.actualMB}). ` +
+                                `${tierName} accounts allow up to ${sizeValidation.limitMB}MB per image.`
+                            );
+                        }
+
+                        // Validate content type
+                        const fileType = slide.file.type || '';
+                        if (!fileType.startsWith('image/')) {
+                            logger.warn(`[Upload] Image ${i + 1} has unusual type: ${fileType}, will set explicitly`);
+                        }
+
                         let stackImageUrls = [];
 
                         // 0. If STACK, upload individual component images first
                         if (slide.type === 'stack' && slide.items && slide.items.length > 0) {
                             setProgress(Math.round(baseProgress + (1 / totalSlides) * 10));
 
-                            // Upload each stack item
-                            // We just need the raw URL, no thumbnails for sub-items needed usually (too heavy)
-                            // Actually, let's just upload them as standard "L2" files.
+                            // Validate and upload each stack item
                             for (let j = 0; j < slide.items.length; j++) {
                                 const itemFile = slide.items[j];
+
+                                // PRE-VALIDATION for stack items too (same tier limits)
+                                const itemValidation = validateImageSize(itemFile.size, isUltra);
+                                if (!itemValidation.isValid) {
+                                    const tierName = isUltra ? 'Premium' : 'Free';
+                                    throw new Error(
+                                        `Stack image ${j + 1} in slide ${i + 1} is too large (${itemValidation.actualMB}). ` +
+                                        `${tierName} limit: ${itemValidation.limitMB}MB.`
+                                    );
+                                }
+
                                 const itemRef = ref(storage, `posts/${currentUser.uid}/stack_${Date.now()}_${j}_${itemFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`);
-                                const itemUrl = await uploadWithRetry(itemRef, itemFile);
+
+                                // Set content type explicitly for storage rules
+                                const itemContentType = itemFile.type?.startsWith('image/') ? itemFile.type : 'image/jpeg';
+                                const itemUrl = await uploadWithRetry(itemRef, itemFile, { contentType: itemContentType });
                                 stackImageUrls.push(itemUrl);
                             }
                         }
@@ -175,26 +279,65 @@ export const useCreatePost = () => {
                             l2 = thumbs.l2;
                             // Thumbnails generated
                         } catch (genError) {
-                            console.warn(`  ⚠️ Thumbnail generation failed for slide ${i + 1}, using original:`, genError);
+                            logger.warn(`  ⚠️ Thumbnail generation failed for slide ${i + 1}, using original:`, genError);
                             l0 = slide.file;
                             l1 = slide.file;
                             l2 = slide.file;
                         }
 
-                        // 2. Define Paths
+                        // 2. Define Paths - CRITICAL: All paths must be under posts/{uid}/
                         const timestamp = Date.now();
-                        const baseFilename = `${timestamp}_${i}_${slide.file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                        const safeFilename = slide.file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+                        const baseFilename = `${timestamp}_${i}_${safeFilename}`;
 
-                        const l2Ref = ref(storage, `posts/${currentUser.uid}/${baseFilename}`);
-                        const l1Ref = ref(storage, `posts/${currentUser.uid}/thumbnails/${baseFilename}_l1.jpg`);
-                        const l0Ref = ref(storage, `posts/${currentUser.uid}/thumbnails/${baseFilename}_l0.jpg`);
+                        // CRITICAL: Validate UID before generating paths
+                        const uid = currentUser.uid;
+                        if (!uid || typeof uid !== 'string' || uid.length === 0) {
+                            throw new Error('Invalid user ID - please log in again');
+                        }
+
+                        // All paths follow pattern: posts/{uid}/{filename}
+                        const basePath = `posts/${uid}`;
+                        const l2Path = `${basePath}/${baseFilename}`;
+                        const l1Path = `${basePath}/thumbnails/${baseFilename}_l1.jpg`;
+                        const l0Path = `${basePath}/thumbnails/${baseFilename}_l0.jpg`;
+
+                        // DEBUG: Log paths for troubleshooting
+                        logger.log(`[Upload] Image ${i + 1} paths:`, {
+                            uid,
+                            l2Path,
+                            l1Path,
+                            l0Path,
+                            fileType: slide.file.type,
+                            fileSize: slide.file.size
+                        });
+
+                        const l2Ref = ref(storage, l2Path);
+                        const l1Ref = ref(storage, l1Path);
+                        const l0Ref = ref(storage, l0Path);
 
                         // 3. Upload All Versions with fallback
                         // Uploading original...
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 20)); // +20% for upload start
 
+                        // CRITICAL: Set content type explicitly to pass storage rules validation
+                        const getContentType = (file) => {
+                            if (file.type && file.type.startsWith('image/')) return file.type;
+                            // Fallback based on extension
+                            const ext = (file.name || '').split('.').pop()?.toLowerCase();
+                            const typeMap = { 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp', 'heic': 'image/heic', 'heif': 'image/heif' };
+                            return typeMap[ext] || 'image/jpeg';
+                        };
+
+                        const originalContentType = getContentType(l2);
+                        const originalMetadata = { contentType: originalContentType };
+                        const thumbnailMetadata = { contentType: 'image/jpeg' }; // Thumbnails are always JPEG
+
+                        logger.log(`[Upload] Image ${i + 1} metadata:`, { originalContentType, l2Type: l2.type || 'none' });
+
                         // We upload L2 (Original) first to ensure we have the main asset
-                        const urlL2 = await uploadWithRetry(l2Ref, l2);
+                        const urlL2 = await uploadWithRetry(l2Ref, l2, originalMetadata);
+                        logger.log(`[Upload] Image ${i + 1} original uploaded successfully`);
                         // Original uploaded
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 50)); // +50% after main upload
 
@@ -205,13 +348,13 @@ export const useCreatePost = () => {
                         try {
                             // Uploading thumbnails...
                             [urlL1, urlL0] = await Promise.all([
-                                uploadWithRetry(l1Ref, l1),
-                                uploadWithRetry(l0Ref, l0)
+                                uploadWithRetry(l1Ref, l1, thumbnailMetadata),
+                                uploadWithRetry(l0Ref, l0, thumbnailMetadata)
                             ]);
                             // Thumbnails uploaded
                             setProgress(Math.round(baseProgress + (1 / totalSlides) * 70)); // +70% after thumbnails
                         } catch (thumbError) {
-                            console.warn('Thumbnail upload failed, using original:', thumbError);
+                            logger.warn('Thumbnail upload failed, using original:', thumbError);
                             // Fallback already set above
                         }
 
@@ -230,7 +373,7 @@ export const useCreatePost = () => {
                             height = img.naturalHeight;
                             // Dimensions retrieved
                         } catch (e) {
-                            console.warn('Failed to get image dimensions', e);
+                            logger.warn('Failed to get image dimensions', e);
                         }
 
                         // 5. EXIF - Enhanced with retry
@@ -287,7 +430,7 @@ export const useCreatePost = () => {
                             dominantColor = colorData.hex;
                             // Color extracted
                         } catch (e) {
-                            console.warn('Failed to extract dominant color', e);
+                            logger.warn('Failed to extract dominant color', e);
                         }
 
                         processedItems.push({
@@ -318,21 +461,10 @@ export const useCreatePost = () => {
                         });
 
                     } catch (uploadError) {
-                        console.error(`Failed to process slide ${i}:`, uploadError);
-                        // Provide detailed error message
-                        const errorMsg = uploadError.message || 'Unknown error';
-                        const isNetworkError = errorMsg.includes('network') || errorMsg.includes('fetch');
-                        const isStorageError = errorMsg.includes('storage') || errorMsg.includes('quota');
+                        logger.error(`Failed to process slide ${i}:`, uploadError.code || 'no-code', uploadError);
 
-                        let userMessage = `Failed to upload image ${i + 1}.`;
-                        if (isNetworkError) {
-                            userMessage += ' Network error detected. Please check your connection and try again.';
-                        } else if (isStorageError) {
-                            userMessage += ' Storage error. You may have reached your storage limit.';
-                        } else {
-                            userMessage += ` Error: ${errorMsg}`;
-                        }
-
+                        // Use the new error message parser
+                        const userMessage = getStorageErrorMessage(uploadError, i);
                         throw new Error(userMessage);
                     }
                 } else {
@@ -493,7 +625,7 @@ export const useCreatePost = () => {
                 });
                 await Promise.all(verificationPromises);
             } catch (verificationError) {
-                console.error('❌ Post verification failed! Rolling back...', verificationError);
+                logger.error('❌ Post verification failed! Rolling back...', verificationError);
                 await deleteDoc(doc(db, 'posts', docRef.id));
                 throw new Error('Post creation failed: Image verification failed. Please try again.');
             }
@@ -605,7 +737,7 @@ export const useCreatePost = () => {
                         updatedAt: serverTimestamp()
                     });
                 } catch (collectionError) {
-                    console.error('Failed to add post to collection:', collectionError);
+                    logger.error('Failed to add post to collection:', collectionError);
                 }
             }
 
@@ -619,7 +751,7 @@ export const useCreatePost = () => {
                 thumbnailUrls
             };
         } catch (err) {
-            console.error('Create post failed:', err);
+            logger.error('Create post failed:', err);
             setError(err.message);
             throw err;
         } finally {

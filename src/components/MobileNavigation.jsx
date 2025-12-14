@@ -212,26 +212,36 @@ const MobileNavigation = () => {
 
     // Close both when opening one? Logic handled in toggles.
 
-    // Styling
+    // Styling - CRITICAL: Ensure hamburger is ALWAYS visible and clickable
     const menuButtonStyle = {
         position: 'fixed',
         top: 'max(0.75rem, env(safe-area-inset-top))',
         right: '1rem',
-        zIndex: 10000,
+        zIndex: 99999, // Highest z-index in the app
         cursor: 'pointer',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-        // ... (rest of style inferred to be unchanged if I only replace handlers, but I'm replacing a large block. I must ensure I don't lose the button style definition)
         color: accentColor,
-        background: 'transparent',
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
         width: '44px',
         height: '44px',
+        minWidth: '44px',
+        minHeight: '44px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: 'none',
+        border: `1px solid ${accentColor}40`,
+        borderRadius: '12px',
         outline: 'none',
-        filter: `drop-shadow(0 0 6px ${accentColor}80)`
+        filter: `drop-shadow(0 0 6px ${accentColor}80)`,
+        // CRITICAL: Ensure click events are always captured
+        pointerEvents: 'auto',
+        touchAction: 'manipulation',
+        WebkitTapHighlightColor: 'transparent',
+        // Prevent being hidden by overflow
+        isolation: 'isolate'
     };
 
     const drawerStyle = {
@@ -307,8 +317,13 @@ const MobileNavigation = () => {
 
             {/* Hamburger Button */}
             <div
+                className="mobile-nav-hamburger"
                 style={menuButtonStyle}
                 onClick={() => { setIsOpen(!isOpen); handleInteraction(); }}
+                role="button"
+                aria-label={isOpen ? "Close menu" : "Open menu"}
+                aria-expanded={isOpen}
+                tabIndex={0}
             >
                 {isOpen ? (
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -16,6 +16,7 @@ import {
     limit
 } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { logger } from '@/core/utils/logger';
 
 const COLLECTIONS_CACHE = {}; // { userId: collections[] }
 const SINGLE_COLLECTION_CACHE = {}; // { collectionId: collectionData }
@@ -56,11 +57,11 @@ export const useCollections = (userId) => {
             setError(null);
         } catch (err) {
             if (err.code === 'permission-denied') {
-                console.warn('[useCollections] Permission denied. Returning empty list.');
+                logger.warn('[useCollections] Permission denied. Returning empty list.');
                 setCollections([]);
                 setError(null); // Do not expose error to UI to avoid spam/retries
             } else {
-                console.error('Error fetching collections:', err);
+                logger.error('Error fetching collections:', err);
                 setError(err.message);
             }
         } finally {
@@ -121,7 +122,7 @@ export const useCreateCollection = () => {
             setLoading(false);
             return { id: docRef.id, ...newCollection };
         } catch (err) {
-            console.error('Error creating collection:', err);
+            logger.error('Error creating collection:', err);
             setError(err.message);
             setLoading(false);
             throw err;
@@ -149,7 +150,7 @@ export const useCreateCollection = () => {
             setLoading(false);
             return true;
         } catch (err) {
-            console.error('Error updating collection:', err);
+            logger.error('Error updating collection:', err);
             setError(err.message);
             setLoading(false);
             throw err;
@@ -169,7 +170,7 @@ export const useCreateCollection = () => {
             setLoading(false);
             return true;
         } catch (err) {
-            console.error('Error deleting collection:', err);
+            logger.error('Error deleting collection:', err);
             setError(err.message);
             setLoading(false);
             throw err;
@@ -189,7 +190,7 @@ export const useCreateCollection = () => {
 
             return true;
         } catch (err) {
-            console.error('Error adding post to collection:', err);
+            logger.error('Error adding post to collection:', err);
             throw err;
         }
     };
@@ -207,7 +208,7 @@ export const useCreateCollection = () => {
 
             return true;
         } catch (err) {
-            console.error('Error removing post from collection:', err);
+            logger.error('Error removing post from collection:', err);
             throw err;
         }
     };
@@ -233,7 +234,7 @@ export const useCreateCollection = () => {
 
             return true;
         } catch (err) {
-            console.error('Error removing item from collection:', err);
+            logger.error('Error removing item from collection:', err);
             throw err;
         }
     };
@@ -278,7 +279,7 @@ export const useCollection = (collectionId) => {
                 setError('Collection not found');
             }
         } catch (err) {
-            console.error('Error fetching collection:', err);
+            logger.error('Error fetching collection:', err);
             setError(err.message);
         } finally {
             setLoading(false);

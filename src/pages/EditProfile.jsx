@@ -20,6 +20,7 @@ import BannerTypeSelector from '@/components/edit-profile/BannerTypeSelector';
 import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
+import { logger } from '@/core/utils/logger';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -237,7 +238,7 @@ const EditProfile = () => {
         // Starting profile save...
 
         if (!currentUser) {
-            console.error("No current user found.");
+            logger.error("No current user found.");
             return;
         }
 
@@ -251,14 +252,14 @@ const EditProfile = () => {
                 try {
                     // CRITICAL: Path must match storage.rules structure: profile_photos/{userId}/{filename}
                     const storageRef = ref(storage, `profile_photos/${currentUser.uid}/${Date.now()}_profile`);
-                    console.log('[EditProfile] Uploading to:', storageRef.fullPath);
+                    logger.log('[EditProfile] Uploading to:', storageRef.fullPath);
                     await uploadBytes(storageRef, selectedFile);
                     newPhotoURL = await getDownloadURL(storageRef);
-                    console.log('[EditProfile] Upload success, URL:', newPhotoURL);
+                    logger.log('[EditProfile] Upload success, URL:', newPhotoURL);
                 } catch (uploadError) {
-                    console.error("[EditProfile] Image upload failed:", uploadError);
-                    console.error("[EditProfile] Error code:", uploadError.code);
-                    console.error("[EditProfile] Error message:", uploadError.message);
+                    logger.error("[EditProfile] Image upload failed:", uploadError);
+                    logger.error("[EditProfile] Error code:", uploadError.code);
+                    logger.error("[EditProfile] Error message:", uploadError.message);
                     alert("Failed to upload image: " + (uploadError.message || "Unknown error"));
                     setLoading(false);
                     return; // Don't save profile if upload failed

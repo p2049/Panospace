@@ -12,6 +12,7 @@ import {
     serverTimestamp,
     type Timestamp
 } from 'firebase/firestore';
+import { logger } from '@/core/utils/logger';
 
 export interface NotificationInput {
     userId: string;
@@ -43,7 +44,7 @@ export const createNotification = async (notificationData: NotificationInput): P
         const docRef = await addDoc(notificationsRef, notification);
         return { id: docRef.id, ...notification } as unknown as Notification;
     } catch (error) {
-        console.error('Error creating notification:', error);
+        logger.error('Error creating notification:', error);
         throw error;
     }
 };
@@ -64,7 +65,7 @@ export const getUserNotifications = async (userId: string, limitCount: number = 
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
     } catch (error) {
-        console.error('Error getting notifications:', error);
+        logger.error('Error getting notifications:', error);
         throw error;
     }
 };
@@ -84,7 +85,7 @@ export const getUnreadCount = async (userId: string): Promise<number> => {
         const querySnapshot = await getDocs(q);
         return querySnapshot.size;
     } catch (error) {
-        console.error('Error getting unread count:', error);
+        logger.error('Error getting unread count:', error);
         return 0;
     }
 };
@@ -99,7 +100,7 @@ export const markAsRead = async (notificationId: string): Promise<void> => {
             read: true
         });
     } catch (error) {
-        console.error('Error marking notification as read:', error);
+        logger.error('Error marking notification as read:', error);
         throw error;
     }
 };
@@ -123,7 +124,7 @@ export const markAllAsRead = async (userId: string): Promise<void> => {
 
         await Promise.all(updatePromises);
     } catch (error) {
-        console.error('Error marking all as read:', error);
+        logger.error('Error marking all as read:', error);
         throw error;
     }
 };

@@ -1006,3 +1006,54 @@ h6 {
   font-weight: 700 !important;
   border-left: 2px solid #7FFFD4 !important;
 }
+
+/* === MOBILE NAVIGATION GLOBAL STYLES === */
+
+/* Ensure hamburger button is ALWAYS on top */
+.mobile-nav-hamburger {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+  isolation: isolate;
+}
+
+/* Bottom tab navigation spacing - prevent content overlap */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Ensure fixed/sticky headers don't overlap hamburger */
+  .page-header,
+  .sticky-header,
+  [class*="header"] {
+    z-index: 100;
+  }
+}
+
+/* Desktop: No bottom padding needed */
+@media (min-width: 769px) {
+  body {
+    padding-bottom: 0;
+  }
+}
+
+/* === SETTINGS PAGE INTERACTION FIX === */
+/* Ensure all buttons and toggles are reliably clickable */
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix for Settings page rows specifically */
+button[type="button"] {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure child elements don't block parent button clicks */
+button>div,
+button>span,
+button>svg {
+  pointer-events: none;
+}

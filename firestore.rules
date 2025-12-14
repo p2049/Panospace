@@ -245,6 +245,52 @@ service cloud.firestore {
       allow write: if !request.resource.data.keys().hasAny(['eventType']) ||
                      request.resource.data.eventType in ['contest', 'seasonal', 'drop', 'user', 'scheduled_post', 'scheduled_collection'];
     }
+
+    // ============================================
+    // GLOBAL EVENTS COLLECTION (Astronomical, Holidays, etc.)
+    // ============================================
+    match /events_global/{eventId} {
+      // Public read for global events (moon phases, holidays, etc.)
+      allow read: if true;
+      
+      // No client-side writes (admin/backend only)
+      allow write: if false;
+    }
+
+    // ============================================
+    // APP EVENTS COLLECTION (Curated Platform Events)
+    // ============================================
+    match /events_app/{eventId} {
+      // Public read for app-curated events
+      allow read: if true;
+      
+      // No client-side writes (admin/backend only)
+      allow write: if false;
+    }
+
+    // ============================================
+    // EVENT SUBMISSIONS COLLECTION
+    // ============================================
+    match /eventSubmissions/{submissionId} {
+      // Public read for submissions (to show in event galleries)
+      allow read: if true;
+      
+      // Authenticated users can create submissions
+      allow create: if request.auth != null &&
+                     request.resource.data.createdBy == request.auth.uid &&
+                     request.resource.data.keys().hasAll(['eventId', 'postId', 'createdBy', 'submittedAt']) &&
+                     request.resource.data.eventId is string &&
+                     request.resource.data.postId is string;
+      
+      // Users can delete their own submissions
+      allow delete: if request.auth != null &&
+                     resource.data.createdBy == request.auth.uid;
+      
+      // Users can update visibility of their own submissions
+      allow update: if request.auth != null &&
+                     resource.data.createdBy == request.auth.uid &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visible']);
+    }
       
     // ============================================
     match /posts/{postId}/comments/{commentId} {

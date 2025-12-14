@@ -13,7 +13,8 @@ import FilmOptionsPanel from '@/components/create-post/FilmOptionsPanel';
 import ManualExifEditor from '@/components/create-post/ManualExifEditor';
 import CollectionSelector from '@/components/create-post/CollectionSelector';
 import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import ImageSizeWarningModal from '@/components/ImageSizeWarningModal';
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
@@ -22,6 +23,8 @@ import Post from '@/components/Post';
 import { extractDominantHue } from '@/core/utils/colorUtils';
 import { generateStackPreview } from '@/core/utils/stackUtils';
 import { logger } from '@/core/utils/logger';
+import { validateImageSize, getMaxImageSizeMB, formatFileSizeMB, getMaxImageSize } from '@/core/constants/imageLimits';
+import { scaleImageToFit } from '@/core/utils/imageScaler';
 
 
 
@@ -165,6 +168,35 @@ const CreatePost = () => {
         collaborators: []
     });
 
+    // Image Size Warning Modal State
+    const [sizeWarningModal, setSizeWarningModal] = useState({
+        isOpen: false,
+        file: null,
+        fileIndex: null,
+        imageName: '',
+        actualSize: '',
+        isPremium: false,
+        isScaling: false,
+        pendingFiles: [],  // Queue of files to process after current
+    });
+    const [userIsPremium, setUserIsPremium] = useState(false);
+
+    // Check if user is premium on mount
+    useEffect(() => {
+        const checkPremiumStatus = async () => {
+            if (!currentUser?.uid) return;
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    setUserIsPremium(userDoc.data().isUltra || false);
+                }
+            } catch (e) {
+                logger.warn('Could not check premium status:', e);
+            }
+        };
+        checkPremiumStatus();
+    }, [currentUser?.uid]);
+
     // Toggle Handlers
     const handleSprocketToggle = (val) => {
         setEnableSprocketOverlay(val);
@@ -181,8 +213,8 @@ const CreatePost = () => {
         }
     };
 
-    // Handle file selection
-    const handleFileSelect = (e) => {
+    // Handle file selection with size validation
+    const handleFileSelect = async (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
@@ -194,23 +226,162 @@ const CreatePost = () => {
 
         // Get ALL EXIF from first slide to auto-fill new slides
         const firstSlideExif = slides.length > 0 ? (slides[0].manualExif || slides[0].exif) : null;
-        // Copy all fields from first slide's EXIF
         const commonExif = firstSlideExif ? { ...firstSlideExif } : null;
 
-        const newSlides = files.map(file => ({
-            type: 'image',
-            file,
-            preview: URL.createObjectURL(file),
-            title: '', // Changed from caption to title
-            exif: null,
-            manualExif: commonExif // Auto-fill with ALL EXIF fields from first slide
-        }));
+        // Check each file for size limits
+        const validFiles = [];
+        let oversizedFile = null;
+        let remainingFiles = [];
 
-        setSlides(prev => {
-            const updated = [...prev, ...newSlides];
-            if (prev.length === 0) setActiveSlideIndex(0);
-            return updated;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const validation = validateImageSize(file.size, userIsPremium);
+
+            if (validation.isValid) {
+                validFiles.push(file);
+            } else {
+                // Found an oversized file - show modal
+                oversizedFile = file;
+                remainingFiles = files.slice(i + 1); // Files after this one
+                break;
+            }
+        }
+
+        // Add valid files as slides
+        if (validFiles.length > 0) {
+            const newSlides = validFiles.map(file => ({
+                type: 'image',
+                file,
+                preview: URL.createObjectURL(file),
+                title: '',
+                exif: null,
+                manualExif: commonExif
+            }));
+
+            setSlides(prev => {
+                const updated = [...prev, ...newSlides];
+                if (prev.length === 0) setActiveSlideIndex(0);
+                return updated;
+            });
+        }
+
+        // If there's an oversized file, show the warning modal
+        if (oversizedFile) {
+            const validation = validateImageSize(oversizedFile.size, userIsPremium);
+            setSizeWarningModal({
+                isOpen: true,
+                file: oversizedFile,
+                fileIndex: slides.length + validFiles.length,
+                imageName: oversizedFile.name,
+                actualSize: validation.actualMB,
+                isPremium: userIsPremium,
+                isScaling: false,
+                pendingFiles: remainingFiles,
+                commonExif: commonExif,
+            });
+        }
+    };
+
+    // Handle scaling the oversized image
+    const handleScaleDown = async () => {
+        const { file, pendingFiles, commonExif } = sizeWarningModal;
+        if (!file) return;
+
+        setSizeWarningModal(prev => ({ ...prev, isScaling: true }));
+
+        try {
+            const maxSize = getMaxImageSize(userIsPremium);
+            const result = await scaleImageToFit(file, maxSize);
+
+            if (result.success) {
+                // Add the scaled file as a slide
+                const newSlide = {
+                    type: 'image',
+                    file: result.file,
+                    preview: URL.createObjectURL(result.file),
+                    title: '',
+                    exif: null,
+                    manualExif: commonExif || null,
+                    wasScaled: true,
+                    originalSize: formatFileSizeMB(result.originalSize),
+                    scaledSize: formatFileSizeMB(result.finalSize),
+                };
+
+                setSlides(prev => {
+                    const updated = [...prev, newSlide];
+                    if (prev.length === 0) setActiveSlideIndex(0);
+                    return updated;
+                });
+
+                // Show success feedback
+                logger.log(`[CreatePost] Scaled image from ${formatFileSizeMB(result.originalSize)} to ${formatFileSizeMB(result.finalSize)}`);
+
+                // Close modal and process remaining files
+                setSizeWarningModal({
+                    isOpen: false,
+                    file: null,
+                    fileIndex: null,
+                    imageName: '',
+                    actualSize: '',
+                    isPremium: false,
+                    isScaling: false,
+                    pendingFiles: [],
+                });
+
+                // Process any remaining files
+                if (pendingFiles && pendingFiles.length > 0) {
+                    // Create a synthetic event to trigger handleFileSelect
+                    const dataTransfer = new DataTransfer();
+                    pendingFiles.forEach(f => dataTransfer.items.add(f));
+                    handleFileSelect({ target: { files: dataTransfer.files } });
+                }
+            } else {
+                alert(`Could not scale image to fit within limit: ${result.error}`);
+                setSizeWarningModal(prev => ({ ...prev, isScaling: false }));
+            }
+        } catch (err) {
+            logger.error('[CreatePost] Scaling failed:', err);
+            alert(`Scaling failed: ${err.message}`);
+            setSizeWarningModal(prev => ({ ...prev, isScaling: false }));
+        }
+    };
+
+    // Handle upgrade navigation
+    const handleUpgrade = () => {
+        setSizeWarningModal({
+            isOpen: false,
+            file: null,
+            fileIndex: null,
+            imageName: '',
+            actualSize: '',
+            isPremium: false,
+            isScaling: false,
+            pendingFiles: [],
         });
+        navigate('/subscribe'); // Navigate to subscription page
+    };
+
+    // Handle cancel - skip this file and continue with the rest
+    const handleCancelOversized = () => {
+        const { pendingFiles, commonExif } = sizeWarningModal;
+
+        setSizeWarningModal({
+            isOpen: false,
+            file: null,
+            fileIndex: null,
+            imageName: '',
+            actualSize: '',
+            isPremium: false,
+            isScaling: false,
+            pendingFiles: [],
+        });
+
+        // Process remaining files if any
+        if (pendingFiles && pendingFiles.length > 0) {
+            const dataTransfer = new DataTransfer();
+            pendingFiles.forEach(f => dataTransfer.items.add(f));
+            handleFileSelect({ target: { files: dataTransfer.files } });
+        }
     };
 
     // Handle removing a slide
@@ -1969,6 +2140,19 @@ const CreatePost = () => {
                     letter-spacing: 0.05em;
                 }
             `}</style>
+
+            {/* Image Size Warning Modal */}
+            <ImageSizeWarningModal
+                isOpen={sizeWarningModal.isOpen}
+                imageName={sizeWarningModal.imageName}
+                actualSize={sizeWarningModal.actualSize}
+                limitSize={getMaxImageSizeMB(userIsPremium)}
+                isPremium={userIsPremium}
+                onScaleDown={handleScaleDown}
+                onUpgrade={handleUpgrade}
+                onCancel={handleCancelOversized}
+                isScaling={sizeWarningModal.isScaling}
+            />
         </div>
     );
 };
