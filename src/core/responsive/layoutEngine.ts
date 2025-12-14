@@ -156,8 +156,8 @@ export function layoutForScreen(width: number, height: number, screen: string = 
         case 'profile':
             // Profile specific layout tweaks
             if (device === 'phone') {
-                config.gridColumns = 3;
-                config.gridGap = '3px'; // Tighter gap for grid
+                config.gridColumns = 4; // Dense grid for visual impact
+                config.gridGap = '2px'; // Tighter gap for grid
                 config.paddingX = '2px'; // Maximize width for images
             } else {
                 config.gridGap = '1rem'; // Standard gap for larger screens

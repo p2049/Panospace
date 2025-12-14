@@ -880,7 +880,7 @@ const Profile = () => {
             </div >
 
             {/* Content */}
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 1rem' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: `0 ${layout.paddingX}` }}>
                 {activeTab === 'posts' && (
                     <>
 

@@ -24,6 +24,9 @@ const InfiniteGrid = ({
 
     // Calculate responsive column count based on window width
     const columnCount = useMemo(() => {
+        // Handle if columns is a direct number (from layoutEngine)
+        if (typeof columns === 'number') return columns;
+
         if (typeof window === 'undefined') return columns.mobile || 1;
         const width = window.innerWidth;
         if (width >= 1024) return columns.desktop || 3;
