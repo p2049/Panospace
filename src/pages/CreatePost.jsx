@@ -159,6 +159,30 @@ const CreatePost = () => {
     // Digital Collectibles State
     const [createSpaceCard, setCreateSpaceCard] = useState(false);
     const [showFeedPreview, setShowFeedPreview] = useState(false);
+
+    // Mobile Optimization State
+    const [isMobile, setIsMobile] = useState(false);
+    const [isLocationExpanded, setIsLocationExpanded] = useState(true);
+    const [isTagsPanelExpanded, setIsTagsPanelExpanded] = useState(true);
+
+    // Initial Mobile Check
+    useEffect(() => {
+        const checkMobile = () => {
+            const mobile = window.innerWidth <= 900;
+            setIsMobile(mobile);
+            // On mobile, collapse by default
+            if (mobile) {
+                setIsLocationExpanded(false);
+                setIsTagsPanelExpanded(false);
+            } else {
+                setIsLocationExpanded(true);
+                setIsTagsPanelExpanded(true);
+            }
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
     const [spaceCardData, setSpaceCardData] = useState({
         title: '',
         price: 0,
@@ -1125,12 +1149,41 @@ const CreatePost = () => {
                     />
 
                     {/* 2. Tags & Categories (Moved to Left) */}
-                    <TagCategoryPanel
-                        tags={tags}
-                        handleTagToggle={handleTagToggle}
-                        expandedCategories={expandedCategories}
-                        toggleCategory={toggleCategory}
-                    />
+                    {/* 2. Tags & Categories (Moved to Left) - Collapsible on Mobile */}
+                    <div style={{
+                        border: isMobile ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        background: isMobile ? 'rgba(0,0,0,0.3)' : 'transparent'
+                    }}>
+                        {isMobile && (
+                            <div
+                                onClick={() => setIsTagsPanelExpanded(!isTagsPanelExpanded)}
+                                style={{
+                                    padding: '1rem',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    cursor: 'pointer',
+                                    background: 'rgba(255,255,255,0.05)'
+                                }}
+                            >
+                                <span style={{ fontWeight: '600', color: tags.length > 0 ? '#7FFFD4' : '#fff' }}>
+                                    Tags & Categories {tags.length > 0 && `(${tags.length})`}
+                                </span>
+                                <span>{isTagsPanelExpanded ? '▲' : '▼'}</span>
+                            </div>
+                        )}
+
+                        {(isTagsPanelExpanded || !isMobile) && (
+                            <TagCategoryPanel
+                                tags={tags}
+                                handleTagToggle={handleTagToggle}
+                                expandedCategories={expandedCategories}
+                                toggleCategory={toggleCategory}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* RIGHT COLUMN: Post Details & Settings */}
@@ -1325,37 +1378,60 @@ const CreatePost = () => {
                             </label>
                         </div>
 
-                        <div className="location-grid" style={{ gap: '0.5rem' }}>
-                            <div className="location-input-wrapper">
-                                <FaMapMarkerAlt className="location-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="City"
-                                    value={location.city}
-                                    onChange={(e) => setLocation({ ...location, city: e.target.value })}
-                                    className="form-input location-input"
-                                />
+                        {/* Collapsible Location Grid */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <div
+                                onClick={() => setIsLocationExpanded(!isLocationExpanded)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '600',
+                                    color: '#aaa',
+                                    marginBottom: isLocationExpanded ? '0.5rem' : '0',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem 0'
+                                }}
+                            >
+                                <FaMapMarkerAlt />
+                                {isLocationExpanded ? 'Location' : 'Add Location'}
+                                <span style={{ marginLeft: 'auto', fontSize: '0.8rem' }}>
+                                    {isLocationExpanded ? '▲' : '▼'}
+                                </span>
                             </div>
-                            <div className="location-input-wrapper">
-                                <FaMapMarkerAlt className="location-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="State"
-                                    value={location.state}
-                                    onChange={(e) => setLocation({ ...location, state: e.target.value })}
-                                    className="form-input location-input"
-                                />
-                            </div>
-                            <div className="location-input-wrapper">
-                                <FaMapMarkerAlt className="location-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Country"
-                                    value={location.country}
-                                    onChange={(e) => setLocation({ ...location, country: e.target.value })}
-                                    className="form-input location-input"
-                                />
-                            </div>
+
+                            {isLocationExpanded && (
+                                <div className="location-grid" style={{ gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
+                                    <div className="location-input-wrapper">
+                                        <input
+                                            type="text"
+                                            placeholder="City"
+                                            value={location.city}
+                                            onChange={(e) => setLocation({ ...location, city: e.target.value })}
+                                            className="form-input location-input"
+                                        />
+                                    </div>
+                                    <div className="location-input-wrapper">
+                                        <input
+                                            type="text"
+                                            placeholder="State"
+                                            value={location.state}
+                                            onChange={(e) => setLocation({ ...location, state: e.target.value })}
+                                            className="form-input location-input"
+                                        />
+                                    </div>
+                                    <div className="location-input-wrapper">
+                                        <input
+                                            type="text"
+                                            placeholder="Country"
+                                            value={location.country}
+                                            onChange={(e) => setLocation({ ...location, country: e.target.value })}
+                                            className="form-input location-input"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -1831,6 +1907,7 @@ const CreatePost = () => {
                         width: 100% !important;
                         max-width: 100% !important;
                     }
+                    /* Reorder for mobile landscape too if needed, but keeping separate */
                     .desktop-publish { display: flex !important; }
                     .mobile-publish-btn { display: none !important; }
                     
@@ -1868,6 +1945,10 @@ const CreatePost = () => {
                         padding-right: 0;
                         width: 100%;
                         max-width: 100%;
+                    }
+                    /* Move form to top on mobile portrait */
+                    .right-column {
+                        order: -1;
                     }
                     .create-post-container {
                         overflow-x: hidden;
