@@ -569,7 +569,7 @@ const MobileNavigation = () => {
                             <FaArrowLeft size={18} />
                         </button>
                     )}
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>PANO HUB</h3>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CENTER</h3>
                 </div>
 
                 <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -768,7 +768,7 @@ const MobileNavigation = () => {
                                 gap: '0.4rem'
                             }}
                         >
-                            <FaStore size={12} /> HUB
+                            <FaStore size={12} /> CENTER
                         </button>
 
                         {/* Custom Feeds Button */}
