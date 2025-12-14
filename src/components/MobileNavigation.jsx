@@ -600,7 +600,7 @@ const MobileNavigation = () => {
                     position: 'absolute',
                     top: 'max(0.75rem, env(safe-area-inset-top))',
                     left: '1rem',
-                    right: '3.5rem',
+                    right: '4.5rem',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.5rem',
@@ -612,7 +612,13 @@ const MobileNavigation = () => {
                     {/* Standard Feed Toggles - Visible when NOT custom feed enabled or always visible but disabled? */}
                     {/* User wants them "back where they were". Originally they were separate buttons in the main header of the drawer. */}
 
-                    <div style={{ display: 'flex', width: '100%', gap: '0.4rem' }}>
+                    {/* Standard Feed Toggles - Grid Layout for alignment */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '0.4rem',
+                        width: '100%'
+                    }}>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -620,7 +626,6 @@ const MobileNavigation = () => {
                                 handleInteraction();
                             }}
                             style={{
-                                flex: 1,
                                 padding: '0.35rem 0.5rem',
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
@@ -651,7 +656,6 @@ const MobileNavigation = () => {
                                 handleInteraction();
                             }}
                             style={{
-                                flex: 1,
                                 padding: '0.35rem 0.5rem',
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
@@ -675,10 +679,7 @@ const MobileNavigation = () => {
                         >
                             {currentFeed === 'art' ? 'ART' : 'SOCIAL'}
                         </button>
-                    </div>
 
-                    {/* Hub & Custom Feed Toggles */}
-                    <div style={{ display: 'flex', width: '100%', gap: '0.4rem', marginTop: '0.5rem' }}>
                         {/* Hub Button */}
                         <button
                             onClick={(e) => {
@@ -686,8 +687,7 @@ const MobileNavigation = () => {
                                 toggleHubPanel();
                             }}
                             style={{
-                                flex: 1,
-                                padding: '0.35rem 0.8rem',
+                                padding: '0.35rem 0.5rem', // Reduced padding to fit text
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
                                 background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
@@ -717,13 +717,12 @@ const MobileNavigation = () => {
                                 toggleCustomFeedsPanel();
                             }}
                             style={{
-                                flex: 2, // Larger width
-                                padding: '0.35rem 0.8rem',
+                                padding: '0.35rem 0.2rem', // Minimal padding
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
                                 background: showCustomSelector ? accentColor : 'rgba(0,0,0,0.6)',
                                 color: showCustomSelector ? '#000' : accentColor,
-                                fontSize: '0.75rem',
+                                fontSize: '0.7rem', // Slightly smaller font
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
@@ -735,10 +734,10 @@ const MobileNavigation = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.4rem'
+                                gap: '0.2rem'
                             }}
                         >
-                            <FaFilter size={12} /> CUSTOM FEEDS
+                            <FaFilter size={10} /> CUSTOM
                         </button>
                     </div>
                 </div>
