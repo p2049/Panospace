@@ -4,7 +4,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AnimatePresence } from 'framer-motion';
 import OrientationGuard from './components/OrientationGuard';
 import MobileNavigation from './components/MobileNavigation';
-import BottomTabNavigation from './components/BottomTabNavigation';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import MotionWrapper from './components/MotionWrapper';
 import AppLoading from './components/AppLoading';
@@ -300,7 +299,6 @@ function App() {
                         </Suspense>
 
                         <MobileNavigation />
-                        <BottomTabNavigation />
                       </div>
                     </OrientationGuard>
                   </Router>
