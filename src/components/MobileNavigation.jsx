@@ -24,7 +24,8 @@ import {
     FaFilter,
     FaPlus,
     FaFire,
-    FaTrophy
+    FaTrophy,
+    FaArrowLeft
 } from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
@@ -60,6 +61,17 @@ const MobileNavigation = () => {
     const [showHubPanel, setShowHubPanel] = useState(false); // New Hub Panel
     const { feeds } = useCustomFeeds();
     const inactivityTimerRef = useRef(null);
+
+    // Mobile Vertical Detection
+    const [isMobileVertical, setIsMobileVertical] = useState(false);
+    useEffect(() => {
+        const checkLayout = () => {
+            setIsMobileVertical(window.innerWidth <= 768);
+        };
+        checkLayout();
+        window.addEventListener('resize', checkLayout);
+        return () => window.removeEventListener('resize', checkLayout);
+    }, []);
 
     // Auto-collapse logic REMOVED as per user request
     /*
@@ -368,22 +380,47 @@ const MobileNavigation = () => {
             <div style={{
                 position: 'fixed',
                 top: 0,
-                right: (isOpen && showCustomSelector) ? '300px' : '-320px', // Slides out to the left of the main drawer (which is 300px wide)
-                width: '260px',
+                // On vertical mobile (<=768), overlay the drawer (0). On desktop, side-by-side (300px)
+                right: (isOpen && showCustomSelector)
+                    ? (isMobileVertical ? '0' : '300px')
+                    : (isMobileVertical ? '-100%' : '-320px'),
+                width: isMobileVertical ? '100%' : '260px', // Full width on mobile
                 height: '100vh',
-                background: '#111111', // Solid background color
-                // backdropFilter: 'none', // Explicitly remove backdrop filter
+                background: '#111111',
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
                 transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: 9999, // Raised to match drawer and sit above backdrop
+                zIndex: isMobileVertical ? 10005 : 9999, // Higher z-index on mobile to overlay main drawer
                 paddingTop: '80px',
                 display: 'flex',
                 flexDirection: 'column',
                 pointerEvents: isOpen ? 'auto' : 'none'
             }} onClick={(e) => e.stopPropagation()}>
 
-                <div style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
+                <div style={{
+                    padding: '1rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    marginBottom: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                }}>
+                    {isMobileVertical && (
+                        <button
+                            onClick={() => setShowCustomSelector(false)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: accentColor,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: 0
+                            }}
+                        >
+                            <FaArrowLeft size={18} />
+                        </button>
+                    )}
                     <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM FEEDS</h3>
                 </div>
 
@@ -489,25 +526,49 @@ const MobileNavigation = () => {
             </div>
 
             {/* Hub Panel (New Secondary Panel) - Slides out to the left of the main drawer */}
-            {/* Uses same positioning logic as sidecar but controlled by showHubPanel */}
             <div style={{
                 position: 'fixed',
                 top: 0,
-                right: (isOpen && showHubPanel) ? '300px' : '-320px',
-                width: '260px',
+                right: (isOpen && showHubPanel)
+                    ? (isMobileVertical ? '0' : '300px')
+                    : (isMobileVertical ? '-100%' : '-320px'),
+                width: isMobileVertical ? '100%' : '260px',
                 height: '100vh',
                 background: '#111111',
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
                 transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: 9999,
+                zIndex: isMobileVertical ? 10005 : 9999,
                 paddingTop: '80px',
                 display: 'flex',
                 flexDirection: 'column',
                 pointerEvents: isOpen ? 'auto' : 'none'
             }} onClick={(e) => e.stopPropagation()}>
 
-                <div style={{ padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
+                <div style={{
+                    padding: '1rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    marginBottom: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                }}>
+                    {isMobileVertical && (
+                        <button
+                            onClick={() => setShowHubPanel(false)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: accentColor,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: 0
+                            }}
+                        >
+                            <FaArrowLeft size={18} />
+                        </button>
+                    )}
                     <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>PANO HUB</h3>
                 </div>
 
