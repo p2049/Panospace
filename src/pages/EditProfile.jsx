@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { updateProfile } from 'firebase/auth';
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch, limit, orderBy } from 'firebase/firestore';
 import { db, storage } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
@@ -438,6 +438,9 @@ const EditProfile = () => {
 
             await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
 
+            // Propagate updates to past content (Fire & Forget to avoid UI block)
+            updatePastContent(currentUser.uid, newPhotoURL, sanitizedUsername);
+
             // Invalidate cache so Profile page refetches
             invalidateProfileCache(currentUser.uid);
 
@@ -448,6 +451,68 @@ const EditProfile = () => {
             showToast("Could not save profile: " + error.message, 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Helper to propagate updates to recent posts/comments
+    const updatePastContent = async (uid, photoURL, displayName) => {
+        try {
+            const batch = writeBatch(db);
+            let opCount = 0;
+
+            // 1. Posts (Try with sort, fallback without if index missing)
+            const postsRef = collection(db, 'posts');
+            let qPosts;
+            try {
+                qPosts = query(postsRef, where('userId', '==', uid), orderBy('createdAt', 'desc'), limit(50));
+            } catch (e) {
+                qPosts = query(postsRef, where('userId', '==', uid), limit(50));
+            }
+
+            // Execute query safely
+            let postSnaps;
+            try {
+                postSnaps = await getDocs(qPosts);
+            } catch (e) {
+                // If index missing error, fallback to unsorted
+                const qFallback = query(postsRef, where('userId', '==', uid), limit(50));
+                postSnaps = await getDocs(qFallback);
+            }
+
+            postSnaps.forEach(doc => {
+                const p = doc.data();
+                if (p.authorPhotoUrl !== photoURL || p.authorName !== displayName) {
+                    batch.update(doc.ref, {
+                        authorPhotoUrl: photoURL,
+                        authorName: displayName,
+                        // Update legacy fields just in case
+                        userPhotoUrl: photoURL,
+                        userAvatar: photoURL
+                    });
+                    opCount++;
+                }
+            });
+
+            // 2. Comments
+            const commentsRef = collection(db, 'comments');
+            const qComments = query(commentsRef, where('userId', '==', uid), limit(50));
+            const commentSnaps = await getDocs(qComments);
+
+            commentSnaps.forEach(doc => {
+                batch.update(doc.ref, {
+                    authorPhotoUrl: photoURL,
+                    authorName: displayName,
+                    userPhotoUrl: photoURL
+                });
+                opCount++;
+            });
+
+            if (opCount > 0) {
+                await batch.commit();
+                console.log(`Updated ${opCount} past documents.`);
+            }
+        } catch (e) {
+            console.warn("Background update of past content failed (non-critical):", e);
         }
     };
 
