@@ -288,26 +288,33 @@
 /* Responsive */
 @media (max-width: 768px) {
     .post-ui--film35 .cyber-content-row {
-        height: 40vh;
-        min-height: 250px;
+        height: 30vh;
+        min-height: 200px;
     }
 
     .post-ui--film35 .cyber-image-container {
-        width: 60vh;
-        /* Use min() to ensure it fits on small screens like iPhone SE (375px) */
-        min-width: min(375px, 90vw);
+        width: 45vh;
+        /* Maintain 3:2 aspect ratio logic with height reduction */
+        min-width: min(300px, 85vw);
         max-width: none;
     }
 
+    /* Smaller tracks for mobile */
+    .post-ui--film35 .cyber-track {
+        height: 34px;
+        padding: 0 10px;
+    }
+
     .post-ui--film35 .cyber-leader {
-        height: calc(40vh + 88px);
-        min-height: 338px;
-        width: 80px;
-        /* Smaller leader on mobile */
+        height: calc(30vh + 68px);
+        /* 30vh + 2 * 34px */
+        min-height: 268px;
+        /* 200 + 68 */
+        width: 60px;
     }
 
     .post-ui--film35 .cyber-film-strip-scroll-container {
-        padding: 0 1rem;
+        padding: 0 0.5rem;
     }
 
     .post-ui--film35 .cyber-sprockets {
@@ -315,8 +322,16 @@
     }
 
     .post-ui--film35 .cyber-sprockets span {
-        width: 16px;
-        height: 22px;
+        width: 14px;
+        height: 20px;
+        border-radius: 3px;
+    }
+
+    /* Scale down text */
+    .post-ui--film35 .cyber-micro-text,
+    .post-ui--film35 .cyber-frame-number,
+    .post-ui--film35 .cyber-edge-code {
+        font-size: 8px;
     }
 }
 
