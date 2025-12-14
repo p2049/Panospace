@@ -33,9 +33,10 @@
     overflow-x: auto;
     overflow-y: hidden;
     gap: 0;
-    padding: 0 2rem 1rem 2rem;
-    /* Adjusted bottom padding */
+    padding: 0 2rem;
+    /* Symmetrical horizontal padding only - no extra bottom padding */
     align-items: center;
+    justify-content: flex-start;
 
     /* Smooth scrolling & performance */
     -webkit-overflow-scrolling: touch;
@@ -46,8 +47,8 @@
     scrollbar-width: thin;
     scrollbar-color: var(--electric-green) #111;
 
-    /* Scroll Snap - Keeping this as it's good UX */
-    scroll-snap-type: x mandatory;
+    /* FREE SCROLL - No snap for smooth continuous scrolling */
+    scroll-snap-type: none;
 }
 
 /* Scrollbar Styling */
@@ -80,8 +81,8 @@
     /* Subtle film grain texture REMOVED */
     background-color: var(--film-base);
 
-    /* Scroll Snap */
-    scroll-snap-align: center;
+    /* No snap for free scrolling */
+    scroll-snap-align: none;
 }
 
 /* Data Tracks (Top/Bottom) - Film Edges with Sprockets */
@@ -306,7 +307,7 @@
     }
 
     .post-ui--film35 .cyber-film-strip-scroll-container {
-        padding: 0 1rem 1rem 1rem;
+        padding: 0 1rem;
     }
 
     .post-ui--film35 .cyber-sprockets {
