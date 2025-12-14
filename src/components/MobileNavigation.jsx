@@ -744,7 +744,7 @@ const MobileNavigation = () => {
                 </div>
 
                 {/* Context Options - Kept in main drawer but visualized as list */}
-                <div style={{ marginTop: '90px' }}> {/* Push down below header buttons + toggles */}
+                <div style={{ marginTop: '1rem' }}> {/* Push down below header buttons + toggles */}
                     <ContextOptionsSection
                         currentContext={resolvedContext}
                         postOwnerId={resolvedPostOwnerId}
@@ -775,9 +775,9 @@ const MobileNavigation = () => {
                         {t('nav.search')}
                     </div>
 
-                    <div onClick={() => handleNavClick('/create-post')} style={navItemStyle}>
-                        <FaPlusSquare color="#7FFFD4" size={20} />
-                        {t('nav.create')}
+                    <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
+                        <FaUserCircle color="#7FFFD4" size={20} />
+                        {t('nav.profile') || 'Profile'}
                     </div>
 
                     {/* Market and Calendar Removed from Main List (Moved to Hub) */}
