@@ -245,6 +245,9 @@ export const useSearch = () => {
                     ? snapshot.docs[snapshot.docs.length - 1]
                     : null;
 
+            // Log result count for debugging
+            logger.log(`[useSearch] searchPosts returned ${docs.length} posts`);
+
             // Client-side filtering
             let filtered = docs;
 
@@ -370,7 +373,12 @@ export const useSearch = () => {
 
             // PHASE 3: Post Type Filter
             if (filters.postType) {
-                filtered = filtered.filter(post => (post.type || 'art') === filters.postType);
+                const beforeCount = filtered.length;
+                filtered = filtered.filter(post => {
+                    const postType = post.type || 'art'; // Default to 'art' if no type field
+                    return postType === filters.postType;
+                });
+                logger.log(`[useSearch] postType filter (${filters.postType}): ${beforeCount} -> ${filtered.length} posts`);
             }
 
             // Apply client-side sorting to handle derived fields (EXIF date) and ensure correct order
@@ -401,6 +409,7 @@ export const useSearch = () => {
                 }
             }
 
+            logger.log(`[useSearch] searchPosts final result: ${filtered.length} posts returned`);
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Post search error:', err);

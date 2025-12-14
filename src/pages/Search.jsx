@@ -803,14 +803,7 @@ const Search = () => {
             <SearchResults
                 viewMode={viewMode}
                 currentMode={currentMode}
-                results={{
-                    ...results,
-                    // Filter logic handled deep in SearchResults or here: 
-                    // If marketplace mode, we filter posts that are linked to active shop items?
-                    // Actually, the USER requested "Turn Explore into Marketplace Mode"
-                    // So we should pass isMarketplaceMode down to render Shop Item Cards instead of Post Cards.
-                    posts: results.posts.filter(p => (p.type || 'art') === searchMode)
-                }}
+                results={results}
                 isMarketplaceMode={isMarketplaceMode} // NEW
                 isMobile={isMobile}
                 selectedOrientation={selectedOrientation}

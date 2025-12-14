@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { FaGem, FaCheck, FaTrophy, FaImage, FaPalette, FaStore, FaCrown } from 'react-icons/fa';
+import { FaGem, FaCheck, FaTrophy, FaImage, FaPalette, FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { subscribeToUltra, getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import { useAuth } from '@/context/AuthContext';
 import UltraBadge from '@/components/monetization/UltraBadge';
 
 const UltraPage = () => {
     const { currentUser } = useAuth();
+    const navigate = useNavigate();
     const [tier, setTier] = useState(USER_TIERS.FREE);
     const [loading, setLoading] = useState(false);
 
@@ -31,10 +33,7 @@ const UltraPage = () => {
     const features = [
         { icon: FaTrophy, title: 'Create Contests & Events', description: 'Host time-drop events and community challenges' },
         { icon: FaImage, title: 'Limited Edition Prints', description: 'Create PhotoDex cards with rarity tiers and provenance tracking' },
-        { icon: FaPalette, title: 'RAW Editing Commissions', description: 'Accept paid editing requests from the community' },
-        { icon: FaStore, title: 'Shop Upgrades', description: 'Higher royalty split (75% vs 60%) and gallery print packs' },
-        { icon: FaCrown, title: 'Priority Feed Ranking', description: 'Small ethical boost in Explore feed' },
-        { icon: FaGem, title: 'Profile Customization', description: 'Custom gradients, animated banners, and exclusive badges' }
+        { icon: FaPalette, title: 'Commissions', description: 'Accept paid requests from the community' }
     ];
 
     if (tier === USER_TIERS.ULTRA || tier === USER_TIERS.PARTNER) {
@@ -66,20 +65,53 @@ const UltraPage = () => {
             background: 'linear-gradient(180deg, #000 0%, #1a1a1a 100%)',
             padding: '2rem'
         }}>
-            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate(-1)}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: 'none',
+                        color: '#fff',
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                >
+                    <FaArrowLeft size={18} />
+                </button>
+
                 {/* Hero Section */}
                 <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <FaGem size={48} color="#FFD700" />
+                        <FaGem size={48} style={{
+                            background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
+                            backgroundSize: '300% 300%',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            animation: 'iridescent-shimmer 6s ease infinite'
+                        }} />
                         <h1 style={{
                             color: '#fff',
                             fontSize: '3rem',
                             margin: 0,
-                            background: 'linear-gradient(45deg, #FFD700, #FFA500)',
+                            background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
+                            backgroundSize: '300% 300%',
                             WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
+                            WebkitTextFillColor: 'transparent',
+                            animation: 'iridescent-shimmer 6s ease infinite'
                         }}>
-                            Space Creator
+                            Ultra
                         </h1>
                     </div>
                     <p style={{ color: '#ccc', fontSize: '1.3rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -108,7 +140,12 @@ const UltraPage = () => {
                             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
                             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                         >
-                            <feature.icon size={32} color="#FFD700" style={{ marginBottom: '1rem' }} />
+                            <feature.icon size={32} style={{
+                                marginBottom: '1rem',
+                                background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent'
+                            }} />
                             <h3 style={{ color: '#fff', marginBottom: '0.5rem' }}>{feature.title}</h3>
                             <p style={{ color: '#888', lineHeight: '1.6' }}>{feature.description}</p>
                         </div>
@@ -117,17 +154,40 @@ const UltraPage = () => {
 
                 {/* Pricing */}
                 <div style={{
-                    background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                    position: 'relative',
                     borderRadius: '16px',
                     padding: '3rem',
                     textAlign: 'center',
                     maxWidth: '600px',
-                    margin: '0 auto'
+                    margin: '0 auto',
+                    background: '#1a1a1a',
+                    overflow: 'hidden'
                 }}>
-                    <h2 style={{ color: '#000', fontSize: '2.5rem', marginBottom: '1rem' }}>
+                    {/* Iridescent animated border */}
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '16px',
+                        padding: '2px',
+                        background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
+                        backgroundSize: '300% 300%',
+                        animation: 'iridescent-shimmer 6s ease infinite',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        maskComposite: 'exclude',
+                        pointerEvents: 'none'
+                    }} />
+
+                    <h2 style={{
+                        fontSize: '2.5rem',
+                        marginBottom: '1rem',
+                        background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>
                         $5.00<span style={{ fontSize: '1.2rem' }}>/month</span>
                     </h2>
-                    <p style={{ color: '#333', marginBottom: '2rem', fontSize: '1.1rem' }}>
+                    <p style={{ color: '#888', marginBottom: '2rem', fontSize: '1.1rem' }}>
                         Cancel anytime. No long-term commitment.
                     </p>
                     <button
@@ -135,15 +195,17 @@ const UltraPage = () => {
                         disabled={loading}
                         style={{
                             padding: '1.2rem 3rem',
-                            background: '#000',
-                            color: '#FFD700',
+                            background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
+                            backgroundSize: '300% 300%',
+                            color: '#000',
                             border: 'none',
                             borderRadius: '30px',
                             fontSize: '1.2rem',
                             fontWeight: 'bold',
                             cursor: loading ? 'not-allowed' : 'pointer',
                             transition: 'transform 0.2s',
-                            opacity: loading ? 0.7 : 1
+                            opacity: loading ? 0.7 : 1,
+                            animation: 'iridescent-shimmer 6s ease infinite'
                         }}
                         onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = 'scale(1.05)')}
                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -151,6 +213,17 @@ const UltraPage = () => {
                         {loading ? 'Processing...' : 'Upgrade via Wallet'}
                     </button>
                 </div>
+
+                {/* Iridescent Animation Keyframes */}
+                <style>{`
+                    @keyframes iridescent-shimmer {
+                        0% { background-position: 0% 50%; }
+                        25% { background-position: 50% 100%; }
+                        50% { background-position: 100% 50%; }
+                        75% { background-position: 50% 0%; }
+                        100% { background-position: 0% 50%; }
+                    }
+                `}</style>
             </div>
         </div>
     );

@@ -9,6 +9,7 @@ const Notifications = () => {
     const { currentUser } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [filter, setFilter] = useState('all'); // 'all', 'unread', 'magazine'
 
     useEffect(() => {
@@ -20,10 +21,21 @@ const Notifications = () => {
     const loadNotifications = async () => {
         try {
             setLoading(true);
+            setError(null);
+            console.log('[Notifications] Loading notifications for user:', currentUser.uid);
             const notifs = await getUserNotifications(currentUser.uid);
-            setNotifications(notifs);
+            console.log('[Notifications] Loaded:', notifs?.length || 0, 'notifications');
+            // Defensive: ensure we always have an array
+            setNotifications(Array.isArray(notifs) ? notifs : []);
         } catch (err) {
-            console.error('Error loading notifications:', err);
+            console.error('[Notifications] Error loading notifications:', err);
+            // Check if it's an index error
+            if (err.message?.includes('index')) {
+                setError('A Firestore index is being built. Please try again in a few minutes, or check the Firebase Console for the index status.');
+            } else {
+                setError(err.message || 'Failed to load notifications');
+            }
+            setNotifications([]);
         } finally {
             setLoading(false);
         }
@@ -68,7 +80,6 @@ const Notifications = () => {
 
     const filteredNotifications = notifications.filter(n => {
         if (filter === 'unread') return !n.read;
-        if (filter === 'magazine') return n.type?.startsWith('magazine') || n.type?.startsWith('submission');
         return true;
     });
 
@@ -78,6 +89,30 @@ const Notifications = () => {
         return (
             <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', color: '#fff' }}>
                 Loading notifications...
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', color: '#fff', padding: '2rem', textAlign: 'center' }}>
+                <FaBell style={{ fontSize: '3rem', marginBottom: '1rem', color: '#ff6b6b' }} />
+                <h2 style={{ marginBottom: '1rem' }}>Error Loading Notifications</h2>
+                <p style={{ color: '#888', marginBottom: '1.5rem', maxWidth: '400px' }}>{error}</p>
+                <button
+                    onClick={loadNotifications}
+                    style={{
+                        background: '#7FFFD4',
+                        color: '#000',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Retry
+                </button>
             </div>
         );
     }
@@ -133,7 +168,7 @@ const Notifications = () => {
 
                 {/* Filters */}
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {['all', 'unread', 'magazine'].map(f => (
+                    {['all', 'unread'].map(f => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}

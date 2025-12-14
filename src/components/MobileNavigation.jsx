@@ -12,6 +12,7 @@ import { useFeedStore } from '@/core/store/useFeedStore';
 import { useCustomFeeds } from '@/hooks/useCustomFeeds';
 import { useThemeStore } from '@/core/store/useThemeStore';
 import { useTranslation } from 'react-i18next';
+import { getUnreadCount } from '@/services/notificationService';
 import {
     FaHome,
     FaSearch,
@@ -25,7 +26,8 @@ import {
     FaPlus,
     FaFire,
     FaTrophy,
-    FaArrowLeft
+    FaArrowLeft,
+    FaBell
 } from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
@@ -59,6 +61,7 @@ const MobileNavigation = () => {
 
     const [showCustomSelector, setShowCustomSelector] = useState(false);
     const [showHubPanel, setShowHubPanel] = useState(false); // New Hub Panel
+    const [unreadNotifications, setUnreadNotifications] = useState(0); // Notification count
     const { feeds } = useCustomFeeds();
     const inactivityTimerRef = useRef(null);
 
@@ -72,6 +75,25 @@ const MobileNavigation = () => {
         window.addEventListener('resize', checkLayout);
         return () => window.removeEventListener('resize', checkLayout);
     }, []);
+
+    // Load unread notification count
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const loadNotificationCount = async () => {
+            try {
+                const count = await getUnreadCount(currentUser.uid);
+                setUnreadNotifications(count);
+            } catch (err) {
+                console.error('Error loading notification count:', err);
+            }
+        };
+
+        loadNotificationCount();
+        // Poll for updates every 30 seconds
+        const interval = setInterval(loadNotificationCount, 30000);
+        return () => clearInterval(interval);
+    }, [currentUser]);
 
     // Auto-collapse logic REMOVED as per user request
     /*
@@ -624,7 +646,6 @@ const MobileNavigation = () => {
                         </div>
                     </button>
 
-                    {/* Events (Hub Link) */}
                     <button
                         onClick={() => handleNavClick('/events/all')}
                         style={{
@@ -647,6 +668,47 @@ const MobileNavigation = () => {
                             <div style={{ fontWeight: 'bold' }}>Events</div>
                             <div style={{ fontSize: '0.7rem', color: '#888' }}>Curated feeds & contests</div>
                         </div>
+                    </button>
+
+                    {/* Notifications */}
+                    <button
+                        onClick={() => handleNavClick('/notifications')}
+                        style={{
+                            padding: '0.8rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.03)',
+                            color: '#fff',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem',
+                            transition: 'all 0.2s',
+                            position: 'relative'
+                        }}
+                    >
+                        <FaBell size={16} color={accentColor} />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 'bold' }}>Notifications</div>
+                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Activity & updates</div>
+                        </div>
+                        {unreadNotifications > 0 && (
+                            <span style={{
+                                background: '#00ff00',
+                                color: '#000',
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                minWidth: '20px',
+                                textAlign: 'center',
+                                boxShadow: '0 0 8px rgba(0, 255, 0, 0.8)'
+                            }}>
+                                {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                            </span>
+                        )}
                     </button>
 
                 </div>

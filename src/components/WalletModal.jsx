@@ -68,9 +68,14 @@ const WalletModal = ({ onClose }) => {
                 background: 'rgba(0,0,0,0.8)',
                 backdropFilter: 'blur(8px)',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 justifyContent: 'center',
-                zIndex: 2000
+                zIndex: 2000,
+                overflowY: 'auto',
+                paddingTop: '5vh',
+                paddingBottom: '2rem',
+                paddingLeft: '1rem',
+                paddingRight: '1rem'
             }}
         >
             <div
@@ -239,6 +244,72 @@ const WalletModal = ({ onClose }) => {
                                     Minimum withdrawal amount is $25.00
                                 </div>
                             )}
+
+                            {/* Upgrade to Ultra Button */}
+                            <div style={{
+                                marginTop: '1.5rem',
+                                position: 'relative',
+                                borderRadius: '12px',
+                                overflow: 'hidden'
+                            }}>
+                                {/* Iridescent animated border */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    borderRadius: '12px',
+                                    padding: '2px',
+                                    background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
+                                    backgroundSize: '300% 300%',
+                                    animation: 'iridescent-border 6s ease infinite',
+                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                    WebkitMaskComposite: 'xor',
+                                    maskComposite: 'exclude',
+                                    pointerEvents: 'none'
+                                }} />
+
+                                <button
+                                    onClick={() => {
+                                        onClose();
+                                        window.location.href = '/ultra';
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'rgba(0, 0, 0, 0.8)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: '0.95rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <span style={{
+                                        background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0)',
+                                        backgroundSize: '300% 300%',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        animation: 'iridescent-border 6s ease infinite'
+                                    }}>✦</span>
+                                    Upgrade to Ultra
+                                </button>
+                            </div>
+
+                            {/* Iridescent Animation Keyframes */}
+                            <style>{`
+                                @keyframes iridescent-border {
+                                    0% { background-position: 0% 50%; }
+                                    25% { background-position: 50% 100%; }
+                                    50% { background-position: 100% 50%; }
+                                    75% { background-position: 50% 0%; }
+                                    100% { background-position: 0% 50%; }
+                                }
+                            `}</style>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

@@ -63,6 +63,30 @@
             ]
         },
         {
+            "collectionGroup": "events",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "active",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "visibleDate",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "events_app",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "visibleDate",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
             "collectionGroup": "eventSubmissions",
             "queryScope": "COLLECTION",
             "fields": [

@@ -27,8 +27,13 @@ const FeedPostCard = ({ post, contextPosts }) => {
             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
         >
             <div style={{ width: '200px', height: '200px', flexShrink: 0, background: '#111' }}>
-                {post.images?.[0]?.url || post.imageUrl ? (
-                    <img src={post.images?.[0]?.url || post.imageUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {(post.thumbnailUrls?.[0] || post.images?.[0]?.thumbnailUrl || post.images?.[0]?.url || post.imageUrls?.[0] || post.imageUrl) ? (
+                    <img
+                        src={post.thumbnailUrls?.[0] || post.images?.[0]?.thumbnailUrl || post.images?.[0]?.url || post.imageUrls?.[0] || post.imageUrl}
+                        alt=""
+                        loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaImage color="#333" /></div>
                 )}

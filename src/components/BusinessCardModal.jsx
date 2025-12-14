@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaEnvelope, FaGlobe, FaBriefcase, FaMapMarkerAlt, FaCopy, FaCheck, FaImage, FaExchangeAlt } from 'react-icons/fa';
+import { FaTimes, FaEnvelope, FaGlobe, FaBriefcase, FaMapMarkerAlt, FaCopy, FaCheck, FaImage, FaExchangeAlt, FaPhone } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -21,8 +21,18 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
         cardImageUrl: '',
         fullCardImageUrl: '',
         layoutMode: 'split', // 'split' or 'full'
-        bio: '' // New Bio field
+        bio: '',
+        cardDisplayName: '',
+        phoneNumber: '' // Optional phone number
     });
+
+    // Extract emojis from username
+    const extractEmojis = (str) => {
+        if (!str) return '';
+        const emojiRegex = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
+        const matches = str.match(emojiRegex);
+        return matches ? matches.join('') : '';
+    };
 
     // Initialize data from user profile
     useEffect(() => {
@@ -36,7 +46,9 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                 cardImageUrl: user.cardImageUrl || '',
                 fullCardImageUrl: user.fullCardImageUrl || '',
                 layoutMode: user.cardLayoutMode || 'split',
-                bio: user.bio || ''
+                bio: user.bio || '',
+                cardDisplayName: user.cardDisplayName || '',
+                phoneNumber: user.phoneNumber || ''
             });
         }
     }, [user]);
@@ -61,7 +73,9 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                 cardImageUrl: cardData.cardImageUrl,
                 fullCardImageUrl: cardData.fullCardImageUrl,
                 cardLayoutMode: cardData.layoutMode,
-                bio: cardData.bio // Save Bio
+                bio: cardData.bio,
+                cardDisplayName: cardData.cardDisplayName,
+                phoneNumber: cardData.phoneNumber
             });
             setIsEditing(false);
             // Optional: Show success toast
@@ -95,10 +109,14 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
             background: 'rgba(0, 0, 0, 0.85)',
             backdropFilter: 'blur(5px)',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'center',
             zIndex: 1100,
-            padding: '1rem'
+            paddingTop: '5vh',
+            paddingBottom: '2rem',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+            overflowY: 'auto'
         }}>
             {/* Card Container - 3.5 x 2 Ratio (1.75) */}
             <div style={{
@@ -260,32 +278,88 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                         }}>
                             {/* Name & Title */}
                             <div style={{ marginBottom: '1rem' }}>
-                                <h2 style={{
-                                    margin: '0 0 0.25rem 0',
-                                    fontSize: '1.4rem',
-                                    color: usernameColor,
-                                    fontWeight: '800',
-                                    lineHeight: '1.2',
-                                    fontFamily: 'var(--font-family-heading)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.02em'
-                                }}>
-                                    {user.displayName || user.username}
-                                </h2>
+                                {isEditing ? (
+                                    <>
+                                        <input
+                                            type="text"
+                                            value={cardData.cardDisplayName}
+                                            onChange={(e) => setCardData({ ...cardData, cardDisplayName: e.target.value })}
+                                            placeholder={user.displayName || user.username}
+                                            style={{
+                                                width: '100%',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                color: usernameColor,
+                                                borderRadius: '4px',
+                                                padding: '0.5rem',
+                                                fontSize: '1.2rem',
+                                                fontWeight: '800',
+                                                marginBottom: '0.5rem',
+                                                fontFamily: 'var(--font-family-heading)'
+                                            }}
+                                        />
+                                        <div style={{ fontSize: '0.7rem', color: '#888', marginBottom: '0.5rem' }}>
+                                            Custom display name (leave blank to use your username)
+                                        </div>
+                                    </>
+                                ) : (
+                                    <h2 style={{
+                                        margin: '0 0 0.25rem 0',
+                                        fontSize: '1.4rem',
+                                        color: usernameColor,
+                                        fontWeight: '800',
+                                        lineHeight: '1.2',
+                                        fontFamily: 'var(--font-family-heading)',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.02em',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}>
+                                        {cardData.cardDisplayName || user.displayName || user.username}
+                                        {/* Show emojis from username if any */}
+                                        {extractEmojis(user.username) && !cardData.cardDisplayName?.includes(extractEmojis(user.username)) && (
+                                            <span style={{ fontSize: '1.2rem' }}>{extractEmojis(user.username)}</span>
+                                        )}
+                                    </h2>
+                                )}
                                 <div style={{
-                                    color: bioColor, // Use bioColor for subtitle too for coherence
+                                    color: bioColor,
                                     fontSize: '0.85rem',
                                     fontWeight: '500',
                                     opacity: 0.9
                                 }}>
-                                    {cardData.businessType || 'Creator'}
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            value={cardData.businessType}
+                                            onChange={(e) => setCardData({ ...cardData, businessType: e.target.value })}
+                                            placeholder="Your title (e.g., Photographer, Artist)"
+                                            style={{
+                                                width: '100%',
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                color: bioColor,
+                                                borderRadius: '4px',
+                                                padding: '0.25rem 0.5rem',
+                                                fontSize: '0.85rem'
+                                            }}
+                                        />
+                                    ) : (
+                                        cardData.businessType || 'Creator'
+                                    )}
                                 </div>
                             </div>
 
                             {/* Details */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8rem', color: '#ccc' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ color: usernameColor, width: '16px', opacity: 0.7 }}>@</span>
+                                    {/* Show emoji from username instead of @ if present */}
+                                    {extractEmojis(user.username) ? (
+                                        <span style={{ width: '16px' }}>{extractEmojis(user.username).charAt(0)}</span>
+                                    ) : (
+                                        <span style={{ color: usernameColor, width: '16px', opacity: 0.7 }}>@</span>
+                                    )}
                                     <span>{user.username}</span>
                                 </div>
 
@@ -320,6 +394,47 @@ const BusinessCardModal = ({ isOpen, onClose, user }) => {
                                         >
                                             {cardData.website.replace(/^https?:\/\//, '')}
                                         </a>
+                                    </div>
+                                )}
+
+                                {/* Phone Number - only shows if user has added one */}
+                                {cardData.phoneNumber && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%' }}>
+                                        <FaPhone size={12} style={{ color: usernameColor, opacity: 0.7, minWidth: '12px' }} />
+                                        <a
+                                            href={`tel:${cardData.phoneNumber}`}
+                                            style={{ color: '#ccc', textDecoration: 'none' }}
+                                        >
+                                            {cardData.phoneNumber}
+                                        </a>
+                                        <button
+                                            onClick={() => handleCopy(cardData.phoneNumber, 'phone')}
+                                            style={{ background: 'none', border: 'none', color: copiedField === 'phone' ? 'var(--ice-mint)' : '#444', cursor: 'pointer', padding: 0 }}
+                                        >
+                                            {copiedField === 'phone' ? <FaCheck size={10} /> : <FaCopy size={10} />}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Phone Number Input when Editing */}
+                                {isEditing && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', maxWidth: '100%' }}>
+                                        <FaPhone size={12} style={{ color: usernameColor, opacity: 0.7, minWidth: '12px' }} />
+                                        <input
+                                            type="tel"
+                                            value={cardData.phoneNumber}
+                                            onChange={(e) => setCardData({ ...cardData, phoneNumber: e.target.value })}
+                                            placeholder="Phone number (optional)"
+                                            style={{
+                                                flex: 1,
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                color: '#ccc',
+                                                borderRadius: '4px',
+                                                padding: '0.25rem 0.5rem',
+                                                fontSize: '0.8rem'
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </div>

@@ -26,10 +26,26 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
     const isFiltered = selectedOrientation || selectedAspectRatio;
 
     // OPTIMIZATION: Prioritize thumbnail URL for grid views
-    // Fallback to full URL only if no thumbnail exists
-    const displaySrc = post.thumbnailUrl || post.items?.[0]?.thumbnailUrl || post.items?.[0]?.url || post.imageUrl;
-    // Use previewUrl for the blur placeholder if available
-    const placeholderSrc = post.previewUrl || post.items?.[0]?.previewUrl;
+    // Post structure from Firestore:
+    // - images: [{url, thumbnailUrl, tinyUrl, ...}]
+    // - imageUrls: [url1, url2, ...]
+    // - thumbnailUrls: [thumb1, thumb2, ...]
+    const displaySrc =
+        post.thumbnailUrls?.[0] ||           // Root-level thumbnail array
+        post.images?.[0]?.thumbnailUrl ||     // First image in images array
+        post.images?.[0]?.url ||              // Full URL from images array
+        post.imageUrls?.[0] ||                // Root-level URL array
+        post.thumbnailUrl ||                  // Legacy: root thumbnailUrl
+        post.items?.[0]?.thumbnailUrl ||      // Legacy: items array
+        post.items?.[0]?.url ||               // Legacy: items URL
+        post.imageUrl;                        // Legacy: single imageUrl
+
+    // Use previewUrl or tinyUrl for the blur placeholder if available
+    const placeholderSrc =
+        post.images?.[0]?.tinyUrl ||
+        post.images?.[0]?.thumbnailUrl ||
+        post.previewUrl ||
+        post.items?.[0]?.previewUrl;
 
     return (
         <div

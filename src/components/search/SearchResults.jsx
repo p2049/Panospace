@@ -134,15 +134,21 @@ const SearchResults = ({
 
             {/* No Results State */}
             {
-                !isSearching && !error && (
-                    currentMode === 'posts' ? results.posts.length === 0 :
-                        currentMode === 'users' ? results.users.length === 0 :
-                            currentMode === 'galleries' ? results.galleries.length === 0 :
-                                currentMode === 'collections' ? results.collections.length === 0 :
-                                    currentMode === 'contests' ? results.contests.length === 0 :
-                                        currentMode === 'events' ? results.events.length === 0 :
-                                            currentMode === 'spacecards' ? results.spacecards.length === 0 : true
-                ) && hasSearched && (
+                !isSearching && !error && hasSearched && (() => {
+                    // Calculate if current mode has no results
+                    const isEmpty =
+                        currentMode === 'posts' ? results.posts?.length === 0 :
+                            currentMode === 'users' ? results.users?.length === 0 :
+                                currentMode === 'galleries' ? results.galleries?.length === 0 :
+                                    currentMode === 'collections' ? results.collections?.length === 0 :
+                                        currentMode === 'contests' ? results.contests?.length === 0 :
+                                            currentMode === 'events' ? results.events?.length === 0 :
+                                                currentMode === 'spacecards' ? results.spacecards?.length === 0 :
+                                                    currentMode === 'museums' ? results.museums?.length === 0 :
+                                                        false; // Default to false (has results) for unknown modes
+
+                    return isEmpty;
+                })() && (
                     <div style={{
                         width: '100%',
                         minHeight: '60vh',
