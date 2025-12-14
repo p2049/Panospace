@@ -1,10 +1,22 @@
 [
     {
         "origin": [
-            "*"
+            "http://localhost:5173",
+            "http://localhost:5175",
+            "https://panospace.app",
+            "https://panospace-7v4ucn.web.app",
+            "https://panospace-7v4ucn.firebaseapp.com",
+            "https://*.vercel.app"
         ],
         "method": [
-            "GET"
+            "GET",
+            "HEAD",
+            "OPTIONS"
+        ],
+        "responseHeader": [
+            "Content-Type",
+            "Access-Control-Allow-Origin",
+            "x-goog-resumable"
         ],
         "maxAgeSeconds": 3600
     }

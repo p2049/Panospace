@@ -36,15 +36,25 @@ export const FilmSlideRenderer = {
             // imageLoader/preloadImage returns void, we generally need the element.
             // We'll create a new Image.
             const img = new Image();
-            img.crossOrigin = "anonymous";
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = resolve; // Fallback to black if fail
+            img.crossOrigin = "anonymous"; // CRITICAL: Must be before src
+
+            const loaded = await new Promise<boolean>((resolve) => {
+                img.onload = () => resolve(true);
+                img.onerror = (e) => {
+                    console.error("Canvas Image Load Failed:", imgSrc, e);
+                    resolve(false);
+                };
                 img.src = imgSrc;
             });
-            imgBitmap = img;
+
+            if (loaded) {
+                imgBitmap = img;
+            } else {
+                imgBitmap = null; // Ensure we don't try to draw a broken image
+            }
         } catch (e) {
-            console.warn("Failed to load image for render", imgSrc);
+            console.warn("Exception loading image for render", imgSrc, e);
+            imgBitmap = null;
         }
 
         // 3. Draw Cyber-Film Layout
