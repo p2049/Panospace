@@ -1,3 +1,13 @@
+/**
+ * ⚠️ CREATE POST LAYOUT CONTRACT ⚠️
+ *
+ * - Header must NEVER scroll
+ * - Body is flex:1 with overflow hidden
+ * - Left & Right columns own ALL vertical scrolling
+ * - No height math (calc / max-height / 100%) inside columns
+ *
+ * Do not modify layout containers without understanding this contract.
+ */
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -162,7 +172,7 @@ const CreatePost = () => {
 
     // Mobile Optimization State
     const [isMobile, setIsMobile] = useState(false);
-    const [isLocationExpanded, setIsLocationExpanded] = useState(true);
+    const [isLocationExpanded, setIsLocationExpanded] = useState(false);
     const [isTagsPanelExpanded, setIsTagsPanelExpanded] = useState(true);
 
     // Initial Mobile Check
@@ -170,12 +180,10 @@ const CreatePost = () => {
         const checkMobile = () => {
             const mobile = window.innerWidth <= 900;
             setIsMobile(mobile);
-            // On mobile, collapse by default
+            // On mobile, collapse tags by default
             if (mobile) {
-                setIsLocationExpanded(false);
                 setIsTagsPanelExpanded(false);
             } else {
-                setIsLocationExpanded(true);
                 setIsTagsPanelExpanded(true);
             }
         };
@@ -879,43 +887,9 @@ const CreatePost = () => {
                 showProgress={loading}
                 progress={progress}
                 style={{ zIndex: 2000 }}
-                bottomSlot={
-                    slides.length > 0 && (
-                        <div style={{
-                            width: '100%',
-                            padding: '0.5rem 1rem',
-                            background: 'rgba(0,0,0,0.8)',
-                            backdropFilter: 'blur(10px)',
-                            borderBottom: '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                            <ThumbnailStrip
-                                slides={slides}
-                                activeSlideIndex={activeSlideIndex}
-                                setActiveSlideIndex={setActiveSlideIndex}
-                                handleDragStart={handleDragStart}
-                                handleDragOver={handleDragOver}
-                                handleDrop={handleDrop}
-                                moveSlide={moveSlide}
-                            />
-                        </div>
-                    )
-                }
             />
 
-            {/* Progress Dots (Desktop Fixed) */}
-            <div className="progress-dots-container">
-                <div className={`progress-dot ${slides.length > 0 ? 'completed' : 'active'}`} title="Add Images">
-                    <div className="dot-icon"><FaImages size={12} /></div>
-                    <div className="dot-line"></div>
-                </div>
-                <div className={`progress-dot ${slides.length > 0 ? (title.trim().length > 0 ? 'completed' : 'active') : ''}`} title="Add Title (Optional)">
-                    <div className="dot-icon"><FaPen size={12} /></div>
-                    <div className="dot-line"></div>
-                </div>
-                <div className={`progress-dot ${title.trim().length > 0 ? 'active' : ''}`} title="Ready">
-                    <div className="dot-icon"><FaCheckCircle size={12} /></div>
-                </div>
-            </div>
+            {/* Progress Dots removed to fix layout gap */}
 
             {/* Mobile Publish Button - Positioned via CSS */}
             <button
@@ -933,7 +907,7 @@ const CreatePost = () => {
 
             <div className="create-post-layout">
                 {/* LEFT COLUMN: Images, Previews, Tags */}
-                <div className="left-column">
+                <div className="preview-column">
                     {/* Loading Indicator for Photo Processing */}
                     {isProcessingStack && (
                         <div style={{
@@ -963,18 +937,19 @@ const CreatePost = () => {
                     )}
 
                     {/* 1. Image Carousel & Stack Controls */}
-                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
+                    <div style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
 
                         {/* Vertical Stack Button */}
                         <label style={{
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '8px',
-                            padding: '0.6rem 1rem',
+                            padding: '0.6rem 0.8rem', /* Reduced horizontal padding */
                             color: '#e0e0e0',
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            display: 'flex', alignItems: 'center', gap: '0.4rem', /* Reduced gap */
                             cursor: 'pointer', fontSize: '0.85rem',
-                            position: 'relative'
+                            position: 'relative',
+                            whiteSpace: 'nowrap' /* Prevent text wrap */
                         }}>
                             <FaArrowsAltV /> Vertical Stack
                             <input
@@ -991,10 +966,11 @@ const CreatePost = () => {
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '8px',
-                            padding: '0.6rem 1rem',
+                            padding: '0.6rem 0.8rem',
                             color: '#e0e0e0',
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            cursor: 'pointer', fontSize: '0.85rem'
+                            display: 'flex', alignItems: 'center', gap: '0.4rem',
+                            cursor: 'pointer', fontSize: '0.85rem',
+                            whiteSpace: 'nowrap'
                         }}>
                             <FaArrowsAltH /> Horizontal Row
                             <input
@@ -1011,10 +987,11 @@ const CreatePost = () => {
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '8px',
-                            padding: '0.6rem 1rem',
+                            padding: '0.6rem 0.8rem',
                             color: '#e0e0e0',
-                            display: 'flex', alignItems: 'center', gap: '0.5rem',
-                            cursor: 'pointer', fontSize: '0.85rem'
+                            display: 'flex', alignItems: 'center', gap: '0.4rem',
+                            cursor: 'pointer', fontSize: '0.85rem',
+                            whiteSpace: 'nowrap'
                         }}>
                             <FaThLarge /> Grid Collage
                             <input
@@ -1150,44 +1127,19 @@ const CreatePost = () => {
 
                     {/* 2. Tags & Categories (Moved to Left) */}
                     {/* 2. Tags & Categories (Moved to Left) - Collapsible on Mobile */}
-                    <div style={{
-                        border: isMobile ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        background: isMobile ? 'rgba(0,0,0,0.3)' : 'transparent'
-                    }}>
-                        {isMobile && (
-                            <div
-                                onClick={() => setIsTagsPanelExpanded(!isTagsPanelExpanded)}
-                                style={{
-                                    padding: '1rem',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    cursor: 'pointer',
-                                    background: 'rgba(255,255,255,0.05)'
-                                }}
-                            >
-                                <span style={{ fontWeight: '600', color: tags.length > 0 ? '#7FFFD4' : '#fff' }}>
-                                    Tags & Categories {tags.length > 0 && `(${tags.length})`}
-                                </span>
-                                <span>{isTagsPanelExpanded ? '▲' : '▼'}</span>
-                            </div>
-                        )}
-
-                        {(isTagsPanelExpanded || !isMobile) && (
-                            <TagCategoryPanel
-                                tags={tags}
-                                handleTagToggle={handleTagToggle}
-                                expandedCategories={expandedCategories}
-                                toggleCategory={toggleCategory}
-                            />
-                        )}
+                    {/* 2. Tags & Categories */}
+                    <div style={{ marginTop: '1rem' }}>
+                        <TagCategoryPanel
+                            tags={tags}
+                            handleTagToggle={handleTagToggle}
+                            expandedCategories={expandedCategories}
+                            toggleCategory={toggleCategory}
+                        />
                     </div>
                 </div>
 
                 {/* RIGHT COLUMN: Post Details & Settings */}
-                <div className="right-column">
+                <div className="form-column">
                     <div className="form-section" style={{
                         padding: '0.75rem 0.75rem 0.75rem',
                         border: '1px solid rgba(127, 255, 212, 0.15)',
@@ -1617,17 +1569,13 @@ const CreatePost = () => {
                 
                 .create-post-container * { box-sizing: border-box; }
                 .create-post-container {
-                    min-height: 100dvh;
+                    height: 100vh; /* 🔒 ROOT LOCK */
                     background: var(--black);
                     color: #fff;
-                    padding-bottom: 80px;
                     display: flex;
                     flex-direction: column;
-                    position: relative;
-                    overflow-x: hidden;
-                    overflow-x: hidden;
+                    overflow: hidden; /* 🔒 NO SCROLL ON ROOT */
                     width: 100%;
-                    max-width: 100vw;
                 }
                 .header-btn, .header-btn-primary {
                     padding: 0.6rem 1.2rem;
@@ -1675,40 +1623,39 @@ const CreatePost = () => {
                 }
 
                 .create-post-layout {
+                    flex: 1 1 auto; /* 🔒 FILL REMAINING SPACE */
                     display: grid;
-                    grid-template-columns: 480px 1fr;
+                    grid-template-columns: 480px 1fr; /* Restored column widths */
                     gap: 2.75rem;
                     max-width: 1400px;
                     margin: 0 auto;
-                    margin-top: 1rem;
-                    padding: 2rem;
+                    padding: 0; /* 🔒 NO PADDING ON WRAPPER */
                     width: 100%;
-                    height: calc(100dvh - 70px);
-                    overflow: hidden;
-                    overflow-y: hidden;
+                    height: auto; /* 🔒 NO HEIGHT MATH */
+                    overflow: hidden; /* 🔒 TRAP CHILD SCROLL */
                     position: relative;
                     z-index: 1;
                 }
 
-                .left-column {
-                    height: 100%;
-                    overflow-y: auto;
+                .preview-column {
+                    height: 100%; /* 🔒 FULL HEIGHT */
+                    overflow-y: auto; /* 🔒 INDEPENDENT SCROLL */
+                    overflow-x: hidden;
                     display: flex;
                     flex-direction: column;
                     gap: 1rem;
-                    padding-right: 0.5rem;
-                    width: 100%;
-                    max-width: 100%;
+                    padding: 1.5rem 1rem 4rem 0.5rem; /* Gap at top, spacing at bottom */
                     box-sizing: border-box;
+                    scrollbar-gutter: stable; /* 🔒 PREVENTS LAYOUT SHIFT/BLINKING */
                 }
 
-                .right-column {
-                    height: 100%;
-                    overflow-y: auto;
-                    padding-right: 0.5rem;
-                    width: 100%;
-                    max-width: 100%;
+                .form-column {
+                    height: 100%; /* 🔒 FULL HEIGHT */
+                    overflow-y: auto; /* 🔒 INDEPENDENT SCROLL */
+                    overflow-x: hidden;
+                    padding: 1.5rem 1rem 4rem 0.5rem; /* Gap at top, spacing at bottom */
                     box-sizing: border-box;
+                    scrollbar-gutter: stable; /* 🔒 PREVENTS LAYOUT SHIFT/BLINKING */
                 }
 
                 .form-section {
