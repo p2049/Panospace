@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { usePreferenceLearning } from '@/hooks/usePersonalizedFeed';
 import { FaStar, FaRegStar, FaSmile, FaRegSmile } from 'react-icons/fa';
 
-const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }) => {
+const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, showCount = true }) => {
     const { currentUser } = useAuth();
     const [userRating, setUserRating] = useState(0); // User's rating (1-5)
     const [averageRating, setAverageRating] = useState(0);
@@ -193,7 +193,7 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
                 ) : (
                     <FaRegSmile size={24} style={{ color: 'rgba(127, 255, 212, 0.5)' }} />
                 )}
-                <span style={{ color: '#7FFFD4' }}>{likeCount > 0 ? likeCount : ''}</span>
+                {showCount && <span style={{ color: '#7FFFD4' }}>{likeCount > 0 ? likeCount : ''}</span>}
             </button>
         );
     }
@@ -262,7 +262,7 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true }
             </div>
 
             {/* Compact Rating Info */}
-            {totalVotes > 0 && (
+            {showCount && totalVotes > 0 && (
                 <span style={{
                     color: '#7FFFD4',
                     fontSize: '0.75rem',

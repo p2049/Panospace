@@ -1,22 +1,9 @@
 
 import React, { useRef, useEffect, useState } from 'react';
+import { BRAND_COLORS as COLORS, CITY_THEMES } from '@/core/constants/cityThemes';
 
 // --- PANOSPACE BRAND PALETTE ---
-const COLORS = {
-    iceWhite: '#F2F7FA',
-    auroraBlue: '#7FDBFF',
-    ionBlue: '#1B82FF',
-    nebulaPink: '#FFB7D5',
-    solarPink: '#FF5C8A',
-    cosmicPeriwinkle: '#A7B6FF',
-    deepOrbitPurple: '#5A3FFF',
-    stellarOrange: '#FF914D',
-    classicMint: '#7FFFD4',
-    auroraMint: '#8CFFE9',
-    darkNebula: '#0A1A3A',
-    voidPurple: '#2A0E61',
-    black: '#000000'
-};
+// Imported from @/core/constants/cityThemes
 
 // --- DETERMINISTIC STATIC CITY GENERATOR ---
 // "The skyline must always appear identical"
@@ -62,7 +49,7 @@ const GENERATE_STATIC_CITY = () => {
 const STATIC_CITY = GENERATE_STATIC_CITY();
 
 // --- THEME CONFIGURATIONS ---
-const CITY_THEMES = {
+/* const CITY_THEMES = {
     // 1. Galaxy City (Formerly Vaporwave)
     'city_vaporwave': {
         sky: [COLORS.voidPurple, COLORS.deepOrbitPurple],
@@ -294,7 +281,7 @@ const CITY_THEMES = {
             type: 'festival_terrain' // Mountains sides, Ocean back
         }
     }
-};
+}; */
 
 // --- RENDER CACHE (Module Scope) ---
 const CITY_RENDER_CACHE = new Map();

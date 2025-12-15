@@ -737,7 +737,10 @@ const Search = () => {
             currentMode={currentMode}
             isMobileFiltersOpen={isMobileFiltersOpen}
             onMobileFilterToggle={setIsMobileFiltersOpen}
+            isMobile={isMobile}
             onScroll={handleScroll}
+            isMarketplaceMode={isMarketplaceMode} // NEW: Pass to Panels
+            onMarketplaceToggle={setIsMarketplaceMode} // NEW: Pass to Panels
         >
             {/* Active Museum Filter Indicator */}
             {selectedMuseum && (
@@ -798,6 +801,7 @@ const Search = () => {
                 setSearchMode={setSearchMode}
                 isMarketplaceMode={isMarketplaceMode} // NEW
                 setIsMarketplaceMode={setIsMarketplaceMode} // NEW
+                hasActiveFilters={selectedTags.length > 0 || selectedPark || selectedDate || selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio || selectedMuseum}
             />
 
             <SearchResults

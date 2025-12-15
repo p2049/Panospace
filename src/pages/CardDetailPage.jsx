@@ -8,6 +8,7 @@ import { SpaceCardService, RARITY_TIERS } from '@/services/SpaceCardService';
 import SpaceCardComponent from '@/components/SpaceCardComponent';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { isFeatureEnabled } from '@/config/featureFlags';
+import '@/styles/rarity-system.css';
 
 const CardDetailPage = () => {
     const { cardId } = useParams();
@@ -79,8 +80,9 @@ const CardDetailPage = () => {
         );
     }
 
-    const rarityStyle = RARITY_TIERS[card.rarity];
+    const rarityStyle = RARITY_TIERS[card.rarity] || RARITY_TIERS.Common;
     const isSoldOut = card.editionType === 'limited' && card.mintedCount >= card.editionSize;
+    const isGalactic = card.rarity === 'Galactic';
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--black)', color: '#fff', paddingBottom: '80px' }}>
@@ -127,7 +129,10 @@ const CardDetailPage = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div style={{ background: '#111', padding: '1rem', borderRadius: '8px' }}>
                                 <div style={{ color: '#888', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Rarity</div>
-                                <div style={{ color: rarityStyle.color, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div
+                                    className={`rarity-text-${card.rarity?.toLowerCase() || 'common'}`}
+                                    style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
                                     <FaStar /> {card.rarity}
                                 </div>
                             </div>
@@ -146,7 +151,7 @@ const CardDetailPage = () => {
 
                             <div style={{ background: '#111', padding: '1rem', borderRadius: '8px' }}>
                                 <div style={{ color: '#888', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Floor Price</div>
-                                <div style={{ fontWeight: 'bold', color: '#7FFFD4' }}>
+                                <div style={{ fontWeight: 'bold', color: 'var(--brand-mint)' }}>
                                     ${card.stats.floorPrice?.toFixed(2) || 'N/A'}
                                 </div>
                             </div>
@@ -159,7 +164,7 @@ const CardDetailPage = () => {
                                 disabled={minting}
                                 style={{
                                     padding: '1rem 2rem',
-                                    background: minting ? '#333' : '#7FFFD4',
+                                    background: minting ? '#333' : 'var(--brand-mint)',
                                     color: minting ? '#888' : '#000',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -223,14 +228,14 @@ const CardDetailPage = () => {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#7FFFD4' }}>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--brand-mint)' }}>
                                             ${listing.listing.salePrice}
                                         </div>
                                         <button
                                             onClick={() => handlePurchase(listing.listing.id)}
                                             style={{
                                                 padding: '0.75rem 1.5rem',
-                                                background: '#7FFFD4',
+                                                background: 'var(--brand-mint)',
                                                 color: '#000',
                                                 border: 'none',
                                                 borderRadius: '8px',

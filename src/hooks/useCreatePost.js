@@ -11,7 +11,7 @@ import { formatPrice } from '@/core/utils/helpers';
 import { AccountTypeService } from '@/core/services/firestore/users.service';
 import { generateSearchKeywords } from '@/core/utils/searchKeywords';
 import { extractDominantColor } from '@/core/utils/colors';
-import { generateAllThumbnails } from '@/core/utils/thumbnailGenerator';
+import { generateAllThumbnails, generateThumbnail } from '@/core/utils/thumbnailGenerator';
 import { sanitizeTitle, sanitizeDescription, sanitizeTag } from '@/core/utils/sanitize';
 import { logger } from '@/core/utils/logger';
 import { getMaxImageSize, getMaxImageSizeMB, formatFileSizeMB, validateImageSize } from '@/core/constants/imageLimits';
@@ -273,19 +273,23 @@ export const useCreatePost = () => {
                         // 1. Generate Thumbnails Client-Side (For the main file - collage or single)
                         let l0, l1, l2;
                         try {
+                            // GENERATE OPTIMIZED DISPLAY VERSION (L2)
+                            // Max 3840px, 92% quality, no blur
+                            const displayBlob = await generateThumbnail(slide.file, 3840, 0.92, false);
+
                             const thumbs = await generateAllThumbnails(slide.file);
                             l0 = thumbs.l0;
                             l1 = thumbs.l1;
-                            l2 = thumbs.l2;
+                            l2 = displayBlob; // Use optimized blob for display, not original file
                             // Thumbnails generated
                         } catch (genError) {
-                            logger.warn(`  ⚠️ Thumbnail generation failed for slide ${i + 1}, using original:`, genError);
+                            logger.warn(`  ⚠️ Thumbnail/Opt generation failed for slide ${i + 1}, using original:`, genError);
                             l0 = slide.file;
                             l1 = slide.file;
                             l2 = slide.file;
                         }
 
-                        // 2. Define Paths - CRITICAL: All paths must be under posts/{uid}/
+                        // 2. Define Paths - CRITICAL: All paths must be under posts_display/{uid}/
                         const timestamp = Date.now();
                         const safeFilename = slide.file.name.replace(/[^a-zA-Z0-9.]/g, '_');
                         const baseFilename = `${timestamp}_${i}_${safeFilename}`;
@@ -296,8 +300,8 @@ export const useCreatePost = () => {
                             throw new Error('Invalid user ID - please log in again');
                         }
 
-                        // All paths follow pattern: posts/{uid}/{filename}
-                        const basePath = `posts/${uid}`;
+                        // All display paths follow pattern: posts_display/{uid}/{filename}
+                        const basePath = `posts_display/${uid}`;
                         const l2Path = `${basePath}/${baseFilename}`;
                         const l1Path = `${basePath}/thumbnails/${baseFilename}_l1.jpg`;
                         const l0Path = `${basePath}/thumbnails/${baseFilename}_l0.jpg`;
@@ -317,7 +321,7 @@ export const useCreatePost = () => {
                         const l0Ref = ref(storage, l0Path);
 
                         // 3. Upload All Versions with fallback
-                        // Uploading original...
+                        // Uploading original (Display)...
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 20)); // +20% for upload start
 
                         // CRITICAL: Set content type explicitly to pass storage rules validation
@@ -329,21 +333,21 @@ export const useCreatePost = () => {
                             return typeMap[ext] || 'image/jpeg';
                         };
 
-                        const originalContentType = getContentType(l2);
-                        const originalMetadata = { contentType: originalContentType };
+                        const originalContentType = getContentType(slide.file); // Use original file to guess type if blob misses it
+                        const displayMetadata = { contentType: 'image/jpeg' }; // Display L2 is always JPEG/WebP from canvas
                         const thumbnailMetadata = { contentType: 'image/jpeg' }; // Thumbnails are always JPEG
 
                         logger.log(`[Upload] Image ${i + 1} metadata:`, { originalContentType, l2Type: l2.type || 'none' });
 
-                        // We upload L2 (Original) first to ensure we have the main asset
-                        const urlL2 = await uploadWithRetry(l2Ref, l2, originalMetadata);
-                        logger.log(`[Upload] Image ${i + 1} original uploaded successfully`);
+                        // We upload L2 (Display) first
+                        const urlL2 = await uploadWithRetry(l2Ref, l2, displayMetadata);
+                        logger.log(`[Upload] Image ${i + 1} display version uploaded successfully`);
                         // Original uploaded
                         setProgress(Math.round(baseProgress + (1 / totalSlides) * 50)); // +50% after main upload
 
-                        // Upload thumbnails with fallback to original if generation failed
-                        let urlL1 = urlL2; // Fallback
-                        let urlL0 = urlL2; // Fallback
+                        // Upload thumbnails with fallback to original (L2) if generation failed
+                        let urlL1 = urlL2;
+                        let urlL0 = urlL2;
 
                         try {
                             // Uploading thumbnails...
@@ -354,8 +358,35 @@ export const useCreatePost = () => {
                             // Thumbnails uploaded
                             setProgress(Math.round(baseProgress + (1 / totalSlides) * 70)); // +70% after thumbnails
                         } catch (thumbError) {
-                            logger.warn('Thumbnail upload failed, using original:', thumbError);
+                            logger.warn('Thumbnail upload failed, using display version:', thumbError);
                             // Fallback already set above
+                        }
+
+                        // --- PRINT MASTER UPLOAD (If Shop Enabled) ---
+                        let masterUrl = null;
+                        let masterPath = null;
+                        if (slide.addToShop) {
+                            try {
+                                logger.log(`[Upload] Uploading Print Master for Image ${i + 1}...`);
+                                const ext = (slide.file.name || '').split('.').pop()?.toLowerCase() || 'jpg';
+                                const masterRefPath = `prints_master/${uid}/${baseFilename}_master.${ext}`;
+                                const masterRef = ref(storage, masterRefPath);
+
+                                // Upload original FULL resolution file
+                                masterUrl = await uploadWithRetry(masterRef, slide.file, {
+                                    customMetadata: {
+                                        originalName: slide.file.name,
+                                        uploadedBy: uid,
+                                        createdAt: new Date().toISOString()
+                                    },
+                                    contentType: originalContentType
+                                });
+                                masterPath = masterRefPath;
+                                logger.log(`[Upload] Print Master uploaded: ${masterPath}`);
+                            } catch (masterErr) {
+                                logger.error(`[Upload] Failed to upload Print Master:`, masterErr);
+                                throw new Error(`Failed to upload high-res master for shop item: ${masterErr.message}`);
+                            }
                         }
 
                         // 4. Get Dimensions
@@ -457,7 +488,11 @@ export const useCreatePost = () => {
                             // Stack Metadata
                             isStack: slide.type === 'stack',
                             stackLayout: slide.type === 'stack' ? slide.layout : null,
-                            stackImages: slide.type === 'stack' ? stackImageUrls : null
+                            stackImages: slide.type === 'stack' ? stackImageUrls : null,
+
+                            // Master File (for Shop)
+                            masterUrl: masterUrl,
+                            masterPath: masterPath
                         });
 
                     } catch (uploadError) {
@@ -695,7 +730,12 @@ export const useCreatePost = () => {
                         price: item.price || 0,
                         soldCount: 0,
                         isSoldOut: false,
+                        isSoldOut: false,
                         resaleAllowed: item.isLimitedEdition || false,
+
+                        // Internal Master Reference (Restricted Access)
+                        masterUrl: item.masterUrl || null,
+                        masterPath: item.masterPath || null,
                     };
 
                     await addDoc(collection(db, 'shopItems'), shopItemDoc);

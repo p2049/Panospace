@@ -26,8 +26,8 @@ const ThumbnailStrip = ({
     handleDrop,
     moveSlide
 }) => {
-    // Only show if there's more than one slide
-    if (slides.length <= 1) return null;
+    // Always show strip to provide scrollbar context if requested
+    // if (slides.length <= 1) return null;
 
     return (
         <div className="thumbnail-scrollbar">

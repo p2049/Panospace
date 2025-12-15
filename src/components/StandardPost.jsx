@@ -435,12 +435,7 @@ const StandardPost = ({
                 )}
             </div>
 
-            {/* Title Overlay */}
-            {post.title && (
-                <div className="post-title-overlay">
-                    <h2 className="post-title-text">{renderCosmicUsername(post.title)}</h2>
-                </div>
-            )}
+
 
             {/* Author Info & Location - REDESIGNED */}
             <div
@@ -559,7 +554,7 @@ const StandardPost = ({
                         {currentSlide + 1}/{items.length}
                     </div>
                 )}
-                <LikeButton postId={post.id} />
+                <LikeButton postId={post.id} enableRatings={true} showCount={false} />
             </div>
 
         </div >

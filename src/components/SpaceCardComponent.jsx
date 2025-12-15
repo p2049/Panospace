@@ -2,32 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaStar, FaShoppingCart, FaUser } from 'react-icons/fa';
 import { RARITY_TIERS } from '@/services/SpaceCardService';
-
-// Add keyframes for iridescent border animation
-const styleSheet = document.styleSheets[0];
-const keyframes = `
-@keyframes iridescent-border {
-    0% { border-color: #FF00FF; box-shadow: 0 0 20px #FF00FF, inset 0 0 20px rgba(255,0,255,0.3); }
-    16% { border-color: #FF0080; box-shadow: 0 0 20px #FF0080, inset 0 0 20px rgba(255,0,128,0.3); }
-    33% { border-color: #FF0000; box-shadow: 0 0 20px #FF0000, inset 0 0 20px rgba(255,0,0,0.3); }
-    50% { border-color: #FFD700; box-shadow: 0 0 20px #FFD700, inset 0 0 20px rgba(255,215,0,0.3); }
-    66% { border-color: #00FFFF; box-shadow: 0 0 20px #00FFFF, inset 0 0 20px rgba(0,255,255,0.3); }
-    83% { border-color: #0080FF; box-shadow: 0 0 20px #0080FF, inset 0 0 20px rgba(0,128,255,0.3); }
-    100% { border-color: #FF00FF; box-shadow: 0 0 20px #FF00FF, inset 0 0 20px rgba(255,0,255,0.3); }
-}
-
-@keyframes holographic {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-`;
-
-try {
-    styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-} catch (e) {
-    // Animation already exists or error inserting
-}
+import '@/styles/rarity-system.css';
 
 const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = false }) => {
     const navigate = useNavigate();
@@ -42,7 +17,12 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
     };
 
     const rarityStyle = RARITY_TIERS[card.rarity] || RARITY_TIERS.Common;
-    const isMythic = card.rarity === 'mythic' || card.rarity === 'Mythic';
+    const isGalactic = card.rarity === 'Galactic';
+    const isUltra = card.rarity === 'Ultra';
+
+    // Get the CSS class for this rarity
+    const rarityClass = rarityStyle.cssClass || 'rarity-common';
+    const glowClass = rarityStyle.glow ? `space-card-${rarityClass}` : '';
 
     return (
         <div
@@ -63,18 +43,19 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
                 transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
             }}>
                 {/* Front */}
-                <div style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    backfaceVisibility: 'hidden',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    border: isMythic ? '4px solid #FF00FF' : rarityStyle.border,
-                    boxShadow: rarityStyle.glow ? `0 0 20px ${rarityStyle.color}` : '0 4px 8px rgba(0,0,0,0.3)',
-                    background: '#000',
-                    animation: isMythic ? 'iridescent-border 3s ease-in-out infinite' : 'none'
-                }}>
+                <div
+                    className={`${rarityClass} ${isUltra ? 'rarity-animated' : ''}`}
+                    style={{
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        backfaceVisibility: 'hidden',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        background: '#000',
+                        boxShadow: rarityStyle.glow ? `0 0 20px ${rarityStyle.colorHex}40` : '0 4px 8px rgba(0,0,0,0.3)'
+                    }}
+                >
                     <img
                         src={card.images.front}
                         alt={card.title}
@@ -105,20 +86,14 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
                     </div>
 
                     {/* Rarity Badge */}
-                    <div style={{
-                        position: 'absolute',
-                        top: '0.5rem',
-                        right: '0.5rem',
-                        background: rarityStyle.color,
-                        color: '#000',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
-                    }}>
+                    <div
+                        className={`rarity-badge rarity-badge-${card.rarity?.toLowerCase() || 'common'}`}
+                        style={{
+                            position: 'absolute',
+                            top: '0.5rem',
+                            right: '0.5rem'
+                        }}
+                    >
                         <FaStar size={10} />
                         {card.rarity}
                     </div>
@@ -148,7 +123,7 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
                             top: '0.5rem',
                             left: '50%',
                             transform: 'translateX(-50%)',
-                            background: '#7FFFD4',
+                            background: 'var(--brand-mint)',
                             color: '#000',
                             padding: '0.25rem 0.75rem',
                             borderRadius: '12px',
@@ -169,12 +144,14 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
                             position: 'absolute',
                             bottom: '3.5rem',
                             left: '0.75rem',
-                            background: 'rgba(127, 255, 212, 0.9)',
-                            color: '#000',
+                            background: 'var(--ice-mint-alpha-20)',
+                            backdropFilter: 'blur(8px)',
+                            color: 'var(--brand-mint)',
                             padding: '0.5rem 0.75rem',
                             borderRadius: '8px',
                             fontSize: '0.9rem',
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            border: '1px solid var(--brand-mint)'
                         }}>
                             ${card.basePrice}
                         </div>
@@ -183,19 +160,20 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
 
                 {/* Back (if exists) */}
                 {card.images.back && (
-                    <div style={{
-                        position: 'absolute',
-                        width: '100%',
-                        height: '100%',
-                        backfaceVisibility: 'hidden',
-                        transform: 'rotateY(180deg)',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        border: isMythic ? '4px solid #FF00FF' : rarityStyle.border,
-                        boxShadow: rarityStyle.glow ? `0 0 20px ${rarityStyle.color}` : '0 4px 8px rgba(0,0,0,0.3)',
-                        background: '#000',
-                        animation: isMythic ? 'iridescent-border 3s ease-in-out infinite' : 'none'
-                    }}>
+                    <div
+                        className={`${rarityClass} ${isUltra ? 'rarity-animated' : ''}`}
+                        style={{
+                            position: 'absolute',
+                            width: '100%',
+                            height: '100%',
+                            backfaceVisibility: 'hidden',
+                            transform: 'rotateY(180deg)',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            background: '#000',
+                            boxShadow: rarityStyle.glow ? `0 0 20px ${rarityStyle.colorHex}40` : '0 4px 8px rgba(0,0,0,0.3)'
+                        }}
+                    >
                         <img
                             src={card.images.back}
                             alt={`${card.title} - Back`}
@@ -209,15 +187,16 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
                 )}
             </div>
 
-            {/* Holographic Effect for Mythic */}
-            {card.rarity === 'Mythic' && (
+            {/* Holographic Effect for Galactic */}
+            {isGalactic && (
                 <div style={{
                     position: 'absolute',
                     inset: 0,
                     borderRadius: '12px',
-                    background: 'linear-gradient(45deg, transparent 30%, rgba(255,0,255,0.3) 50%, transparent 70%)',
-                    backgroundSize: '200% 200%',
-                    animation: 'holographic 3s ease infinite',
+                    background: 'var(--gradient-iridescent)',
+                    backgroundSize: '300% 300%',
+                    animation: 'rarity-galactic-shift 8s ease infinite',
+                    opacity: 0.15,
                     pointerEvents: 'none'
                 }} />
             )}
@@ -226,3 +205,4 @@ const SpaceCardComponent = ({ card, ownership, showPrice = false, compact = fals
 };
 
 export default SpaceCardComponent;
+

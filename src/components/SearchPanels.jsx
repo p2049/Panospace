@@ -7,7 +7,7 @@ import { TAG_CATEGORIES } from '@/core/constants/tagCategories';
 import { PARKS_DATA } from '@/core/constants/parksData';
 import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '@/core/constants/searchFilters';
 import { formatDateForDisplay, formatDateForInput } from '@/core/utils/dates';
-import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp, FaArrowLeft, FaShoppingBag } from 'react-icons/fa';  // ADDED FaArrowLeft
 import CurrentAppEventsBox from '@/components/search/CurrentAppEventsBox';
 import PanoDateInput from '@/components/common/PanoDateInput';
 
@@ -32,6 +32,9 @@ const SearchPanels = ({
     isMobileFiltersOpen,
     onMobileFilterToggle,
     onScroll,
+    isMobile, // NEW
+    isMarketplaceMode, // NEW
+    onMarketplaceToggle, // NEW
     children
 }) => {
     const [expandedPanels, setExpandedPanels] = useState({
@@ -68,7 +71,7 @@ const SearchPanels = ({
     return (
         <div className="search-panels-layout" style={{
             display: 'flex',
-            height: 'calc(100vh - 60px)', // Adjust based on header height
+            height: '100vh', // Full page usage
             overflow: 'hidden',
             position: 'relative'
         }}>
@@ -151,21 +154,33 @@ const SearchPanels = ({
                             fontFamily: 'var(--font-family-heading)',
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem', // Increased gap
+                            color: '#fff' // Default color for non-gradient items
+                        }}
+                    >
+                        {isMobile && (
+                            <FaArrowLeft
+                                size={16}
+                                color="var(--ice-mint)"
+                                style={{
+                                    filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))'
+                                }}
+                            />
+                        )}
+                        <span style={{
                             background: 'linear-gradient(135deg, #ffffff 0%, #7FFFD4 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
                             color: 'transparent',
-                            filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))',
-                            cursor: 'pointer',
-                            userSelect: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <span style={{ fontSize: '1rem', opacity: 0.8 }}>←</span>
-                        Filters
+                            filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))'
+                        }}>
+                            Filters
+                        </span>
                     </h2>
                     {(selectedTags.length > 0 || selectedPark || selectedDate || selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio) && (
                         <button
@@ -208,6 +223,62 @@ const SearchPanels = ({
                     {/* Current App Events Box */}
                     {(currentMode === 'posts' || currentMode === 'events') && (
                         <CurrentAppEventsBox />
+                    )}
+
+                    {/* Marketplace Toggle - Show for Posts only AND Mobile Vertical (using isMobile as proxy) */}
+                    {currentMode === 'posts' && isMobile && (
+                        <div style={{ marginBottom: '0.8rem' }}>
+                            <button
+                                onClick={() => onMarketplaceToggle(!isMarketplaceMode)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem 1rem',
+                                    background: isMarketplaceMode ? 'rgba(127, 255, 212, 0.15)' : 'rgba(0, 0, 0, 0.4)',
+                                    border: isMarketplaceMode ? '1px solid var(--ice-mint)' : '1px solid rgba(127, 255, 212, 0.3)',
+                                    borderRadius: '12px',
+                                    color: isMarketplaceMode ? 'var(--ice-mint)' : '#fff',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    cursor: 'pointer',
+                                    backdropFilter: 'blur(10px)',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                    <FaShoppingBag size={14} />
+                                    <span style={{
+                                        fontWeight: 700,
+                                        fontFamily: 'var(--font-family-heading)',
+                                        letterSpacing: '0.05em',
+                                        fontSize: '0.9rem',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        Shop Items
+                                    </span>
+                                </div>
+                                <div style={{
+                                    width: '36px',
+                                    height: '20px',
+                                    background: isMarketplaceMode ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.2)',
+                                    borderRadius: '10px',
+                                    position: 'relative',
+                                    transition: 'background 0.3s'
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '2px',
+                                        left: isMarketplaceMode ? '18px' : '2px',
+                                        width: '16px',
+                                        height: '16px',
+                                        background: isMarketplaceMode ? '#000' : '#fff',
+                                        borderRadius: '50%',
+                                        transition: 'left 0.3s'
+                                    }} />
+                                </div>
+                            </button>
+                        </div>
                     )}
 
                     {/* Date Filter Panel - Show for Posts and Events */}
@@ -595,7 +666,7 @@ const SearchPanels = ({
 
                 {/* Results Content */}
                 <div
-                    style={{ flex: 1, overflowY: 'auto', padding: '0' }}
+                    style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0' }}
                     onScroll={onScroll}
 
                 >

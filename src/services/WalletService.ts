@@ -182,8 +182,9 @@ export const WalletService = {
      */
     processPrimaryPurchase: async (buyerId: string, sellerId: string, itemId: string, itemType: string, price: number, title: string): Promise<boolean> => {
         try {
-            // 1. Deduct from Buyer
-            await WalletService.subtractFunds(buyerId, price, 'purchase', `Purchased ${title}`, itemId, itemType);
+            // 1. Deduct from Buyer - REMOVED for Earnings Ledger Refactor
+            // We no longer track spending in the wallet, only earnings.
+            // await WalletService.subtractFunds(buyerId, price, 'purchase', `Purchased ${title}`, itemId, itemType);
 
             // 2. Add to Seller
             await WalletService.addFunds(sellerId, price, 'sale', `Sold ${title}`, itemId, itemType);
@@ -211,8 +212,8 @@ export const WalletService = {
         const sellerNet = price - platformFee - artistRoyalty;
 
         try {
-            // 1. Deduct full amount from Buyer
-            await WalletService.subtractFunds(buyerId, price, 'purchase', `Purchased resale: ${title}`, itemId, itemType);
+            // 1. Deduct full amount from Buyer - REMOVED
+            // await WalletService.subtractFunds(buyerId, price, 'purchase', `Purchased resale: ${title}`, itemId, itemType);
 
             // 2. Add Net to Seller
             await WalletService.addFunds(sellerId, sellerNet, 'sale', `Sold resale: ${title}`, itemId, itemType);
@@ -222,9 +223,7 @@ export const WalletService = {
                 await WalletService.addFunds(originalArtistId, artistRoyalty, 'royalty', `Royalty from resale of ${title}`, itemId, itemType);
             }
 
-            // 4. Platform Fee (Tracked in a system wallet or just deducted from circulation)
-            // For now, we just don't pay it out to anyone, effectively burning it or keeping it in the system.
-            // In a real app, we'd add it to a 'platform' user wallet.
+            // 4. Platform Fee - Tracked internally (not implemented in this ledger)
 
             return true;
         } catch (error) {
@@ -239,8 +238,8 @@ export const WalletService = {
      */
     processCommissionPayment: async (buyerId: string, sellerId: string, commissionId: string, price: number, title: string): Promise<boolean> => {
         try {
-            // 1. Deduct from Buyer
-            await WalletService.subtractFunds(buyerId, price, 'purchase', `Commission Payment: ${title}`, commissionId, 'commission');
+            // 1. Deduct from Buyer - REMOVED
+            // await WalletService.subtractFunds(buyerId, price, 'purchase', `Commission Payment: ${title}`, commissionId, 'commission');
 
             // 2. Add to Seller
             await WalletService.addFunds(sellerId, price, 'commission', `Commission Earned: ${title}`, commissionId, 'commission');

@@ -7,6 +7,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaExclamationTriangle, FaCompress, FaCrown, FaTimes } from 'react-icons/fa';
+import { functions } from '@/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 const ImageSizeWarningModal = ({
     isOpen,
@@ -19,6 +21,19 @@ const ImageSizeWarningModal = ({
     onCancel,
     isScaling = false,
 }) => {
+    const handleUpgrade = async () => {
+        try {
+            const createCreatorSubscriptionCheckout = httpsCallable(functions, 'createCreatorSubscriptionCheckout');
+            const { data } = await createCreatorSubscriptionCheckout();
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error("Subscription Checkout Failed:", error);
+            alert("Upgrade failed. Please try again.");
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -35,7 +50,7 @@ const ImageSizeWarningModal = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 10000,
+                    zIndex: 999999, // Ensure it's above everything
                     padding: '1rem',
                 }}
                 onClick={onCancel}
@@ -155,7 +170,7 @@ const ImageSizeWarningModal = ({
                         {/* Upgrade Option - Only for free users */}
                         {!isPremium && (
                             <button
-                                onClick={onUpgrade}
+                                onClick={handleUpgrade}
                                 disabled={isScaling}
                                 style={{
                                     width: '100%',

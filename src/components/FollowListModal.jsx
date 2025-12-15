@@ -109,7 +109,7 @@ const FollowListModal = ({ isOpen, onClose, userId, type = 'followers', title })
                         {title ? title : (
                             <>
                                 {type === 'followers' ? <AstronautIcon size={20} /> : <RocketIcon size={20} />}
-                                {type === 'followers' ? 'Followers' : 'Following'}
+                                {type === 'followers' ? 'Visitors' : 'Spaces'}
                             </>
                         )}
                     </h2>

@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaTimes, FaWallet, FaCreditCard, FaLock, FaGem, FaRocket } from 'react-icons/fa';
-import { WalletService } from '@/services/WalletService';
-import { subscribeToUltra, getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
+import { FaTimes, FaGem, FaRocket } from 'react-icons/fa';
+import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import { useAuth } from '@/context/AuthContext';
 
-const PRESET_AMOUNTS = [10, 25, 50, 100];
-
-const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
+const AddFundsModal = ({ onClose }) => {
     const { currentUser } = useAuth();
-    const [selectedAmount, setSelectedAmount] = useState(25);
-    const [customAmount, setCustomAmount] = useState('');
     const [loading, setLoading] = useState(false);
-    const [subscribing, setSubscribing] = useState(false);
     const [error, setError] = useState('');
     const [isSpaceCreator, setIsSpaceCreator] = useState(false);
 
@@ -42,76 +36,33 @@ const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
     };
 
     const handleSubscribe = async () => {
-        if (currentBalance < 5) {
-            setError("Insufficient wallet balance. Please add funds first.");
-            return;
-        }
-
-        setSubscribing(true);
-        setError('');
-
-        try {
-            await subscribeToUltra(currentUser.uid);
-            setIsSpaceCreator(true);
-            onSuccess?.(0); // Refresh balance (0 added, but balance changed)
-        } catch (err) {
-            console.error("Subscription failed:", err);
-            setError(err.message || "Failed to subscribe.");
-        } finally {
-            setSubscribing(false);
-        }
-    };
-
-    const handleAmountSelect = (amount) => {
-        setSelectedAmount(amount);
-        setCustomAmount('');
-    };
-
-    const handleCustomChange = (e) => {
-        const val = e.target.value;
-        if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
-            setCustomAmount(val);
-            setSelectedAmount(null);
-        }
-    };
-
-    const getFinalAmount = () => {
-        if (customAmount) return parseFloat(customAmount);
-        return selectedAmount;
-    };
-
-    const handlePayment = async () => {
-        const amount = getFinalAmount();
-
-        if (!amount || amount < 5) {
-            setError('Minimum deposit is $5.00');
-            return;
-        }
-
         setLoading(true);
         setError('');
 
         try {
-            // SIMULATED PAYMENT DELAY
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Call the Stripe Subscription Cloud Function
+            // We use the function created in previous step: createCreatorSubscriptionCheckout
+            const { httpsCallable, getFunctions } = await import('firebase/functions');
+            const functions = getFunctions();
+            const createCheckout = httpsCallable(functions, 'createCreatorSubscriptionCheckout');
 
-            // Add funds to wallet
-            await WalletService.addFunds(
-                currentUser.uid,
-                amount,
-                'deposit',
-                'Added funds to wallet'
-            );
+            const { data } = await createCheckout();
 
-            onSuccess?.(amount);
-            onClose();
+            if (data?.url) {
+                window.location.href = data.url;
+            } else {
+                throw new Error("No checkout URL returned");
+            }
+
         } catch (err) {
-            console.error("Payment failed:", err);
-            setError("Payment failed. Please try again.");
-        } finally {
+            console.error("Subscription failed:", err);
+            setError(err.message || "Failed to initiate upgrade.");
             setLoading(false);
         }
     };
+
+    // Removed handlePayment, handleAmountSelect, handleCustomChange
+    // This modal is now strictly for Membership Upgrades
 
     return (
         <div style={{
@@ -180,7 +131,7 @@ const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
                     background: '#222'
                 }}>
                     <h2 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.2rem' }}>
-                        <FaWallet color="#7FFFD4" /> Add Funds
+                        <FaGem color="#7FFFD4" /> Space Creator Plan
                     </h2>
                     <button
                         onClick={onClose}
@@ -235,75 +186,7 @@ const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
                         ))}
                     </div>
 
-                    {/* Current Balance */}
-                    <div style={{
-                        textAlign: 'center',
-                        marginBottom: '2rem'
-                    }}>
-                        <div style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Current Balance</div>
-                        <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#fff' }}>
-                            ${currentBalance?.toFixed(2) || '0.00'}
-                        </div>
-                    </div>
 
-                    {/* Amount Selection */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <label style={{ display: 'block', color: '#ccc', marginBottom: '1rem', fontWeight: 'bold' }}>Select Amount</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.8rem', marginBottom: '1rem' }}>
-                            {PRESET_AMOUNTS.map(amount => (
-                                <button
-                                    key={amount}
-                                    onClick={() => handleAmountSelect(amount)}
-                                    style={{
-                                        padding: '0.8rem',
-                                        background: selectedAmount === amount ? '#7FFFD4' : '#333',
-                                        color: selectedAmount === amount ? '#000' : '#fff',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    ${amount}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Custom Amount */}
-                        <div style={{ position: 'relative' }}>
-                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#888' }}>$</span>
-                            <input
-                                type="text"
-                                placeholder="Custom Amount"
-                                value={customAmount}
-                                onChange={handleCustomChange}
-                                style={{
-                                    width: '100%',
-                                    padding: '1rem 1rem 1rem 2.5rem',
-                                    background: '#111',
-                                    border: customAmount ? '1px solid #7FFFD4' : '1px solid #444',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
-                                    outline: 'none'
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Payment Method Stub */}
-                    <div style={{ marginBottom: '2rem', padding: '1rem', background: '#252525', borderRadius: '8px', border: '1px solid #333' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span style={{ color: '#ccc', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FaCreditCard /> Payment Method
-                            </span>
-                            <span style={{ color: '#888', fontSize: '0.8rem' }}>Mock Payment</span>
-                        </div>
-                        <div style={{ color: '#666', fontSize: '0.9rem' }}>
-                            •••• •••• •••• 4242 (Visa)
-                        </div>
-                    </div>
 
                     {/* Space Creator Subscription Section */}
                     <div style={{
@@ -431,7 +314,7 @@ const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
                             {!isSpaceCreator && (
                                 <button
                                     onClick={handleSubscribe}
-                                    disabled={subscribing || loading}
+                                    disabled={loading}
                                     style={{
                                         width: '100%',
                                         padding: '0.8rem',
@@ -441,14 +324,14 @@ const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
                                         border: 'none',
                                         borderRadius: '8px',
                                         fontWeight: 'bold',
-                                        cursor: (subscribing || loading) ? 'not-allowed' : 'pointer',
-                                        opacity: (subscribing || loading) ? 0.7 : 1,
+                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        opacity: loading ? 0.7 : 1,
                                         transition: 'transform 0.2s',
                                         animation: 'iridescent-button 6s ease infinite',
                                         boxShadow: '0 4px 20px rgba(224, 179, 255, 0.3)'
                                     }}
                                 >
-                                    {subscribing ? 'Activating...' : 'Upgrade to Space Creator'}
+                                    {loading ? 'Redirecting to Stripe...' : 'Upgrade Now ($5/mo)'}
                                 </button>
                             )}
                         </div>
@@ -470,34 +353,7 @@ const AddFundsModal = ({ onClose, onSuccess, currentBalance }) => {
                         </div>
                     )}
 
-                    <button
-                        onClick={handlePayment}
-                        disabled={loading || subscribing}
-                        style={{
-                            width: '100%',
-                            padding: '1rem',
-                            background: (loading || subscribing) ? '#555' : '#7FFFD4',
-                            color: (loading || subscribing) ? '#ccc' : '#000',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontSize: '1.1rem',
-                            fontWeight: 'bold',
-                            cursor: (loading || subscribing) ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.8rem',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        {loading ? (
-                            'Processing...'
-                        ) : (
-                            <>
-                                <FaLock size={14} /> Pay ${getFinalAmount()?.toFixed(2) || '0.00'}
-                            </>
-                        )}
-                    </button>
+                    {/* Removed Pay Button */}
 
                     <p style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem', marginTop: '1rem' }}>
                         Secure, encrypted transaction. Funds are available immediately.

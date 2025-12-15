@@ -13,6 +13,7 @@ import { useCustomFeeds } from '@/hooks/useCustomFeeds';
 import { useThemeStore } from '@/core/store/useThemeStore';
 import { useTranslation } from 'react-i18next';
 import { getUnreadCount } from '@/services/notificationService';
+import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import {
     FaHome,
     FaSearch,
@@ -352,24 +353,76 @@ const MobileNavigation = () => {
             {/* Hamburger Button */}
             <div
                 className="mobile-nav-hamburger"
-                style={menuButtonStyle}
+                style={{
+                    position: 'fixed',
+                    top: 'max(0.75rem, env(safe-area-inset-top))',
+                    right: '1rem',
+                    zIndex: 99999,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    // Glass Effect
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    width: '44px',
+                    height: '44px',
+                    minWidth: '44px',
+                    minHeight: '44px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '12px',
+                    outline: 'none',
+                    pointerEvents: 'auto',
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                    isolation: 'isolate',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                }}
                 onClick={() => { setIsOpen(!isOpen); handleInteraction(); }}
                 role="button"
                 aria-label={isOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isOpen}
                 tabIndex={0}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                    const dot = e.currentTarget.querySelector('.menu-dot');
+                    if (dot) {
+                        dot.style.boxShadow = '0 0 12px var(--ice-mint)';
+                        dot.style.opacity = '1';
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    const dot = e.currentTarget.querySelector('.menu-dot');
+                    if (dot) {
+                        dot.style.boxShadow = '0 0 6px var(--ice-mint)';
+                        dot.style.opacity = '0.9';
+                    }
+                }}
             >
                 {isOpen ? (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.8 }}>
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 ) : (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
+                    // System Control Dot
+                    <div
+                        className="menu-dot"
+                        style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: 'var(--ice-mint)',
+                            boxShadow: '0 0 6px var(--ice-mint)',
+                            opacity: 0.9,
+                            transition: 'all 0.3s ease'
+                        }}
+                    />
                 )}
             </div>
 
@@ -443,12 +496,12 @@ const MobileNavigation = () => {
                             <FaArrowLeft size={18} />
                         </button>
                     )}
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM FEEDS</h3>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM ORBITS</h3>
                 </div>
 
                 {/* App-Curated Feeds Section REMOVED from Custom Panel - Moved to Hub */}
 
-                <div style={{ fontSize: '0.7rem', color: '#888', padding: '1rem 1rem 0.5rem 1rem' }}>SAVED FEEDS</div>
+                <div style={{ fontSize: '0.7rem', color: '#888', padding: '1rem 1rem 0.5rem 1rem' }}>SAVED ORBITS</div>
 
                 {/* Feeds List */}
                 <div style={{
@@ -477,7 +530,7 @@ const MobileNavigation = () => {
                             justifyContent: 'space-between'
                         }}
                     >
-                        <span>Standard Feed</span>
+                        <span>Standard Orbit</span>
                         {!customFeedEnabled && <div style={{ width: 8, height: 8, borderRadius: '50%', background: accentColor }} />}
                     </button>
 
@@ -511,7 +564,7 @@ const MobileNavigation = () => {
 
                     {feeds.length === 0 && (
                         <div style={{ padding: '1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', fontStyle: 'italic', textAlign: 'center' }}>
-                            No saved feeds
+                            No saved orbits
                         </div>
                     )}
                 </div>
@@ -570,7 +623,7 @@ const MobileNavigation = () => {
                 <div style={{
                     padding: '1rem',
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    marginBottom: '0.5rem',
+                    marginBottom: '1rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '1rem'
@@ -591,7 +644,7 @@ const MobileNavigation = () => {
                             <FaArrowLeft size={18} />
                         </button>
                     )}
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CENTER</h3>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>STATION</h3>
                 </div>
 
                 <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -614,7 +667,7 @@ const MobileNavigation = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <FaStore size={16} color={accentColor} />
+                        <FaStore size={14} color={accentColor} />
                         <div>
                             <div style={{ fontWeight: 'bold' }}>Market</div>
                             <div style={{ fontSize: '0.7rem', color: '#888' }}>Shop prints & gear</div>
@@ -639,7 +692,7 @@ const MobileNavigation = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <FaCalendarAlt size={16} color={accentColor} />
+                        <FaCalendarAlt size={14} color={accentColor} />
                         <div>
                             <div style={{ fontWeight: 'bold' }}>Calendar</div>
                             <div style={{ fontSize: '0.7rem', color: '#888' }}>Events & launches</div>
@@ -663,7 +716,7 @@ const MobileNavigation = () => {
                             transition: 'all 0.2s'
                         }}
                     >
-                        <FaTrophy size={16} color={accentColor} />
+                        <FaTrophy size={14} color={accentColor} />
                         <div>
                             <div style={{ fontWeight: 'bold' }}>Events</div>
                             <div style={{ fontSize: '0.7rem', color: '#888' }}>Curated feeds & contests</div>
@@ -689,7 +742,7 @@ const MobileNavigation = () => {
                             position: 'relative'
                         }}
                     >
-                        <FaBell size={16} color={accentColor} />
+                        <FaBell size={14} color={accentColor} />
                         <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 'bold' }}>Notifications</div>
                             <div style={{ fontSize: '0.7rem', color: '#888' }}>Activity & updates</div>
@@ -738,7 +791,7 @@ const MobileNavigation = () => {
                     {/* Standard Feed Toggles - Grid Layout for alignment */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
+                        gridTemplateColumns: '1fr 1fr 1fr',
                         gap: '0.4rem',
                         width: '100%'
                     }}>
@@ -770,7 +823,7 @@ const MobileNavigation = () => {
                             }}
                             disabled={customFeedEnabled}
                         >
-                            {followingOnly ? 'FOLLOWING' : 'GLOBAL'}
+                            {followingOnly ? 'ADDED' : 'GLOBAL'}
                         </button>
                         <button
                             onClick={(e) => {
@@ -803,36 +856,6 @@ const MobileNavigation = () => {
                             {currentFeed === 'art' ? 'ART' : 'SOCIAL'}
                         </button>
 
-                        {/* Hub Button */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleHubPanel();
-                            }}
-                            style={{
-                                padding: '0.35rem 0.5rem', // Reduced padding to fit text
-                                borderRadius: '8px',
-                                border: `1px solid ${accentColor}`,
-                                background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
-                                color: showHubPanel ? '#000' : accentColor,
-                                fontSize: '0.75rem',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap',
-                                height: '32px',
-                                backdropFilter: 'blur(10px)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.4rem'
-                            }}
-                        >
-                            <FaStore size={12} /> CENTER
-                        </button>
-
                         {/* Custom Feeds Button */}
                         <button
                             onClick={(e) => {
@@ -862,6 +885,39 @@ const MobileNavigation = () => {
                         >
                             <FaFilter size={10} /> CUSTOM
                         </button>
+
+                        {/* Station Button (Full Width) */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                toggleHubPanel();
+                            }}
+                            style={{
+                                gridColumn: '1 / -1', // Full Width
+                                padding: '0.35rem 0.5rem',
+                                borderRadius: '8px',
+                                border: `1px solid ${accentColor}`,
+                                background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
+                                color: showHubPanel ? '#000' : accentColor,
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap',
+                                height: '32px',
+                                backdropFilter: 'blur(10px)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.4rem',
+                                opacity: 0.9 // Reduce visual dominance
+                            }}
+                        >
+                            <FaStore size={12} /> STATION
+                        </button>
+
                     </div>
                 </div>
 
@@ -883,8 +939,34 @@ const MobileNavigation = () => {
                     </div>
 
                     <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
-                        <FaUserCircle color="#7FFFD4" size={20} />
-                        Account
+                        {currentUser?.photoURL ? (
+                            <img
+                                src={currentUser.photoURL}
+                                alt="Profile"
+                                style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '8px',
+                                    objectFit: 'cover',
+                                    border: '1px solid #7FFFD4'
+                                }}
+                            />
+                        ) : (
+                            <FaUserCircle color="#7FFFD4" size={24} />
+                        )}
+                        <span style={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '180px'
+                        }}>
+                            {renderCosmicUsername(currentUser?.displayName || 'My Profile', accentColor)}
+                        </span>
+                    </div>
+
+                    <div onClick={() => handleNavClick('/create')} style={navItemStyle}>
+                        <FaPlusSquare color="#7FFFD4" size={20} />
+                        {t('nav.create')}
                     </div>
 
                     {/* Market and Calendar Removed from Main List (Moved to Hub) */}

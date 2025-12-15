@@ -10,6 +10,7 @@ const Signup = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirm, setPasswordConfirm] = useState('');
+    const [birthDate, setBirthDate] = useState('');
     const { signup } = useAuth();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -35,6 +36,21 @@ const Signup = () => {
         if (!usernameRegex.test(username)) {
             return setError('Username contains invalid characters.');
         }
+
+        // AGE VERIFICATION
+        const today = new Date();
+        const birthDateObj = new Date(birthDate);
+        let age = today.getFullYear() - birthDateObj.getFullYear();
+        const m = today.getMonth() - birthDateObj.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
+            age--;
+        }
+
+        if (age < 14) {
+            return setError('You must be 14 or older to use Panospace.');
+        }
+
+        const isAdult = age >= 18;
 
         try {
             setError('');
@@ -67,6 +83,13 @@ const Signup = () => {
                     createdAt: new Date().toISOString(),
                     bio: 'New Panospace Artist',
                     accountType: 'art',
+                    // User Safety & Shop Data
+                    birthDate: birthDate,
+                    isAdult: isAdult,
+                    sellerStatus: 'none', // none | ineligible_age | pending | verified
+                    guardianRequired: !isAdult,
+                    sellerAppliedAt: null,
+                    sellerVerifiedAt: null,
                 };
 
                 // Generate search keywords
@@ -225,10 +248,19 @@ const Signup = () => {
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password" className="y2k-input" />
                     <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required placeholder="Confirm Password" className="y2k-input" />
 
+                    <input
+                        type="date"
+                        value={birthDate}
+                        onChange={e => setBirthDate(e.target.value)}
+                        required
+                        className="y2k-input"
+                        style={{ colorScheme: 'dark' }}
+                    />
+
                     <label style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', fontSize: '0.8rem', color: '#aaa', cursor: 'pointer' }}>
                         <input type="checkbox" required style={{ marginTop: '0.2rem' }} />
                         <span>
-                            I am at least 14 years old and agree to the <Link to="/legal" target="_blank" style={{ color: '#7FFFD4', textDecoration: 'none' }}>Terms &amp; Guidelines</Link>.
+                            I agree to the <Link to="/legal" target="_blank" style={{ color: '#7FFFD4', textDecoration: 'none' }}>Terms &amp; Guidelines</Link>.
                         </span>
                     </label>
                     <button disabled={loading} type="submit" className="y2k-button">Sign Up</button>

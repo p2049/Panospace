@@ -4,7 +4,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import { AnimatePresence } from 'framer-motion';
 import OrientationGuard from './components/OrientationGuard';
 import MobileNavigation from './components/MobileNavigation';
-import BottomTabNavigation from './components/BottomTabNavigation';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import MotionWrapper from './components/MotionWrapper';
 import AppLoading from './components/AppLoading';
@@ -14,7 +13,9 @@ import { UserCacheProvider } from './context/UserCacheContext';
 import { UIProvider } from './context/UIContext';
 import { ToastProvider } from './context/ToastContext';
 import ToastManager from './components/ToastManager';
+import { CartProvider } from './context/CartContext';
 import './styles/tap-targets.css';
+import './styles/rarity-system.css';
 
 // Lazy load pages for performance optimization
 const Login = lazy(() => import('./pages/Login'));
@@ -62,6 +63,8 @@ const EventFeedPage = lazy(() => import('./pages/EventFeedPage'));
 
 const MigrateDates = lazy(() => import('./pages/MigrateDates'));
 const ShopSetup = lazy(() => import('./pages/shop/ShopSetupPage'));
+const SellerVerificationPage = lazy(() => import('./pages/shop/SellerVerificationPage'));
+const CartPage = lazy(() => import('./pages/shop/CartPage'));
 const ShopDrafts = lazy(() => import('./pages/ShopDrafts'));
 const ColorBackfillPage = lazy(() => import('./pages/ColorBackfillPage'));
 const CustomFeedManager = lazy(() => import('./pages/CustomFeedManager'));
@@ -145,9 +148,19 @@ const AnimatedRoutes = () => {
             <MotionWrapper><Shop /></MotionWrapper>
           </PrivateRoute>
         } />
+        <Route path="/cart" element={
+          <PrivateRoute>
+            <MotionWrapper><CartPage /></MotionWrapper>
+          </PrivateRoute>
+        } />
         <Route path="/shop/setup" element={
           <PrivateRoute>
             <MotionWrapper><ShopSetup /></MotionWrapper>
+          </PrivateRoute>
+        } />
+        <Route path="/shop/verification" element={
+          <PrivateRoute>
+            <MotionWrapper><SellerVerificationPage /></MotionWrapper>
           </PrivateRoute>
         } />
         <Route path="/shop/drafts" element={
@@ -287,26 +300,27 @@ function App() {
         <UserCacheProvider>
           <ActivePostProvider>
             <ToastProvider>
-              <UIProvider>
-                <HelmetProvider>
-                  <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <OrientationGuard>
-                      {/* Offline Banner - Global */}
-                      <OfflineBanner />
+              <CartProvider>
+                <UIProvider>
+                  <HelmetProvider>
+                    <Router>
+                      <OrientationGuard>
+                        {/* Offline Banner - Global */}
+                        <OfflineBanner />
 
-                      <div className="app-container">
-                        <Suspense fallback={<AppLoading />}>
-                          <AnimatedRoutes />
-                        </Suspense>
+                        <div className="app-container">
+                          <Suspense fallback={<AppLoading />}>
+                            <AnimatedRoutes />
+                          </Suspense>
 
-                        <MobileNavigation />
-                        <BottomTabNavigation />
-                      </div>
-                    </OrientationGuard>
-                  </Router>
-                  <ToastManager />
-                </HelmetProvider>
-              </UIProvider>
+                          <MobileNavigation />
+                        </div>
+                      </OrientationGuard>
+                    </Router>
+                    <ToastManager />
+                  </HelmetProvider>
+                </UIProvider>
+              </CartProvider>
             </ToastProvider>
           </ActivePostProvider>
         </UserCacheProvider>

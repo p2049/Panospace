@@ -20,14 +20,91 @@ import {
 import { WalletService } from './WalletService';
 
 // Rarity tiers with metadata
+// Visual styles are defined in /styles/rarity-system.css - use class names for styling
 export const RARITY_TIERS = {
-    Common: { color: '#9E9E9E', weight: 60, border: '2px solid #9E9E9E' },
-    Uncommon: { color: '#4CAF50', weight: 25, border: '2px solid #4CAF50' },
-    Rare: { color: '#2196F3', weight: 10, border: '2px solid #2196F3' },
-    Epic: { color: '#9C27B0', weight: 3, border: '3px solid #9C27B0' },
-    Legendary: { color: '#FFD700', weight: 1.5, border: '3px solid #FFD700', glow: true },
-    Mythic: { color: '#FF00FF', weight: 0.5, border: '4px solid #FF00FF', holographic: true, iridescent: true }
+    Common: {
+        cssClass: 'rarity-common',
+        color: 'var(--brand-mint)',
+        colorHex: '#7FFFD4',
+        weight: 60,
+        border: '2px solid var(--brand-mint)'
+    },
+    Rare: {
+        cssClass: 'rarity-rare',
+        color: 'var(--brand-blue)',
+        colorHex: '#4CC9F0',
+        weight: 25,
+        border: '2px solid var(--brand-blue)',
+        glow: true
+    },
+    Super: {
+        cssClass: 'rarity-super',
+        color: 'var(--brand-purple)',
+        colorHex: '#6C5CE7',
+        weight: 10,
+        border: '3px solid var(--brand-purple)',
+        glow: true
+    },
+    Ultra: {
+        cssClass: 'rarity-ultra',
+        color: 'var(--brand-pink)',
+        colorHex: '#FF6B9D', // Solar Flare Pink
+        weight: 3,
+        border: '3px solid var(--brand-pink)',
+        glow: true,
+        animated: true
+    },
+    Galactic: {
+        cssClass: 'rarity-galactic',
+        color: 'var(--gradient-iridescent)',
+        colorHex: '#e0b3ff',
+        weight: 2,
+        border: '4px solid transparent',
+        holographic: true,
+        iridescent: true,
+        glow: true
+    }
 } as const;
+
+// Map old rarity names to new tier names
+const RARITY_NAME_NORMALIZE: Record<string, keyof typeof RARITY_TIERS> = {
+    'common': 'Common',
+    'Common': 'Common',
+    'uncommon': 'Rare',      // Uncommon → Rare
+    'Uncommon': 'Rare',
+    'rare': 'Super',         // Rare → Super
+    'Rare': 'Rare',          // New Rare stays Rare
+    'super': 'Super',
+    'Super': 'Super',
+    'epic': 'Ultra',         // Epic → Ultra
+    'Epic': 'Ultra',
+    'ultra': 'Ultra',
+    'Ultra': 'Ultra',
+    'legendary': 'Galactic', // Legendary → Galactic
+    'Legendary': 'Galactic',
+    'mythic': 'Galactic',    // Mythic → Galactic
+    'Mythic': 'Galactic',
+    'galactic': 'Galactic',
+    'Galactic': 'Galactic'
+};
+
+/**
+ * Get rarity info with automatic normalization of old tier names
+ */
+export function getRarityInfo(rarity: string | undefined) {
+    if (!rarity) return RARITY_TIERS.Common;
+    const normalizedKey = RARITY_NAME_NORMALIZE[rarity];
+    if (normalizedKey) return RARITY_TIERS[normalizedKey];
+    return RARITY_TIERS.Common;
+}
+
+/**
+ * Get normalized rarity tier name
+ */
+export function normalizeRarity(rarity: string | undefined): keyof typeof RARITY_TIERS {
+    if (!rarity) return 'Common';
+    return RARITY_NAME_NORMALIZE[rarity] || 'Common';
+}
 
 export type Rarity = keyof typeof RARITY_TIERS;
 
@@ -85,6 +162,8 @@ export interface SpaceCardInput {
     audioUrl?: string;
     soundTag?: string;
     imagePosition?: { x: number; y: number };
+    cardLayout?: 'fullbleed' | 'bordered';
+    cityThemeId?: string;
 }
 
 export interface SpaceCard {
@@ -115,6 +194,8 @@ export interface SpaceCard {
     isAudioCard: boolean;
     audioUrl: string | null;
     soundTag: string | null;
+    cardLayout: 'fullbleed' | 'bordered';
+    cityThemeId?: string;
     createdAt: Timestamp;
     updatedAt: Timestamp;
     stats: {
@@ -169,7 +250,9 @@ export const SpaceCardService = {
                 isAudioCard,
                 audioUrl,
                 soundTag,
-                imagePosition
+                imagePosition,
+                cardLayout,
+                cityThemeId
             } = cardData;
 
             // Validate required fields
@@ -205,6 +288,8 @@ export const SpaceCardService = {
                 isAudioCard: isAudioCard || false,
                 audioUrl: audioUrl || null,
                 soundTag: soundTag || null,
+                cardLayout: cardLayout || 'bordered', // 'fullbleed' | 'bordered'
+                cityThemeId: cityThemeId || null,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
                 stats: {

@@ -1,0 +1,280 @@
+/**
+ * PANOSPACE RARITY VISUAL SYSTEM
+ * 
+ * Single source of truth for all rarity-based visual treatments.
+ * Uses ONLY existing Panospace brand color tokens from index.css.
+ * 
+ * RARITY TIERS (Low → High):
+ * 1. COMMON   - Ice Mint, no animation, minimal glow
+ * 2. RARE     - Brand Blue, slight glow, no animation
+ * 3. SUPER    - Brand Purple, moderate glow, no animation
+ * 4. ULTRA    - Solar Pink, strong glow, optional subtle pulse
+ * 5. GALACTIC - Iridescent gradient, slow shift, multi-color glow
+ * 
+ * USAGE:
+ * - Space Cards
+ * - Featured posts
+ * - Contest winners
+ * - Profile highlights
+ * - Feed cards
+ */
+
+/* =========================================
+   RARITY BORDER CLASSES
+   ========================================= */
+
+/* COMMON - Ice Mint, clean and minimal */
+.rarity-common {
+    border: 2px solid var(--brand-mint);
+    box-shadow: none;
+}
+
+.rarity-common:hover {
+    box-shadow: var(--glow-mint);
+}
+
+/* RARE - Brand Blue, slight glow */
+.rarity-rare {
+    border: 2px solid var(--brand-blue);
+    box-shadow: var(--glow-blue);
+}
+
+/* SUPER - Brand Purple, moderate glow */
+.rarity-super {
+    border: 3px solid var(--brand-purple);
+    box-shadow: var(--glow-purple);
+}
+
+/* ULTRA - Solar Pink, strong glow, optional pulse */
+.rarity-ultra {
+    border: 3px solid var(--brand-pink);
+    box-shadow: var(--glow-pink);
+}
+
+/* Ultra with subtle pulse animation (opt-in) */
+.rarity-ultra.rarity-animated {
+    animation: rarity-ultra-pulse 4s ease-in-out infinite;
+}
+
+/* GALACTIC - Iridescent gradient border, premium feel */
+.rarity-galactic {
+    position: relative;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    box-shadow: var(--glow-iridescent);
+}
+
+/* Iridescent border using pseudo-element */
+.rarity-galactic::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    background: var(--gradient-iridescent);
+    background-size: 300% 300%;
+    z-index: -1;
+    animation: rarity-galactic-shift 8s ease infinite;
+}
+
+/* =========================================
+   RARITY BADGE CLASSES
+   ========================================= */
+
+.rarity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    font-family: var(--font-family-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.rarity-badge-common {
+    background: var(--brand-mint);
+    color: #000;
+}
+
+.rarity-badge-rare {
+    background: var(--brand-blue);
+    color: #000;
+}
+
+.rarity-badge-super {
+    background: var(--brand-purple);
+    color: #fff;
+}
+
+.rarity-badge-ultra {
+    background: var(--brand-pink);
+    color: #000;
+}
+
+.rarity-badge-galactic {
+    background: var(--gradient-iridescent);
+    background-size: 200% 200%;
+    color: #000;
+    animation: rarity-galactic-shift 6s ease infinite;
+}
+
+/* =========================================
+   RARITY TEXT CLASSES
+   ========================================= */
+
+.rarity-text-common {
+    color: var(--brand-mint);
+}
+
+.rarity-text-rare {
+    color: var(--brand-blue);
+}
+
+.rarity-text-super {
+    color: var(--brand-purple);
+}
+
+.rarity-text-ultra {
+    color: var(--brand-pink);
+}
+
+.rarity-text-galactic {
+    background: var(--gradient-iridescent);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: rarity-galactic-shift 6s ease infinite;
+}
+
+/* =========================================
+   RARITY GLOW CLASSES (for icons, overlays)
+   ========================================= */
+
+.rarity-glow-common {
+    filter: drop-shadow(0 0 4px var(--brand-mint));
+}
+
+.rarity-glow-rare {
+    filter: drop-shadow(0 0 6px var(--brand-blue));
+}
+
+.rarity-glow-super {
+    filter: drop-shadow(0 0 8px var(--brand-purple));
+}
+
+.rarity-glow-ultra {
+    filter: drop-shadow(0 0 10px var(--brand-pink));
+}
+
+.rarity-glow-galactic {
+    filter:
+        drop-shadow(0 0 6px rgba(224, 179, 255, 0.5)) drop-shadow(0 0 12px rgba(179, 229, 252, 0.3));
+}
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+
+/* Ultra subtle pulse - very slow and tasteful */
+@keyframes rarity-ultra-pulse {
+
+    0%,
+    100% {
+        box-shadow: var(--glow-pink);
+    }
+
+    50% {
+        box-shadow: 0 0 28px rgba(255, 107, 157, 0.7);
+        /* Solar Flare Pink glow */
+    }
+}
+
+/* Galactic iridescent shift - slow gradient movement */
+@keyframes rarity-galactic-shift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    25% {
+        background-position: 50% 100%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    75% {
+        background-position: 50% 0%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* =========================================
+   SPACE CARD SPECIFIC RARITY STYLES
+   ========================================= */
+
+.space-card-rarity-common {
+    border: 2px solid var(--brand-mint);
+}
+
+.space-card-rarity-rare {
+    border: 2px solid var(--brand-blue);
+    box-shadow: 0 4px 12px rgba(76, 201, 240, 0.2);
+}
+
+.space-card-rarity-super {
+    border: 3px solid var(--brand-purple);
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+}
+
+.space-card-rarity-ultra {
+    border: 3px solid var(--brand-pink);
+    box-shadow: 0 4px 20px rgba(255, 107, 157, 0.4);
+    /* Solar Flare Pink */
+}
+
+.space-card-rarity-galactic {
+    position: relative;
+    border: 4px solid transparent;
+    box-shadow: 0 4px 24px rgba(224, 179, 255, 0.3);
+}
+
+.space-card-rarity-galactic::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    background: var(--gradient-iridescent);
+    background-size: 300% 300%;
+    z-index: -1;
+    animation: rarity-galactic-shift 8s ease infinite;
+}
+
+/* =========================================
+   PERFORMANCE OPTIMIZATION
+   ========================================= */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+
+    .rarity-ultra.rarity-animated,
+    .rarity-galactic::before,
+    .rarity-badge-galactic,
+    .rarity-text-galactic {
+        animation: none;
+    }
+}
+
+/* Disable animations on low-power mode or when many cards are visible (use with JS) */
+.rarity-no-animation .rarity-ultra.rarity-animated,
+.rarity-no-animation .rarity-galactic::before,
+.rarity-no-animation .rarity-badge-galactic,
+.rarity-no-animation .rarity-text-galactic {
+    animation: none;
+}

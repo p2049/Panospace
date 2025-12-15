@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '@/firebase';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { FaUserPlus, FaUserCheck } from 'react-icons/fa';
 
 const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
@@ -9,6 +10,7 @@ const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
     const [loading, setLoading] = useState(true);
     const [followDocId, setFollowDocId] = useState(null);
     const { currentUser } = useAuth();
+    const { showSuccess } = useToast();
 
     useEffect(() => {
         checkFollowStatus();
@@ -63,6 +65,7 @@ const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
                 });
                 setIsFollowing(true);
                 setFollowDocId(docRef.id);
+                showSuccess('Added to Spaces');
             }
         } catch (error) {
             console.error('Error toggling follow:', error);
@@ -108,7 +111,7 @@ const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
             }}
         >
             {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
-            {isFollowing ? 'Following' : 'Follow'}
+            {isFollowing ? 'ADDED' : 'ADD'}
         </button>
     );
 };

@@ -1,9 +1,11 @@
 import React from 'react';
 import { FaRocket, FaCrown } from 'react-icons/fa';
 import { RARITY_TIERS } from '@/services/SpaceCardService';
+import '@/styles/rarity-system.css';
 
 const SpaceCardBadge = ({ type = 'owner', rarity = 'Common', className = '' }) => {
     const rarityInfo = RARITY_TIERS[rarity] || RARITY_TIERS.Common;
+    const isGalactic = rarity === 'Galactic';
 
     const styles = {
         container: {
@@ -14,16 +16,13 @@ const SpaceCardBadge = ({ type = 'owner', rarity = 'Common', className = '' }) =
             borderRadius: '12px',
             fontSize: '0.75rem',
             fontWeight: '600',
-            background: 'rgba(0, 0, 0, 0.6)',
-            border: `1px solid ${rarityInfo.color}`,
-            color: rarityInfo.color,
+            background: isGalactic ? 'var(--gradient-iridescent)' : 'rgba(0, 0, 0, 0.6)',
+            backgroundSize: isGalactic ? '300% 300%' : 'auto',
+            border: `1px solid ${rarityInfo.colorHex || rarityInfo.color}`,
+            color: isGalactic ? '#000' : (rarityInfo.colorHex || rarityInfo.color),
             backdropFilter: 'blur(4px)',
-            boxShadow: rarityInfo.glow ? `0 0 8px ${rarityInfo.color}40` : 'none',
-            ...((rarityInfo.holographic) && {
-                background: `linear-gradient(135deg, ${rarityInfo.color}20, rgba(255,255,255,0.1), ${rarityInfo.color}20)`,
-                backgroundSize: '200% 200%',
-                animation: 'holoShift 3s ease infinite'
-            })
+            boxShadow: rarityInfo.glow ? `0 0 8px ${rarityInfo.colorHex}40` : 'none',
+            animation: isGalactic ? 'rarity-galactic-shift 6s ease infinite' : 'none'
         }
     };
 
@@ -36,3 +35,4 @@ const SpaceCardBadge = ({ type = 'owner', rarity = 'Common', className = '' }) =
 };
 
 export default SpaceCardBadge;
+

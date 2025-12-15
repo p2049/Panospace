@@ -655,6 +655,16 @@ export const getCategoryTags = (category: CardCategory): string[] => {
 };
 
 // Helper function to get rarity for a tag
+// Maps old rarity names to new tier names
+const RARITY_NAME_MAP: Record<string, string> = {
+    'common': 'Common',
+    'uncommon': 'Rare',     // Uncommon → Rare
+    'rare': 'Super',        // Rare → Super  
+    'epic': 'Ultra',        // Epic → Ultra
+    'legendary': 'Galactic', // Legendary → Galactic
+    'mythic': 'Galactic'    // Mythic → Galactic (merged into Galactic)
+};
+
 export const getAutoRarity = (category: CardCategory, tag: string): string | null => {
     let config: Record<string, RarityConfig>;
     switch (category) {
@@ -676,7 +686,9 @@ export const getAutoRarity = (category: CardCategory, tag: string): string | nul
         default:
             return null;
     }
-    return config[tag]?.rarity || null;
+    const oldRarity = config[tag]?.rarity || null;
+    // Map old rarity name to new tier name
+    return oldRarity ? (RARITY_NAME_MAP[oldRarity] || 'Common') : null;
 };
 
 // Helper function to get label for a tag

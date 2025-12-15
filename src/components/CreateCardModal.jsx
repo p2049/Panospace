@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { FaTimes, FaImage, FaStar, FaInfoCircle, FaRocket, FaFileAlt, FaUpload, FaShoppingCart } from 'react-icons/fa';
+import { FaTimes, FaImage, FaStar, FaInfoCircle, FaRocket, FaFileAlt, FaUpload, FaShoppingCart, FaCity } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { SpaceCardService, RARITY_TIERS, EDITION_TYPES, CARD_DISCIPLINES, CARD_STYLES } from '@/services/SpaceCardService';
 import { fetchPublishedPosts, fetchDrafts } from '@/core/services/firestore/posts.service';
@@ -13,8 +13,11 @@ import {
     getAllParks,
     getTagLabel
 } from '@/core/constants/officialCardCategories';
+import { CITY_THEMES } from '@/core/constants/cityThemes';
+import { CityCardFrame } from './CityCardFrame';
 import StarBackground from './StarBackground';
 import { logger } from '@/core/utils/logger';
+import '@/styles/rarity-system.css';
 
 const CreateCardModal = ({ onClose, onCreated }) => {
     const { currentUser } = useAuth();
@@ -60,6 +63,9 @@ const CreateCardModal = ({ onClose, onCreated }) => {
     const [editionType, setEditionType] = useState(EDITION_TYPES.UNLIMITED);
     const [editionSize, setEditionSize] = useState(100);
     const [cardStyle, setCardStyle] = useState(CARD_STYLES.CLASSIC);
+
+    const [cardLayout, setCardLayout] = useState('bordered'); // 'fullbleed' | 'bordered'
+    const [cityThemeId, setCityThemeId] = useState(null); // Default null (no city theme)
     // const [basePrice, setBasePrice] = useState(10); // Removed Selling Fields for now
     const [addToShopDraft, setAddToShopDraft] = useState(false); // NEW: Shop Draft Toggle
 
@@ -135,9 +141,8 @@ const CreateCardModal = ({ onClose, onCreated }) => {
         if (cardType === 'official' && selectedTag) {
             const autoRarity = getAutoRarity(officialCategory, selectedTag);
             if (autoRarity) {
-                // Capitalize first letter for compatibility with RARITY_TIERS keys
-                const formattedRarity = autoRarity.charAt(0).toUpperCase() + autoRarity.slice(1);
-                setRarity(formattedRarity);
+                // getAutoRarity now returns properly formatted tier names
+                setRarity(autoRarity);
             }
         }
     }, [cardType, officialCategory, selectedTag]);
@@ -288,6 +293,8 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                 editionSize: editionType === EDITION_TYPES.LIMITED ? editionSize : null,
                 linkedPostId: postId || selectedPost?.id || null,
                 cardStyle,
+                cardLayout, // 'fullbleed' | 'bordered'
+                cityThemeId: cardLayout === 'bordered' ? cityThemeId : null,
                 basePrice: 0, // Force 0 or remove entirely if schema allows. We are removing selling fields.
                 // New Fields
                 cardType,
@@ -1005,7 +1012,7 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                     {selectedTag && (
                                         <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(127, 255, 212, 0.05)', borderRadius: '8px', border: '1px solid rgba(127, 255, 212, 0.2)' }}>
                                             <div style={{ fontSize: '0.9rem', color: '#888' }}>Auto-Assigned Rarity</div>
-                                            <div style={{ fontWeight: 'bold', color: RARITY_TIERS[rarity]?.color || '#fff' }}>{rarity}</div>
+                                            <div className={`rarity-text-${rarity?.toLowerCase() || 'common'}`} style={{ fontWeight: 'bold' }}>{rarity}</div>
                                         </div>
                                     )}
                                 </div>
@@ -1034,7 +1041,7 @@ const CreateCardModal = ({ onClose, onCreated }) => {
 
                                     <div>
                                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
-                                            Select Rarity <FaStar style={{ color: RARITY_TIERS[rarity].color, marginLeft: '0.5rem' }} />
+                                            Select Rarity <FaStar className={`rarity-glow-${rarity?.toLowerCase() || 'common'}`} style={{ marginLeft: '0.5rem' }} />
                                         </label>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                                             {Object.keys(RARITY_TIERS).map(rarityTier => (
@@ -1043,9 +1050,9 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                                     onClick={() => setRarity(rarityTier)}
                                                     style={{
                                                         padding: '0.75rem',
-                                                        background: rarity === rarityTier ? RARITY_TIERS[rarityTier].color : '#1a1a1a',
-                                                        color: rarity === rarityTier ? '#000' : RARITY_TIERS[rarityTier].color,
-                                                        border: `2px solid ${RARITY_TIERS[rarityTier].color} `,
+                                                        background: rarity === rarityTier ? (RARITY_TIERS[rarityTier].colorHex || RARITY_TIERS[rarityTier].color) : '#1a1a1a',
+                                                        color: rarity === rarityTier ? '#000' : (RARITY_TIERS[rarityTier].colorHex || RARITY_TIERS[rarityTier].color),
+                                                        border: `2px solid ${RARITY_TIERS[rarityTier].colorHex || RARITY_TIERS[rarityTier].color}`,
                                                         borderRadius: '8px',
                                                         cursor: 'pointer',
                                                         fontWeight: '600',
@@ -1143,6 +1150,171 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                     </select>
                                 </div>
                             </div>
+
+                            {/* Card Layout Toggle */}
+                            <div style={{ marginTop: '1.5rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.75rem', fontWeight: '600' }}>Card Layout</label>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    {/* Fullbleed Option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setCardLayout('fullbleed')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '1rem',
+                                            background: cardLayout === 'fullbleed' ? 'rgba(127, 255, 212, 0.15)' : '#1a1a1a',
+                                            border: cardLayout === 'fullbleed' ? '2px solid var(--brand-mint)' : '1px solid #333',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {/* Fullbleed Preview Icon */}
+                                        <div style={{
+                                            width: '50px',
+                                            height: '70px',
+                                            background: 'linear-gradient(135deg, #333, #555)',
+                                            borderRadius: '6px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: '2px solid #666'
+                                        }}>
+                                            <FaImage style={{ color: '#888', fontSize: '1.2rem' }} />
+                                        </div>
+                                        <span style={{
+                                            color: cardLayout === 'fullbleed' ? 'var(--brand-mint)' : '#888',
+                                            fontSize: '0.85rem',
+                                            fontWeight: cardLayout === 'fullbleed' ? '600' : '400'
+                                        }}>Fullbleed</span>
+                                        <span style={{ color: '#666', fontSize: '0.7rem' }}>Edge-to-edge image</span>
+                                    </button>
+
+                                    {/* Bordered Option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setCardLayout('bordered')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '1rem',
+                                            background: cardLayout === 'bordered' ? 'rgba(127, 255, 212, 0.15)' : '#1a1a1a',
+                                            border: cardLayout === 'bordered' ? '2px solid var(--brand-mint)' : '1px solid #333',
+                                            borderRadius: '12px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {/* Bordered Preview Icon */}
+                                        <div style={{
+                                            width: '50px',
+                                            height: '70px',
+                                            background: '#222',
+                                            borderRadius: '6px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            overflow: 'hidden',
+                                            border: '2px solid #666'
+                                        }}>
+                                            {/* Landscape image area */}
+                                            <div style={{
+                                                flex: '0 0 55%',
+                                                background: 'linear-gradient(135deg, #333, #555)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <FaImage style={{ color: '#888', fontSize: '0.8rem' }} />
+                                            </div>
+                                            {/* Info area */}
+                                            <div style={{
+                                                flex: 1,
+                                                background: 'linear-gradient(180deg, #444, #333)',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                padding: '2px',
+                                                gap: '1px'
+                                            }}>
+                                                <div style={{ height: '3px', background: '#555', borderRadius: '1px' }}></div>
+                                                <div style={{ height: '2px', background: '#555', width: '60%', borderRadius: '1px' }}></div>
+                                            </div>
+                                        </div>
+                                        <span style={{
+                                            color: cardLayout === 'bordered' ? 'var(--brand-mint)' : '#888',
+                                            fontSize: '0.85rem',
+                                            fontWeight: cardLayout === 'bordered' ? '600' : '400'
+                                        }}>Bordered</span>
+                                        <span style={{ color: '#666', fontSize: '0.7rem' }}>Pokémon-style layout</span>
+                                    </button>
+
+                                </div>
+                            </div>
+
+                            {/* City Theme Selection - Custom & Bordered Only */}
+                            {cardType === 'custom' && cardLayout === 'bordered' && (
+                                <div style={{
+                                    marginTop: '1rem',
+                                    padding: '1rem',
+                                    background: '#1a1a1a',
+                                    border: '1px solid #333',
+                                    borderRadius: '8px'
+                                }}>
+                                    <label style={{ display: 'block', marginBottom: '1rem', fontWeight: '600' }}>City Background (Optional)</label>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                                        gap: '0.75rem',
+                                        maxHeight: '200px',
+                                        overflowY: 'auto',
+                                        paddingRight: '0.5rem'
+                                    }}>
+                                        {/* Standard / None Option */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setCityThemeId(null)}
+                                            style={{
+                                                padding: '0.75rem',
+                                                background: cityThemeId === null ? 'rgba(127, 255, 212, 0.2)' : '#222',
+                                                border: cityThemeId === null ? '1px solid var(--brand-mint)' : '1px solid #444',
+                                                borderRadius: '8px',
+                                                color: cityThemeId === null ? '#fff' : '#aaa',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                textAlign: 'center'
+                                            }}
+                                        >
+                                            Standard (None)
+                                        </button>
+
+                                        {Object.entries(CITY_THEMES).map(([id, theme]) => (
+                                            <button
+                                                key={id}
+                                                type="button"
+                                                onClick={() => setCityThemeId(id)}
+                                                style={{
+                                                    padding: '0.75rem',
+                                                    background: cityThemeId === id ? 'rgba(127, 255, 212, 0.2)' : '#222',
+                                                    border: cityThemeId === id ? '1px solid var(--brand-mint)' : '1px solid #444',
+                                                    borderRadius: '8px',
+                                                    color: cityThemeId === id ? '#fff' : '#aaa',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.85rem',
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                {theme.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Edition Type</label>
@@ -1250,21 +1422,269 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                         <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
                             <div style={{ flex: 1 }}>
                                 <h3>Card Preview</h3>
-                                <div style={{
-                                    aspectRatio: '2/3',
-                                    borderRadius: '12px',
-                                    overflow: 'hidden',
-                                    border: RARITY_TIERS[rarity].border,
-                                    boxShadow: RARITY_TIERS[rarity].glow ? `0 0 20px ${RARITY_TIERS[rarity].color} ` : 'none',
-                                    background: '#000'
-                                }}>
-                                    <img src={frontImage} alt={title} style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover',
-                                        objectPosition: `${imagePosition.x}% ${imagePosition.y}% `
-                                    }} />
-                                </div>
+
+                                {/* Fullbleed Layout */}
+                                {cardLayout === 'fullbleed' && (
+                                    <div
+                                        className={`${RARITY_TIERS[rarity]?.cssClass || 'rarity-common'}`}
+                                        style={{
+                                            aspectRatio: '2/3',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            boxShadow: RARITY_TIERS[rarity]?.glow ? `0 0 20px ${RARITY_TIERS[rarity].colorHex}40` : 'none',
+                                            background: '#000'
+                                        }}
+                                    >
+                                        <img src={frontImage} alt={title} style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
+                                        }} />
+                                    </div>
+                                )}
+
+                                {/* Bordered Layout - Pokémon Style (Standard) */}
+                                {cardLayout === 'bordered' && !cityThemeId && (
+                                    <div
+                                        className={`${RARITY_TIERS[rarity]?.cssClass || 'rarity-common'}`}
+                                        style={{
+                                            aspectRatio: '2/3',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            boxShadow: RARITY_TIERS[rarity]?.glow ? `0 0 25px ${RARITY_TIERS[rarity].colorHex}50` : 'none',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            // Rarity-matched gradient background
+                                            background: rarity === 'Galactic'
+                                                ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+                                                : rarity === 'Ultra'
+                                                    ? `linear-gradient(180deg, #1a0a12 0%, #2d1420 50%, rgba(255, 107, 157, 0.15) 100%)`
+                                                    : rarity === 'Super'
+                                                        ? `linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 50%, rgba(108, 92, 231, 0.15) 100%)`
+                                                        : rarity === 'Rare'
+                                                            ? `linear-gradient(180deg, #0a1a1a 0%, #0d2530 50%, rgba(76, 201, 240, 0.15) 100%)`
+                                                            : `linear-gradient(180deg, #0a1a15 0%, #0d2520 50%, rgba(127, 255, 212, 0.1) 100%)`
+                                        }}
+                                    >
+                                        {/* Landscape Image Area - Top 55% with film strip crop */}
+                                        <div style={{
+                                            flex: '0 0 55%',
+                                            position: 'relative',
+                                            margin: '8px 8px 0 8px',
+                                            borderRadius: '8px',
+                                            overflow: 'hidden',
+                                            border: `2px solid ${RARITY_TIERS[rarity]?.colorHex || '#7FFFD4'}30`
+                                        }}>
+                                            <img
+                                                src={frontImage}
+                                                alt={title}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Card Info Panel - Bottom */}
+                                        <div style={{
+                                            flex: 1,
+                                            padding: '12px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '6px'
+                                        }}>
+                                            {/* Title */}
+                                            <div style={{
+                                                fontSize: '1rem',
+                                                fontWeight: '700',
+                                                color: '#fff',
+                                                fontFamily: 'var(--font-family-heading)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.03em',
+                                                lineHeight: 1.2,
+                                                textShadow: `0 2px 4px rgba(0,0,0,0.5)`
+                                            }}>
+                                                {title || 'Card Title'}
+                                            </div>
+
+                                            {/* Tag / Subject */}
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                color: 'rgba(255,255,255,0.7)',
+                                                fontWeight: '500'
+                                            }}>
+                                                {cardType === 'official' ? getTagLabel(officialCategory, selectedTag) : customTag}
+                                            </div>
+
+                                            {/* Description */}
+                                            {description && (
+                                                <div style={{
+                                                    fontSize: '0.65rem',
+                                                    color: 'rgba(255,255,255,0.8)',
+                                                    marginTop: '2px',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                    lineHeight: 1.3,
+                                                    textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+                                                }}>
+                                                    {description}
+                                                </div>
+                                            )}
+
+                                            {/* Rarity Badge */}
+                                            <div style={{
+                                                marginTop: 'auto',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}>
+                                                <span
+                                                    className={`rarity-text-${rarity?.toLowerCase() || 'common'}`}
+                                                    style={{
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '700',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.05em'
+                                                    }}
+                                                >
+                                                    <FaStar style={{ marginRight: '4px', fontSize: '0.7rem' }} />
+                                                    {rarity}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '0.7rem',
+                                                    color: 'rgba(255,255,255,0.5)',
+                                                    fontWeight: '500'
+                                                }}>
+                                                    {discipline}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* City Layout - Bordered with Theme */}
+                                {cardLayout === 'bordered' && cityThemeId && (
+                                    <div
+                                        className={`${RARITY_TIERS[rarity]?.cssClass || 'rarity-common'}`}
+                                        style={{
+                                            aspectRatio: '2/3',
+                                            borderRadius: '12px',
+                                            overflow: 'hidden',
+                                            boxShadow: RARITY_TIERS[rarity]?.glow ? `0 0 25px ${RARITY_TIERS[rarity].colorHex}50` : 'none',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            position: 'relative'
+                                        }}
+                                    >
+                                        <CityCardFrame
+                                            themeId={cityThemeId}
+                                            width="100%"
+                                            height="100%"
+                                            style={{ position: 'absolute', inset: 0 }}
+                                        >
+                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+                                                {/* Image Area - Top (Standard) */}
+                                                <div style={{
+                                                    flex: '0 0 55%',
+                                                    position: 'relative',
+                                                    margin: '8px 8px 0 8px', // Margin at top
+                                                    borderRadius: '8px',
+                                                    overflow: 'hidden',
+                                                    border: `2px solid ${RARITY_TIERS[rarity]?.colorHex || '#7FFFD4'}30`
+                                                }}>
+                                                    <img src={frontImage} alt={title} style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover',
+                                                        objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
+                                                    }} />
+                                                </div>
+
+                                                {/* Card Info Panel - Bottom (Standard) */}
+                                                <div style={{
+                                                    flex: 1,
+                                                    padding: '12px',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '6px'
+                                                }}>
+                                                    {/* Title */}
+                                                    <div style={{
+                                                        fontSize: '1rem',
+                                                        fontWeight: '700',
+                                                        color: '#fff',
+                                                        fontFamily: 'var(--font-family-heading)',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.03em',
+                                                        lineHeight: 1.2,
+                                                        textShadow: `0 2px 4px rgba(0,0,0,0.5)`
+                                                    }}>
+                                                        {title || 'Card Title'}
+                                                    </div>
+
+                                                    {/* Tag / Subject */}
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: 'rgba(255,255,255,0.7)',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        {cardType === 'official' ? getTagLabel(officialCategory, selectedTag) : customTag}
+                                                    </div>
+
+                                                    {/* Description */}
+                                                    {description && (
+                                                        <div style={{
+                                                            fontSize: '0.65rem',
+                                                            color: 'rgba(255,255,255,0.8)',
+                                                            marginTop: '2px',
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden',
+                                                            lineHeight: 1.3,
+                                                            textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+                                                        }}>
+                                                            {description}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Rarity Badge */}
+                                                    <div style={{
+                                                        marginTop: 'auto',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <span
+                                                            className={`rarity-text-${rarity?.toLowerCase() || 'common'}`}
+                                                            style={{
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: '700',
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.05em'
+                                                            }}
+                                                        >
+                                                            <FaStar style={{ marginRight: '4px', fontSize: '0.7rem' }} />
+                                                            {rarity}
+                                                        </span>
+                                                        <span style={{
+                                                            fontSize: '0.7rem',
+                                                            color: 'rgba(255,255,255,0.5)',
+                                                            fontWeight: '500'
+                                                        }}>
+                                                            {discipline}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CityCardFrame>
+                                    </div>
+                                )}
                             </div>
                             <div style={{ flex: 1 }}>
                                 <h3>Card Details</h3>
@@ -1273,9 +1693,9 @@ const CreateCardModal = ({ onClose, onCreated }) => {
                                     <div><strong>Type:</strong> {cardType === 'official' ? 'Official' : 'Custom'}</div>
                                     <div><strong>Tag:</strong> {cardType === 'official' ? getTagLabel(officialCategory, selectedTag) : customTag}</div>
                                     <div><strong>Discipline:</strong> {discipline}</div>
-                                    <div><strong>Rarity:</strong> <span style={{ color: RARITY_TIERS[rarity].color }}>{rarity}</span></div>
-                                    <div><strong>Edition:</strong> {editionType === EDITION_TYPES.LIMITED ? `Limited(${editionSize})` : editionType}</div>
-                                    <div><strong>Edition:</strong> {editionType === EDITION_TYPES.LIMITED ? `Limited(${editionSize})` : editionType}</div>
+                                    <div><strong>Rarity:</strong> <span className={`rarity-text-${rarity?.toLowerCase() || 'common'}`}>{rarity}</span></div>
+                                    <div><strong>Layout:</strong> {cardLayout === 'bordered' ? (cityThemeId ? `Bordered (City: ${CITY_THEMES[cityThemeId]?.name})` : 'Bordered (Standard)') : 'Fullbleed'}</div>
+                                    <div><strong>Edition:</strong> {editionType === EDITION_TYPES.LIMITED ? `Limited (${editionSize})` : editionType}</div>
                                     {/* <div><strong>Price:</strong> ${basePrice.toFixed(2)}</div> */}
                                     {description && <div><strong>Description:</strong> {description}</div>}
                                     <div style={{

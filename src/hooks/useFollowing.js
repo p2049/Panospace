@@ -20,7 +20,16 @@ export const useFollowing = (userId) => {
         try {
             const followsRef = collection(db, 'follows');
             const q = query(followsRef, where('followerId', '==', userId));
-            const snapshot = await getDocs(q);
+
+            // 🛡️ SAFETY: Timeout
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Following list request timed out')), 10000)
+            );
+
+            const snapshot = await Promise.race([
+                getDocs(q),
+                timeoutPromise
+            ]);
 
             const followedUserIds = snapshot.docs.map(doc => doc.data().followingId);
             setFollowingList(followedUserIds);

@@ -39,6 +39,25 @@
   --gold-dark: #FFA500;
   --gold-glow: 0 0 20px rgba(255, 215, 0, 0.3);
 
+  /* === BRAND COLORS (Rarity System) === */
+  /* These colors are used across the app - centralized here as the source of truth */
+  --brand-mint: var(--ice-mint);
+  --brand-blue: #4CC9F0;
+  --brand-purple: #6C5CE7;
+  --brand-pink: #FF6B9D;
+  /* Solar Flare Pink - vibrant warm pink */
+
+  /* Iridescent Gradient (from existing Ultra/Premium styling) */
+  --gradient-iridescent: linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff);
+
+  /* Rarity Glows */
+  --glow-mint: 0 0 12px rgba(127, 255, 212, 0.4);
+  --glow-blue: 0 0 15px rgba(76, 201, 240, 0.4);
+  --glow-purple: 0 0 18px rgba(108, 92, 231, 0.5);
+  --glow-pink: 0 0 22px rgba(255, 107, 157, 0.6);
+  /* Solar Flare glow */
+  --glow-iridescent: 0 0 25px rgba(224, 179, 255, 0.3), 0 0 40px rgba(179, 229, 252, 0.2), 0 0 55px rgba(255, 214, 240, 0.15);
+
   /* Space Age Aesthetic */
   --glass-bg: rgba(20, 20, 20, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);

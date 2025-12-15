@@ -12,7 +12,8 @@ import { useBlock } from '@/hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '@/core/constants/nsfwTags';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { useFeedStore } from '@/core/store/useFeedStore';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar, FaUsers } from 'react-icons/fa';
+import UpgradeModal from '@/components/monetization/AddFundsModal';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar, FaUsers, FaGem } from 'react-icons/fa';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -115,6 +116,9 @@ const Settings = () => {
         setUserNSFWPreference(newValue);
     };
 
+    // Upgrade Modal State
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
     // Delete Account State
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
@@ -124,6 +128,25 @@ const Settings = () => {
     const [showConversionConfirm, setShowConversionConfirm] = useState(false);
     const [converting, setConverting] = useState(false);
     const [conversionError, setConversionError] = useState('');
+
+    // Fetch User Data from Firestore
+    const [userData, setUserData] = useState(null);
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (currentUser) {
+                try {
+                    const userRef = doc(db, 'users', currentUser.uid);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        setUserData(userSnap.data());
+                    }
+                } catch (error) {
+                    console.error("Error fetching user settings:", error);
+                }
+            }
+        };
+        fetchUserData();
+    }, [currentUser]);
 
     const handleLogout = async () => {
         try {
@@ -339,6 +362,81 @@ const Settings = () => {
                     <SettingsRow icon={FaTrash} label={t('settings.deleteAccount')} onClick={() => setShowDeleteConfirm(true)} isDestructive={true} />
                 </div>
 
+                {/* Membership Section (NEW) */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>MEMBERSHIP / PLAN</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ color: '#888', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current Plan</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {userData?.isSpaceCreator ? (
+                                    <>
+                                        <FaGem color="#7FFFD4" /> Space Creator
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Free Account</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        {userData?.isSpaceCreator && (
+                            <div style={{
+                                background: 'rgba(127, 255, 212, 0.15)',
+                                color: '#7FFFD4',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 'bold'
+                            }}>
+                                ACTIVE
+                            </div>
+                        )}
+                    </div>
+
+                    {!userData?.isSpaceCreator && (
+                        <>
+                            <div style={{ fontSize: '0.9rem', color: '#ccc', lineHeight: '1.5' }}>
+                                Upgrade to Space Creator for higher upload limits (30MB) and exclusive features.
+                            </div>
+                            <button
+                                onClick={() => setShowUpgradeModal(true)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    background: 'linear-gradient(135deg, #7FFFD4 0%, #00BFA5 100%)',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    color: '#000',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    fontSize: '0.95rem',
+                                    boxShadow: '0 4px 15px rgba(127, 255, 212, 0.3)'
+                                }}
+                            >
+                                Upgrade to Space Creator
+                            </button>
+                        </>
+                    )}
+                </div>
+
                 {/* Appearance Section */}
                 <h3 style={{
                     color: 'var(--text-secondary, #6b7f78)',
@@ -497,8 +595,8 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <SettingsRow icon={FaCreditCard} label={t('settings.manageSubscription')} onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaCreditCard} label={t('settings.paymentMethods')} onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaCreditCard} label={t('settings.manageSubscription')} onClick={() => window.open('https://billing.stripe.com/p/login/test_...', '_blank')} />
+                    {/* Note: In a real app, you'd generate a customer portal link dynamically */}
                     <SettingsRow icon={FaHistory} label={t('settings.purchaseHistory')} onClick={() => alert('Coming soon')} />
                 </div>
 
@@ -828,6 +926,14 @@ const Settings = () => {
                         targetId={activePost.id}
                         targetTitle={activePost.caption || activePost.title || 'Post'}
                         onClose={() => setShowReportModal(false)}
+                    />
+                )
+            }
+            {/* Upgrade Modal */}
+            {
+                showUpgradeModal && (
+                    <UpgradeModal
+                        onClose={() => setShowUpgradeModal(false)}
                     />
                 )
             }

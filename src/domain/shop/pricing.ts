@@ -656,22 +656,46 @@ export const getAspectRatioCategory = (width: number, height: number): number | 
     return 'custom';
 };
 
+// Resolution & Quality Standards
+export const MIN_DPI = 300;
+
 /**
  * Filter valid sizes for a given image
+ * Enforces:
+ * 1. Resolution Check (300 DPI minimum)
+ * 2. Aspect Ratio Tolerance (unless cropping allowed)
  */
 export const getValidSizesForImage = (width: number, height: number, allowCropped: boolean = false): ProductDefinition[] => {
-    if (allowCropped || !width || !height) return PRINT_PRODUCTS;
+    if (!width || !height) return [];
 
     const imageRatio = width / height;
     const isPortrait = imageRatio < 1;
     const normalizedImageRatio = isPortrait ? 1 / imageRatio : imageRatio;
 
-    const validSizes = PRINT_PRODUCTS.filter(size => {
-        const diff = Math.abs(size.ratio - normalizedImageRatio);
-        return diff < 0.15; // 15% tolerance
-    });
+    return PRINT_PRODUCTS.filter(size => {
+        // 1. Resolution Check (Critical)
+        if (!size.dimensions) return false; // Should have dimensions
 
-    return validSizes.length > 0 ? validSizes : PRINT_PRODUCTS;
+        // Calculate required pixels at 300 DPI
+        const reqW = size.dimensions.width * MIN_DPI;
+        const reqH = size.dimensions.height * MIN_DPI;
+
+        // Check if image has enough pixels (orientation agnostic)
+        // We check if the image can cover the print area at 300 DPI
+        const hasResolution =
+            (width >= reqW && height >= reqH) ||
+            (width >= reqH && height >= reqW);
+
+        if (!hasResolution) return false;
+
+        // 2. Aspect Ratio Check (if cropping not allowed)
+        if (!allowCropped) {
+            const diff = Math.abs(size.ratio - normalizedImageRatio);
+            if (diff >= 0.15) return false; // 15% tolerance
+        }
+
+        return true;
+    });
 };
 
 // Base Price Accessor

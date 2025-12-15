@@ -23,6 +23,7 @@ import FilmOptionsPanel from '@/components/create-post/FilmOptionsPanel';
 import ManualExifEditor from '@/components/create-post/ManualExifEditor';
 import CollectionSelector from '@/components/create-post/CollectionSelector';
 import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
+import ShopOptionsPanel from '@/components/create-post/ShopOptionsPanel';
 import ImageSizeWarningModal from '@/components/ImageSizeWarningModal';
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -212,6 +213,7 @@ const CreatePost = () => {
         pendingFiles: [],  // Queue of files to process after current
     });
     const [userIsPremium, setUserIsPremium] = useState(false);
+    const [sellerStatus, setSellerStatus] = useState('none');
 
     // Check if user is premium on mount
     useEffect(() => {
@@ -220,7 +222,9 @@ const CreatePost = () => {
             try {
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    setUserIsPremium(userDoc.data().isUltra || false);
+                    const data = userDoc.data();
+                    setUserIsPremium(data.isUltra || false);
+                    setSellerStatus(data.sellerStatus || 'none');
                 }
             } catch (e) {
                 logger.warn('Could not check premium status:', e);
@@ -908,6 +912,82 @@ const CreatePost = () => {
             <div className="create-post-layout">
                 {/* LEFT COLUMN: Images, Previews, Tags */}
                 <div className="preview-column">
+                    {/* MOBILE TITLE INPUT (Visible only on Mobile Portrait) */}
+                    <div className="mobile-only-title" style={{ marginBottom: '1rem', display: 'none' }}>
+                        <input
+                            type="text"
+                            placeholder="Title your post"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="form-input"
+                            style={{
+                                fontSize: '1.2rem',
+                                fontWeight: '700',
+                                border: 'none',
+                                borderBottom: '1px solid #333',
+                                borderRadius: 0,
+                                padding: '0.5rem 0',
+                                background: 'transparent',
+                                color: '#7FFFD4',
+                                transition: 'all 110ms ease-out',
+                                boxShadow: 'none',
+                                width: '100%',
+                                fontFamily: '"Rajdhani", sans-serif',
+                                textTransform: 'uppercase',
+                                marginBottom: '1rem'
+                            }}
+                        />
+
+                        {/* Mobile Post Type Toggle */}
+                        <div className="post-type-toggle" style={{ display: 'flex', alignItems: 'center' }}>
+                            <button
+                                type="button"
+                                onClick={() => setPostType("art")}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    marginRight: '0.5rem',
+                                    borderRadius: '6px',
+                                    border: postType === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                    background: postType === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                    color: postType === "art" ? '#7FFFD4' : '#888',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}
+                            >
+                                Art
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPostType("social")}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    borderRadius: '6px',
+                                    border: postType === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                    background: postType === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                    color: postType === "social" ? '#7FFFD4' : '#888',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem'
+                                }}
+                            >
+                                Social
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Loading Indicator for Photo Processing */}
                     {isProcessingStack && (
                         <div style={{
@@ -937,10 +1017,10 @@ const CreatePost = () => {
                     )}
 
                     {/* 1. Image Carousel & Stack Controls */}
-                    <div style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
+                    <div className="stack-controls-row" style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
 
                         {/* Vertical Stack Button */}
-                        <label style={{
+                        <label className="stack-btn" style={{
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '8px',
@@ -951,7 +1031,8 @@ const CreatePost = () => {
                             position: 'relative',
                             whiteSpace: 'nowrap' /* Prevent text wrap */
                         }}>
-                            <FaArrowsAltV /> Vertical Stack
+                            <FaArrowsAltV size={16} />
+                            <span className="stack-btn-text">Vertical Stack</span>
                             <input
                                 type="file"
                                 multiple
@@ -962,7 +1043,7 @@ const CreatePost = () => {
                         </label>
 
                         {/* Horizontal Row Button */}
-                        <label style={{
+                        <label className="stack-btn" style={{
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '8px',
@@ -972,7 +1053,8 @@ const CreatePost = () => {
                             cursor: 'pointer', fontSize: '0.85rem',
                             whiteSpace: 'nowrap'
                         }}>
-                            <FaArrowsAltH /> Horizontal Row
+                            <FaArrowsAltH size={16} />
+                            <span className="stack-btn-text">Horizontal Row</span>
                             <input
                                 type="file"
                                 multiple
@@ -983,7 +1065,7 @@ const CreatePost = () => {
                         </label>
 
                         {/* Grid Collage Button */}
-                        <label style={{
+                        <label className="stack-btn" style={{
                             background: 'rgba(255,255,255,0.1)',
                             border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '8px',
@@ -993,7 +1075,8 @@ const CreatePost = () => {
                             cursor: 'pointer', fontSize: '0.85rem',
                             whiteSpace: 'nowrap'
                         }}>
-                            <FaThLarge /> Grid Collage
+                            <FaThLarge size={14} />
+                            <span className="stack-btn-text">Grid Collage</span>
                             <input
                                 type="file"
                                 multiple
@@ -1019,6 +1102,7 @@ const CreatePost = () => {
                         moveSlide={moveSlide}
                         onAddMoreClick={() => fileInputRef.current?.click()}
                     />
+
 
                     {/* Stack Order Settings - Below Image Preview */}
                     {activeSlide?.type === 'stack' && activeSlide?.items && (
@@ -1152,7 +1236,7 @@ const CreatePost = () => {
                         `}</style>
 
                         {/* Post Type Toggle */}
-                        <div className="post-type-toggle" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                        <div className="post-type-toggle desktop-only-post-type" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
                             <span style={{ marginRight: '0.75rem', fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa' }}>
                                 POST TYPE:
                             </span>
@@ -1278,7 +1362,7 @@ const CreatePost = () => {
                             </div>
                         )}
 
-                        <div style={{ marginBottom: '0.5rem' }}>
+                        <div className="desktop-only-title" style={{ marginBottom: '0.5rem' }}>
                             <input
                                 type="text"
                                 placeholder="Title your post"
@@ -1417,12 +1501,21 @@ const CreatePost = () => {
                     />
 
 
-
                     {/* Rating System Toggle */}
                     <RatingSystemSelector
                         enableRatings={enableRatings}
                         setEnableRatings={setEnableRatings}
                     />
+
+                    {/* Shop Options (Phase 6) */}
+                    {activeSlide && activeSlide.type === 'image' && (
+                        <ShopOptionsPanel
+                            activeSlide={activeSlide}
+                            updateSlide={(updates) => updateSlide(activeSlideIndex, updates)}
+                            sellerStatus={sellerStatus}
+                            isPremium={userIsPremium}
+                        />
+                    )}
 
 
                     {/* Active Image Settings (Contextual) */}
@@ -1848,7 +1941,7 @@ const CreatePost = () => {
                         height: 100dvh !important;
                         overflow: hidden !important;
                     }
-                    .left-column, .right-column {
+                    .preview-column, .form-column {
                         height: 100% !important;
                         overflow-y: auto !important;
                         width: 100% !important;
@@ -1878,64 +1971,59 @@ const CreatePost = () => {
                         flex-direction: column !important;
                         height: auto !important;
                         overflow: visible;
-                        /* Rule: horizontal padding = 4vw */
-                        padding: 4vw; 
-                        padding-top: max(4vw, env(safe-area-inset-top));
-                        padding-bottom: max(4vw, env(safe-area-inset-bottom));
-                        gap: 4vw;
+                        padding: 1.5rem;
+                        padding-top: max(1.5rem, env(safe-area-inset-top));
+                        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+                        gap: 1.5rem;
                         max-width: 100vw;
                         box-sizing: border-box;
                     }
-                    .left-column, .right-column {
+                    .preview-column, .form-column {
                         height: auto;
                         overflow: visible;
-                        padding-right: 0;
+                        padding: 0;
                         width: 100%;
                         max-width: 100%;
                     }
-                    /* Move form to top on mobile portrait */
-                    .right-column {
-                        order: -1;
-                    }
+                    /* Move form to top on mobile portrait - REMOVED to keep Photos below Title (via duplication) */
+                    /* .form-column { order: -1; } */
+                    
                     .create-post-container {
                         overflow-x: hidden;
                         overflow-y: auto;
                         height: auto;
                         min-height: 100dvh;
-                        padding-bottom: 2rem;
+                        padding-bottom: 80px; /* Space for mobile nav if needed */
                     }
                     
                     /* Carousel Sizing - 16:9 Aspect Ratio */
                     .carousel-slide { 
                         aspect-ratio: 16/9;
-                        max-height: 35vh;
+                        max-height: 50vh;
                     }
                     .empty-state {
                         aspect-ratio: auto;
-                        min-height: 30vh;
+                        min-height: 250px;
                         height: auto;
-                        padding: 6vw 4vw;
+                        padding: 2rem;
                     }
                     .empty-state svg {
-                        /* Rule: icon-size = max(4vw, 18px) - scaled up slightly for main icon */
-                        width: max(8vw, 32px);
-                        height: max(8vw, 32px);
+                        width: 48px;
+                        height: 48px;
                     }
                     .empty-state p {
-                        /* Rule: font-size = max(3.5vw, 14px) */
-                        font-size: max(3.5vw, 14px);
+                        font-size: 1rem;
                         margin: 0.5rem 0 0 0;
                     }
                     .empty-state span {
-                        font-size: max(3vw, 12px);
+                        font-size: 0.85rem;
                     }
                     
                     .form-section {
-                        /* Rule: horizontal padding = 4vw */
-                        padding: 4vw;
+                        padding: 1.5rem;
                         margin-left: 0;
                         margin-right: 0;
-                        margin-bottom: 4vw;
+                        margin-bottom: 1.5rem;
                         width: 100%;
                     }
                     
@@ -1943,21 +2031,20 @@ const CreatePost = () => {
                     .desktop-publish {
                         display: none !important;
                     }
+
                     .mobile-publish-btn {
                         display: block !important;
                         position: static !important;
                         transform: none !important;
                         width: 100% !important;
                         min-width: auto !important;
-                        margin-top: 4vw !important;
-                        margin-bottom: 4vw !important;
+                        margin-top: 1.5rem !important;
+                        margin-bottom: 1.5rem !important;
                         left: auto !important;
                         bottom: auto !important;
                         
-                        /* Rule: height = 12vw (capped at 60px) */
-                        height: min(12vw, 60px);
-                        /* Rule: font-size = max(3.5vw, 14px) */
-                        font-size: max(3.5vw, 14px);
+                        height: 50px;
+                        font-size: 1rem;
                         
                         background: var(--ice-mint);
                         color: #000;
@@ -1967,7 +2054,26 @@ const CreatePost = () => {
                         cursor: pointer;
                         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
                     }
-                    
+
+                    /* --- MOBILE TITLES & ICONS --- */
+                    .mobile-only-title {
+                        display: block !important;
+                    }
+                    .desktop-only-title {
+                        display: none !important;
+                    }
+                    .desktop-only-post-type {
+                        display: none !important;
+                    }
+                    .stack-btn-text {
+                        display: none !important;
+                    }
+                    .stack-btn {
+                        padding: 0.8rem !important;
+                        justify-content: center !important;
+                        gap: 0 !important;
+                    }
+
                     /* Hide Cancel text, keep icon */
                     .cancel-text {
                         display: none;
@@ -1976,27 +2082,27 @@ const CreatePost = () => {
                     /* Adjust header title alignment */
                     .page-header-title {
                         text-align: left !important;
-                        font-size: max(3.5vw, 14px) !important;
+                        font-size: 1.1rem !important;
                     }
                     
                     /* Tag Panels - Compact & Scaled */
                     .tag-filter-panel {
-                        margin-bottom: 2vw !important;
+                        margin-bottom: 1rem !important;
                         border-radius: 12px !important;
                         max-width: 100% !important;
                         overflow: hidden !important;
                     }
                     .panel-header {
-                        padding: 3vw 4vw !important;
+                        padding: 1rem 1.25rem !important;
                     }
                     .panel-header span:first-child {
-                        font-size: max(3vw, 12px) !important;
+                        font-size: 0.95rem !important;
                     }
                     .panel-header span:last-child {
-                        font-size: max(2.5vw, 10px) !important;
+                        font-size: 0.8rem !important;
                     }
                     .panel-content {
-                        padding: 2vw 4vw 3vw !important;
+                        padding: 1rem 1.25rem 1.25rem !important;
                         max-width: 100% !important;
                         overflow: hidden !important;
                     }
@@ -2005,22 +2111,22 @@ const CreatePost = () => {
                         grid-auto-flow: column !important;
                         overflow-x: auto !important;
                         max-width: 100% !important;
-                        gap: 1.5vw !important;
+                        gap: 0.75rem !important;
                     }
                     .tags-grid button {
-                        padding: 1.5vw 2.5vw !important;
-                        font-size: max(2.5vw, 10px) !important;
-                        border-radius: 5px !important;
+                        padding: 0.6rem 1rem !important;
+                        font-size: 0.85rem !important;
+                        border-radius: 6px !important;
                     }
                     
                     .location-grid { 
                         grid-template-columns: 1fr;
-                        gap: 2vw;
+                        gap: 0.75rem;
                     }
                     
                     .add-more-carousel-btn {
-                        padding: 3vw;
-                        font-size: max(3vw, 12px);
+                        padding: 1rem;
+                        font-size: 0.9rem;
                     }
                 }
 

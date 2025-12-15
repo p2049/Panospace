@@ -177,8 +177,8 @@ class GlobalErrorBoundary extends React.Component {
                             Try refreshing the page or returning to the home screen.
                         </p>
 
-                        {/* Error Details (Development Mode) */}
-                        {import.meta.env.DEV && this.state.error && (
+                        {/* Error Details (Forced) */}
+                        {this.state.hasError && (
                             <details style={{
                                 marginBottom: '2rem',
                                 textAlign: 'left',

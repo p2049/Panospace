@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '@/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
-import { FaArrowLeft, FaTag, FaInfoCircle, FaEdit, FaSave, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaTag, FaInfoCircle, FaEdit, FaSave, FaCheck, FaTimes, FaCartPlus } from 'react-icons/fa';
 import CheckoutButton from '@/components/CheckoutButton';
+import { useCart } from '@/context/CartContext';
 import {
     getPrintifyProducts,
     PRINT_TIERS,
@@ -24,6 +25,7 @@ const ShopItemDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser, userProfile } = useAuth(); // Added userProfile for check
+    const { addToCart } = useCart();
 
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -949,6 +951,32 @@ const ShopItemDetail = () => {
                     </div>
 
                     <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                        <button
+                            onClick={() => addToCart({
+                                ...item,
+                                price: currentPrice // Ensure current price for size is passed
+                            }, 1, selectedSize)}
+                            disabled={!selectedSize}
+                            style={{
+                                width: '100%',
+                                padding: '1.2rem',
+                                background: '#222',
+                                color: '#fff',
+                                border: '1px solid #333',
+                                borderRadius: '8px',
+                                fontSize: '1.2rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '1rem',
+                                cursor: selectedSize ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <FaCartPlus /> Add to Cart
+                        </button>
+
                         <CheckoutButton
                             post={item}
                             selectedSize={selectedSize}

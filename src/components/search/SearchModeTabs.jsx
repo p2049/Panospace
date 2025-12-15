@@ -5,16 +5,17 @@ import PSButton from '@/components/PSButton';
 
 import { isFeatureEnabled } from '@/config/featureFlags';
 
-const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
+const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile, children }) => {
     return (
         <div className="search-mode-switcher" style={{
             display: 'flex',
-            gap: isMobile ? '0.15rem' : '1rem',
+            gap: '0.4rem', // Reduced gap (Group D)
             marginBottom: isMobile ? '0' : '0.25rem',
             overflowX: 'auto',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            justifyContent: isMobile ? 'space-between' : 'flex-start'
+            justifyContent: 'flex-start',
+            paddingRight: '2rem' // Added End Padding (Group D)
         }}>
             <style>{`
                 @media (max-width: 1024px) {
@@ -22,12 +23,14 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
                         display: none !important;
                     }
                     .search-mode-switcher button {
-                        background: transparent !important;
-                        border: none !important;
-                        box-shadow: none !important;
+                        /* Force visible background/border for icons on mobile if needed */
                     }
                 }
             `}</style>
+
+            {/* Render any prefix elements (like Art/Shop buttons) */}
+            {children}
+
             {[
                 { key: 'posts', icon: FaCamera, label: 'Posts', enabled: true },
                 { key: 'galleries', icon: FaImage, label: 'Studios', enabled: isFeatureEnabled('GALLERIES') },
@@ -46,12 +49,14 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile }) => {
                     onClick={() => setCurrentMode(mode.key)}
                     style={{
                         height: '32px',
-                        padding: isMobile ? '0 0.2rem' : '0.5rem 1.25rem',
-                        flex: isMobile ? '1' : undefined,
+                        width: isMobile ? '32px' : undefined, // Force square on mobile
+                        padding: isMobile ? '0' : '0.5rem 1rem',
+                        flexShrink: 0,
                         justifyContent: 'center',
-                        minWidth: isMobile ? '28px' : undefined
+                        minWidth: isMobile ? '32px' : undefined,
+                        borderRadius: '8px' // Enforce rounded square (Group E)
                     }}
-                    icon={<ModernIcon icon={mode.icon} size={14} glow={currentMode === mode.key} />}
+                    icon={<mode.icon size={16} />} // Raw icon, no ModernIcon wrapper (Group E)
                 >
                     <span className="tab-label">{!isMobile && mode.label}</span>
                 </PSButton>

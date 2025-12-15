@@ -27,7 +27,8 @@ const SearchHeader = ({
     searchMode,
     setSearchMode,
     isMarketplaceMode,
-    setIsMarketplaceMode
+    setIsMarketplaceMode,
+    hasActiveFilters // New prop
 }) => {
     const navigate = useNavigate();
     const { accentColor } = useThemeColors();
@@ -41,6 +42,8 @@ const SearchHeader = ({
             position: 'sticky',
             top: 0,
             height: 'auto',
+            width: '100%',
+            boxSizing: 'border-box',
             zIndex: 50,
             WebkitTransform: 'translateZ(0)',
             overflow: 'visible',
@@ -95,8 +98,8 @@ const SearchHeader = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '2rem',
-                    marginBottom: isMobile ? '0.2rem' : '0.5rem',
-                    justifyContent: isMobile ? 'space-between' : 'flex-start'
+                    marginBottom: '0.5rem',
+                    justifyContent: 'flex-start'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         {/* Custom Green Planet with Ring Logo */}
@@ -111,7 +114,7 @@ const SearchHeader = ({
                                 cursor: 'pointer',
                                 overflow: 'visible'
                             }}
-                            title="Go to Feed"
+                            title="Go to Orbit"
                         >
                             <defs>
                                 <radialGradient id="planetGradient" cx="40%" cy="40%">
@@ -174,11 +177,11 @@ const SearchHeader = ({
                                     filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))',
                                     cursor: 'default',
                                     userSelect: 'none'
-                                }}>EXPLORE {isMobile && selectedTags.length > 0 && <span style={{ fontSize: '0.8em', verticalAlign: 'top', color: '#7FFFD4', WebkitTextFillColor: '#7FFFD4' }}>•</span>}</span>
+                                }}>EXPLORE</span>
                         </div>
                     </div>
 
-                    {/* Category Tabs - Desktop */}
+                    {/* Category Tabs - Desktop ONLY */}
                     {!isMobile && (
                         <div style={{ flex: 1, overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                             <SearchModeTabs
@@ -190,18 +193,23 @@ const SearchHeader = ({
                     )}
                 </div>
 
-                {/* Desktop Layout (and Mobile Search Bar Row) */}
+                {/* ROW 1: Desktop Layout & Mobile Search Bar Row (Input + Controls) */}
                 <div className="search-bar-container" style={{
                     display: 'flex',
                     flexDirection: 'row',
                     alignItems: 'center',
-                    gap: '0.75rem',
+                    gap: isMobile ? '0.5rem' : '0.75rem',
                     marginBottom: '0',
                     position: 'relative',
-                    zIndex: 10
+                    zIndex: 10,
+                    flexWrap: 'nowrap' // Force single row (Group Goal)
                 }}>
-                    {/* Search Bar - Narrower */}
-                    <div style={{ position: 'relative', maxWidth: isMobile ? '140px' : '320px', minWidth: isMobile ? '100px' : '280px', flexShrink: 0 }}>
+                    {/* Search Bar - Takes available space */}
+                    <div style={{
+                        position: 'relative',
+                        flex: 1, // Grow to fill space
+                        minWidth: '50px' // Prevent collapse
+                    }}>
                         <FaSearch style={{
                             position: 'absolute',
                             left: '1rem',
@@ -214,12 +222,12 @@ const SearchHeader = ({
                         }} />
                         <input
                             type="text"
-                            placeholder={`Search ${currentMode}...`}
+                            placeholder={isMobile ? "Search..." : `Search ${currentMode}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
                                 width: '100%',
-                                padding: '0.45rem 1rem 0.45rem 2.8rem',
+                                padding: '0.45rem 1rem 0.45rem 2.5rem', // Slightly less padding on mobile
                                 background: 'rgba(0, 0, 0, 0.6)',
                                 border: '1px solid rgba(127, 255, 212, 0.3)',
                                 borderRadius: '10px',
@@ -250,9 +258,8 @@ const SearchHeader = ({
                         />
                     </div>
 
-                    {/* Phase 3 Fix: Art/Social Tabs - Banner Inline */}
-                    {/* Phase 3 Fix: Single Toggle Button for Art/Social */}
-                    {currentMode === 'posts' && (
+                    {/* Desktop: Art/Social Buttons (Only show here if NOT mobile) */}
+                    {!isMobile && currentMode === 'posts' && (
                         <div className="search-mode-tabs" style={{ flexShrink: 0, display: 'flex', gap: '0.5rem' }}>
                             <button
                                 onClick={() => setSearchMode(searchMode === "art" ? "social" : "art")}
@@ -304,25 +311,27 @@ const SearchHeader = ({
                                     boxSizing: 'border-box'
                                 }}
                             >
-                                {isMarketplaceMode ? '🛍️ MARKET' : '🛍️ SHOP'}
+                                {isMarketplaceMode ? 'SHOP' : 'SHOP'}
                             </button>
+
+
                         </div>
                     )}
 
-                    {/* Mobile: Filter button next to Search Bar */}
+                    {/* Mobile: Filter button */}
                     {isMobile && (
                         <button
                             onClick={() => setIsMobileFiltersOpen(true)}
                             style={{
-                                background: 'rgba(127, 255, 212, 0.1)',
-                                border: '1px solid var(--ice-mint)',
+                                background: hasActiveFilters ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
+                                border: hasActiveFilters ? '1px solid var(--ice-mint)' : '1px solid rgba(255, 255, 255, 0.2)',
                                 borderRadius: '8px',
                                 width: '32px',
                                 height: '32px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: 'var(--ice-mint)',
+                                color: hasActiveFilters ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.7)',
                                 cursor: 'pointer',
                                 flexShrink: 0
                             }}
@@ -331,7 +340,7 @@ const SearchHeader = ({
                         </button>
                     )}
 
-                    {/* Mobile: Compact Filter Controls */}
+                    {/* Mobile: Compact Filter Controls Row (Inline now) */}
                     {isMobile && (
                         <>
                             {/* Following Toggle - Icon Only */}
@@ -351,7 +360,7 @@ const SearchHeader = ({
                                     flexShrink: 0,
                                     fontSize: '14px'
                                 }}
-                                title="Following Only"
+                                title="Added Only"
                             >
                                 👥
                             </button>
@@ -370,7 +379,7 @@ const SearchHeader = ({
                                     fontSize: '0.7rem',
                                     cursor: 'pointer',
                                     flexShrink: 0,
-                                    minWidth: '60px'
+                                    maxWidth: '60px'
                                 }}
                             >
                                 <option value="recent">New</option>
@@ -395,16 +404,14 @@ const SearchHeader = ({
                                     flexShrink: 0,
                                     fontSize: '18px'
                                 }}
-                                title={viewMode === 'grid' ? 'Grid View' : 'Feed View'}
+                                title={viewMode === 'grid' ? 'Grid View' : 'Orbit View'}
                             >
                                 {viewMode === 'grid' ? '⊞' : '☰'}
                             </button>
-
-
                         </>
                     )}
 
-                    {/* Desktop: Buttons Row */}
+                    {/* Desktop: Buttons Row (Not modified) */}
                     {!isMobile && (
                         <div style={{
                             display: 'flex',
@@ -454,7 +461,7 @@ const SearchHeader = ({
                                     letterSpacing: '0.05em',
                                     textTransform: 'uppercase'
                                 }}>
-                                    Following
+                                    ADDED
                                 </span>
                             </label>
 
@@ -470,6 +477,50 @@ const SearchHeader = ({
                         </div>
                     )}
                 </div>
+
+                {/* ROW 2: Mobile Category Tabs (Icon Row) - Bottom Row */}
+                {isMobile && (
+                    <div style={{ marginTop: '0.75rem', width: '100%', overflow: 'hidden' }}>
+                        <SearchModeTabs
+                            currentMode={currentMode}
+                            setCurrentMode={setCurrentMode}
+                            isMobile={isMobile}
+                        >
+                            {/* Insert Art/Shop Buttons Here as Children for Mobile Scroll */}
+                            {currentMode === 'posts' && (
+                                <>
+                                    <button
+                                        onClick={() => setSearchMode(searchMode === "art" ? "social" : "art")}
+                                        style={{
+                                            padding: '0.35rem 0.5rem',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${accentColor}`,
+                                            background: searchMode === 'art' ? accentColor : 'transparent',
+                                            color: searchMode === 'art' ? '#000' : accentColor,
+                                            fontSize: '0.7rem',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            whiteSpace: 'nowrap',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none',
+                                            height: '32px',
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        {searchMode === 'art' ? 'ART' : 'SOCIAL'}
+                                    </button>
+
+
+                                </>
+                            )}
+                        </SearchModeTabs>
+                    </div>
+                )}
             </div>
 
 

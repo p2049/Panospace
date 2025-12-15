@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaWallet, FaHistory, FaArrowUp, FaArrowDown, FaTimes, FaPlus } from 'react-icons/fa';
+import { FaWallet, FaHistory, FaArrowUp, FaArrowDown, FaTimes } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { WalletService } from '@/services/WalletService';
 import { formatPrice } from '@/core/utils/helpers';
@@ -37,25 +37,7 @@ const WalletModal = ({ onClose }) => {
     // Modal escape handling
     const { handleBackdropClick } = useModalEscape(true, onClose);
 
-    const handleAddFunds = async () => {
-        // Mock Deposit
-        const amount = 100; // $100
-        if (window.confirm(`Add $${amount} to your wallet (Test Mode)?`)) {
-            try {
-                await WalletService.addFunds(currentUser.uid, amount, 'deposit', 'Test Deposit');
-                alert("Funds added!");
-                // Refresh data
-                const [walletData, txData] = await Promise.all([
-                    WalletService.getWallet(currentUser.uid),
-                    WalletService.getTransactions(currentUser.uid)
-                ]);
-                setWallet(walletData);
-                setTransactions(txData);
-            } catch (error) {
-                alert("Failed to add funds");
-            }
-        }
-    };
+
 
     if (!currentUser) return null;
 
@@ -108,7 +90,7 @@ const WalletModal = ({ onClose }) => {
                     zIndex: 1
                 }}>
                     <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.25rem' }}>
-                        <FaWallet style={{ color: '#7FFFD4' }} /> My Wallet
+                        <FaWallet style={{ color: '#7FFFD4' }} /> Creator Earnings
                     </h2>
                     <button
                         onClick={onClose}
@@ -180,7 +162,7 @@ const WalletModal = ({ onClose }) => {
                                 textAlign: 'center',
                                 border: '1px solid #333'
                             }}>
-                                <div style={{ color: '#888', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Available Balance</div>
+                                <div style={{ color: '#888', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Pending Earnings</div>
                                 <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#fff' }}>
                                     ${wallet?.balance?.toFixed(2) || '0.00'}
                                 </div>
@@ -201,115 +183,28 @@ const WalletModal = ({ onClose }) => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                <button
-                                    onClick={handleAddFunds}
-                                    style={{
-                                        flex: 1,
-                                        padding: '1rem',
-                                        background: '#7FFFD4',
-                                        color: '#000',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem'
-                                    }}
-                                >
-                                    <FaPlus /> Add Funds
-                                </button>
-                                <button
-                                    disabled={!wallet?.balance || wallet.balance < 25}
-                                    title={(!wallet?.balance || wallet.balance < 25) ? "Minimum withdrawal is $25" : "Withdraw funds"}
-                                    style={{
-                                        flex: 1,
-                                        padding: '1rem',
-                                        background: '#333',
-                                        color: '#fff',
-                                        border: '1px solid #444',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        cursor: (!wallet?.balance || wallet.balance < 25) ? 'not-allowed' : 'pointer',
-                                        opacity: (!wallet?.balance || wallet.balance < 25) ? 0.5 : 1
-                                    }}
-                                >
-                                    Withdraw
-                                </button>
-                            </div>
-                            {(!wallet?.balance || wallet.balance < 25) && (
-                                <div style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem' }}>
-                                    Minimum withdrawal amount is $25.00
-                                </div>
-                            )}
-
-                            {/* Upgrade to Ultra Button */}
-                            <div style={{
-                                marginTop: '1.5rem',
-                                position: 'relative',
-                                borderRadius: '12px',
-                                overflow: 'hidden'
-                            }}>
-                                {/* Iridescent animated border */}
-                                <div style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    borderRadius: '12px',
-                                    padding: '2px',
-                                    background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
-                                    backgroundSize: '300% 300%',
-                                    animation: 'iridescent-border 6s ease infinite',
-                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                                    WebkitMaskComposite: 'xor',
-                                    maskComposite: 'exclude',
-                                    pointerEvents: 'none'
-                                }} />
-
-                                <button
-                                    onClick={() => {
-                                        onClose();
-                                        window.location.href = '/ultra';
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '1rem',
-                                        background: 'rgba(0, 0, 0, 0.8)',
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '12px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem',
-                                        fontSize: '0.95rem',
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <span style={{
-                                        background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0)',
-                                        backgroundSize: '300% 300%',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                        animation: 'iridescent-border 6s ease infinite'
-                                    }}>✦</span>
-                                    Upgrade to Ultra
-                                </button>
+                            <button
+                                disabled={true}
+                                title="Payouts enabled after verification"
+                                style={{
+                                    flex: 1,
+                                    padding: '1rem',
+                                    background: '#333',
+                                    color: '#fff',
+                                    border: '1px solid #444',
+                                    borderRadius: '8px',
+                                    fontWeight: 'bold',
+                                    cursor: 'not-allowed',
+                                    opacity: 0.5
+                                }}
+                            >
+                                Withdraw
+                            </button>
+                            <div style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem', marginTop: '1rem' }}>
+                                Earnings are tracked internally. Payouts will be available after creator verification.
                             </div>
 
-                            {/* Iridescent Animation Keyframes */}
-                            <style>{`
-                                @keyframes iridescent-border {
-                                    0% { background-position: 0% 50%; }
-                                    25% { background-position: 50% 100%; }
-                                    50% { background-position: 100% 50%; }
-                                    75% { background-position: 50% 0%; }
-                                    100% { background-position: 0% 50%; }
-                                }
-                            `}</style>
+                            {/* Upgrade Button Removed - Moved to Settings */}
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -359,8 +254,8 @@ const WalletModal = ({ onClose }) => {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

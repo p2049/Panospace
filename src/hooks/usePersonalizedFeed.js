@@ -20,7 +20,10 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
     const [refreshing, setRefreshing] = useState(false);
     const lastDocRef = useRef(null);
     const { currentUser } = useAuth();
-    const { followingList, loading: followingLoading } = useFollowing(currentUser?.uid);
+    const { followingList: rawFollowingList, loading: followingLoading } = useFollowing(currentUser?.uid);
+    // Safety: ensure array
+    const followingList = Array.isArray(rawFollowingList) ? rawFollowingList : [];
+
 
     // Custom Feed State
     const [customFeedConfig, setCustomFeedConfig] = useState(null);
@@ -118,7 +121,16 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             }
 
             const q = query(collection(db, 'posts'), ...constraints);
-            const snapshot = await getDocs(q);
+
+            // 🛡️ SAFETY: Add timeout to prevent eternal loading
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Feed request timed out')), 15000)
+            );
+
+            const snapshot = await Promise.race([
+                getDocs(q),
+                timeoutPromise
+            ]);
 
             let newPosts = snapshot.docs.map(doc => ({
                 id: doc.id,
@@ -171,7 +183,8 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             }
             // 3. Standard Following Only Filter
             else if (followingOnly && currentUser) {
-                if (followingList && followingList.length > 0) {
+                if (followingList.length > 0) {
+
                     // USER REQUEST: Show your own posts in feed when on following
                     // We simply add currentUser.uid to the inclusion check
                     newPosts = newPosts.filter(p =>

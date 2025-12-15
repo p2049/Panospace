@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { doc, addDoc, deleteDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { useBlock } from '@/hooks/useBlock';
 import { useCollections } from '@/hooks/useCollections';
 import { useProfile } from '@/hooks/useProfile';
@@ -15,12 +16,14 @@ import CreateMuseumModal from '@/components/CreateMuseumModal';
 import MuseumCard from '@/components/MuseumCard';
 import ReportModal from '@/components/ReportModal';
 import CreateCardModal from '@/components/CreateCardModal';
+import { CityCardFrame } from '@/components/CityCardFrame';
 import BusinessCardModal from '@/components/BusinessCardModal';
 import CommissionModal from '@/components/monetization/CommissionModal';
 import WalletModal from '@/components/WalletModal';
+import UpgradeModal from '@/components/monetization/AddFundsModal';
 import DisciplinesModal from '@/components/DisciplinesModal';
 import { getUnreadCount } from '@/services/notificationService';
-import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette, FaStar } from 'react-icons/fa';
+import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette, FaStar, FaStore } from 'react-icons/fa';
 import FollowListModal from '@/components/FollowListModal';
 import { getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { isFeatureEnabled } from '@/config/featureFlags';
@@ -28,6 +31,8 @@ import { RocketIcon, AstronautIcon, PlanetIcon } from '@/components/SpaceIcons';
 import PlanetUserIcon from '@/components/PlanetUserIcon'; // Import new shared icon
 import ShopShelfRow from '@/components/ShopShelfRow'; // NEW: Shop Shelf Component
 import { COLORS, getGradientCss, getThemeGradient } from '@/core/theme/colors';
+import { RARITY_TIERS, getRarityInfo, normalizeRarity } from '@/services/SpaceCardService';
+import '@/styles/rarity-system.css';
 import { useThemeStore } from '@/core/store/useThemeStore';
 import { useFeedStore } from '@/core/store/useFeedStore';
 
@@ -45,6 +50,7 @@ const Profile = () => {
     const { currentUser } = useAuth();
     const { blockUser } = useBlock();
     const { t } = useTranslation();
+    const { showSuccess } = useToast();
     const { setProfileAccent, resetProfileAccent } = useThemeStore();
     const [showCreateMuseumModal, setShowCreateMuseumModal] = useState(false);
 
@@ -71,7 +77,8 @@ const Profile = () => {
     const [showFollowList, setShowFollowList] = useState(false);
     const [followListType, setFollowListType] = useState('followers');
     const { currentFeed: feedType, toggleFeed } = useFeedStore();
-    const [showAddFunds, setShowAddFunds] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showWalletModal, setShowWalletModal] = useState(false);
     const [showProfilePopout, setShowProfilePopout] = useState(false);
     const [followLoading, setFollowLoading] = useState(false);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -91,6 +98,15 @@ const Profile = () => {
         setFollowDocId,
         setSpaceCards
     } = useProfile(targetId, currentUser, activeTab, feedType);
+
+    const [cardFilter, setCardFilter] = useState('custom');
+
+    const filteredSpaceCards = React.useMemo(() => {
+        return spaceCards.filter(c => {
+            if (cardFilter === 'app') return c.cardType === 'official';
+            return c.cardType !== 'official';
+        });
+    }, [spaceCards, cardFilter]);
 
     // Fetch orders for Gallery tab
     React.useEffect(() => {
@@ -135,6 +151,7 @@ const Profile = () => {
                 });
                 setIsFollowing(true);
                 setFollowDocId(docRef.id);
+                showSuccess('Added to Spaces');
             }
         } catch (error) {
             console.error('Error toggling follow:', error);
@@ -431,7 +448,7 @@ const Profile = () => {
                                         clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)'
                                     }}
                                 >
-                                    {isFollowing ? 'Following' : 'Follow'}
+                                    {isFollowing ? 'ADDED' : 'ADD'}
                                 </button>
                                 <button
                                     onClick={() => setShowCommissionModal(true)}
@@ -584,7 +601,7 @@ const Profile = () => {
                                                             opacity: followLoading ? 0.5 : 1
                                                         }}
                                                     >
-                                                        {isFollowing ? t('profile.following') : t('profile.follow')}
+                                                        {isFollowing ? 'ADDED' : 'ADD'}
                                                     </button>
                                                 ) : (
                                                     <button
@@ -610,11 +627,11 @@ const Profile = () => {
                                             <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
                                                 <div onClick={() => { setFollowListType('following'); setShowFollowList(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
                                                     <span style={{ fontSize: '1rem', fontWeight: '800', fontFamily: 'var(--font-family-heading)', color: user.profileTheme?.usernameColor }}>{user.followingCount || 0}</span>
-                                                    <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{t('profile.following')}</span>
+                                                    <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Spaces</span>
                                                 </div>
                                                 <div onClick={() => { setFollowListType('followers'); setShowFollowList(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
                                                     <span style={{ fontSize: '1rem', fontWeight: '800', fontFamily: 'var(--font-family-heading)', color: user.profileTheme?.usernameColor }}>{user.followersCount || 0}</span>
-                                                    <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{t('profile.followers')}</span>
+                                                    <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Visitors</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -754,11 +771,18 @@ const Profile = () => {
             </div >
 
             {/* Tabs */}
-            <div style={{
+            <style>{`
+                .profile-tabs-scroll::-webkit-scrollbar { 
+                    display: none; 
+                }
+            `}</style>
+            <div className="profile-tabs-scroll" style={{
                 borderBottom: '1px solid #222',
                 marginBottom: isMobile ? '0.75rem' : '2rem',
                 marginTop: '1rem', // Balanced spacing
-                overflowX: 'auto'
+                overflowX: 'auto',
+                scrollbarWidth: 'none', // Firefox
+                msOverflowStyle: 'none', // IE 10+
             }}>
                 <div style={{
                     display: 'flex',
@@ -868,7 +892,7 @@ const Profile = () => {
                                             opacity: isSelected ? 1 : 0.5,
                                             transition: 'transform 0.2s',
                                         }}
-                                        title={`Switch to ${feedType === 'art' ? 'Social' : 'Art'} Feed`}
+                                        title={`Switch to ${feedType === 'art' ? 'Social' : 'Art'} Orbit`}
                                     >
                                         {feedType === 'art' ? <FaPalette size={14} /> : <FaUserPlus size={14} />}
                                     </div>
@@ -1006,6 +1030,42 @@ const Profile = () => {
                 {
                     activeTab === 'cards' && (
                         <>
+                            {/* Card Filter Tabs */}
+                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid #333', paddingBottom: '0.5rem' }}>
+                                <button
+                                    onClick={() => setCardFilter('custom')}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: cardFilter === 'custom' ? '#fff' : '#888',
+                                        fontWeight: cardFilter === 'custom' ? '700' : '400',
+                                        fontSize: '1rem',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        borderBottom: cardFilter === 'custom' ? `2px solid ${effectiveUsernameColor || '#7FFFD4'}` : '2px solid transparent',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    Custom Cards
+                                </button>
+                                <button
+                                    onClick={() => setCardFilter('app')}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: cardFilter === 'app' ? '#fff' : '#888',
+                                        fontWeight: cardFilter === 'app' ? '700' : '400',
+                                        fontSize: '1rem',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        borderBottom: cardFilter === 'app' ? `2px solid ${effectiveUsernameColor || '#7FFFD4'}` : '2px solid transparent',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    App Cards
+                                </button>
+                            </div>
+
                             {isOwnProfile && (
                                 <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
                                     <button
@@ -1027,88 +1087,312 @@ const Profile = () => {
                                     </button>
                                 </div>
                             )}
-                            {spaceCards.length > 0 ? (
+                            {filteredSpaceCards.length > 0 ? (
                                 <InfiniteGrid
 
-                                    items={spaceCards}
+                                    items={filteredSpaceCards}
                                     columns={layout.gridColumns}
                                     gap={layout.gridGap}
                                     renderItem={(card) => {
-                                        const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
-                                        return (
-                                            <div style={{
-                                                position: 'relative',
-                                                aspectRatio: '2/3',
-                                                borderRadius: '12px',
-                                                overflow: 'visible'
-                                            }}>
-                                                {/* Iridescent border for high rarity cards */}
-                                                {isHighRarity && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        inset: '-3px',
-                                                        borderRadius: '12px',
-                                                        background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
-                                                        backgroundSize: '300% 300%',
-                                                        animation: 'iridescent-border 6s ease infinite',
-                                                        zIndex: 0
-                                                    }} />
-                                                )}
 
-                                                {/* Card content */}
+                                        const rarityInfo = getRarityInfo(card.rarity);
+                                        const normalizedRarity = normalizeRarity(card.rarity);
+                                        const isGalactic = normalizedRarity === 'Galactic';
+
+                                        const layout = card.cardLayout || 'bordered';
+                                        const isCity = layout === 'bordered' && card.cityThemeId;
+
+                                        if (isCity) {
+                                            return (
+                                                <div
+                                                    className={rarityInfo.cssClass}
+                                                    style={{
+                                                        position: 'relative',
+                                                        aspectRatio: '2/3',
+                                                        borderRadius: '12px',
+                                                        overflow: isGalactic ? 'visible' : 'hidden',
+                                                        boxShadow: rarityInfo.glow ? `0 0 20px ${rarityInfo.colorHex}40` : 'none'
+                                                    }}
+                                                >
+                                                    <CityCardFrame
+                                                        themeId={card.cityThemeId}
+                                                        width="100%"
+                                                        height="100%"
+                                                        style={{ position: 'absolute', inset: 0 }}
+                                                    >
+                                                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+                                                            {/* Image Panel - Top (Standard) */}
+                                                            <div style={{
+                                                                flex: '0 0 55%',
+                                                                margin: '6px 6px 0 6px',
+                                                                borderRadius: '6px',
+                                                                overflow: 'hidden',
+                                                                border: `1px solid ${rarityInfo.colorHex}30`
+                                                            }}>
+                                                                <SmartImage
+                                                                    src={card.images?.front || card.imageUrl || card.frontImage}
+                                                                    alt={card.title || card.name}
+                                                                    eager={false}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'cover',
+                                                                        objectPosition: card.images?.position
+                                                                            ? `${card.images.position.x}% ${card.images.position.y}%`
+                                                                            : card.imagePosition
+                                                                                ? `${card.imagePosition.x}% ${card.imagePosition.y}%`
+                                                                                : 'center'
+                                                                    }}
+                                                                />
+                                                            </div>
+
+                                                            {/* Info Panel - Bottom (Standard) */}
+                                                            <div style={{
+                                                                flex: 1,
+                                                                padding: '8px',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '3px'
+                                                            }}>
+                                                                <div style={{
+                                                                    fontSize: '0.85rem',
+                                                                    fontWeight: '700',
+                                                                    color: '#fff',
+                                                                    textTransform: 'uppercase',
+                                                                    letterSpacing: '0.02em',
+                                                                    lineHeight: 1.2,
+                                                                    textShadow: '0 1px 3px rgba(0,0,0,0.5)'
+                                                                }}>
+                                                                    {card.title || card.name}
+                                                                </div>
+                                                                {card.subjectTag && (
+                                                                    <div style={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: 'rgba(255,255,255,0.6)',
+                                                                        fontWeight: '500'
+                                                                    }}>
+                                                                        {card.subjectTag}
+                                                                    </div>
+                                                                )}
+                                                                {card.description && (
+                                                                    <div style={{
+                                                                        fontSize: '0.6rem',
+                                                                        color: 'rgba(255,255,255,0.8)',
+                                                                        marginTop: '2px',
+                                                                        display: '-webkit-box',
+                                                                        WebkitLineClamp: 2,
+                                                                        WebkitBoxOrient: 'vertical',
+                                                                        overflow: 'hidden',
+                                                                        lineHeight: 1.2,
+                                                                        textShadow: '0 1px 2px rgba(0,0,0,0.8)'
+                                                                    }}>
+                                                                        {card.description}
+                                                                    </div>
+                                                                )}
+                                                                <div style={{
+                                                                    marginTop: 'auto',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center'
+                                                                }}>
+                                                                    <span
+                                                                        className={`rarity-text-${normalizedRarity.toLowerCase()}`}
+                                                                        style={{
+                                                                            fontSize: '0.7rem',
+                                                                            fontWeight: '700',
+                                                                            textTransform: 'uppercase'
+                                                                        }}
+                                                                    >
+                                                                        {normalizedRarity}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </CityCardFrame>
+                                                </div>
+                                            );
+                                        }
+
+                                        // Default to bordered if undefined (legacy cards) or explicitly bordered
+                                        const isBordered = card.cardLayout === 'bordered' || !card.cardLayout;
+                                        const isFullbleed = card.cardLayout === 'fullbleed'; // Explicit check for fullbleed
+                                        const showBordered = !isFullbleed;
+
+                                        // Rarity-matched gradient for bordered layout
+                                        const getRarityGradient = () => {
+                                            switch (normalizedRarity) {
+                                                case 'Galactic': return 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+                                                case 'Ultra': return 'linear-gradient(180deg, #1a0a12 0%, #2d1420 50%, rgba(255, 107, 157, 0.15) 100%)';
+                                                case 'Super': return 'linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 50%, rgba(108, 92, 231, 0.15) 100%)';
+                                                case 'Rare': return 'linear-gradient(180deg, #0a1a1a 0%, #0d2530 50%, rgba(76, 201, 240, 0.15) 100%)';
+                                                default: return 'linear-gradient(180deg, #0a1a15 0%, #0d2520 50%, rgba(127, 255, 212, 0.1) 100%)';
+                                            }
+                                        };
+
+                                        return (
+                                            <div
+                                                className={rarityInfo.cssClass}
+                                                style={{
+                                                    position: 'relative',
+                                                    aspectRatio: '2/3',
+                                                    borderRadius: '12px',
+                                                    overflow: isGalactic ? 'visible' : 'hidden',
+                                                    boxShadow: rarityInfo.glow ? `0 0 20px ${rarityInfo.colorHex}40` : 'none'
+                                                }}
+                                            >
+                                                {/* Inner content container */}
                                                 <div style={{
                                                     position: 'relative',
                                                     width: '100%',
                                                     height: '100%',
-                                                    background: '#000',
                                                     borderRadius: '12px',
                                                     overflow: 'hidden',
-                                                    border: isHighRarity ? 'none' : '2px solid #7FFFD4',
-                                                    boxShadow: isHighRarity
-                                                        ? '0 0 30px rgba(224, 179, 255, 0.4), 0 8px 32px rgba(0,0,0,0.5)'
-                                                        : '0 0 20px rgba(127, 255, 212, 0.3), 0 8px 24px rgba(0,0,0,0.4)',
-                                                    zIndex: 1
+                                                    background: showBordered ? getRarityGradient() : '#000',
+                                                    display: showBordered ? 'flex' : 'block',
+                                                    flexDirection: 'column'
                                                 }}>
-                                                    {(card.images?.front || card.imageUrl) && (
-                                                        <SmartImage
-                                                            src={card.images?.front || card.imageUrl}
-                                                            alt={card.title || card.name}
-                                                            eager={false}
-                                                            style={{
-                                                                width: '100%',
-                                                                height: '100%',
-                                                                objectFit: 'cover'
-                                                            }}
-                                                        />
+                                                    {/* Image Area */}
+                                                    {showBordered ? (
+                                                        // Bordered: Landscape image at top
+                                                        <div style={{
+                                                            flex: '0 0 55%',
+                                                            margin: '6px 6px 0 6px',
+                                                            borderRadius: '6px',
+                                                            overflow: 'hidden',
+                                                            border: `1px solid ${rarityInfo.colorHex}30`
+                                                        }}>
+                                                            {(card.images?.front || card.imageUrl || card.frontImage) && (
+                                                                <SmartImage
+                                                                    src={card.images?.front || card.imageUrl || card.frontImage}
+                                                                    alt={card.title || card.name}
+                                                                    eager={false}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'cover',
+                                                                        objectPosition: card.images?.position
+                                                                            ? `${card.images.position.x}% ${card.images.position.y}%`
+                                                                            : card.imagePosition
+                                                                                ? `${card.imagePosition.x}% ${card.imagePosition.y}%`
+                                                                                : 'center'
+                                                                    }}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        // Fullbleed: Full image
+                                                        (card.images?.front || card.imageUrl || card.frontImage) && (
+                                                            <SmartImage
+                                                                src={card.images?.front || card.imageUrl || card.frontImage}
+                                                                alt={card.title || card.name}
+                                                                eager={false}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit: 'cover',
+                                                                    objectPosition: card.images?.position
+                                                                        ? `${card.images.position.x}% ${card.images.position.y}%`
+                                                                        : card.imagePosition
+                                                                            ? `${card.imagePosition.x}% ${card.imagePosition.y}%`
+                                                                            : 'center'
+                                                                }}
+                                                            />
+                                                        )
                                                     )}
 
-                                                    {/* Card title overlay */}
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        bottom: 0,
-                                                        left: 0,
-                                                        right: 0,
-                                                        background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
-                                                        padding: '1.5rem 0.75rem 0.75rem',
-                                                        color: '#fff'
-                                                    }}>
+                                                    {/* Card Info */}
+                                                    {showBordered ? (
+                                                        // Bordered: Info panel at bottom
                                                         <div style={{
-                                                            fontSize: '0.9rem',
-                                                            fontWeight: '600',
-                                                            marginBottom: '0.25rem'
+                                                            flex: 1,
+                                                            padding: '8px',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: '3px'
                                                         }}>
-                                                            {card.title || card.name}
-                                                        </div>
-                                                        {card.rarity && (
                                                             <div style={{
-                                                                fontSize: '0.75rem',
-                                                                color: isHighRarity ? '#e0b3ff' : '#7FFFD4',
-                                                                fontWeight: '500'
+                                                                fontSize: '0.85rem',
+                                                                fontWeight: '700',
+                                                                color: '#fff',
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.02em',
+                                                                lineHeight: 1.2,
+                                                                textShadow: '0 1px 3px rgba(0,0,0,0.5)'
                                                             }}>
-                                                                {card.rarity}
+                                                                {card.title || card.name}
                                                             </div>
-                                                        )}
-                                                    </div>
+                                                            {card.subjectTag && (
+                                                                <div style={{
+                                                                    fontSize: '0.65rem',
+                                                                    color: 'rgba(255,255,255,0.6)',
+                                                                    fontWeight: '500'
+                                                                }}>
+                                                                    {card.subjectTag}
+                                                                </div>
+                                                            )}
+                                                            {card.description && (
+                                                                <div style={{
+                                                                    fontSize: '0.6rem',
+                                                                    color: 'rgba(255,255,255,0.8)',
+                                                                    marginTop: '2px',
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 2,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden',
+                                                                    lineHeight: 1.2
+                                                                }}>
+                                                                    {card.description}
+                                                                </div>
+                                                            )}
+                                                            <div style={{
+                                                                marginTop: 'auto',
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center'
+                                                            }}>
+                                                                <span
+                                                                    className={`rarity-text-${normalizedRarity.toLowerCase()}`}
+                                                                    style={{
+                                                                        fontSize: '0.7rem',
+                                                                        fontWeight: '700',
+                                                                        textTransform: 'uppercase'
+                                                                    }}
+                                                                >
+                                                                    {normalizedRarity}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        // Fullbleed: Overlay at bottom
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            bottom: 0,
+                                                            left: 0,
+                                                            right: 0,
+                                                            background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
+                                                            padding: '1.5rem 0.75rem 0.75rem',
+                                                            color: '#fff'
+                                                        }}>
+                                                            <div style={{
+                                                                fontSize: '0.9rem',
+                                                                fontWeight: '600',
+                                                                marginBottom: '0.25rem'
+                                                            }}>
+                                                                {card.title || card.name}
+                                                            </div>
+                                                            {card.rarity && (
+                                                                <div
+                                                                    className={`rarity-text-${normalizedRarity.toLowerCase()}`}
+                                                                    style={{
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: '500'
+                                                                    }}
+                                                                >
+                                                                    {normalizedRarity}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -1116,7 +1400,7 @@ const Profile = () => {
                                 />
                             ) : (
                                 <div style={{ padding: '2rem', textAlign: 'center', color: '#666', background: '#111', borderRadius: '8px' }}>
-                                    No marketplace cards owned.
+                                    No {cardFilter === 'app' ? 'official' : 'custom'} cards found.
                                 </div>
                             )}
                         </>
@@ -1124,60 +1408,127 @@ const Profile = () => {
 
                 {activeTab === 'shop' && (
                     <div className="tab-content" style={{ padding: '0 2rem 2rem 2rem' }}>
-                        {/* 5.2 Filter Active Items */}
-                        {(() => {
-                            const activeShopItems = shopItems.filter(item => item.status === 'active');
-                            const printItems = activeShopItems.filter(item => item.kind !== 'spacecard');
-                            const spaceCardItems = activeShopItems.filter(item => item.kind === 'spacecard');
 
-                            if (activeShopItems.length === 0) {
+                        {/* SELLER VERIFICATION GATE (OWNER ONLY) */}
+                        {isOwnProfile && user?.sellerStatus !== 'verified' && (
+                            <div style={{
+                                padding: '3rem',
+                                background: '#111',
+                                border: '1px solid #333',
+                                borderRadius: '12px',
+                                textAlign: 'center',
+                                marginBottom: '2rem'
+                            }}>
+                                <FaStore size={48} color="#7FFFD4" style={{ marginBottom: '1rem' }} />
+                                <h2 style={{ color: '#fff', marginBottom: '0.5rem' }}>Become a Seller</h2>
+                                <p style={{ color: '#888', maxWidth: '400px', margin: '0 auto 1.5rem auto' }}>
+                                    To ensure the highest quality prints and verify artist identity,
+                                    all sellers must complete a quick verification process.
+                                </p>
+                                <button
+                                    onClick={() => navigate('/shop/verification')}
+                                    style={{
+                                        padding: '0.75rem 2rem',
+                                        background: '#7FFFD4',
+                                        color: '#000',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        fontSize: '1rem'
+                                    }}
+                                >
+                                    {user?.sellerStatus === 'pending' ? 'View Application Status' : 'Start Verification'}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* SHOP CONTENT (Verified Owners OR Visitors) */}
+                        {(!isOwnProfile || user?.sellerStatus === 'verified') && (
+                            (() => {
+                                const activeShopItems = shopItems.filter(item => item.status === 'active');
+                                const printItems = activeShopItems.filter(item => item.kind !== 'spacecard');
+                                const spaceCardItems = activeShopItems.filter(item => item.kind === 'spacecard');
+
+                                if (activeShopItems.length === 0) {
+                                    return (
+                                        <div className="ps-empty-state" style={{
+                                            padding: '4rem 2rem',
+                                            textAlign: 'center',
+                                            color: '#888',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '1rem'
+                                        }}>
+                                            <FaShoppingBag size={48} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                                            <h3 style={{ color: '#fff', fontSize: '1.2rem', margin: 0 }}>Your shop is looking empty</h3>
+                                            <p style={{ margin: 0, fontSize: '0.9rem' }}>Add items to your shop to start selling.</p>
+
+                                            {isOwnProfile && (
+                                                <button
+                                                    onClick={() => navigate('/create-post')}
+                                                    style={{
+                                                        marginTop: '1rem',
+                                                        padding: '0.75rem 1.5rem',
+                                                        background: effectiveUsernameColor || '#7FFFD4',
+                                                        color: '#000',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        fontWeight: 'bold',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.9rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem'
+                                                    }}
+                                                >
+                                                    Create Your First Item
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                }
+
                                 return (
-                                    <div className="ps-empty-state">
-                                        <FaShoppingBag size={48} />
-                                        <h3>{t('shop.empty')}</h3>
-                                        {isOwnProfile && <p>Go to "Create Post" to add items to your shop.</p>}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                                        {/* Prints Shelf */}
+                                        <section>
+                                            <h3 style={{
+                                                marginBottom: '1rem',
+                                                color: user.profileTheme?.usernameColor || '#fff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                fontSize: '1.2rem',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em'
+                                            }}>
+                                                <FaImage /> Prints
+                                            </h3>
+                                            <ShopShelfRow items={printItems} kind="print" />
+                                        </section>
+
+                                        {/* Space Cards Shelf */}
+                                        <section>
+                                            <h3 style={{
+                                                marginBottom: '1rem',
+                                                color: user.profileTheme?.usernameColor || '#fff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                fontSize: '1.2rem',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em'
+                                            }}>
+                                                <PlanetIcon size={18} /> Space Cards
+                                            </h3>
+                                            <ShopShelfRow items={spaceCardItems} kind="spacecard" />
+                                        </section>
                                     </div>
                                 );
-                            }
-
-                            return (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                                    {/* Prints Shelf */}
-                                    <section>
-                                        <h3 style={{
-                                            marginBottom: '1rem',
-                                            color: user.profileTheme?.usernameColor || '#fff',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            fontSize: '1.2rem',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em'
-                                        }}>
-                                            <FaImage /> Prints
-                                        </h3>
-                                        <ShopShelfRow items={printItems} kind="print" />
-                                    </section>
-
-                                    {/* Space Cards Shelf */}
-                                    <section>
-                                        <h3 style={{
-                                            marginBottom: '1rem',
-                                            color: user.profileTheme?.usernameColor || '#fff',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            fontSize: '1.2rem',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em'
-                                        }}>
-                                            <PlanetIcon size={18} /> Space Cards
-                                        </h3>
-                                        <ShopShelfRow items={spaceCardItems} kind="spacecard" />
-                                    </section>
-                                </div>
-                            );
-                        })()}
+                            })()
+                        )}
                     </div>
                 )}
 
@@ -1245,7 +1596,7 @@ const Profile = () => {
                             {/* Owned Cards Section */}
                             <div>
                                 <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <FaRocket style={{ color: '#e0b3ff' }} />
+                                    <FaRocket style={{ color: 'var(--brand-purple)' }} />
                                     Marketplace Cards
                                 </h3>
                                 {spaceCards.length > 0 ? (
@@ -1254,81 +1605,236 @@ const Profile = () => {
                                         columns={layout.gridColumns}
                                         gap={layout.gridGap}
                                         renderItem={(card) => {
-                                            const isHighRarity = card.rarity === 'Legendary' || card.rarity === 'Mythic' || card.rarity === 'Epic';
-                                            return (
-                                                <div style={{
-                                                    position: 'relative',
-                                                    aspectRatio: '2/3',
-                                                    borderRadius: '12px',
-                                                    overflow: 'visible'
-                                                }}>
-                                                    {/* Iridescent border for high rarity cards */}
-                                                    {isHighRarity && (
-                                                        <div style={{
-                                                            position: 'absolute',
-                                                            inset: '-3px',
-                                                            borderRadius: '12px',
-                                                            background: 'linear-gradient(135deg, #e0b3ff, #b3e5fc, #c5f5e8, #ffd6f0, #e0b3ff)',
-                                                            backgroundSize: '300% 300%',
-                                                            animation: 'iridescent-border 6s ease infinite',
-                                                            zIndex: 0
-                                                        }} />
-                                                    )}
+                                            const rarityInfo = getRarityInfo(card.rarity);
+                                            const normalizedRarity = normalizeRarity(card.rarity);
+                                            const isGalactic = normalizedRarity === 'Galactic';
 
-                                                    {/* Card content */}
+                                            const layout = card.cardLayout || 'bordered';
+
+                                            if (layout === 'city') {
+                                                return (
+                                                    <div
+                                                        className={rarityInfo.cssClass}
+                                                        style={{
+                                                            position: 'relative',
+                                                            aspectRatio: '2/3',
+                                                            borderRadius: '12px',
+                                                            overflow: isGalactic ? 'visible' : 'hidden',
+                                                            boxShadow: rarityInfo.glow ? `0 0 20px ${rarityInfo.colorHex}40` : 'none'
+                                                        }}
+                                                    >
+                                                        <CityCardFrame
+                                                            themeId={card.cityThemeId}
+                                                            width="100%"
+                                                            height="100%"
+                                                            style={{ position: 'absolute', inset: 0 }}
+                                                        >
+                                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+                                                                <div style={{ flex: '0 0 55%', padding: '10px 10px 0 10px' }}>
+                                                                    <div style={{ width: '100%', height: '100%', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                                                                        <SmartImage
+                                                                            src={card.images?.front || card.imageUrl || card.frontImage}
+                                                                            alt={card.title || card.name}
+                                                                            eager={false}
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                objectFit: 'cover',
+                                                                                objectPosition: card.images?.position
+                                                                                    ? `${card.images.position.x}% ${card.images.position.y}%`
+                                                                                    : card.imagePosition
+                                                                                        ? `${card.imagePosition.x}% ${card.imagePosition.y}%`
+                                                                                        : 'center'
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ flex: 1, padding: '10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                    <div style={{
+                                                                        flex: 1,
+                                                                        background: 'rgba(0,0,0,0.6)',
+                                                                        backdropFilter: 'blur(4px)',
+                                                                        borderRadius: '8px',
+                                                                        padding: '10px',
+                                                                        display: 'flex',
+                                                                        flexDirection: 'column',
+                                                                        border: '1px solid rgba(255,255,255,0.1)'
+                                                                    }}>
+                                                                        <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#fff', textShadow: '0 2px 4px #000', marginBottom: '4px' }}>
+                                                                            {card.title || card.name}
+                                                                        </div>
+                                                                        {card.subjectTag && <div style={{ fontSize: '0.65rem', color: '#ccc' }}>{card.subjectTag}</div>}
+                                                                        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between' }}>
+                                                                            <span className={`rarity-text-${normalizedRarity.toLowerCase()}`} style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>{normalizedRarity}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </CityCardFrame>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Default to bordered if undefined (legacy cards) or explicitly bordered
+                                            const isBordered = card.cardLayout === 'bordered' || !card.cardLayout;
+                                            const isFullbleed = card.cardLayout === 'fullbleed';
+                                            const showBordered = !isFullbleed;
+
+                                            // Rarity-matched gradient for bordered layout
+                                            const getRarityGradient = () => {
+                                                switch (normalizedRarity) {
+                                                    case 'Galactic': return 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+                                                    case 'Ultra': return 'linear-gradient(180deg, #1a0a12 0%, #2d1420 50%, rgba(255, 107, 157, 0.15) 100%)';
+                                                    case 'Super': return 'linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 50%, rgba(108, 92, 231, 0.15) 100%)';
+                                                    case 'Rare': return 'linear-gradient(180deg, #0a1a1a 0%, #0d2530 50%, rgba(76, 201, 240, 0.15) 100%)';
+                                                    default: return 'linear-gradient(180deg, #0a1a15 0%, #0d2520 50%, rgba(127, 255, 212, 0.1) 100%)';
+                                                }
+                                            };
+
+                                            return (
+                                                <div
+                                                    className={rarityInfo.cssClass}
+                                                    style={{
+                                                        position: 'relative',
+                                                        aspectRatio: '2/3',
+                                                        borderRadius: '12px',
+                                                        overflow: isGalactic ? 'visible' : 'hidden',
+                                                        boxShadow: rarityInfo.glow ? `0 0 20px ${rarityInfo.colorHex}40` : 'none'
+                                                    }}
+                                                >
                                                     <div style={{
                                                         position: 'relative',
                                                         width: '100%',
                                                         height: '100%',
-                                                        background: '#000',
                                                         borderRadius: '12px',
                                                         overflow: 'hidden',
-                                                        border: isHighRarity ? 'none' : '2px solid #7FFFD4',
-                                                        boxShadow: isHighRarity
-                                                            ? '0 0 30px rgba(224, 179, 255, 0.4), 0 8px 32px rgba(0,0,0,0.5)'
-                                                            : '0 0 20px rgba(127, 255, 212, 0.3), 0 8px 24px rgba(0,0,0,0.4)',
-                                                        zIndex: 1
+                                                        background: showBordered ? getRarityGradient() : '#000',
+                                                        display: showBordered ? 'flex' : 'block',
+                                                        flexDirection: 'column'
                                                     }}>
-                                                        {(card.images?.front || card.imageUrl) && (
-                                                            <SmartImage
-                                                                src={card.images?.front || card.imageUrl}
-                                                                alt={card.title || card.name}
-                                                                eager={false}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    height: '100%',
-                                                                    objectFit: 'cover'
-                                                                }}
-                                                            />
+                                                        {showBordered ? (
+                                                            <div style={{
+                                                                flex: '0 0 55%',
+                                                                margin: '6px 6px 0 6px',
+                                                                borderRadius: '6px',
+                                                                overflow: 'hidden',
+                                                                border: `1px solid ${rarityInfo.colorHex}30`
+                                                            }}>
+                                                                {(card.images?.front || card.imageUrl || card.frontImage) && (
+                                                                    <SmartImage
+                                                                        src={card.images?.front || card.imageUrl || card.frontImage}
+                                                                        alt={card.title || card.name}
+                                                                        eager={false}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            height: '100%',
+                                                                            objectFit: 'cover',
+                                                                            objectPosition: card.images?.position
+                                                                                ? `${card.images.position.x}% ${card.images.position.y}%`
+                                                                                : card.imagePosition
+                                                                                    ? `${card.imagePosition.x}% ${card.imagePosition.y}%`
+                                                                                    : 'center'
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            // Fullbleed: Full image
+                                                            (card.images?.front || card.imageUrl || card.frontImage) && (
+                                                                <SmartImage
+                                                                    src={card.images?.front || card.imageUrl || card.frontImage}
+                                                                    alt={card.title || card.name}
+                                                                    eager={false}
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: '100%',
+                                                                        objectFit: 'cover',
+                                                                        objectPosition: card.images?.position
+                                                                            ? `${card.images.position.x}% ${card.images.position.y}%`
+                                                                            : card.imagePosition
+                                                                                ? `${card.imagePosition.x}% ${card.imagePosition.y}%`
+                                                                                : 'center'
+                                                                    }}
+                                                                />
+                                                            )
                                                         )}
 
-                                                        {/* Card title overlay */}
-                                                        <div style={{
-                                                            position: 'absolute',
-                                                            bottom: 0,
-                                                            left: 0,
-                                                            right: 0,
-                                                            background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
-                                                            padding: '1.5rem 0.75rem 0.75rem',
-                                                            color: '#fff'
-                                                        }}>
+                                                        {isBordered ? (
                                                             <div style={{
-                                                                fontSize: '0.9rem',
-                                                                fontWeight: '600',
-                                                                marginBottom: '0.25rem'
+                                                                flex: 1,
+                                                                padding: '8px',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '3px'
                                                             }}>
-                                                                {card.title || card.name}
-                                                            </div>
-                                                            {card.rarity && (
                                                                 <div style={{
-                                                                    fontSize: '0.75rem',
-                                                                    color: isHighRarity ? '#e0b3ff' : '#7FFFD4',
-                                                                    fontWeight: '500'
+                                                                    fontSize: '0.85rem',
+                                                                    fontWeight: '700',
+                                                                    color: '#fff',
+                                                                    textTransform: 'uppercase',
+                                                                    letterSpacing: '0.02em',
+                                                                    lineHeight: 1.2,
+                                                                    textShadow: '0 1px 3px rgba(0,0,0,0.5)'
                                                                 }}>
-                                                                    {card.rarity}
+                                                                    {card.title || card.name}
                                                                 </div>
-                                                            )}
-                                                        </div>
+                                                                {card.subjectTag && (
+                                                                    <div style={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: 'rgba(255,255,255,0.6)',
+                                                                        fontWeight: '500'
+                                                                    }}>
+                                                                        {card.subjectTag}
+                                                                    </div>
+                                                                )}
+                                                                <div style={{
+                                                                    marginTop: 'auto',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center'
+                                                                }}>
+                                                                    <span
+                                                                        className={`rarity-text-${normalizedRarity.toLowerCase()}`}
+                                                                        style={{
+                                                                            fontSize: '0.7rem',
+                                                                            fontWeight: '700',
+                                                                            textTransform: 'uppercase'
+                                                                        }}
+                                                                    >
+                                                                        {normalizedRarity}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                bottom: 0,
+                                                                left: 0,
+                                                                right: 0,
+                                                                background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
+                                                                padding: '1.5rem 0.75rem 0.75rem',
+                                                                color: '#fff'
+                                                            }}>
+                                                                <div style={{
+                                                                    fontSize: '0.9rem',
+                                                                    fontWeight: '600',
+                                                                    marginBottom: '0.25rem'
+                                                                }}>
+                                                                    {card.title || card.name}
+                                                                </div>
+                                                                {card.rarity && (
+                                                                    <div
+                                                                        className={`rarity-text-${normalizedRarity.toLowerCase()}`}
+                                                                        style={{
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: '500'
+                                                                        }}
+                                                                    >
+                                                                        {normalizedRarity}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );
@@ -1411,9 +1917,17 @@ const Profile = () => {
             }
 
             {
-                showAddFunds && (
+                showWalletModal && (
                     <WalletModal
-                        onClose={() => setShowAddFunds(false)}
+                        onClose={() => setShowWalletModal(false)}
+                    />
+                )
+            }
+
+            {
+                showUpgradeModal && (
+                    <UpgradeModal
+                        onClose={() => setShowUpgradeModal(false)}
                     />
                 )
             }

@@ -23,7 +23,6 @@ const Feed = () => {
     const isRestoringScrollRef = useRef(false);
 
     // Pass currentFeed to hook if dual feeds enabled
-
     const { currentFeed, followingOnly, customFeedEnabled, activeCustomFeedId } = useFeedStore();
     const showSocialPosts = currentFeed === 'social';
 
@@ -36,8 +35,17 @@ const Feed = () => {
         activeCustomFeedId
     );
 
+
     const currentTheme = getCurrentTheme();
-    const { blockedUsers } = useBlock();
+    const { blockedUsers: rawBlockedUsers } = useBlock();
+
+    // SAFETY FIX: Ensure blockedUsers is always a Set to prevent crashes in filter logic
+    const blockedUsers = React.useMemo(() => {
+        if (rawBlockedUsers instanceof Set) return rawBlockedUsers;
+        if (Array.isArray(rawBlockedUsers)) return new Set(rawBlockedUsers);
+        return new Set();
+    }, [rawBlockedUsers]);
+
     const navigate = useNavigate();
     const { setFollowingOnly } = useFeedStore(); // Needed for switch button
 
@@ -240,17 +248,6 @@ const Feed = () => {
                             background: '#000' // Ensure background is black specifically for the container
                         }}
                     >
-                        {/* We import VirtualizedPostContainer dynamically or assume it is imported at top. 
-                             Since I cannot add top-level imports easily in a small replace block without risk,
-                             I will use a lazy import or assume the previous step's context allows me to add the import separately.
-                             However, standard practice is to add import at top. 
-                             
-                             I will update this block to use VirtualizedPostContainer. 
-                             I'll handle the import in a separate tool call if needed or just replace the whole file content section if I need to add import.
-                             
-                             Actually, I'll replace the block assuming 'VirtualizedPostContainer' is available, 
-                             and I will add the import line in a separate call or use a multi-replace to add it at the top.
-                          */}
                         <VirtualizedPostContainer
                             posts={visiblePosts}
                             initialIndex={0}

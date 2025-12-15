@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/firebase';
-import { doc, deleteDoc, collection, query, where, limit, getDocs } from 'firebase/firestore';
-import { FaCamera, FaInfoCircle, FaShoppingBag } from 'react-icons/fa';
+import { doc, deleteDoc, collection, query, where, limit, getDocs, getDoc } from 'firebase/firestore';
+import { FaCamera, FaInfoCircle, FaShoppingBag, FaSmile, FaStar } from 'react-icons/fa';
 import { logger } from '@/core/utils/logger';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { formatExifForDisplay } from '@/core/utils/exif';
@@ -19,6 +19,39 @@ const PostDetailsSidebar = ({
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const [shopLinkTarget, setShopLinkTarget] = useState(null);
+    const [stats, setStats] = useState({ likeCount: 0, averageRating: 0, totalVotes: 0 });
+
+    // Fetch live stats
+    useEffect(() => {
+        if (isVisible && post?.id) {
+            const fetchStats = async () => {
+                try {
+                    const docSnap = await getDoc(doc(db, 'posts', post.id));
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+
+                        // Rating Stats
+                        const ratings = data.ratings || {};
+                        const ratingVals = Object.values(ratings);
+                        const avg = ratingVals.length > 0 ? ratingVals.reduce((a, b) => a + b, 0) / ratingVals.length : 0;
+
+                        // Like Stats
+                        const likes = data.likes || [];
+                        const count = data.likeCount !== undefined ? data.likeCount : likes.length;
+
+                        setStats({
+                            likeCount: count,
+                            averageRating: data.averageRating || avg, // Use stored or calculated
+                            totalVotes: data.totalVotes || ratingVals.length
+                        });
+                    }
+                } catch (err) {
+                    console.error("Error fetching stats:", err);
+                }
+            };
+            fetchStats();
+        }
+    }, [isVisible, post]);
 
     // Check for linked shop item or general shop existence
     useEffect(() => {
@@ -157,6 +190,25 @@ const PostDetailsSidebar = ({
                     </button>
                 </div>
 
+                {/* Post Title */}
+                {post.title && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <h2 style={{
+                            margin: 0,
+                            color: '#fff',
+                            fontSize: '1.4rem',
+                            fontFamily: '"Orbitron", sans-serif',
+                            fontWeight: '700',
+                            letterSpacing: '0.05em',
+                            lineHeight: 1.3,
+                            textTransform: 'uppercase',
+                            textShadow: '0 0 15px rgba(127, 255, 212, 0.2)'
+                        }}>
+                            {renderCosmicUsername(post.title)}
+                        </h2>
+                    </div>
+                )}
+
                 {/* Tags */}
                 {post.tags && post.tags.length > 0 && (
                     <div>
@@ -214,6 +266,36 @@ const PostDetailsSidebar = ({
                         </div>
                     </div>
                 )}
+
+                {/* Engagement Stats - "Footnote" Style */}
+                <div style={{ padding: '0 0.5rem' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        gap: '1rem',
+                        opacity: 0.6, // Dimmer overall
+                        fontSize: '0.85rem'
+                    }}>
+                        {stats.totalVotes > 0 ? (
+                            /* Show Rating */
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FaStar color="#7FFFD4" size={12} />
+                                <span style={{ color: '#fff', fontFamily: 'monospace' }}>
+                                    {Number(stats.averageRating).toFixed(1)} <span style={{ opacity: 0.7 }}>({stats.totalVotes})</span>
+                                </span>
+                            </div>
+                        ) : (
+                            /* Show Likes */
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FaSmile color="#7FFFD4" size={12} />
+                                <span style={{ color: '#fff', fontFamily: 'monospace' }}>
+                                    {stats.likeCount} Likes
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 {/* Post Options */}
                 <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
