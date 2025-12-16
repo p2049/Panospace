@@ -96,7 +96,7 @@ service cloud.firestore {
       allow write: if !request.resource.data.keys().hasAny(['images']) ||
                      (request.resource.data.images is list &&
                       request.resource.data.images.size() > 0 &&
-                      request.resource.data.images.size() <= 10;
+                      request.resource.data.images.size() <= 10);
                       // request.resource.data.images[0].url.matches('.*firebasestorage\\.googleapis\\.com.*'));
     }
     
