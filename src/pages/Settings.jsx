@@ -417,7 +417,24 @@ const Settings = () => {
                                 Upgrade to Space Creator for higher upload limits (30MB) and exclusive features.
                             </div>
                             <button
-                                onClick={() => setShowUpgradeModal(true)}
+                                onClick={async () => {
+                                    try {
+                                        const res = await fetch('/api/create-checkout-session', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                        });
+
+                                        if (!res.ok) {
+                                            throw new Error('Failed to create checkout session');
+                                        }
+
+                                        const { url } = await res.json();
+                                        window.location.href = url;
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert('Checkout failed: ' + e.message);
+                                    }
+                                }}
                                 style={{
                                     width: '100%',
                                     padding: '0.8rem',
