@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch, limit, orderBy } from 'firebase/firestore';
-import { db, storage } from '@/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { db } from '@/firebase';
+// storage imports removed as they are handled by storageUploader
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
@@ -22,6 +22,7 @@ import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
 import { logger } from '@/core/utils/logger';
 import StarBackground from '@/components/StarBackground';
+import { uploadFile } from '@/services/storageUploader'; // Static import
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -253,15 +254,18 @@ const EditProfile = () => {
                 try {
                     // CRITICAL: Path must match storage.rules structure: profile_photos/{userId}/{filename}
                     // Fixed filename 'profile_current' ensures only one file exists per user (overwrites old)
-                    const storageRef = ref(storage, `profile_photos/${currentUser.uid}/profile_current`);
-                    logger.log('[EditProfile] Uploading to:', storageRef.fullPath);
-                    await uploadBytesResumable(storageRef, selectedFile);
-                    newPhotoURL = await getDownloadURL(storageRef);
-                    logger.log('[EditProfile] Upload success, URL:', newPhotoURL);
+                    const path = `profile_photos/${currentUser.uid}/profile_current`;
+
+                    console.log('[PROD_DEBUG] Starting Profile Photo Upload via Canonical Uploader to:', path);
+                    const result = await uploadFile({
+                        file: selectedFile,
+                        path: path
+                    });
+
+                    newPhotoURL = result.downloadURL;
+                    console.log('[PROD_DEBUG] Profile Photo Upload Success. URL:', newPhotoURL);
                 } catch (uploadError) {
                     logger.error("[EditProfile] Image upload failed:", uploadError);
-                    logger.error("[EditProfile] Error code:", uploadError.code);
-                    logger.error("[EditProfile] Error message:", uploadError.message);
                     alert("Failed to upload image: " + (uploadError.message || "Unknown error"));
                     setLoading(false);
                     return; // Don't save profile if upload failed

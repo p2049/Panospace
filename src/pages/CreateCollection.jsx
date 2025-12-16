@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
 import { useCreateCollection } from '@/hooks/useCollections';
 import { db } from '@/firebase';
@@ -189,10 +189,13 @@ const CreateCollection = () => {
                 // Upload cover image if selected
                 if (images.length > 0) {
                     const image = images[0];
-                    const fileName = `magazines/${currentUser.uid}/${Date.now()}_cover_${image.file.name}`;
-                    const storageRef = ref(storage, fileName);
-                    await uploadBytes(storageRef, image.file);
-                    finalCoverImageUrl = await getDownloadURL(storageRef);
+                    const path = `magazines/${currentUser.uid}/${Date.now()}_cover_${image.file.name}`;
+                    const { uploadFile } = await import('@/services/storageUploader');
+                    const result = await uploadFile({
+                        file: image.file,
+                        path
+                    });
+                    finalCoverImageUrl = result.downloadURL;
                 }
 
                 // Calculate next release date
@@ -241,10 +244,13 @@ const CreateCollection = () => {
                 // Upload cover image if selected
                 if (images.length > 0) {
                     const image = images[0];
-                    const fileName = `museums/${currentUser.uid}/${Date.now()}_cover_${image.file.name}`;
-                    const storageRef = ref(storage, fileName);
-                    await uploadBytes(storageRef, image.file);
-                    finalCoverImageUrl = await getDownloadURL(storageRef);
+                    const path = `museums/${currentUser.uid}/${Date.now()}_cover_${image.file.name}`;
+                    const { uploadFile } = await import('@/services/storageUploader');
+                    const result = await uploadFile({
+                        file: image.file,
+                        path
+                    });
+                    finalCoverImageUrl = result.downloadURL;
                 }
 
                 const museumData = {
@@ -297,11 +303,14 @@ const CreateCollection = () => {
             const uploadedItems = [];
             for (let i = 0; i < images.length; i++) {
                 const image = images[i];
-                const fileName = `collections/${currentUser.uid}/${Date.now()}_${i}_${image.file.name}`;
-                const storageRef = ref(storage, fileName);
+                const path = `collections/${currentUser.uid}/${Date.now()}_${i}_${image.file.name}`;
+                const { uploadFile } = await import('@/services/storageUploader');
 
-                await uploadBytes(storageRef, image.file);
-                const imageUrl = await getDownloadURL(storageRef);
+                const result = await uploadFile({
+                    file: image.file,
+                    path
+                });
+                const imageUrl = result.downloadURL;
 
                 uploadedItems.push({
                     imageUrl,

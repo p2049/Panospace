@@ -21,7 +21,7 @@ import {
     serverTimestamp,
     Timestamp
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '@/firebase';
 import type { Post, PostFormData, PostItem, CreatePostResult } from '@/types';
 import { generateSearchKeywords } from '@/domain/search/keywords';
@@ -54,10 +54,16 @@ export async function createPost(
         formData.slides.map(async (slide) => {
             const file = slide.file;
             const fileName = `${Date.now()}_${file.name}`;
-            const storageRef = ref(storage, `posts/${userId}/${fileName}`);
+            const path = `posts/${userId}/${fileName}`;
 
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
+            const { uploadFile } = await import('@/services/storageUploader');
+            console.log("[PROD_UPLOAD] Domain Service createPost running via canonical uploader");
+
+            const result = await uploadFile({
+                file,
+                path
+            });
+            const url = result.downloadURL;
 
             // Extract EXIF data
             const exif = await extractExifData(file);

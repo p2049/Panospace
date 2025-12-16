@@ -17,6 +17,12 @@ window.collection = collection;
 window.addDoc = addDoc;
 window.serverTimestamp = serverTimestamp;
 
+// 🛡️ Initialize Security Guard (DEV ONLY)
+import { initializeUploadGuard } from '@/core/security/uploadGuard';
+if (import.meta.env.DEV) {
+  initializeUploadGuard();
+}
+
 // Unregister service workers in development to prevent fetch interception issues
 if (import.meta.env.DEV && "serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(registrations => {

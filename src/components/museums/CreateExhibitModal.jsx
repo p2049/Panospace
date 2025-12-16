@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaTimes, FaImage, FaClock, FaCloudUploadAlt } from 'react-icons/fa';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/firebase';
 import { useAuth } from '@/context/AuthContext';
@@ -45,10 +45,14 @@ const CreateExhibitModal = ({ isOpen, onClose, museumId }) => {
 
         try {
             // 1. Upload Image
-            const fileName = `exhibits/${museumId}/${currentUser.uid}/${Date.now()}_${image.name}`;
-            const storageRef = ref(storage, fileName);
-            await uploadBytes(storageRef, image);
-            const imageUrl = await getDownloadURL(storageRef);
+            const path = `exhibits/${museumId}/${currentUser.uid}/${Date.now()}_${image.name}`;
+
+            const { uploadFile } = await import('@/services/storageUploader');
+            const result = await uploadFile({
+                file: image,
+                path
+            });
+            const imageUrl = result.downloadURL;
 
             // 2. Calculate Expiration
             const now = new Date();

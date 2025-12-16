@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FaImage, FaTimes, FaCalendar, FaClock, FaUpload, FaCheck } from 'react-icons/fa';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
@@ -66,11 +66,15 @@ const MagazineSubmissionBox = ({ magazine, gallery, nextIssue }) => {
             const uploadedImages = [];
             for (let i = 0; i < images.length; i++) {
                 const image = images[i];
-                const fileName = `magazines/${magazine.id}/submissions/${currentUser.uid}/${Date.now()}_${i}_${image.file.name}`;
-                const storageRef = ref(storage, fileName);
+                const path = `magazines/${magazine.id}/submissions/${currentUser.uid}/${Date.now()}_${i}_${image.file.name}`;
 
-                await uploadBytes(storageRef, image.file);
-                const imageUrl = await getDownloadURL(storageRef);
+                const { uploadFile } = await import('@/services/storageUploader');
+                const result = await uploadFile({
+                    file: image.file,
+                    path
+                });
+
+                const imageUrl = result.downloadURL;
 
                 uploadedImages.push({
                     imageUrl,

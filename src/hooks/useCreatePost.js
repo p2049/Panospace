@@ -84,47 +84,24 @@ export const useCreatePost = () => {
     };
 
     // Helper: Upload with Retry
+    // Helper: Upload with Retry (Delegates to Canonical Uploader)
     const uploadWithRetry = async (storageRef, file, metadata = {}, retries = 3) => {
-        let lastError = null;
+        const { uploadFile } = await import('@/services/storageUploader');
 
-        for (let i = 0; i < retries; i++) {
-            try {
-                const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+        // We pass the full path string because the new uploader expects a path, not a ref
+        const fullPath = storageRef.fullPath;
 
-                // Add timeout protection (60 seconds per upload)
-                const uploadPromise = new Promise((resolve, reject) => {
-                    uploadTask.on('state_changed',
-                        null,
-                        (error) => reject(error), // Properly capture Firebase error
-                        () => resolve(uploadTask.snapshot)
-                    );
-                });
-
-                const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Upload timeout - please check your connection')), 60000)
-                );
-
-                await Promise.race([uploadPromise, timeoutPromise]);
-                return await getDownloadURL(storageRef);
-            } catch (err) {
-                lastError = err;
-                logger.warn(`Upload attempt ${i + 1} failed:`, err.code || err.message, err);
-
-                // Don't retry for permission errors - they won't succeed
-                if (err.code === 'storage/unauthorized' || err.code === 'storage/unauthenticated') {
-                    throw err;
-                }
-
-                // Don't retry for quota errors
-                if (err.code === 'storage/quota-exceeded') {
-                    throw err;
-                }
-
-                if (i === retries - 1) throw err;
-                await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); // Exponential backoff
-            }
+        try {
+            const result = await uploadFile({
+                file,
+                path: fullPath,
+                metadata
+            });
+            return result.downloadURL;
+        } catch (error) {
+            console.error("[useCreatePost] Upload failed via canonical uploader:", error);
+            throw error;
         }
-        throw lastError;
     };
 
     // -----------------------------------------------------------------------
