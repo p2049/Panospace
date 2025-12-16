@@ -17,7 +17,7 @@ import {
     increment,
     setDoc
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 // We assume searchKeywords is now in core utils or we inline logic. 
 // For now import from previous location (will be fixed by global replace later if moved)
 // But wait, searchKeywords.js was in utils, which we moved to core/utils.
@@ -44,7 +44,7 @@ export const createGallery = async (galleryData: any, coverImageFile: any, userI
         let coverImageUrl = null;
         if (coverImageFile) {
             const imageRef = ref(storage, `galleries/${userId}/${Date.now()}_${coverImageFile.name}`);
-            await uploadBytes(imageRef, coverImageFile);
+            await uploadBytesResumable(imageRef, coverImageFile);
             coverImageUrl = await getDownloadURL(imageRef);
         }
 

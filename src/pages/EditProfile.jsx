@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext';
 import { updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch, limit, orderBy } from 'firebase/firestore';
 import { db, storage } from '@/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
@@ -255,7 +255,7 @@ const EditProfile = () => {
                     // Fixed filename 'profile_current' ensures only one file exists per user (overwrites old)
                     const storageRef = ref(storage, `profile_photos/${currentUser.uid}/profile_current`);
                     logger.log('[EditProfile] Uploading to:', storageRef.fullPath);
-                    await uploadBytes(storageRef, selectedFile);
+                    await uploadBytesResumable(storageRef, selectedFile);
                     newPhotoURL = await getDownloadURL(storageRef);
                     logger.log('[EditProfile] Upload success, URL:', newPhotoURL);
                 } catch (uploadError) {

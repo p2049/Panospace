@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage, db } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { FaImage, FaTimes, FaPlus, FaArrowLeft, FaBook, FaCheck, FaGripVertical } from 'react-icons/fa';
@@ -211,7 +211,7 @@ const CreateMagazineIssue = () => {
                 const fileName = `magazines/${magazineId}/issues/${currentUser.uid}/${Date.now()}_slide_${i.toString().padStart(3, '0')}_${slide.file.name}`;
                 const storageRef = ref(storage, fileName);
 
-                await uploadBytes(storageRef, slide.file);
+                await uploadBytesResumable(storageRef, slide.file);
                 const imageUrl = await getDownloadURL(storageRef);
 
                 uploadedSlides.push({
