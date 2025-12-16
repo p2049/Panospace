@@ -1,225 +1,332 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaFilter, FaSearch, FaStar } from 'react-icons/fa';
-import { SpaceCardService, RARITY_TIERS, CARD_DISCIPLINES, EDITION_TYPES } from '@/services/SpaceCardService';
-import SpaceCardComponent from '@/components/SpaceCardComponent';
-import '@/styles/rarity-system.css';
+import React, { useState, useEffect, useCallback, useReducer, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { useSearch, SEARCH_CACHE } from '@/hooks/useSearch';
+import { useFollowing } from '@/hooks/useFollowing';
+import { useBlock } from '@/hooks/useBlock';
+import { getRecommendations } from '@/core/utils/recommendations';
+import MarketLayoutWrapper from '@/components/marketplace/MarketLayoutWrapper';
+import MarketHeader from '@/components/marketplace/MarketHeader';
+import MarketResults from '@/components/marketplace/MarketResults';
+import { convertSearchInput } from '@/utils/convertSearchInput';
+
+// Simplified Reducer for Market
+const searchReducer = (state, action) => {
+    switch (action.type) {
+        case 'SET_RESULTS':
+            return {
+                ...state,
+                results: action.isLoadMore
+                    ? {
+                        posts: [...state.results.posts, ...action.payload.posts], // Store shop items in 'posts' array for compatibility
+                    }
+                    : action.payload,
+                lastDoc: action.lastDoc !== undefined ? action.lastDoc : state.lastDoc,
+                hasMore: action.hasMore !== undefined ? action.hasMore : state.hasMore,
+            };
+        case 'RESET_RESULTS':
+            return {
+                ...state,
+                results: { posts: [] },
+                lastDoc: null,
+                hasMore: true,
+            };
+        default:
+            return state;
+    }
+};
+
+const initialSearchState = {
+    results: { posts: [] },
+    lastDoc: null,
+    hasMore: true,
+};
 
 const CardMarketplace = () => {
+    const { currentUser } = useAuth();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [cards, setCards] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
 
-    // Filters
-    const [selectedRarity, setSelectedRarity] = useState('');
-    const [selectedDiscipline, setSelectedDiscipline] = useState('');
-    const [selectedEditionType, setSelectedEditionType] = useState('');
-    const [minPrice, setMinPrice] = useState('');
-    const [maxPrice, setMaxPrice] = useState('');
+    // State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedTags, setSelectedTags] = useState([]);
+
+    // Market Specific Filters
+    const [shopCategory, setShopCategory] = useState('print');
+    const [selectedSize, setSelectedSize] = useState('');
+    const [selectedType, setSelectedType] = useState('');
+
     const [sortBy, setSortBy] = useState('newest');
+    const [viewMode, setViewMode] = useState('grid');
+    const [isSearching, setIsSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [error, setError] = useState(null);
+    const [followingOnly, setFollowingOnly] = useState(false);
+
+    const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+    const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+    const sortDropdownRef = useRef(null);
+
+    // Header Visibility
+    const [headerVisible, setHeaderVisible] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
+    const lastScrollY = useRef(0);
+
+    const [searchState, dispatch] = useReducer(searchReducer, initialSearchState);
+    const { results, lastDoc, hasMore } = searchState;
+
+    const { searchShopItems, loading } = useSearch();
+    const { followingList } = useFollowing(currentUser?.uid);
+    const { blockedUsers } = useBlock();
+
+    const isMountedRef = useRef(true);
+    const isLoadingRef = useRef(false);
+    const searchRequestId = useRef(0);
+
+    // Refs for current state to use in async calls
+    const currentSearchTermRef = useRef(searchTerm);
+    const currentShopCategoryRef = useRef(shopCategory);
+    const currentSelectedTagsRef = useRef(selectedTags);
+    const currentSelectedSizeRef = useRef(selectedSize);
+    const currentSelectedTypeRef = useRef(selectedType);
+    const currentSortByRef = useRef(sortBy);
+
+    // Mobile check
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
-        fetchMarketplace();
-    }, [selectedRarity, selectedDiscipline, selectedEditionType, minPrice, maxPrice, sortBy]);
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            if (currentScrollY < 10) setHeaderVisible(true);
+            else if (currentScrollY > lastScrollY.current && currentScrollY > 100) setHeaderVisible(false);
+            else if (currentScrollY < lastScrollY.current) setHeaderVisible(true);
+            lastScrollY.current = currentScrollY;
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
-    const fetchMarketplace = async () => {
-        setLoading(true);
+    // Update Refs
+    useEffect(() => {
+        currentSearchTermRef.current = searchTerm;
+        currentShopCategoryRef.current = shopCategory;
+        currentSelectedTagsRef.current = selectedTags;
+        currentSelectedSizeRef.current = selectedSize;
+        currentSelectedTypeRef.current = selectedType;
+        currentSortByRef.current = sortBy;
+    }, [searchTerm, shopCategory, selectedTags, selectedSize, selectedType, sortBy]);
+
+    // Cleanup
+    useEffect(() => {
+        return () => { isMountedRef.current = false; };
+    }, []);
+
+    // Perform Search
+    const performSearch = useCallback(async (isLoadMore = false) => {
+        if (!isMountedRef.current) return;
+        if (isLoadingRef.current && !isLoadMore) return;
+
+        const currentRequestId = ++searchRequestId.current;
+        const term = convertSearchInput(currentSearchTermRef.current);
+        const tags = currentSelectedTagsRef.current; // Array
+
+        // Cache Key (Market Specific)
+        const cacheKey = JSON.stringify({
+            mode: 'market',
+            term,
+            category: currentShopCategoryRef.current,
+            tags,
+            size: currentSelectedSizeRef.current,
+            type: currentSelectedTypeRef.current,
+            sortBy: currentSortByRef.current,
+            followingOnly
+        });
+
+        // Cache Check
+        if (!isLoadMore && SEARCH_CACHE[cacheKey]) {
+            dispatch({
+                type: 'SET_RESULTS',
+                payload: SEARCH_CACHE[cacheKey].results,
+                isLoadMore: false,
+                lastDoc: SEARCH_CACHE[cacheKey].lastDoc,
+                hasMore: SEARCH_CACHE[cacheKey].hasMore
+            });
+            setIsSearching(false);
+            setHasSearched(true);
+            return;
+        }
+
+        if (!isLoadMore) {
+            setIsSearching(true);
+            setHasSearched(true);
+            setError(null);
+        }
+        isLoadingRef.current = true;
+
         try {
-            const filters = {
-                rarity: selectedRarity || undefined,
-                discipline: selectedDiscipline || undefined,
-                editionType: selectedEditionType || undefined,
-                minPrice: minPrice ? parseFloat(minPrice) : undefined,
-                maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-                sortBy
+            // AUTHOR IDS for "Added" filter
+            let searchAuthorIds = [];
+            if (followingOnly && followingList.length > 0) {
+                searchAuthorIds = followingList;
+            }
+
+            const { data, lastDoc: newLastDoc } = await searchShopItems(
+                term,
+                {
+                    shopCategory: currentShopCategoryRef.current,
+                    tags,
+                    sort: currentSortByRef.current,
+                    size: currentSelectedSizeRef.current,
+                    type: currentSelectedTypeRef.current,
+                    authorIds: searchAuthorIds
+                },
+                isLoadMore ? lastDoc : null
+            );
+
+            // Filter blocked users
+            const resultData = data.filter(item => !blockedUsers.has(item.ownerId));
+
+            if (!isMountedRef.current || searchRequestId.current !== currentRequestId) return;
+
+            const payload = { posts: resultData }; // Reuse 'posts' key for SearchResults compatibility
+            const hasMoreData = resultData.length > 0;
+
+            // Update Cache (Simplistic)
+            let finalResults = payload;
+            if (isLoadMore && SEARCH_CACHE[cacheKey]) {
+                finalResults = { posts: [...SEARCH_CACHE[cacheKey].results.posts, ...payload.posts] };
+            }
+            SEARCH_CACHE[cacheKey] = {
+                results: finalResults,
+                lastDoc: newLastDoc,
+                hasMore: hasMoreData
             };
 
-            const marketplace = await SpaceCardService.getMarketplace(filters);
-            setCards(marketplace);
-        } catch (error) {
-            console.error('Error fetching marketplace:', error);
+            dispatch({
+                type: 'SET_RESULTS',
+                payload,
+                isLoadMore,
+                lastDoc: newLastDoc,
+                hasMore: hasMoreData
+            });
+
+        } catch (err) {
+            console.error('Market search error:', err);
+            setError('Failed to load market items.');
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) setIsSearching(false);
+            isLoadingRef.current = false;
         }
+
+    }, [searchShopItems, followingOnly, followingList, blockedUsers, lastDoc]);
+
+    // Trigger Search on Filter Change
+    useEffect(() => {
+        // Debounce search term changes
+        const timer = setTimeout(() => {
+            dispatch({ type: 'RESET_RESULTS' });
+            performSearch(false);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm, shopCategory, selectedTags, selectedSize, selectedType, sortBy, followingOnly]);
+
+
+    // Infinite Scroll
+    useEffect(() => {
+        let prefetchTimer = null;
+        const handleScroll = () => {
+            if (prefetchTimer) clearTimeout(prefetchTimer);
+            prefetchTimer = setTimeout(() => {
+                const scrollPosition = window.innerHeight + window.scrollY;
+                const documentHeight = document.documentElement.scrollHeight;
+                if (scrollPosition >= documentHeight - 800 && !loading && hasMore && results.posts.length > 0) {
+                    performSearch(true);
+                }
+            }, 300);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (prefetchTimer) clearTimeout(prefetchTimer);
+        };
+    }, [loading, hasMore, results.posts.length, performSearch]);
+
+    const handleTagToggle = (tag) => {
+        setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
     };
 
-    const filteredCards = cards.filter(card => {
-        if (!searchTerm) return true;
-        const search = searchTerm.toLowerCase();
-        return (
-            card.title.toLowerCase().includes(search) ||
-            card.creatorName.toLowerCase().includes(search) ||
-            card.description?.toLowerCase().includes(search)
-        );
-    });
+    const clearAllFilters = () => {
+        setSearchTerm('');
+        setShopCategory('print');
+        setSelectedTags([]);
+        setSelectedSize('');
+        setSelectedType('');
+        setSortBy('newest');
+        setFollowingOnly(false);
+        dispatch({ type: 'RESET_RESULTS' });
+    };
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--black)', color: '#fff', paddingBottom: '80px' }}>
-            {/* Header */}
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #333' }}>
-                <h1 style={{ margin: '0 0 1rem 0', fontSize: '2rem' }}>SpaceCards Marketplace</h1>
+        <MarketLayoutWrapper
+            selectedTags={selectedTags}
+            onTagToggle={handleTagToggle}
+            onClearAll={clearAllFilters}
+            resultsCount={results.posts.length}
+            isMobileFiltersOpen={isMobileFiltersOpen}
+            onMobileFilterToggle={setIsMobileFiltersOpen}
+            isMobile={isMobile}
+            isStandalone={true}
+        >
+            <MarketHeader
+                isMobile={isMobile}
+                headerVisible={headerVisible}
+                isStandalone={true}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                currentMode="posts"
+                setCurrentMode={() => { }}
+                followingOnly={followingOnly}
+                setFollowingOnly={setFollowingOnly}
+                selectedTags={selectedTags}
+                setIsMobileFiltersOpen={setIsMobileFiltersOpen}
 
-                {/* Search Bar */}
-                <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                    <FaSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
-                    <input
-                        type="text"
-                        placeholder="Search cards by name, creator, or description..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '0.75rem 1rem 0.75rem 2.5rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            fontSize: '1rem'
-                        }}
-                    />
-                </div>
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
 
-                {/* Filters */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
-                    <select
-                        value={selectedRarity}
-                        onChange={(e) => setSelectedRarity(e.target.value)}
-                        style={{
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff'
-                        }}
-                    >
-                        <option value="">All Rarities</option>
-                        {Object.keys(RARITY_TIERS).map(rarity => (
-                            <option key={rarity} value={rarity}>{rarity}</option>
-                        ))}
-                    </select>
+                isSortDropdownOpen={isSortDropdownOpen}
+                setIsSortDropdownOpen={setIsSortDropdownOpen}
 
-                    <select
-                        value={selectedDiscipline}
-                        onChange={(e) => setSelectedDiscipline(e.target.value)}
-                        style={{
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff'
-                        }}
-                    >
-                        <option value="">All Disciplines</option>
-                        {Object.values(CARD_DISCIPLINES).map(disc => (
-                            <option key={disc} value={disc}>{disc}</option>
-                        ))}
-                    </select>
+                searchMode="art"
+                setSearchMode={() => { }}
 
-                    <select
-                        value={selectedEditionType}
-                        onChange={(e) => setSelectedEditionType(e.target.value)}
-                        style={{
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff'
-                        }}
-                    >
-                        <option value="">All Editions</option>
-                        <option value={EDITION_TYPES.LIMITED}>Limited</option>
-                        <option value={EDITION_TYPES.TIMED}>Timed</option>
-                        <option value={EDITION_TYPES.CHALLENGE}>Challenge</option>
-                        <option value={EDITION_TYPES.CONTEST}>Contest</option>
-                    </select>
+                selectedSize={selectedSize}
+                setSelectedSize={setSelectedSize}
+                selectedType={selectedType}
+                setSelectedType={setSelectedType}
+                shopCategory={shopCategory}
+                setShopCategory={setShopCategory}
 
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        style={{
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff'
-                        }}
-                    >
-                        <option value="newest">Newest</option>
-                        <option value="price_asc">Price: Low to High</option>
-                        <option value="price_desc">Price: High to Low</option>
-                    </select>
-                </div>
-
-                {/* Price Range */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '0.75rem' }}>
-                    <input
-                        type="number"
-                        placeholder="Min Price"
-                        value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
-                        style={{
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff'
-                        }}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Max Price"
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
-                        style={{
-                            padding: '0.75rem',
-                            background: '#111',
-                            border: '1px solid #333',
-                            borderRadius: '8px',
-                            color: '#fff'
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* Results */}
-            <div style={{ padding: '1.5rem' }}>
-                <div style={{ marginBottom: '1rem', color: '#888' }}>
-                    {filteredCards.length} {filteredCards.length === 1 ? 'card' : 'cards'} available
-                </div>
-
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                        Loading marketplace...
-                    </div>
-                ) : filteredCards.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                        <FaFilter size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                        <div>No cards found matching your filters</div>
-                    </div>
-                ) : (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                        gap: '1.5rem'
-                    }}>
-                        {filteredCards.map(card => (
-                            <div
-                                key={card.listing.id}
-                                onClick={() => navigate(`/cards/${card.id}`)}
-                                style={{ cursor: 'pointer' }}
-                            >
-                                <SpaceCardComponent
-                                    card={card}
-                                    ownership={card.listing}
-                                    showPrice={true}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        </div>
+                hasActiveFilters={searchTerm || selectedTags.length > 0 || selectedSize || selectedType}
+            />
+            <MarketResults
+                viewMode={viewMode}
+                currentMode="posts"
+                results={results}
+                isMobile={isMobile}
+                isSearching={isSearching}
+                hasSearched={hasSearched}
+                error={error}
+                performSearch={performSearch}
+                setSearchTerm={setSearchTerm}
+            />
+        </MarketLayoutWrapper>
     );
 };
 

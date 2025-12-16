@@ -987,8 +987,9 @@ export const useSearch = () => {
             const shopItemsRef = collection(db, 'shopItems');
             let q;
 
-            // Base query always requires status == 'active'
-            const baseConstraints = [where('status', '==', 'active')];
+            // Base query - MOVED STATUS CHECK TO CLIENT SIDE TO BYPASS MISSING INDEX
+            // const baseConstraints = [where('status', '==', 'active')];
+            const baseConstraints = [];
 
             if (tags.length > 0) {
                 // Filter by tags
@@ -997,7 +998,7 @@ export const useSearch = () => {
                 // Filter by keywords
                 q = query(shopItemsRef, ...baseConstraints, where('searchKeywords', 'array-contains', primaryWord), limit(50));
             } else {
-                // Recent active items
+                // Recent items
                 q = query(shopItemsRef, ...baseConstraints, orderBy('createdAt', 'desc'), limit(50));
             }
 
@@ -1012,6 +1013,17 @@ export const useSearch = () => {
             // Client-side filtering
             let filtered = docs;
 
+            // Apply Status Filter (Client Side fallback)
+            filtered = filtered.filter(item => item.status === 'active');
+
+            // Apply Category Filter
+            if (filters.shopCategory && filters.shopCategory !== 'all') {
+                filtered = filtered.filter(item => {
+                    const itemType = item.productType || 'print';
+                    return itemType === filters.shopCategory;
+                });
+            }
+
             if (term) {
                 filtered = filtered.filter(item => {
                     const searchableText = [
@@ -1022,6 +1034,7 @@ export const useSearch = () => {
                     return words.every(w => searchableText.includes(w));
                 });
             }
+
 
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {

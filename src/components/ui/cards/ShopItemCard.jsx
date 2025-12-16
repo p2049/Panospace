@@ -41,7 +41,7 @@ const ShopItemCard = ({ item }) => {
                         {item.title}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#7FFFD4', marginTop: '0.2rem' }}>
-                        {item.minPrice !== null ? `From $${item.minPrice.toFixed(2)}` : 'View Details'}
+                        {(item.minPrice !== null && item.minPrice !== undefined) ? `From $${Number(item.minPrice).toFixed(2)}` : 'View Details'}
                     </div>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
@@ -7,12 +7,12 @@ import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'fir
 import { doc, deleteDoc, collection, query, where, getDocs, writeBatch, updateDoc, getDoc, deleteField } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useActivePost } from '@/context/ActivePostContext';
-import ReportModal from '@/components/ReportModal';
+import UpgradeModal from '../components/monetization/AddFundsModal';
+import ReportModal from '../components/ReportModal';
 import { useBlock } from '@/hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '@/core/constants/nsfwTags';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { useFeedStore } from '@/core/store/useFeedStore';
-import UpgradeModal from '@/components/monetization/AddFundsModal';
 import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar, FaUsers, FaGem } from 'react-icons/fa';
 
 const Settings = () => {

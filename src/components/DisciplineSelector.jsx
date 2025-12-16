@@ -8,10 +8,30 @@ const DisciplineSelector = ({
     expandedDiscipline,
     setExpandedDiscipline,
     toggleMainDiscipline,
-    toggleNiche
+    toggleNiche,
+    accentColor = '#7FFFD4'
 }) => {
     // Collapsed by default
     const [isSectionCollapsed, setIsSectionCollapsed] = useState(true);
+
+    // Helper to genericize RGBA backgrounds based on accent color
+    const getRgba = (alpha) => {
+        if (!accentColor || accentColor.includes('gradient') || accentColor[0] !== '#' || accentColor.length < 7) {
+            return `rgba(127, 255, 212, ${alpha})`; // Default Ice Mint for gradients or invalid hex
+        }
+        const r = parseInt(accentColor.slice(1, 3), 16);
+        const g = parseInt(accentColor.slice(3, 5), 16);
+        const b = parseInt(accentColor.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    const isGradient = accentColor && accentColor.includes('gradient');
+    const textStyle = isGradient ? {
+        backgroundImage: accentColor,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        color: 'transparent'
+    } : { color: accentColor };
 
     return (
         <div className="form-group">
@@ -26,12 +46,12 @@ const DisciplineSelector = ({
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ color: '#7FFFD4', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer' }}>Art Disciplines</label>
+                    <label style={{ ...textStyle, fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-block' }}>Art Disciplines</label>
                     <span style={{ fontSize: '0.8rem', color: '#888' }}>
                         {selectedMain.length} selected
                     </span>
                 </div>
-                {isSectionCollapsed ? <FaChevronDown color="#7FFFD4" size={14} /> : <FaChevronUp color="#7FFFD4" size={14} />}
+                {isSectionCollapsed ? <FaChevronDown color={isGradient ? '#fff' : accentColor} size={14} /> : <FaChevronUp color={isGradient ? '#fff' : accentColor} size={14} />}
             </div>
 
             {!isSectionCollapsed && (
@@ -48,33 +68,24 @@ const DisciplineSelector = ({
 
                             return (
                                 <div key={discipline} style={{
-                                    background: isSelected ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
+                                    background: isSelected ? getRgba(0.1) : 'transparent',
                                     borderRadius: '12px',
-                                    border: isSelected ? '1px solid rgba(127, 255, 212, 0.3)' : '1px solid transparent',
+                                    border: isSelected ? `1px solid ${getRgba(0.3)}` : '1px solid transparent',
                                     overflow: 'hidden',
                                     transition: 'all 0.2s'
                                 }}>
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            if (isSelected) {
-                                                // If already selected, allow toggling it off OR expanding/collapsing
-                                                // Click on the main button area toggles selection
-                                                toggleMainDiscipline(discipline);
-                                            } else {
-                                                // If not selected, select it
-                                                toggleMainDiscipline(discipline);
-                                            }
-                                        }}
+                                        onClick={() => toggleMainDiscipline(discipline)}
                                         style={{
                                             width: '100%',
                                             padding: '1rem',
                                             display: 'flex',
                                             justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            background: isSelected ? 'rgba(127, 255, 212, 0.05)' : 'rgba(127, 255, 212, 0.02)',
+                                            background: isSelected ? getRgba(0.05) : getRgba(0.02),
                                             border: 'none',
-                                            color: isSelected ? '#7FFFD4' : '#aaa',
+                                            color: isSelected ? (isGradient ? '#fff' : accentColor) : '#aaa',
                                             cursor: 'pointer',
                                             textAlign: 'left',
                                             fontSize: '0.95rem',
@@ -85,17 +96,16 @@ const DisciplineSelector = ({
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             {isSelected && <FaCheck size={12} color="#4CAF50" />}
-                                            {discipline}
+                                            <span style={isSelected && isGradient ? textStyle : {}}>{discipline}</span>
                                         </div>
                                         {isSelected && (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                 {nicheCount > 0 && (
-                                                    <span style={{ fontSize: '0.75rem', background: '#333', padding: '2px 6px', borderRadius: '10px' }}>
+                                                    <span style={{ fontSize: '0.75rem', background: '#333', padding: '2px 6px', borderRadius: '10px', color: '#fff' }}>
                                                         {nicheCount} niches
                                                     </span>
                                                 )}
-                                                <button
-                                                    type="button"
+                                                <div
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setExpandedDiscipline(isExpanded ? null : discipline);
@@ -113,7 +123,7 @@ const DisciplineSelector = ({
                                                     <span style={{ fontSize: '0.8rem' }}>
                                                         {isExpanded ? '▼' : '▶'}
                                                     </span>
-                                                </button>
+                                                </div>
                                             </div>
                                         )}
                                     </button>
@@ -139,7 +149,7 @@ const DisciplineSelector = ({
                                                 overflowY: 'hidden',
                                                 paddingBottom: '0.5rem',
                                                 scrollbarWidth: 'thin',
-                                                scrollbarColor: 'rgba(127, 255, 212, 0.3) rgba(255, 255, 255, 0.02)'
+                                                scrollbarColor: `${getRgba(0.3)} rgba(255, 255, 255, 0.02)`
                                             }}>
                                                 {ART_DISCIPLINES[discipline].map(niche => {
                                                     const isNicheSelected = selectedNiches[discipline]?.includes(niche);
@@ -152,8 +162,8 @@ const DisciplineSelector = ({
                                                                 padding: '0.4rem 0.8rem',
                                                                 fontSize: '0.8rem',
                                                                 borderRadius: '20px',
-                                                                border: isNicheSelected ? '1px solid #7FFFD4' : '1px solid rgba(127, 255, 212, 0.2)',
-                                                                background: isNicheSelected ? '#7FFFD4' : 'rgba(127, 255, 212, 0.05)',
+                                                                border: isNicheSelected ? (isGradient ? '1px solid #fff' : `1px solid ${accentColor}`) : `1px solid ${getRgba(0.2)}`,
+                                                                background: isNicheSelected ? accentColor : getRgba(0.05),
                                                                 color: isNicheSelected ? '#000' : '#ccc',
                                                                 cursor: 'pointer',
                                                                 whiteSpace: 'nowrap',

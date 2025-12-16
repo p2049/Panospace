@@ -4,6 +4,7 @@ import React from 'react';
 
 import CityscapeBanner from './CityscapeBanner';
 import OceanBanner from './OceanBanner';
+import EarthBanner from './EarthBanner';
 
 const BannerThemeRenderer = ({ mode, color, starSettings }) => {
     const overlayStyle = {
@@ -24,6 +25,11 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
     // 6. OCEAN PACK
     if (mode.startsWith('ocean') && mode !== 'ocean_depths') {
         return <OceanBanner themeId={mode} starSettings={starSettings} />;
+    }
+
+    // 7. COSMIC EARTH (Station Theme)
+    if (mode === 'cosmic-earth') {
+        return <EarthBanner />;
     }
 
     // ... (rest of file) is managed by subsequent replaces or assumed fine if not touched

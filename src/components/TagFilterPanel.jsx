@@ -102,7 +102,7 @@ const TagFilterPanel = ({
                     <span style={{
                         fontWeight: 700,
                         color: 'var(--ice-mint)',
-                        fontFamily: 'var(--font-family-heading)',
+                        fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', sans-serif",
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
                         fontSize: '0.75rem',

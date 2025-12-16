@@ -203,7 +203,7 @@ class GlobalErrorBoundary extends React.Component {
                                     margin: '0.5rem 0 0 0',
                                     color: '#ff8888'
                                 }}>
-                                    {this.state.error.toString()}
+                                    {this.state.error?.toString?.() ?? 'Unknown error'}
                                     {this.state.errorInfo && this.state.errorInfo.componentStack}
                                 </pre>
                             </details>

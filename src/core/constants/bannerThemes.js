@@ -11,6 +11,13 @@ export const BANNER_TYPES = [
         previewGradient: 'linear-gradient(135deg, #2D1B4E, #000000)',
         description: 'Deep space nebula clouds'
     },
+    {
+        id: 'cosmic-earth',
+        label: 'Cosmic Earth',
+        previewGradient: 'linear-gradient(110deg, #004a9f 0%, #000 60%)',
+        needsColor: false,
+        description: 'Station view of Earth at night'
+    },
 
     {
         id: 'simple_gradient',

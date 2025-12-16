@@ -21,6 +21,7 @@ import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
 import { logger } from '@/core/utils/logger';
+import StarBackground from '@/components/StarBackground';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -437,7 +438,14 @@ const EditProfile = () => {
                 artTypes: selectedMain || []
             });
 
-            await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
+            try {
+                logger.log('[PROD_DEBUG] Saving User Profile:', currentUser.uid);
+                await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
+                logger.log('[PROD_DEBUG] User Profile Saved.');
+            } catch (profileErr) {
+                logger.error('[PROD_DEBUG] Profile Save FAILED:', profileErr);
+                throw profileErr;
+            }
 
             // Propagate updates to past content (Fire & Forget to avoid UI block)
             updatePastContent(currentUser.uid, newPhotoURL, sanitizedUsername);
@@ -519,441 +527,130 @@ const EditProfile = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff', paddingBottom: '100px' }}>
-            {/* Header */}
-            <div style={{
-                padding: '1rem 2rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                background: 'rgba(0, 0, 0, 0.95)',
-                backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
-            }}>
-                <button onClick={() => navigate('/profile/me')} style={{ background: 'transparent', border: 'none', color: '#7FFFD4', cursor: 'pointer', fontSize: '1.2rem' }}>
-                    <FaArrowLeft />
-                </button>
-                <h1 style={{
-                    fontSize: '1.2rem',
-                    fontWeight: '700',
-                    color: '#7FFFD4',
-                    fontFamily: 'var(--font-family-heading)',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                    margin: 0
-                }}>Edit Profile</h1>
+        <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff', paddingBottom: '100px', position: 'relative' }}>
+            <style>
+                {`
+                    .custom-scrollbar::-webkit-scrollbar {
+                        height: 6px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 3px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background-color: ${profileBorderColor || '#7FFFD4'};
+                        border-radius: 3px;
+                    }
+                    .custom-scrollbar {
+                        scrollbar-color: ${profileBorderColor || '#7FFFD4'} rgba(255, 255, 255, 0.05);
+                        scrollbar-width: thin;
+                    }
+                `}
+            </style>
+            {/* Dynamic Star Background for Edit Profile */}
+            <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+                <StarBackground
+                    starColor={starColor === 'brand' ? '#7FFFD4' : starColor}
+                    multiColor={starColor === 'brand'}
+                    numStars={50} // Less dense for editing focus
+                />
             </div>
 
-            <div style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
-                <CosmicGuideModal isOpen={showSymbolGuide} onClose={() => setShowSymbolGuide(false)} />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* Header */}
+                <div style={{
+                    padding: '1rem 2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    background: 'rgba(0, 0, 0, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    borderBottom: '1px solid rgba(127, 255, 212, 0.2)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100
+                }}>
+                    <button onClick={() => navigate('/profile/me')} style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        ...(usernameColor && usernameColor.includes('gradient') ? {
+                            backgroundImage: usernameColor,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            color: 'transparent'
+                        } : { color: usernameColor || '#7FFFD4' })
+                    }}>
+                        <FaArrowLeft />
+                    </button>
+                    <h1 style={{
+                        fontSize: '1.2rem',
+                        fontWeight: '700',
+                        fontFamily: 'var(--font-family-heading)',
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                        margin: 0,
+                        ...(usernameColor && usernameColor.includes('gradient') ? {
+                            backgroundImage: usernameColor,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            color: 'transparent',
+                            display: 'inline-block'
+                        } : { color: usernameColor || '#7FFFD4' })
+                    }}>Edit Profile</h1>
+                </div>
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
+                    <CosmicGuideModal isOpen={showSymbolGuide} onClose={() => setShowSymbolGuide(false)} />
 
-                    {/* Photo Section */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                        <div style={{
-                            width: '100px',
-                            height: '100px',
-                            borderRadius: '16px',
-                            overflow: 'hidden',
-                            border: `3px solid ${profileBorderColor}`,
-                            background: '#111',
-                            boxShadow: `0 0 20px ${profileBorderColor}40`
-                        }}>
-                            {preview ? (
-                                <img src={preview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>No Photo</div>
-                            )}
-                        </div>
-                        <label style={{
-                            cursor: 'pointer',
-                            color: '#000',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.85rem',
-                            padding: '0.6rem 1.2rem',
-                            background: '#7FFFD4',
-                            borderRadius: '20px',
-                            fontWeight: '600',
-                            transition: 'all 0.2s',
-                            border: 'none'
-                        }}>
-                            <FaCamera /> Change Photo
-                            <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                        </label>
-                    </div>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                    {/* Profile Picture Border Color Customization (Scrollable) */}
-                    <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                        <label style={{ display: 'block', color: '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center' }}>Profile Border</label>
-
-                        <div style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            overflowX: 'auto',
-                            padding: '0.5rem',
-                            scrollBehavior: 'smooth',
-                            justifyContent: 'flex-start',
-                            maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
-                        }}>
-                            {ALL_COLORS.map(option => {
-                                const isPremiumLocked = option.isPremium && !isPremiumUser;
-
-                                return (
-                                    <button
-                                        key={option.id}
-                                        type="button"
-                                        onClick={() => !isPremiumLocked && setProfileBorderColor(option.color)}
-                                        style={{
-                                            flex: '0 0 auto',
-                                            padding: '0',
-                                            border: profileBorderColor === option.color ? '3px solid #fff' : '2px solid #333',
-                                            borderRadius: '50%',
-                                            width: '40px',
-                                            height: '40px',
-                                            overflow: 'hidden',
-                                            cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
-                                            background: option.color,
-                                            position: 'relative',
-                                            boxShadow: profileBorderColor === option.color ? `0 0 10px ${option.color.includes('gradient') ? '#fff' : option.color}` : 'none',
-                                            opacity: isPremiumLocked ? 0.6 : 1
-                                        }}
-                                        title={option.name}
-                                    >
-                                        {/* Lock Overlay */}
-                                        {isPremiumLocked && (
-                                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <FaLock size={12} color="#fff" />
-                                            </div>
-                                        )}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Basic Info */}
-                    <div className="form-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label style={{ display: 'block', color: '#7FFFD4', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Username</label>
-
-                            {/* Live Character Count */}
-                            <span style={{ fontSize: '0.7rem', color: '#666' }}>
-                                {getRenderedUsernameLength(username)} / 20
-                            </span>
-                        </div>
-
-                        {/* LIVE VISUAL PREVIEW */}
-                        <div style={{
-                            padding: '1rem',
-                            background: '#1a1a1a',
-                            border: '1px solid #333',
-                            borderRadius: '12px',
-                            marginBottom: '1rem',
-                            textAlign: 'center',
-                            minHeight: '60px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <span style={{
-                                fontSize: '1.5rem',
-                                fontWeight: '800',
-                                fontFamily: 'var(--font-family-heading)',
-                                color: usernameColor,
-                                textShadow: textGlow ? `0 0 10px ${usernameColor}80` : 'none'
+                        {/* Photo Section */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: '100px',
+                                height: '100px',
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                border: `3px solid ${profileBorderColor}`,
+                                background: '#111',
+                                boxShadow: `0 0 20px ${profileBorderColor}40`
                             }}>
-                                {renderCosmicUsername(username, bannerColor, textGlow)}
-                            </span>
-                        </div>
-
-                        {/* EMOJI SCROLLBAR */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '0.75rem',
-                            overflowX: 'auto',
-                            padding: '0.5rem 0',
-                            marginBottom: '0.75rem',
-                            maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
-                            WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
-                        }}>
-                            {/* Render PATTERNS first (multi-char) */}
-                            {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
-                                <button
-                                    key={`pat-${i}`}
-                                    type="button"
-                                    onClick={() => handleInsertSymbol(p.pattern)}
-                                    style={{
-                                        flex: '0 0 auto',
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(127, 255, 212, 0.2)',
-                                        background: 'rgba(127, 255, 212, 0.05)',
-                                        fontSize: '1.2rem',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    {p.replacement}
-                                </button>
-                            ))}
-                            {/* Render CHAR_MAP symbols */}
-                            {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
-                                <button
-                                    key={`char-${i}`}
-                                    type="button"
-                                    onClick={() => handleInsertSymbol(char)}
-                                    style={{
-                                        flex: '0 0 auto',
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(127, 255, 212, 0.2)',
-                                        background: 'rgba(127, 255, 212, 0.05)',
-                                        fontSize: '1.2rem',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Hidden Inputs (Logic) */}
-                        <input
-                            ref={usernameInputRef}
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                            style={{
-                                width: '100%',
-                                padding: '0.8rem',
-                                background: 'rgba(127, 255, 212, 0.05)',
-                                border: '1px solid rgba(127, 255, 212, 0.2)',
-                                borderRadius: '8px',
-                                color: '#fff',
-                                fontSize: '1rem',
+                                {preview ? (
+                                    <img src={preview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>No Photo</div>
+                                )}
+                            </div>
+                            <label style={{
+                                cursor: 'pointer',
+                                color: (usernameColor === '#FFFFFF' || usernameColor === '#fff') ? '#000' : '#000',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                fontSize: '0.85rem',
+                                padding: '0.6rem 1.2rem',
+                                background: usernameColor,
+                                borderRadius: '20px',
+                                fontWeight: '600',
                                 transition: 'all 0.2s',
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = '#7FFFD4';
-                                e.target.style.background = 'rgba(127, 255, 212, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
-                                e.target.style.background = 'rgba(127, 255, 212, 0.05)';
-                            }}
-                            placeholder="@username"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label style={{ display: 'block', color: '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Bio</label>
-                        <textarea
-                            value={bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            style={{
-                                width: '100%',
-                                padding: '0.8rem',
-                                background: 'rgba(127, 255, 212, 0.05)',
-                                border: '1px solid rgba(127, 255, 212, 0.2)',
-                                borderRadius: '8px',
-                                color: '#fff',
-                                fontSize: '1rem',
-                                minHeight: '80px',
-                                resize: 'vertical',
-                                transition: 'all 0.2s'
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = '#7FFFD4';
-                                e.target.style.background = 'rgba(127, 255, 212, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
-                                e.target.style.background = 'rgba(127, 255, 212, 0.05)';
-                            }}
-                            placeholder="Tell us about yourself..."
-                        />
-                    </div>
-
-                    {/* Discipline Selection */}
-                    <DisciplineSelector
-                        selectedMain={selectedMain}
-                        selectedNiches={selectedNiches}
-                        expandedDiscipline={expandedDiscipline}
-                        setExpandedDiscipline={setExpandedDiscipline}
-                        toggleMainDiscipline={toggleMainDiscipline}
-                        toggleNiche={toggleNiche}
-                    />
-
-                    {/* Profile Theme (Username Color) - Slider Box */}
-                    <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Theme</label>
-                        </div>
-                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
-                            Choose a color for your username.
-                        </p>
-
-                        {/* Text Glow Toggle */}
-                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <input
-                                type="checkbox"
-                                id="textGlow"
-                                checked={textGlow}
-                                onChange={(e) => setTextGlow(e.target.checked)}
-                                style={{ width: '16px', height: '16px', accentColor: '#7FFFD4', cursor: 'pointer' }}
-                            />
-                            <label htmlFor="textGlow" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
-                                Enable neon glow effect
+                                border: 'none',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                            }}>
+                                <FaCamera /> Change Photo
+                                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                             </label>
                         </div>
 
-                        <div style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            overflowX: 'auto',
-                            padding: '0.5rem',
-                            scrollBehavior: 'smooth',
-                            justifyContent: 'flex-start',
-                            maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
-                        }}>
-                            {ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand').map(option => {
-                                const isPremiumLocked = option.isPremium && !isPremiumUser;
-                                const backgroundStyle = option.color.includes('gradient')
-                                    ? { background: option.color }
-                                    : { backgroundColor: option.color };
+                        {/* Profile Picture Border Color Customization (Scrollable) */}
+                        <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                            <label style={{ display: 'block', color: (profileBorderColor && !profileBorderColor.includes('gradient')) ? profileBorderColor : '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center' }}>Profile Border</label>
 
-                                return (
-                                    <button
-                                        key={option.id}
-                                        type="button"
-                                        onClick={() => !isPremiumLocked && setUsernameColor(option.color)}
-                                        style={{
-                                            flex: '0 0 auto',
-                                            width: '80px',
-                                            padding: '0',
-                                            border: usernameColor === option.color ? '3px solid var(--ice-mint)' : '2px solid #333',
-                                            borderRadius: '12px',
-                                            overflow: 'hidden',
-                                            cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
-                                            background: 'transparent',
-                                            position: 'relative',
-                                            opacity: isPremiumLocked ? 0.6 : 1
-                                        }}
-                                    >
-                                        <div style={{
-                                            height: '40px',
-                                            background: '#000',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }}>
-                                            {isPremiumLocked && (
-                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <FaLock size={16} color="#888" />
-                                                </div>
-                                            )}
-                                            <span style={{
-                                                fontSize: '1rem',
-                                                fontWeight: '800',
-                                                ...backgroundStyle,
-                                                WebkitBackgroundClip: option.color.includes('gradient') ? 'text' : 'border-box',
-                                                WebkitTextFillColor: option.color.includes('gradient') ? 'transparent' : option.color,
-                                                color: option.color.includes('gradient') ? 'transparent' : option.color
-                                            }}>Aa</span>
-                                        </div>
-                                        <div style={{
-                                            padding: '0.4rem',
-                                            background: '#111',
-                                            textAlign: 'center',
-                                            fontSize: '0.75rem',
-                                            color: usernameColor === option.color ? '#fff' : '#888',
-                                            fontWeight: usernameColor === option.color ? '600' : '400'
-                                        }}>{option.name}</div>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Profile Banner Theme - Slider Box */}
-                    <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Theme</label>
-                            <FaInfoCircle size={14} color="#888" title="Unlock more gradients through achievements" />
-                        </div>
-                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
-                            Customize your profile with different themes and gradients.
-                        </p>
-
-                        {/* Modular Banner Theme Selectors */}
-                        <div style={{ marginBottom: '1rem' }}>
-                            <BannerTypeSelector
-                                selectedType={bannerMode}
-                                onSelect={setBannerMode}
-                            />
-                        </div>
-
-                        {/* Contextual Color Selector */}
-                        {BANNER_TYPES.find(t => t.id === bannerMode)?.needsColor && (
-                            <div style={{ paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-                                <label style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>
-                                    Theme Accent Color
-                                </label>
-                                <BannerColorSelector
-                                    selectedColor={bannerColor}
-                                    onSelect={setBannerColor}
-                                />
-                            </div>
-                        )}
-
-                        {/* Stars Overlay Toggle - Only for Star Modes if needed, or remove? 
-                            Prompt says "Do NOT modify unrelated features". 
-                            But this toggle was tied to 'gradient' mode in previous code to ADD stars.
-                            If I have 'stars' mode, it has stars. 
-                            If I have 'gradient' mode, user might want stars.
-                            Let's keep it but styling might need tweak. 
-                            Actually, 'stars' IS a mode now.
-                        */}
-                        {/* Stars Overlay & Color - Expanded to Cities & Oceans */}
-                        {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
-                            <div style={{ marginBottom: '1rem' }}>
-                                <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        id="useStarsOverlay"
-                                        checked={useStarsOverlay}
-                                        onChange={(e) => setUseStarsOverlay(e.target.checked)}
-                                        style={{ width: '16px', height: '16px', accentColor: '#7FFFD4', cursor: 'pointer' }}
-                                    />
-                                    <label htmlFor="useStarsOverlay" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
-                                        {bannerMode.startsWith('city') ? 'Show Stars' : 'Overlay Stars'}
-                                    </label>
-                                </div>
-
-
-                            </div>
-                        )}
-
-                        {/* Legacy Gradient Selector - Shown only when 'gradient' mode is active */}
-                        {bannerMode === 'gradient' && (
-                            <div style={{
+                            <div className="custom-scrollbar" style={{
                                 display: 'flex',
                                 gap: '1rem',
                                 overflowX: 'auto',
@@ -962,247 +659,627 @@ const EditProfile = () => {
                                 justifyContent: 'flex-start',
                                 maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
                             }}>
-                                {Object.values(PROFILE_GRADIENTS).map(gradient => {
-                                    const isUnlocked = unlockedGradients.includes(gradient.id) || gradient.unlockCondition === 'free' || gradient.isDefault;
-                                    const isSelected = selectedGradient === gradient.id;
+                                {ALL_COLORS.map(option => {
+                                    const isPremiumLocked = option.isPremium && !isPremiumUser;
 
                                     return (
                                         <button
-                                            key={gradient.id}
+                                            key={option.id}
                                             type="button"
-                                            onClick={() => isUnlocked && setSelectedGradient(gradient.id)}
-                                            disabled={!isUnlocked}
+                                            onClick={() => !isPremiumLocked && setProfileBorderColor(option.color)}
                                             style={{
                                                 flex: '0 0 auto',
-                                                width: '140px',
                                                 padding: '0',
-                                                border: isSelected ? '2px solid var(--ice-mint)' : '2px solid #333',
-                                                borderRadius: '12px',
-                                                overflow: 'hidden',
-                                                cursor: isUnlocked ? 'pointer' : 'not-allowed',
-                                                opacity: isUnlocked ? 1 : 0.4,
+                                                border: profileBorderColor === option.color
+                                                    ? `2px solid ${(option.color.includes('gradient')) ? '#fff' : option.color}`
+                                                    : '2px solid #333',
+                                                borderRadius: '50%',
+                                                width: '44px', // Slightly larger touch target
+                                                height: '44px',
+                                                cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                                background: 'transparent',
                                                 position: 'relative',
-                                                background: 'transparent'
-                                            }}
-                                        >
-                                            <div style={{
-                                                height: '80px',
-                                                background: gradient.background,
+                                                boxShadow: profileBorderColor === option.color
+                                                    ? `0 0 15px ${(option.color.includes('gradient')) ? '#fff' : option.color}`
+                                                    : 'none',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                position: 'relative'
-                                            }}>
-                                                {!isUnlocked && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        inset: 0,
-                                                        background: 'rgba(0,0,0,0.7)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}>
-                                                        <FaLock color="#666" size={20} />
-                                                    </div>
-                                                )}
-                                                {isSelected && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        top: '8px',
-                                                        right: '8px',
-                                                        background: 'var(--ice-mint)',
-                                                        borderRadius: '50%',
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}>
-                                                        <FaCheck color="#000" size={12} />
-                                                    </div>
-                                                )}
-                                            </div>
+                                                opacity: isPremiumLocked ? 0.6 : 1,
+                                                transition: 'all 0.2s'
+                                            }}
+                                            title={option.name}
+                                        >
+                                            {/* Inner Swatch */}
                                             <div style={{
-                                                padding: '0.5rem',
-                                                background: '#111',
-                                                textAlign: 'center'
-                                            }}>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: '600', color: isUnlocked ? '#fff' : '#666' }}>
-                                                    {gradient.name}
+                                                width: profileBorderColor === option.color ? '22px' : '36px',
+                                                height: profileBorderColor === option.color ? '22px' : '36px',
+                                                borderRadius: '50%',
+                                                background: option.color,
+                                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                            }} />
+
+                                            {/* Lock Overlay */}
+                                            {isPremiumLocked && (
+                                                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <FaLock size={12} color="#fff" />
                                                 </div>
-                                                <div style={{ fontSize: '0.7rem', color: '#888', marginTop: '2px' }}>
-                                                    {gradient.description}
-                                                </div>
-                                            </div>
+                                            )}
                                         </button>
-                                    );
+                                    )
                                 })}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Star Color Customization - Slider Box */}
-                    <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <label style={{ color: '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Star Color</label>
                         </div>
-                        <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
-                            Customize the color of the animated stars on your profile banner.
-                        </p>
 
-                        <div style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            overflowX: 'auto',
-                            padding: '0.5rem',
-                            scrollBehavior: 'smooth',
-                            justifyContent: 'flex-start',
-                            maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
-                        }}>
-                            {ALL_COLORS.map(option => {
-                                const isPremiumLocked = option.isPremium && !isPremiumUser;
+                        {/* Basic Info */}
+                        <div className="form-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{ display: 'block', color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Username</label>
 
-                                return (
+                                {/* Live Character Count */}
+                                <span style={{ fontSize: '0.7rem', color: '#666' }}>
+                                    {getRenderedUsernameLength(username)} / 20
+                                </span>
+                            </div>
+
+                            {/* LIVE VISUAL PREVIEW */}
+                            <div style={{
+                                padding: '1rem',
+                                background: '#1a1a1a',
+                                border: `2px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : profileBorderColor}`,
+                                borderRadius: '12px',
+                                marginBottom: '1rem',
+                                textAlign: 'center',
+                                minHeight: '60px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: (profileBorderColor && profileBorderColor.includes('gradient'))
+                                    ? '0 0 15px rgba(255,255,255,0.1)'
+                                    : `0 0 15px ${profileBorderColor}40`
+                            }}>
+                                <span style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '800',
+                                    fontFamily: 'var(--font-family-heading)',
+                                    color: usernameColor,
+                                    textShadow: textGlow ? `0 0 10px ${usernameColor}80` : 'none'
+                                }}>
+                                    {renderCosmicUsername(username, bannerColor, textGlow)}
+                                </span>
+                            </div>
+
+                            {/* EMOJI SCROLLBAR */}
+                            <div className="custom-scrollbar" style={{
+                                display: 'flex',
+                                gap: '0.75rem',
+                                overflowX: 'auto',
+                                padding: '0.5rem 0',
+                                marginBottom: '0.75rem',
+                                maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
+                                WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
+                            }}>
+                                {/* Render PATTERNS first (multi-char) */}
+                                {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
                                     <button
-                                        key={option.id}
+                                        key={`pat-${i}`}
                                         type="button"
-                                        onClick={() => !isPremiumLocked && setStarColor(option.color)}
+                                        onClick={() => handleInsertSymbol(p.pattern)}
                                         style={{
                                             flex: '0 0 auto',
-                                            width: '80px',
-                                            padding: '0',
-                                            border: starColor === option.color ? '3px solid var(--ice-mint)' : '2px solid #333',
-                                            borderRadius: '12px',
-                                            overflow: 'hidden',
-                                            cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
-                                            background: 'transparent',
-                                            position: 'relative',
-                                            opacity: isPremiumLocked ? 0.6 : 1
-                                        }}
-                                    >
-                                        <div style={{
-                                            height: '60px',
-                                            background: '#000',
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(127, 255, 212, 0.2)',
+                                            background: 'rgba(127, 255, 212, 0.05)',
+                                            fontSize: '1.2rem',
+                                            cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }}>
-                                            {/* Premium Lock Overlay */}
-                                            {isPremiumLocked && (
-                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <FaLock size={16} color="#888" />
-                                                </div>
-                                            )}
+                                            color: '#fff'
+                                        }}
+                                    >
+                                        {p.replacement}
+                                    </button>
+                                ))}
+                                {/* Render CHAR_MAP symbols */}
+                                {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
+                                    <button
+                                        key={`char-${i}`}
+                                        type="button"
+                                        onClick={() => handleInsertSymbol(char)}
+                                        style={{
+                                            flex: '0 0 auto',
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(127, 255, 212, 0.2)',
+                                            background: 'rgba(127, 255, 212, 0.05)',
+                                            fontSize: '1.2rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#fff'
+                                        }}
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
 
-                                            {/* Preview stars */}
-                                            {option.color === 'brand' ? (
-                                                // Multi-color brand stars preview
-                                                <>
-                                                    <style>{`
+                            {/* Hidden Inputs (Logic) */}
+                            <input
+                                ref={usernameInputRef}
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    background: 'rgba(127, 255, 212, 0.05)',
+                                    border: '1px solid rgba(127, 255, 212, 0.2)',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    fontSize: '1rem',
+                                    transition: 'all 0.2s',
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#7FFFD4';
+                                    e.target.style.background = 'rgba(127, 255, 212, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
+                                    e.target.style.background = 'rgba(127, 255, 212, 0.05)';
+                                }}
+                                placeholder="@username"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label style={{ display: 'block', color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Bio</label>
+                            <textarea
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    background: 'rgba(127, 255, 212, 0.05)',
+                                    border: '1px solid rgba(127, 255, 212, 0.2)',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    fontSize: '1rem',
+                                    minHeight: '80px',
+                                    resize: 'vertical',
+                                    transition: 'all 0.2s'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#7FFFD4';
+                                    e.target.style.background = 'rgba(127, 255, 212, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
+                                    e.target.style.background = 'rgba(127, 255, 212, 0.05)';
+                                }}
+                                placeholder="Tell us about yourself..."
+                            />
+                        </div>
+
+                        {/* Discipline Selection */}
+                        <DisciplineSelector
+                            selectedMain={selectedMain}
+                            selectedNiches={selectedNiches}
+                            expandedDiscipline={expandedDiscipline}
+                            setExpandedDiscipline={setExpandedDiscipline}
+                            toggleMainDiscipline={toggleMainDiscipline}
+                            toggleNiche={toggleNiche}
+                            accentColor={usernameColor} // Passing as accentColor for clarity
+                        />
+
+                        {/* Profile Theme (Username Color) - Slider Box */}
+                        <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{ color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Theme</label>
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                                Choose a color for your username.
+                            </p>
+
+                            {/* Text Glow Toggle */}
+                            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <input
+                                    type="checkbox"
+                                    id="textGlow"
+                                    checked={textGlow}
+                                    onChange={(e) => setTextGlow(e.target.checked)}
+                                    style={{ width: '16px', height: '16px', accentColor: (profileBorderColor && profileBorderColor.includes('gradient')) ? '#7FFFD4' : profileBorderColor, cursor: 'pointer' }}
+                                />
+                                <label htmlFor="textGlow" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
+                                    Enable neon glow effect
+                                </label>
+                            </div>
+
+                            <div className="custom-scrollbar" style={{
+                                display: 'flex',
+                                gap: '1rem',
+                                overflowX: 'auto',
+                                padding: '0.5rem',
+                                scrollBehavior: 'smooth',
+                                justifyContent: 'flex-start',
+                                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                            }}>
+                                {ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand').map(option => {
+                                    const isPremiumLocked = option.isPremium && !isPremiumUser;
+                                    const backgroundStyle = option.color.includes('gradient')
+                                        ? { background: option.color }
+                                        : { backgroundColor: option.color };
+
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => !isPremiumLocked && setUsernameColor(option.color)}
+                                            style={{
+                                                flex: '0 0 auto',
+                                                width: '80px',
+                                                padding: '0',
+                                                border: usernameColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : profileBorderColor}` : '2px solid #333',
+                                                borderRadius: '12px',
+                                                overflow: 'hidden',
+                                                cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                                background: 'transparent',
+                                                position: 'relative',
+                                                opacity: isPremiumLocked ? 0.6 : 1
+                                            }}
+                                        >
+                                            <div style={{
+                                                height: '40px',
+                                                background: '#000',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}>
+                                                {isPremiumLocked && (
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <FaLock size={16} color="#888" />
+                                                    </div>
+                                                )}
+                                                <span style={{
+                                                    fontSize: '1rem',
+                                                    fontWeight: '800',
+                                                    ...backgroundStyle,
+                                                    WebkitBackgroundClip: option.color.includes('gradient') ? 'text' : 'border-box',
+                                                    WebkitTextFillColor: option.color.includes('gradient') ? 'transparent' : option.color,
+                                                    color: option.color.includes('gradient') ? 'transparent' : option.color
+                                                }}>Aa</span>
+                                            </div>
+                                            <div style={{
+                                                padding: '0.4rem',
+                                                background: '#111',
+                                                textAlign: 'center',
+                                                fontSize: '0.75rem',
+                                                color: usernameColor === option.color ? '#fff' : '#888',
+                                                fontWeight: usernameColor === option.color ? '600' : '400'
+                                            }}>{option.name}</div>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Profile Banner Theme - Slider Box */}
+                        <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{ color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Theme</label>
+                                <FaInfoCircle size={14} color="#888" title="Unlock more gradients through achievements" />
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                                Customize your profile with different themes and gradients.
+                            </p>
+
+                            {/* Modular Banner Theme Selectors */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <BannerTypeSelector
+                                    selectedType={bannerMode}
+                                    onSelect={setBannerMode}
+                                    highlightColor={profileBorderColor}
+                                />
+                            </div>
+
+                            {/* Contextual Color Selector */}
+                            {BANNER_TYPES.find(t => t.id === bannerMode)?.needsColor && (
+                                <div style={{ paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
+                                    <label style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>
+                                        Theme Accent Color
+                                    </label>
+                                    <BannerColorSelector
+                                        selectedColor={bannerColor}
+                                        onSelect={setBannerColor}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Stars Overlay Toggle - Only for Star Modes if needed, or remove? 
+                            Prompt says "Do NOT modify unrelated features". 
+                            But this toggle was tied to 'gradient' mode in previous code to ADD stars.
+                            If I have 'stars' mode, it has stars. 
+                            If I have 'gradient' mode, user might want stars.
+                            Let's keep it but styling might need tweak. 
+                            Actually, 'stars' IS a mode now.
+                        */}
+                            {/* Stars Overlay & Color - Expanded to Cities & Oceans */}
+                            {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <input
+                                            type="checkbox"
+                                            id="useStarsOverlay"
+                                            checked={useStarsOverlay}
+                                            onChange={(e) => setUseStarsOverlay(e.target.checked)}
+                                            style={{ width: '16px', height: '16px', accentColor: (profileBorderColor && profileBorderColor.includes('gradient')) ? '#7FFFD4' : profileBorderColor, cursor: 'pointer' }}
+                                        />
+                                        <label htmlFor="useStarsOverlay" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
+                                            {bannerMode.startsWith('city') ? 'Show Stars' : 'Overlay Stars'}
+                                        </label>
+                                    </div>
+
+
+                                </div>
+                            )}
+
+                            {/* Legacy Gradient Selector - Shown only when 'gradient' mode is active */}
+                            {bannerMode === 'gradient' && (
+                                <div className="custom-scrollbar" style={{
+                                    display: 'flex',
+                                    gap: '1rem',
+                                    overflowX: 'auto',
+                                    padding: '0.5rem',
+                                    scrollBehavior: 'smooth',
+                                    justifyContent: 'flex-start',
+                                    maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                                }}>
+                                    {Object.values(PROFILE_GRADIENTS).map(gradient => {
+                                        const isUnlocked = unlockedGradients.includes(gradient.id) || gradient.unlockCondition === 'free' || gradient.isDefault;
+                                        const isSelected = selectedGradient === gradient.id;
+
+                                        return (
+                                            <button
+                                                key={gradient.id}
+                                                type="button"
+                                                onClick={() => isUnlocked && setSelectedGradient(gradient.id)}
+                                                disabled={!isUnlocked}
+                                                style={{
+                                                    flex: '0 0 auto',
+                                                    width: '140px',
+                                                    padding: '0',
+                                                    border: isSelected ? '2px solid var(--ice-mint)' : '2px solid #333',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                                                    opacity: isUnlocked ? 1 : 0.4,
+                                                    position: 'relative',
+                                                    background: 'transparent'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    height: '80px',
+                                                    background: gradient.background,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    position: 'relative'
+                                                }}>
+                                                    {!isUnlocked && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            inset: 0,
+                                                            background: 'rgba(0,0,0,0.7)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}>
+                                                            <FaLock color="#666" size={20} />
+                                                        </div>
+                                                    )}
+                                                    {isSelected && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            top: '8px',
+                                                            right: '8px',
+                                                            background: 'var(--ice-mint)',
+                                                            borderRadius: '50%',
+                                                            width: '24px',
+                                                            height: '24px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}>
+                                                            <FaCheck color="#000" size={12} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div style={{
+                                                    padding: '0.5rem',
+                                                    background: '#111',
+                                                    textAlign: 'center'
+                                                }}>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: isUnlocked ? '#fff' : '#666' }}>
+                                                        {gradient.name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#888', marginTop: '2px' }}>
+                                                        {gradient.description}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Star Color Customization - Slider Box */}
+                        <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{ color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Star Color</label>
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
+                                Customize the color of the animated stars on your profile banner.
+                            </p>
+
+                            <div className="custom-scrollbar" style={{
+                                display: 'flex',
+                                gap: '1rem',
+                                overflowX: 'auto',
+                                padding: '0.5rem',
+                                scrollBehavior: 'smooth',
+                                justifyContent: 'flex-start',
+                                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                            }}>
+                                {ALL_COLORS.map(option => {
+                                    const isPremiumLocked = option.isPremium && !isPremiumUser;
+
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => !isPremiumLocked && setStarColor(option.color)}
+                                            style={{
+                                                flex: '0 0 auto',
+                                                width: '80px',
+                                                padding: '0',
+                                                border: starColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : profileBorderColor}` : '2px solid #333',
+                                                borderRadius: '12px',
+                                                overflow: 'hidden',
+                                                cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                                background: 'transparent',
+                                                position: 'relative',
+                                                opacity: isPremiumLocked ? 0.6 : 1
+                                            }}
+                                        >
+                                            <div style={{
+                                                height: '60px',
+                                                background: '#000',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}>
+                                                {/* Premium Lock Overlay */}
+                                                {isPremiumLocked && (
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <FaLock size={16} color="#888" />
+                                                    </div>
+                                                )}
+
+                                                {/* Preview stars */}
+                                                {option.color === 'brand' ? (
+                                                    // Multi-color brand stars preview
+                                                    <>
+                                                        <style>{`
                                                         @keyframes star-preview-twinkle-1 { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
                                                         @keyframes star-preview-twinkle-2 { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
                                                     `}</style>
-                                                    {['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D'].map((c, i) => (
+                                                        {['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D'].map((c, i) => (
+                                                            <div
+                                                                key={i}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    width: '3px',
+                                                                    height: '3px',
+                                                                    background: c,
+                                                                    borderRadius: '50%',
+                                                                    top: `${15 + i * 14}%`,
+                                                                    left: `${12 + i * 16}%`,
+                                                                    boxShadow: `0 0 4px ${c}`,
+                                                                    animation: `star-preview-twinkle-${(i % 2) + 1} ${1.2 + i * 0.2}s infinite`
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </>
+                                                ) : (
+                                                    // Single color stars preview
+                                                    [...Array(5)].map((_, i) => (
                                                         <div
                                                             key={i}
                                                             style={{
                                                                 position: 'absolute',
-                                                                width: '3px',
-                                                                height: '3px',
-                                                                background: c,
+                                                                width: '2px',
+                                                                height: '2px',
+                                                                background: option.color, // Works for gradient string too on div background
                                                                 borderRadius: '50%',
-                                                                top: `${15 + i * 14}%`,
-                                                                left: `${12 + i * 16}%`,
-                                                                boxShadow: `0 0 4px ${c}`,
-                                                                animation: `star-preview-twinkle-${(i % 2) + 1} ${1.2 + i * 0.2}s infinite`
+                                                                top: `${20 + i * 15}%`,
+                                                                left: `${15 + i * 15}%`,
+                                                                boxShadow: option.color.includes('gradient') ? 'none' : `0 0 3px ${option.color}`
                                                             }}
                                                         />
-                                                    ))}
-                                                </>
-                                            ) : (
-                                                // Single color stars preview
-                                                [...Array(5)].map((_, i) => (
-                                                    <div
-                                                        key={i}
-                                                        style={{
-                                                            position: 'absolute',
-                                                            width: '2px',
-                                                            height: '2px',
-                                                            background: option.color, // Works for gradient string too on div background
-                                                            borderRadius: '50%',
-                                                            top: `${20 + i * 15}%`,
-                                                            left: `${15 + i * 15}%`,
-                                                            boxShadow: option.color.includes('gradient') ? 'none' : `0 0 3px ${option.color}`
-                                                        }}
-                                                    />
-                                                ))
-                                            )}
-                                        </div>
-                                        <div style={{
-                                            padding: '0.4rem',
-                                            background: '#111',
-                                            textAlign: 'center',
-                                            fontSize: '0.75rem',
-                                            color: starColor === option.color ? '#fff' : '#888',
-                                            fontWeight: starColor === option.color ? '600' : '400'
-                                        }}>
-                                            {option.name}
-                                        </div>
-                                    </button>
-                                )
-                            })}
+                                                    ))
+                                                )}
+                                            </div>
+                                            <div style={{
+                                                padding: '0.4rem',
+                                                background: '#111',
+                                                textAlign: 'center',
+                                                fontSize: '0.75rem',
+                                                color: starColor === option.color ? '#fff' : '#888',
+                                                fontWeight: starColor === option.color ? '600' : '400'
+                                            }}>
+                                                {option.name}
+                                            </div>
+                                        </button>
+                                    )
+                                })}
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Profile Border Color Customization */}
 
 
+                        {/* Final Save Button */}                        <button
+                            type="submit"
+                            disabled={loading}
+                            style={{
+                                padding: '1rem',
+                                background: usernameColor,
+                                color: (usernameColor === '#FFFFFF' || usernameColor === '#fff') ? '#000' : '#000',
+                                border: 'none',
+                                borderRadius: '30px',
+                                fontSize: '1rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                marginTop: '1rem',
+                                opacity: loading ? 0.7 : 1,
+                                position: 'sticky',
+                                bottom: '20px',
+                                boxShadow: '0 4px 20px rgba(127, 255, 212, 0.3)',
+                                transition: 'all 0.2s',
+                                fontFamily: 'var(--font-family-heading)',
+                                letterSpacing: '0.05em',
+                                textTransform: 'uppercase'
+                            }}
+                        >
+                            {loading ? 'Saving...' : <><FaSave /> Save Changes</>}
+                        </button>
+                    </form>
+                </div>
 
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        style={{
-                            padding: '1rem',
-                            background: '#7FFFD4',
-                            color: '#000',
-                            border: 'none',
-                            borderRadius: '30px',
-                            fontSize: '1rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            marginTop: '1rem',
-                            opacity: loading ? 0.7 : 1,
-                            position: 'sticky',
-                            bottom: '20px',
-                            boxShadow: '0 4px 20px rgba(127, 255, 212, 0.3)',
-                            transition: 'all 0.2s',
-                            fontFamily: 'var(--font-family-heading)',
-                            letterSpacing: '0.05em',
-                            textTransform: 'uppercase'
+                {showCropper && tempImageSrc && (
+                    <ImageCropper
+                        imageSrc={tempImageSrc}
+                        onCrop={handleCropComplete}
+                        onCancel={() => {
+                            setShowCropper(false);
+                            setTempImageSrc(null);
                         }}
-                    >
-                        {loading ? 'Saving...' : <><FaSave /> Save Changes</>}
-                    </button>
-                </form>
-            </div>
+                    />
+                )}
 
-            {showCropper && tempImageSrc && (
-                <ImageCropper
-                    imageSrc={tempImageSrc}
-                    onCrop={handleCropComplete}
-                    onCancel={() => {
-                        setShowCropper(false);
-                        setTempImageSrc(null);
-                    }}
-                />
-            )}
+            </div>{/* End wrapper */}
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { FaTimes, FaGem, FaRocket } from 'react-icons/fa';
 import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import { useAuth } from '@/context/AuthContext';
@@ -29,6 +30,19 @@ const AddFundsModal = ({ onClose }) => {
             checkUserStatus();
         }
     }, [currentUser]);
+
+    // Body Scroll Lock
+    useEffect(() => {
+        // Save original overflow
+        const originalStyle = window.getComputedStyle(document.body).overflow;
+        // Lock body scroll
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            // Restore original overflow
+            document.body.style.overflow = originalStyle;
+        };
+    }, []);
 
     const checkUserStatus = async () => {
         const tier = await getUserTier(currentUser.uid);
@@ -64,18 +78,15 @@ const AddFundsModal = ({ onClose }) => {
     // Removed handlePayment, handleAmountSelect, handleCustomChange
     // This modal is now strictly for Membership Upgrades
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             background: 'rgba(0,0,0,0.8)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 2000,
+            zIndex: 99999, // Ensure it's on top of everything
             padding: '1rem',
             backdropFilter: 'blur(5px)',
             overflow: 'hidden'
@@ -115,9 +126,10 @@ const AddFundsModal = ({ onClose }) => {
                 borderRadius: '16px',
                 maxWidth: '450px',
                 width: '100%',
+                maxHeight: '90vh', // Prevent overflowing screen height
+                overflowY: 'auto', // Allow scrolling within the box
                 border: '2px solid #7FFFD4',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(127, 255, 212, 0.2)',
-                overflow: 'hidden',
                 position: 'relative',
                 zIndex: 1
             }}>
@@ -128,7 +140,10 @@ const AddFundsModal = ({ onClose }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    background: '#222'
+                    background: '#222',
+                    position: 'sticky', // Keep header visible
+                    top: 0,
+                    zIndex: 2
                 }}>
                     <h2 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.8rem', fontSize: '1.2rem' }}>
                         <FaGem color="#7FFFD4" /> Space Creator Plan
@@ -391,7 +406,8 @@ const AddFundsModal = ({ onClose }) => {
                     50% { opacity: 1; transform: scale(1.2); }
                 }
             `}</style>
-        </div>
+        </div>,
+        document.body
     );
 };
 

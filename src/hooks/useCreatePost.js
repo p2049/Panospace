@@ -640,7 +640,22 @@ export const useCreatePost = () => {
                 gradientColor: postData.gradientColor || null,
             };
 
-            const docRef = await addDoc(collection(db, 'posts'), postDoc);
+            // [PROD_DEBUG] Enhanced Logging around Firestore Write
+            logger.log('[PROD_DEBUG] Attempting addDoc in /posts for User:', currentUser.uid);
+
+            let docRef;
+            try {
+                docRef = await addDoc(collection(db, 'posts'), postDoc);
+                logger.log('[PROD_DEBUG] Post created successfully. ID:', docRef.id);
+            } catch (fsErr) {
+                logger.error('[PROD_DEBUG] Firestore Write FAILED:', fsErr);
+                logger.error('[PROD_DEBUG] Error Code:', fsErr.code);
+                logger.error('[PROD_DEBUG] Error Message:', fsErr.message);
+                if (fsErr.code === 'permission-denied') {
+                    logger.error('[PROD_DEBUG] CRITICAL: Permission Denied. Check Firestore Rules for /posts.');
+                }
+                throw fsErr;
+            }
 
             // ---------------------------------------------------------------
             // 🚨 FAIL-SAFE: Verify images exist in storage immediately

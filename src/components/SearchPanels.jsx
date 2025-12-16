@@ -149,9 +149,9 @@ const SearchPanels = ({
                         }}
                         style={{
                             fontSize: '1.2rem',
-                            fontWeight: 800,
+                            fontWeight: '800',
                             margin: 0,
-                            fontFamily: 'var(--font-family-heading)',
+                            fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', monospace",
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
                             cursor: 'pointer',
@@ -159,7 +159,8 @@ const SearchPanels = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.8rem', // Increased gap
-                            color: '#fff' // Default color for non-gradient items
+                            color: '#fff', // Default color for non-gradient items
+                            textShadow: '0 0 10px rgba(127, 255, 212, 0.3)'
                         }}
                     >
                         {isMobile && (
@@ -177,9 +178,11 @@ const SearchPanels = ({
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
                             color: 'transparent',
-                            filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))'
+                            filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))',
+                            fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', monospace",
+                            fontWeight: '800'
                         }}>
-                            Filters
+                            FILTERS
                         </span>
                     </h2>
                     {(selectedTags.length > 0 || selectedPark || selectedDate || selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio) && (

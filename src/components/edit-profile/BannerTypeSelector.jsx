@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 
-const BannerTypeSelector = ({ selectedType, onSelect }) => {
+const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4' }) => {
     const [activeCategory, setActiveCategory] = useState('City');
 
     const getCategory = (id) => {
@@ -16,10 +16,25 @@ const BannerTypeSelector = ({ selectedType, onSelect }) => {
     // Filter and sort to keep the selected item visible if possible, or just standard filter
     const filteredTypes = BANNER_TYPES.filter(t => getCategory(t.id) === activeCategory);
 
+    // Color Helpers
+    const isGradient = highlightColor && highlightColor.includes('gradient');
+    const safeColor = isGradient ? '#7FFFD4' : highlightColor;
+
+    // Helper for RGBA background (10% opacity)
+    const getBackgroundWithOpacity = (color, opacity = 0.1) => {
+        if (color.startsWith('#')) {
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        return color; // Return raw if not hex (e.g. gradient string unlikely but safe fallback)
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* Category Pills */}
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div className="custom-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                 {categories.map(cat => (
                     <button
                         key={cat}
@@ -29,9 +44,9 @@ const BannerTypeSelector = ({ selectedType, onSelect }) => {
                             padding: '6px 12px',
                             borderRadius: '20px',
                             border: '1px solid',
-                            borderColor: activeCategory === cat ? '#7FFFD4' : 'rgba(255,255,255,0.2)',
-                            background: activeCategory === cat ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
-                            color: activeCategory === cat ? '#7FFFD4' : '#888',
+                            borderColor: activeCategory === cat ? (isGradient ? '#fff' : safeColor) : 'rgba(255,255,255,0.2)',
+                            background: activeCategory === cat ? (isGradient ? 'rgba(255,255,255,0.1)' : getBackgroundWithOpacity(safeColor, 0.1)) : 'transparent',
+                            color: activeCategory === cat ? (isGradient ? '#fff' : safeColor) : '#888',
                             fontSize: '0.8rem',
                             fontWeight: '600',
                             cursor: 'pointer',
@@ -46,7 +61,7 @@ const BannerTypeSelector = ({ selectedType, onSelect }) => {
 
             {/* Scrollable List */}
             <div
-                className="banner-type-scroll"
+                className="custom-scrollbar"
                 style={{
                     display: 'flex',
                     gap: '12px',
@@ -55,13 +70,6 @@ const BannerTypeSelector = ({ selectedType, onSelect }) => {
                     WebkitOverflowScrolling: 'touch',
                     minHeight: '80px' // Prevent layout shift
                 }}>
-                <style>{`
-                    .banner-type-scroll::-webkit-scrollbar { height: 6px; }
-                    .banner-type-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
-                    .banner-type-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-                    .banner-type-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-                `}</style>
-
                 {filteredTypes.map((type) => {
                     const isSelected = selectedType === type.id;
 
@@ -89,8 +97,8 @@ const BannerTypeSelector = ({ selectedType, onSelect }) => {
                                 height: '50px',
                                 borderRadius: '8px',
                                 background: type.previewGradient,
-                                border: isSelected ? '2px solid #7FFFD4' : '1px solid rgba(255,255,255,0.2)',
-                                boxShadow: isSelected ? '0 0 15px rgba(127, 255, 212, 0.3)' : 'none',
+                                border: isSelected ? `2px solid ${isGradient ? '#fff' : safeColor}` : '1px solid rgba(255,255,255,0.2)',
+                                boxShadow: isSelected ? `0 0 15px ${isGradient ? 'rgba(255,255,255,0.3)' : getBackgroundWithOpacity(safeColor, 0.5)}` : 'none',
                                 transition: 'all 0.2s',
                                 position: 'relative',
                                 overflow: 'hidden'
@@ -123,7 +131,7 @@ const BannerTypeSelector = ({ selectedType, onSelect }) => {
 
                             {/* Label */}
                             <span style={{
-                                color: isSelected ? '#7FFFD4' : '#888',
+                                color: isSelected ? (isGradient ? '#fff' : safeColor) : '#888',
                                 fontSize: '0.75rem',
                                 fontWeight: isSelected ? '700' : '500',
                                 whiteSpace: 'nowrap'

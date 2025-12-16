@@ -28,7 +28,8 @@ import {
     FaFire,
     FaTrophy,
     FaArrowLeft,
-    FaBell
+    FaBell,
+    FaSatellite
 } from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
@@ -62,6 +63,7 @@ const MobileNavigation = () => {
 
     const [showCustomSelector, setShowCustomSelector] = useState(false);
     const [showHubPanel, setShowHubPanel] = useState(false); // New Hub Panel
+    const [showNotifications, setShowNotifications] = useState(false); // Notifications Popup State
     const [unreadNotifications, setUnreadNotifications] = useState(0); // Notification count
     const { feeds } = useCustomFeeds();
     const inactivityTimerRef = useRef(null);
@@ -117,6 +119,7 @@ const MobileNavigation = () => {
         if (!isOpen) {
             setShowCustomSelector(false);
             setShowHubPanel(false);
+            setShowNotifications(false);
         }
     }, [isOpen]);
 
@@ -350,6 +353,83 @@ const MobileNavigation = () => {
         <>
 
 
+            {/* Mobile Vertical: "Main Menu" Sidebar Return Bar (Futuristic Tab) */}
+            {isMobileVertical && isOpen && (showCustomSelector || showHubPanel || showNotifications) && (
+                <div
+                    onClick={() => {
+                        setShowCustomSelector(false);
+                        setShowHubPanel(false);
+                        setShowNotifications(false);
+                    }}
+                    style={{
+                        position: 'fixed',
+                        top: '15vh', // Not full height, feels more like a "tab" or "file"
+                        right: 'clamp(0px, 80vw, 300px)', // Anchor to left edge of panel (which is max 300px or 80vw)
+                        bottom: 'auto',
+                        height: '70vh',
+                        width: '44px',
+                        background: 'rgba(5, 5, 5, 0.9)',
+                        backdropFilter: 'blur(10px)',
+                        zIndex: 10010,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderLeft: `1px solid ${accentColor}`,
+                        borderTop: `1px solid ${accentColor}`,
+                        borderBottom: `1px solid ${accentColor}`,
+                        borderTopLeftRadius: '12px',
+                        borderBottomLeftRadius: '12px',
+                        boxShadow: `-4px 0 20px -5px ${accentColor}40`,
+                        // Futuristic shape trim
+                        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 15px)' // Slight cut handled by radius, but let's stick to CSS radius for smoothness
+                    }}
+                >
+                    {/* Decorative Data Line */}
+                    <div style={{
+                        position: 'absolute',
+                        left: '4px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: '2px',
+                        height: '80%',
+                        background: `linear-gradient(to bottom, transparent, ${accentColor}80, transparent)`
+                    }} />
+
+                    <div style={{
+                        writingMode: 'vertical-rl',
+                        textOrientation: 'mixed',
+                        transform: 'rotate(180deg)',
+                        color: accentColor,
+                        fontSize: '0.8rem',
+                        fontWeight: '800',
+                        letterSpacing: '0.25em',
+                        fontFamily: "'Orbitron', sans-serif",
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1.5rem',
+                        height: '100%',
+                        justifyContent: 'center',
+                        padding: '1rem 0',
+                        textShadow: `0 0 5px ${accentColor}40`
+                    }}>
+                        {/* Animated Tech Arrow */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '2px',
+                            transform: 'rotate(90deg)'
+                        }}>
+                            <div style={{ width: '4px', height: '4px', background: accentColor, borderRadius: '50%', boxShadow: `0 0 4px ${accentColor}` }} />
+                            <FaArrowLeft size={14} />
+                        </div>
+
+                        <span>MAIN MENU</span>
+                    </div>
+                </div>
+            )}
+
             {/* Hamburger Button */}
             <div
                 className="mobile-nav-hamburger"
@@ -459,7 +539,8 @@ const MobileNavigation = () => {
                 right: (isOpen && showCustomSelector)
                     ? (isMobileVertical ? '0' : '300px')
                     : (isMobileVertical ? '-100%' : '-320px'),
-                width: isMobileVertical ? '100%' : '260px', // Full width on mobile
+                width: isMobileVertical ? '300px' : '260px', // Match drawer width on mobile
+                maxWidth: isMobileVertical ? '80vw' : 'none',
                 height: '100vh',
                 background: '#111111',
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
@@ -480,22 +561,6 @@ const MobileNavigation = () => {
                     alignItems: 'center',
                     gap: '1rem'
                 }}>
-                    {isMobileVertical && (
-                        <button
-                            onClick={() => setShowCustomSelector(false)}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: accentColor,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: 0
-                            }}
-                        >
-                            <FaArrowLeft size={18} />
-                        </button>
-                    )}
                     <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM ORBITS</h3>
                 </div>
 
@@ -607,9 +672,10 @@ const MobileNavigation = () => {
                 right: (isOpen && showHubPanel)
                     ? (isMobileVertical ? '0' : '300px')
                     : (isMobileVertical ? '-100%' : '-320px'),
-                width: isMobileVertical ? '100%' : '260px',
+                width: isMobileVertical ? '300px' : '260px',
+                maxWidth: isMobileVertical ? '80vw' : 'none',
                 height: '100vh',
-                background: '#111111',
+                background: '#050505', // Deep black for space theme base
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
                 transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -617,60 +683,219 @@ const MobileNavigation = () => {
                 paddingTop: '80px',
                 display: 'flex',
                 flexDirection: 'column',
-                pointerEvents: isOpen ? 'auto' : 'none'
+                pointerEvents: isOpen ? 'auto' : 'none',
+                overflow: 'hidden' // Ensure banner doesn't spill
             }} onClick={(e) => e.stopPropagation()}>
 
+                {/* VISUAL BANNER: Earth Horizon & Station - Absolute Top Background */}
                 <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '130px', // Adjusted to align with neighboring tab bottom
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#050505',
+                    zIndex: 0,
+                    borderBottom: '1px solid rgba(76, 201, 240, 0.2)'
+                }}>
+                    {/* Animated Stars */}
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        pointerEvents: 'none',
+                        zIndex: 0
+                    }}>
+                        {[...Array(30)].map((_, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    position: 'absolute',
+                                    width: Math.random() * 2 + 1 + 'px',
+                                    height: Math.random() * 2 + 1 + 'px',
+                                    background: '#7FFFD4', // Brand Ice Mint
+                                    borderRadius: '50%',
+                                    top: Math.random() * 100 + '%',
+                                    left: Math.random() * 100 + '%',
+                                    opacity: Math.random() * 0.5 + 0.3,
+                                    animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                                    animationDelay: `${Math.random() * 2}s`,
+                                    boxShadow: `0 0 ${Math.random() * 3 + 2}px rgba(127, 255, 212, 0.6)`,
+                                    willChange: 'opacity'
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Space Station - Larger & Boldly Placed */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '40px', // Pushed down to interact/overlap with horizon
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 2,
+                        animation: 'ambient-float 6s ease-in-out infinite',
+                        filter: 'drop-shadow(0 0 12px rgba(76, 201, 240, 0.5))' // Increased glow
+                    }}>
+                        {/* 
+                            Diagonal Rotation: -30deg
+                            Scale: Increased to 38px (approx 12-15% bump)
+                            Why: To feel designed and intentional, not polite.
+                        */}
+                        <span style={{ display: 'inline-block', transform: 'rotate(-30deg)' }}>
+                            <FaSatellite size={38} color="#7FFFD4" style={{ opacity: 0.95 }} />
+                        </span>
+                    </div>
+
+                    {/* Earth Horizon Glow - Compressed Height, Brand Blue */}
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '-350px', // Adjusted for new height
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: '800px', // Wider arc
+                        height: '400px',
+                        background: '#000',
+                        borderRadius: '50%',
+                        zIndex: 1,
+                        boxShadow: '0 -15px 50px rgba(76, 201, 240, 0.5), inset 0 20px 40px rgba(76, 201, 240, 0.1)',
+                        borderTop: '2px solid rgba(76, 201, 240, 0.6)'
+                    }} />
+
+                    {/* Atmosphere Haze - Brand Blue */}
+                    <div style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '60px',
+                        background: 'linear-gradient(to top, rgba(76, 201, 240, 0.15), transparent)',
+                        zIndex: 3,
+                        pointerEvents: 'none'
+                    }} />
+                </div>
+
+                {/* Header Content - zIndex above banner */}
+                <div style={{
+                    position: 'absolute', // Absolute to anchor to top of panel
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    zIndex: 10,
                     padding: '1rem',
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    marginBottom: '1rem',
+                    // marginBottom removed as it's not in flow
                     display: 'flex',
                     alignItems: 'center',
                     gap: '1rem'
                 }}>
-                    {isMobileVertical && (
-                        <button
-                            onClick={() => setShowHubPanel(false)}
-                            style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: accentColor,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: 0
-                            }}
-                        >
-                            <FaArrowLeft size={18} />
-                        </button>
-                    )}
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>STATION</h3>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: '1.1rem',
+                        color: '#fff',
+                        letterSpacing: '0.25em', // Increased spacing for authority
+                        fontFamily: "'Orbitron', 'Rajdhani', sans-serif",
+                        textShadow: '0 0 10px rgba(127, 255, 212, 0.6)',
+                        lineHeight: '1',
+                        position: 'absolute',
+                        top: '12px',
+                        left: '16px',
+                        zIndex: 15
+                    }}>STATION</h3>
                 </div>
 
-                <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {/* Content List - zIndex above banner */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 10,
+                    padding: '0 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.8rem',
+                    height: '100%',
+                    overflowY: 'auto',
+                    marginTop: '60px' // Add top margin to clear the 130px banner (80px pad + 60px margin = 140px)
+                }}>
+
+                    {/* Decorative HUD Lines - Adjusted */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '-10px',
+                        left: '0',
+                        width: '100%',
+                        height: '1px',
+                        background: 'linear-gradient(90deg, transparent, rgba(127, 255, 212, 0.3), transparent)',
+                        pointerEvents: 'none'
+                    }} />
 
                     {/* Market */}
                     <button
                         onClick={() => handleNavClick('/marketplace')}
+                        className="station-hologram-btn"
                         style={{
-                            padding: '0.8rem',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
+                            position: 'relative',
+                            padding: '0.75rem',
+                            borderRadius: '4px', // Squared off for sci-fi look
+                            border: '1px solid rgba(127, 255, 212, 0.15)',
+                            background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
                             color: '#fff',
                             textAlign: 'left',
                             fontSize: '0.9rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.8rem',
-                            transition: 'all 0.2s'
+                            gap: '1rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8)',
+                            overflow: 'hidden'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accentColor;
+                            e.currentTarget.style.background = `linear-gradient(90deg, ${accentColor}10, rgba(10, 10, 10, 0.95))`;
+                            e.currentTarget.style.boxShadow = `inset 4px 0 0 ${accentColor}, 0 0 15px ${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(127, 255, 212, 0.15)';
+                            e.currentTarget.style.background = 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))';
+                            e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0, 0, 0, 0.8)';
                         }}
                     >
-                        <FaStore size={14} color={accentColor} />
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '4px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${accentColor}40`,
+                            position: 'relative'
+                        }}>
+                            {/* Decorative corners */}
+                            <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
+                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
+                            <FaStore size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
+                        </div>
                         <div>
-                            <div style={{ fontWeight: 'bold' }}>Market</div>
-                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Shop prints & gear</div>
+                            <div style={{
+                                fontWeight: '700',
+                                fontFamily: "'Orbitron', sans-serif",
+                                letterSpacing: '0.05em',
+                                fontSize: '0.95rem',
+                                textTransform: 'uppercase'
+                            }}>Market</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                color: '#aaa',
+                                fontFamily: "'Rajdhani', sans-serif",
+                                letterSpacing: '0.02em',
+                                marginTop: '2px'
+                            }}>Shop prints</div>
                         </div>
                     </button>
 
@@ -678,86 +903,203 @@ const MobileNavigation = () => {
                     <button
                         onClick={() => handleNavClick('/calendar')}
                         style={{
-                            padding: '0.8rem',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
+                            position: 'relative',
+                            padding: '0.75rem',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(127, 255, 212, 0.15)',
+                            background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
                             color: '#fff',
                             textAlign: 'left',
                             fontSize: '0.9rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.8rem',
-                            transition: 'all 0.2s'
+                            gap: '1rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accentColor;
+                            e.currentTarget.style.background = `linear-gradient(90deg, ${accentColor}10, rgba(10, 10, 10, 0.95))`;
+                            e.currentTarget.style.boxShadow = `inset 4px 0 0 ${accentColor}, 0 0 15px ${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(127, 255, 212, 0.15)';
+                            e.currentTarget.style.background = 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))';
+                            e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0, 0, 0, 0.8)';
                         }}
                     >
-                        <FaCalendarAlt size={14} color={accentColor} />
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '4px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${accentColor}40`,
+                            position: 'relative'
+                        }}>
+                            <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
+                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
+                            <FaCalendarAlt size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
+                        </div>
                         <div>
-                            <div style={{ fontWeight: 'bold' }}>Calendar</div>
-                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Events & launches</div>
+                            <div style={{
+                                fontWeight: '700',
+                                fontFamily: "'Orbitron', sans-serif",
+                                letterSpacing: '0.05em',
+                                fontSize: '0.95rem',
+                                textTransform: 'uppercase'
+                            }}>Calendar</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                color: '#aaa',
+                                fontFamily: "'Rajdhani', sans-serif",
+                                letterSpacing: '0.02em',
+                                marginTop: '2px'
+                            }}>Events & launches</div>
                         </div>
                     </button>
 
                     <button
                         onClick={() => handleNavClick('/events/all')}
                         style={{
-                            padding: '0.8rem',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
+                            position: 'relative',
+                            padding: '0.75rem',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(127, 255, 212, 0.15)',
+                            background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
                             color: '#fff',
                             textAlign: 'left',
                             fontSize: '0.9rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.8rem',
-                            transition: 'all 0.2s'
+                            gap: '1rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accentColor;
+                            e.currentTarget.style.background = `linear-gradient(90deg, ${accentColor}10, rgba(10, 10, 10, 0.95))`;
+                            e.currentTarget.style.boxShadow = `inset 4px 0 0 ${accentColor}, 0 0 15px ${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(127, 255, 212, 0.15)';
+                            e.currentTarget.style.background = 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))';
+                            e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0, 0, 0, 0.8)';
                         }}
                     >
-                        <FaTrophy size={14} color={accentColor} />
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '4px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${accentColor}40`,
+                            position: 'relative'
+                        }}>
+                            <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
+                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
+                            <FaTrophy size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
+                        </div>
                         <div>
-                            <div style={{ fontWeight: 'bold' }}>Events</div>
-                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Curated feeds & contests</div>
+                            <div style={{
+                                fontWeight: '700',
+                                fontFamily: "'Orbitron', sans-serif",
+                                letterSpacing: '0.05em',
+                                fontSize: '0.95rem'
+                            }}>Events</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                color: '#aaa',
+                                fontFamily: "'Rajdhani', sans-serif",
+                                letterSpacing: '0.02em',
+                                marginTop: '2px'
+                            }}>Curated feeds & contests</div>
                         </div>
                     </button>
 
                     {/* Notifications */}
                     <button
-                        onClick={() => handleNavClick('/notifications')}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowNotifications(true);
+                        }}
                         style={{
-                            padding: '0.8rem',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.03)',
+                            position: 'relative',
+                            padding: '0.75rem',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(127, 255, 212, 0.15)',
+                            background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
                             color: '#fff',
                             textAlign: 'left',
                             fontSize: '0.9rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.8rem',
-                            transition: 'all 0.2s',
-                            position: 'relative'
+                            gap: '1rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accentColor;
+                            e.currentTarget.style.background = `linear-gradient(90deg, ${accentColor}10, rgba(10, 10, 10, 0.95))`;
+                            e.currentTarget.style.boxShadow = `inset 4px 0 0 ${accentColor}, 0 0 15px ${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(127, 255, 212, 0.15)';
+                            e.currentTarget.style.background = 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))';
+                            e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0, 0, 0, 0.8)';
                         }}
                     >
-                        <FaBell size={14} color={accentColor} />
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '4px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${accentColor}40`,
+                            position: 'relative'
+                        }}>
+                            <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
+                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
+                            <FaBell size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
+                        </div>
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 'bold' }}>Notifications</div>
-                            <div style={{ fontSize: '0.7rem', color: '#888' }}>Activity & updates</div>
+                            <div style={{
+                                fontWeight: '700',
+                                fontFamily: "'Orbitron', sans-serif",
+                                letterSpacing: '0.05em',
+                                fontSize: '0.95rem'
+                            }}>Notifications</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                color: '#aaa',
+                                fontFamily: "'Rajdhani', sans-serif",
+                                letterSpacing: '0.02em',
+                                marginTop: '2px'
+                            }}>Activity & updates</div>
                         </div>
                         {unreadNotifications > 0 && (
                             <span style={{
-                                background: '#00ff00',
-                                color: '#000',
+                                background: 'transparent',
+                                color: '#00ff00',
                                 fontSize: '0.7rem',
+                                fontFamily: "'Orbitron', monospace",
                                 fontWeight: 'bold',
                                 padding: '2px 8px',
-                                borderRadius: '12px',
-                                minWidth: '20px',
+                                borderRadius: '4px',
+                                border: '1px solid #00ff00',
+                                minWidth: '32px',
                                 textAlign: 'center',
-                                boxShadow: '0 0 8px rgba(0, 255, 0, 0.8)'
+                                boxShadow: '0 0 8px rgba(0, 255, 0, 0.4)',
+                                textShadow: '0 0 5px #00ff00'
                             }}>
                                 {unreadNotifications > 99 ? '99+' : unreadNotifications}
                             </span>
@@ -766,6 +1108,84 @@ const MobileNavigation = () => {
 
                 </div>
 
+            </div>
+
+            {/* Notifications Popup Panel (Drilled Down from Station) */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                right: (isOpen && showNotifications)
+                    ? (isMobileVertical ? '0' : '300px')
+                    : (isMobileVertical ? '-100%' : '-320px'),
+                width: isMobileVertical ? '300px' : '260px',
+                maxWidth: isMobileVertical ? '80vw' : 'none',
+                height: '100vh',
+                background: '#080808',
+                borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+                transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: isMobileVertical ? 10006 : 10000, // Higher than Station
+                paddingTop: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                pointerEvents: isOpen ? 'auto' : 'none'
+            }} onClick={(e) => e.stopPropagation()}>
+
+                {/* Notifications Header with Back to Station */}
+                <div style={{
+                    padding: '1rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    marginBottom: '0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem'
+                }}>
+                    <button
+                        onClick={() => setShowNotifications(false)}
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '8px',
+                            color: accentColor,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.5rem 0.8rem',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold',
+                            letterSpacing: '0.05em'
+                        }}
+                    >
+                        <FaArrowLeft size={12} />
+                        STATION
+                    </button>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#fff', letterSpacing: '0.1em', marginLeft: 'auto' }}>NOTIFICATIONS</h3>
+                </div>
+
+                {/* Simple Notification List Placeholder - In real app, import NotificationList component */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666', fontSize: '0.85rem' }}>
+                        <FaBell size={24} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                        <br />
+                        No new notifications
+                    </div>
+                    <button
+                        onClick={() => handleNavClick('/notifications')}
+                        style={{
+                            marginTop: 'auto',
+                            padding: '0.8rem',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: accentColor,
+                            fontSize: '0.8rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        View All
+                    </button>
+                </div>
             </div>
 
             {/* Main Menu Drawer (Active) */}
@@ -915,7 +1335,9 @@ const MobileNavigation = () => {
                                 opacity: 0.9 // Reduce visual dominance
                             }}
                         >
-                            <FaStore size={12} /> STATION
+                            <span style={{ display: 'inline-block', transform: 'rotate(-30deg)', marginRight: '4px' }}>
+                                <FaSatellite size={12} />
+                            </span> STATION
                         </button>
 
                     </div>

@@ -35,7 +35,7 @@ const Credits = () => {
                 boxSizing: 'border-box'
             }}>
                 <button
-                    onClick={() => navigate('/settings')}
+                    onClick={() => navigate(-1)}
                     style={{
                         background: 'transparent',
                         border: 'none',

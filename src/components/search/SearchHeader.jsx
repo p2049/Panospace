@@ -287,32 +287,7 @@ const SearchHeader = ({
                                 {searchMode === 'art' ? 'ART' : 'SOCIAL'}
                             </button>
 
-                            {/* Marketplace Toggle */}
-                            <button
-                                onClick={() => setIsMarketplaceMode(!isMarketplaceMode)}
-                                style={{
-                                    padding: '0.35rem 0.8rem',
-                                    borderRadius: '8px',
-                                    border: `1px solid ${isMarketplaceMode ? '#7FFFD4' : 'rgba(255,255,255,0.3)'}`,
-                                    background: isMarketplaceMode ? 'rgba(127, 255, 212, 0.2)' : 'transparent',
-                                    color: isMarketplaceMode ? '#7FFFD4' : 'rgba(255,255,255,0.7)',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 'bold',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    whiteSpace: 'nowrap',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem',
-                                    boxShadow: isMarketplaceMode ? `0 0 10px rgba(127, 255, 212, 0.2)` : 'none',
-                                    height: '32px',
-                                    boxSizing: 'border-box'
-                                }}
-                            >
-                                {isMarketplaceMode ? 'SHOP' : 'SHOP'}
-                            </button>
+
 
 
                         </div>
