@@ -255,16 +255,19 @@ const EditProfile = () => {
                     // CRITICAL: Path must match storage.rules structure: profile_photos/{userId}/{filename}
                     // Fixed filename 'profile_current' ensures only one file exists per user (overwrites old)
                     // CRITICAL: Path must match storage.rules + include file extension for proper Content-Type detection
-                    // Use original filename sanitize or standard name + extension
-                    const fileExt = selectedFile.name.split('.').pop();
-                    const path = `profile_photos/${currentUser.uid}/profile_current.${fileExt}`;
+                    // We force .jpg because handleCropComplete converts everything to JPEG
+                    const path = `profile_photos/${currentUser.uid}/profile_current.jpg`;
 
                     console.log('[PROD_DEBUG] Starting Profile Photo Upload via Canonical Uploader to:', path);
                     const result = await uploadFile({
                         file: selectedFile,
                         path: path,
                         metadata: {
-                            contentType: selectedFile.type
+                            contentType: 'image/jpeg', // Explicitly set content type to match extension
+                            customMetadata: {
+                                originalName: selectedFile.name,
+                                uploadedVia: 'EditProfile_Canonical'
+                            }
                         }
                     });
 

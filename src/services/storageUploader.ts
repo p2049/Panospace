@@ -45,7 +45,13 @@ export const uploadFile = async ({
     logger.log(`[StorageUploader] Starting upload to: ${path}`, { size: file.size, type: file.type });
 
     // 3. Create Upload Task (Resumable)
-    const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+    // Auto-inject contentType if missing to prevent CORS issues
+    const finalMetadata = {
+        contentType: file.type,
+        ...metadata,
+    };
+
+    const uploadTask = uploadBytesResumable(storageRef, file, finalMetadata);
 
     // 4. Handle Progress & Completion
     return new Promise((resolve, reject) => {
