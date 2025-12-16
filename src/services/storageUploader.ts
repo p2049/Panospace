@@ -42,6 +42,29 @@ export const uploadFile = async ({
     // 2. Create Reference
     const storageRef = ref(storage, path);
 
+    // --- PROD DIAGNOSTICS ---
+    // Log crucial state to identify if this is an Auth rejection or Bucket mismatch
+    // (A 403 Rule Rejection looks like CORS to the browser)
+    try {
+        // Dynamic import to avoid circular dep if needed, or just use what we have if auth is exported
+        const { auth } = await import('@/firebase');
+        console.log('[PROD_DEBUG] Storage Upload Diagnostics:', {
+            path,
+            bucket: storage.app.options.storageBucket, // Should be panospace-7v4ucn.firebasestorage.app
+            authUser: auth.currentUser ? auth.currentUser.uid : 'NULL (Not Logged In)',
+            contentType: file.type || 'MISSING',
+            metadataContentType: metadata?.contentType || 'MISSING'
+        });
+
+        if (!auth.currentUser) {
+            console.error('[PROD_DEBUG] 🚨 ABORTING: User is null. Storage Rules require Auth. This will look like CORS.');
+            // We don't throw here to let it try, but this explains the failure.
+        }
+    } catch (e) {
+        console.warn('[PROD_DEBUG] Failed to log diagnostics', e);
+    }
+    // ------------------------
+
     logger.log(`[StorageUploader] Starting upload to: ${path}`, { size: file.size, type: file.type });
 
     // 3. Create Upload Task (Resumable)

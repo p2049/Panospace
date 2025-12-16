@@ -11,6 +11,9 @@
         "method": [
             "GET",
             "HEAD",
+            "PUT",
+            "POST",
+            "DELETE",
             "OPTIONS"
         ],
         "responseHeader": [
