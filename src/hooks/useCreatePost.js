@@ -15,6 +15,7 @@ import { generateAllThumbnails, generateThumbnail } from '@/core/utils/thumbnail
 import { sanitizeTitle, sanitizeDescription, sanitizeTag } from '@/core/utils/sanitize';
 import { logger } from '@/core/utils/logger';
 import { getMaxImageSize, getMaxImageSizeMB, formatFileSizeMB, validateImageSize } from '@/core/constants/imageLimits';
+import { invalidateProfileCache } from '@/hooks/useProfile';
 
 // ---------------------------------------------------------------------------
 // Hook: useCreatePost
@@ -579,7 +580,6 @@ export const useCreatePost = () => {
                     scanner: postData.filmMetadata.scanner || '',
                     notes: postData.filmMetadata.lab || ''
                 } : null,
-                postType: postData.postType || 'standard',
                 flipbookSettings: postData.flipbookSettings || null,
                 layoutSettings: postData.layoutSettings || null,
                 panoStackSettings: postData.panoStackSettings || null,
@@ -612,9 +612,14 @@ export const useCreatePost = () => {
                 addToShop: processedItems.some((i) => i.addToShop === true),
                 moderationStatus: 'active',
                 status: status,
-                type: postData.type || 'art', // Unified type field
+                type: postData.type || 'art', // Unified type field (art/social)
+                postType: postData.postType || 'image', // 'image' or 'text'
                 atmosphereBackground: postData.atmosphereBackground || 'black',
                 gradientColor: postData.gradientColor || null,
+                // Text Post Fields
+                body: postData.body || null,
+                writerTheme: postData.writerTheme || null,
+                linkedPostIds: postData.linkedPostIds || [],
             };
 
             // [PROD_DEBUG] Enhanced Logging around Firestore Write
@@ -774,8 +779,9 @@ export const useCreatePost = () => {
             }
 
             // ---------------------------------------------------------------
-            // 7️⃣ Navigate to home feed
+            // 7️⃣ Invalidate profile cache and navigate to home feed
             // ---------------------------------------------------------------
+            invalidateProfileCache(currentUser.uid);
             navigate('/');
             return {
                 postId: docRef.id,
