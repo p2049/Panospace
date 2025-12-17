@@ -203,6 +203,8 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                     .list-view-grid {
                         display: grid;
                         grid-template-columns: 1fr;
+                        grid-auto-rows: 150px;
+                        grid-auto-flow: dense;
                         gap: 1rem;
                         padding: 1rem;
                         max-width: 600px;
@@ -217,19 +219,51 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                 `}
             </style>
             <div className="list-view-grid">
-                {posts.map((post, index) => (
-                    <div
-                        key={post.id}
-                        ref={el => itemRefs.current[index] = el}
-                        data-index={index}
-                        style={{ width: '100%' }}
-                    >
-                        {/* We use renderPost if provided, or default to Post with viewMode='list' */}
-                        {renderPost ? renderPost(post, index, index === initialIndex) : (
-                            <Post post={post} priority="normal" viewMode="list" />
-                        )}
-                    </div>
-                ))}
+                {posts.map((post, index) => {
+                    const hasImages = (
+                        post.thumbnailUrls?.length > 0 ||
+                        (post.images && post.images.length > 0) ||
+                        (post.imageUrls && post.imageUrls.length > 0) ||
+                        !!post.imageUrl ||
+                        !!post.shopImageUrl
+                    );
+                    const isTextPost = post.postType === 'text' || !hasImages;
+
+                    let gridRowSpan = 'span 1';
+
+                    if (isTextPost) {
+                        const textContent = post.body || post.description || post.caption || '';
+                        const hasRichText = !!post.bodyRichText;
+                        const isLong = (
+                            hasRichText ||
+                            textContent.length > 120 ||
+                            (textContent.match(/\n/g) || []).length > 2 ||
+                            (post.title && post.title.length > 60)
+                        );
+
+                        if (isLong) {
+                            gridRowSpan = 'span 2';
+                        }
+                    }
+
+                    return (
+                        <div
+                            key={post.id}
+                            ref={el => itemRefs.current[index] = el}
+                            data-index={index}
+                            style={{
+                                width: '100%',
+                                gridRow: gridRowSpan,
+                                height: '100%'
+                            }}
+                        >
+                            {/* We use renderPost if provided, or default to Post with viewMode='list' */}
+                            {renderPost ? renderPost(post, index, index === initialIndex) : (
+                                <Post post={post} priority="normal" viewMode="list" />
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

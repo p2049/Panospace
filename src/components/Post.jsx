@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import FilmStripPost from './FilmStripPost';
 import InstantPhotoPost from './InstantPhotoPost';
 import StandardPost from './StandardPost';
+import FullscreenTextPost from './FullscreenTextPost';
 import { useActivePost } from '@/context/ActivePostContext';
 import FeedPostCard from './FeedPostCard';
 import '@/styles/Post.css';
@@ -139,13 +140,8 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
 
     // --- 4. RENDERER SELECTION ---
     if (post.postType === 'text') {
-        return (
-            <div ref={containerRef} style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', justifyContent: 'center', boxSizing: 'border-box', padding: '2rem 1rem' }}>
-                <div style={{ maxWidth: '600px', width: '100%' }}>
-                    <FeedPostCard post={post} />
-                </div>
-            </div>
-        );
+        // Fullscreen text post with left-side panel, same as image posts
+        return <FullscreenTextPost post={post} containerRef={containerRef} />;
     }
 
     // Strict priority: Film -> Instant -> Standard

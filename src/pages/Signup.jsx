@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import StarBackground from '@/components/StarBackground';
+import BirthDatePicker from '@/components/BirthDatePicker';
 
 import { getRenderedUsernameLength, renderCosmicUsername } from '@/utils/usernameRenderer';
 
@@ -248,13 +249,10 @@ const Signup = () => {
                     <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Password" className="y2k-input" />
                     <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required placeholder="Confirm Password" className="y2k-input" />
 
-                    <input
-                        type="date"
+                    <BirthDatePicker
                         value={birthDate}
-                        onChange={e => setBirthDate(e.target.value)}
+                        onChange={setBirthDate}
                         required
-                        className="y2k-input"
-                        style={{ colorScheme: 'dark' }}
                     />
 
                     <label style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', fontSize: '0.8rem', color: '#aaa', cursor: 'pointer' }}>

@@ -8,6 +8,7 @@ import { logger } from '@/core/utils/logger';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { formatExifForDisplay } from '@/core/utils/exif';
 import FollowButton from './FollowButton';
+import PlanetUserIcon from './PlanetUserIcon';
 
 const PostDetailsSidebar = ({
     isVisible,
@@ -20,6 +21,44 @@ const PostDetailsSidebar = ({
     const { currentUser } = useAuth();
     const [shopLinkTarget, setShopLinkTarget] = useState(null);
     const [stats, setStats] = useState({ likeCount: 0, averageRating: 0, totalVotes: 0 });
+    const [authorPhoto, setAuthorPhoto] = useState(
+        post?.authorPhotoUrl || post?.userPhotoUrl || post?.userAvatar || post?.profileImage || null
+    );
+    const [authorTheme, setAuthorTheme] = useState({
+        usernameColor: '#7FFFD4',
+        borderColor: '#7FFFD4'
+    });
+
+    // Fetch author photo and theme if not available
+    useEffect(() => {
+        const fetchAuthorData = async () => {
+            const authorId = post?.userId || post?.authorId || post?.uid;
+            if (!authorId) return;
+
+            try {
+                const userDoc = await getDoc(doc(db, 'users', authorId));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    // Update photo if needed
+                    if (data.photoURL && (!authorPhoto || !authorPhoto.startsWith('http'))) {
+                        setAuthorPhoto(data.photoURL);
+                    }
+                    // Update theme colors
+                    if (data.profileTheme) {
+                        setAuthorTheme({
+                            usernameColor: data.profileTheme.usernameColor || '#7FFFD4',
+                            borderColor: data.profileTheme.borderColor || '#7FFFD4'
+                        });
+                    }
+                }
+            } catch (err) {
+                logger.warn("Failed to fetch author data for sidebar", err);
+            }
+        };
+        if (isVisible && post) {
+            fetchAuthorData();
+        }
+    }, [isVisible, post, authorPhoto]);
 
     // Fetch live stats
     useEffect(() => {
@@ -154,6 +193,22 @@ const PostDetailsSidebar = ({
 
     return (
         <>
+            {/* Backdrop - MUST be rendered BEFORE Sidebar for correct stacking */}
+            <div
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onClose();
+                }}
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    zIndex: 999,
+                    backdropFilter: 'blur(2px)'
+                }}
+            />
+
+            {/* Sidebar - Foreground Layer */}
             <div
                 onClick={(e) => e.stopPropagation()}
                 style={{
@@ -186,10 +241,7 @@ const PostDetailsSidebar = ({
                 `}</style>
 
                 {/* Header / Close */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                        <h3 style={{ margin: 0, marginLeft: '40px', color: '#7FFFD4', fontFamily: '"Orbitron", sans-serif', letterSpacing: '2px', lineHeight: 1 }}>POST INFO</h3>
-                    </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                     <button
                         onClick={onClose}
                         style={{
@@ -213,13 +265,96 @@ const PostDetailsSidebar = ({
                     </button>
                 </div>
 
-                {/* Post Title */}
-                {post.title && (
-                    <div style={{ marginTop: '0.5rem' }}>
+                {/* Author Profile Section - Prominent at top */}
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.8rem',
+                        paddingBottom: '1rem',
+                        borderBottom: '1px solid rgba(255,255,255,0.1)'
+                    }}
+                >
+                    {/* Large Profile Picture */}
+                    <div
+                        onClick={() => navigate(`/profile/${post.userId || post.authorId}`)}
+                        style={{
+                            width: '80px',
+                            height: '80px',
+                            borderRadius: '20px', // Matches Profile page styling
+                            overflow: 'hidden',
+                            border: `2px solid ${authorTheme.borderColor}`,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(0,0,0,0.3)',
+                            boxShadow: `0 0 20px ${authorTheme.borderColor}4D`
+                        }}
+                    >
+                        {authorPhoto && authorPhoto.startsWith('http') ? (
+                            <img
+                                src={authorPhoto}
+                                alt={post.username || 'Author'}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                }}
+                            />
+                        ) : (
+                            <PlanetUserIcon size={48} color={authorTheme.usernameColor} />
+                        )}
+                    </div>
+
+                    {/* Username */}
+                    <div
+                        onClick={() => navigate(`/profile/${post.userId || post.authorId}`)}
+                        style={{
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                        }}
+                    >
+                        <span style={{
+                            color: authorTheme.usernameColor,
+                            fontWeight: '700',
+                            fontSize: '1rem',
+                            fontFamily: '"Rajdhani", monospace',
+                            letterSpacing: '1px',
+                            textTransform: 'uppercase'
+                        }}>
+                            {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS', authorTheme.borderColor)}
+                        </span>
+                    </div>
+
+                    {/* Follow Button (only if not own post) */}
+                    {currentUser?.uid !== (post.userId || post.authorId || post.uid) && (
+                        <FollowButton
+                            targetUserId={post.userId || post.authorId || post.uid}
+                            targetUserName={post.username}
+                            style={{
+                                background: 'transparent',
+                                border: `1px solid ${authorTheme.usernameColor}`,
+                                color: authorTheme.usernameColor,
+                                padding: '0.5rem 1.5rem',
+                                borderRadius: '20px',
+                                fontSize: '0.8rem'
+                            }}
+                        />
+                    )}
+                </div>
+
+                {/* Post Title - Only for image posts (text posts show title in content area) */}
+                {post.postType !== 'text' && post.title && (
+                    <div>
                         <h2 style={{
                             margin: 0,
                             color: '#fff',
-                            fontSize: '1.4rem',
+                            fontSize: '1.2rem',
                             fontFamily: '"Orbitron", sans-serif',
                             fontWeight: '700',
                             letterSpacing: '0.05em',
@@ -425,21 +560,6 @@ const PostDetailsSidebar = ({
                         </>
                     ) : (
                         <>
-                            <div style={{ marginBottom: '0.5rem' }}>
-                                <FollowButton
-                                    targetUserId={post.userId || post.authorId || post.uid}
-                                    targetUserName={post.username}
-                                    style={{
-                                        width: '100%',
-                                        justifyContent: 'center',
-                                        background: 'transparent',
-                                        border: '1px solid #7FFFD4',
-                                        color: '#7FFFD4',
-                                        padding: '0.8rem',
-                                        borderRadius: '4px'
-                                    }}
-                                />
-                            </div>
                             <button onClick={handleReportPost} style={{ padding: '0.8rem', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#ccc', cursor: 'pointer', textAlign: 'left' }}>
                                 Report Post
                             </button>
@@ -453,21 +573,6 @@ const PostDetailsSidebar = ({
                     </button>
                 </div>
             </div>
-
-            {/* Backdrop */}
-            <div
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onClose();
-                }}
-                style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.6)',
-                    zIndex: 999,
-                    backdropFilter: 'blur(2px)'
-                }}
-            />
         </>
     );
 };

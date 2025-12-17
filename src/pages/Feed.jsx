@@ -184,7 +184,9 @@ const Feed = () => {
                     height="40"
                     viewBox="-5 -5 34 34"
                     onClick={() => {
-                        navigate('/profile/me');
+                        const newMode = feedViewMode === 'image' ? 'list' : 'image';
+                        setFeedViewMode(newMode);
+                        showToast(`Switched to ${newMode === 'image' ? 'Image Feed' : 'List View'}`);
                     }}
                     style={{
                         flexShrink: 0,
@@ -193,7 +195,7 @@ const Feed = () => {
                         overflow: 'visible',
                         transition: 'filter 0.2s ease'
                     }}
-                    title="Go to Profile"
+                    title="Switch View"
                 >
                     <defs>
                         <radialGradient id="planetGradient" cx="40%" cy="40%">

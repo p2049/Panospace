@@ -192,7 +192,6 @@ const ZoomableImageWrapper = ({ children, onZoomChange, className, style }) => {
         };
     }, [isActive, handleWheel]);
 
-
     // --- MOBILE HANDLERS ---
 
     const getDistance = (touches) => {
@@ -226,7 +225,9 @@ const ZoomableImageWrapper = ({ children, onZoomChange, className, style }) => {
             const currentDistance = getDistance(e.touches);
             if (initialPinchDistanceRef.current > 0) {
                 const ratio = currentDistance / initialPinchDistanceRef.current;
-                const newScale = Math.min(Math.max(MIN_SCALE, initialScaleRef.current * ratio), MAX_SCALE);
+
+                // Allow pinching below 1.0 (down to 0.75) for resistance feel
+                const newScale = Math.min(Math.max(0.75, initialScaleRef.current * ratio), MAX_SCALE);
                 setScale(newScale);
             }
         } else if (isDragging && e.touches.length === 1 && scale > 1) {
@@ -252,8 +253,9 @@ const ZoomableImageWrapper = ({ children, onZoomChange, className, style }) => {
         if (e.touches.length === 0) {
             setIsDragging(false);
 
-            // Snap back if scale < 1 (bounce back)
-            if (scale < 1) {
+            // Snap back to normal if scale is close to 1 (or below)
+            // This '1.1' threshold makes it easy to snap out
+            if (scale < 1.1) {
                 setScale(1);
                 setPosition({ x: 0, y: 0 });
             }
