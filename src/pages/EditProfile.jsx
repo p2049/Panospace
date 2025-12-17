@@ -999,21 +999,12 @@ const EditProfile = () => {
                                     selectedType={bannerMode}
                                     onSelect={setBannerMode}
                                     highlightColor={profileBorderColor}
+                                    bannerColor={bannerColor}
+                                    onColorSelect={setBannerColor}
                                 />
                             </div>
 
-                            {/* Contextual Color Selector */}
-                            {BANNER_TYPES.find(t => t.id === bannerMode)?.needsColor && (
-                                <div style={{ paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '1rem' }}>
-                                    <label style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>
-                                        Theme Accent Color
-                                    </label>
-                                    <BannerColorSelector
-                                        selectedColor={bannerColor}
-                                        onSelect={setBannerColor}
-                                    />
-                                </div>
-                            )}
+
 
                             {/* Stars Overlay Toggle - Only for Star Modes if needed, or remove? 
                             Prompt says "Do NOT modify unrelated features". 
@@ -1024,7 +1015,7 @@ const EditProfile = () => {
                             Actually, 'stars' IS a mode now.
                         */}
                             {/* Stars Overlay & Color - Expanded to Cities & Oceans */}
-                            {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
+                            {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode === 'cosmic-earth' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
                                 <div style={{ marginBottom: '1rem' }}>
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <input

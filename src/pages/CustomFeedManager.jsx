@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaTrash, FaCheck, FaArrowLeft, FaFilter, FaMapMarkerAlt, FaPalette, FaCompass, FaUsers, FaGlobe } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaCheck, FaArrowLeft, FaFilter, FaMapMarkerAlt, FaPalette, FaCompass, FaUsers, FaGlobe, FaSmile, FaBan } from 'react-icons/fa';
 import { useCustomFeeds } from '@/hooks/useCustomFeeds';
 import { useFeedStore } from '@/core/store/useFeedStore';
 
@@ -202,8 +202,12 @@ const CustomFeedManager = () => {
                                         {feed.tags && feed.tags.length > 0 && (
                                             <span style={pillStyle}><FaFilter size={10} /> {feed.tags.length} Tags</span>
                                         )}
-                                        {feed.colorFilters && feed.colorFilters.length > 0 && (
-                                            <span style={pillStyle}><FaPalette size={10} /> {feed.colorFilters.length} Colors</span>
+
+                                        {feed.humorSetting === 'hide' && (
+                                            <span style={pillStyle}><FaBan size={10} /> No Humor</span>
+                                        )}
+                                        {feed.humorSetting === 'only' && (
+                                            <span style={pillStyle}><FaSmile size={10} /> Humor Only</span>
                                         )}
                                     </div>
                                 </div>

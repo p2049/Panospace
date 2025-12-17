@@ -15,7 +15,7 @@ const BannerColorSelector = ({ selectedColor, onSelect }) => {
             display: 'flex',
             gap: '12px',
             overflowX: 'auto',
-            padding: '4px 0 12px 0',
+            padding: '0 0 8px 0',
             WebkitOverflowScrolling: 'touch'
         }}>
             <style>{`

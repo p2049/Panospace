@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import { FaRocket } from 'react-icons/fa';
 import { PostPrefetchManager } from '@/core/prefetch/PostPrefetchManager';
 
 /**
@@ -7,10 +8,18 @@ import { PostPrefetchManager } from '@/core/prefetch/PostPrefetchManager';
  * Renders a massive scrollable area but only mounts ~3 post components at a time.
  * Uses CSS translate3d for GPU-accelerated positioning.
  * Handles aggressive preloading of off-screen content.
+ * Includes pull-to-refresh with rocket animation.
  */
-const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0 }) => {
+const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefresh }) => {
     const containerRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+    // Pull-to-refresh state
+    const [pullDistance, setPullDistance] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const touchStartY = useRef(0);
+    const isPulling = useRef(false);
+    const PULL_THRESHOLD = 80;
 
     // Handle Scroll & Index Calculation
     useEffect(() => {
@@ -29,6 +38,7 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0 }) => {
 
                         if (index !== currentIndex) {
                             setCurrentIndex(index);
+                            if (onIndexChange) onIndexChange(index);
                         }
                     }
                     ticking = false;
@@ -46,6 +56,60 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0 }) => {
 
         return () => container.removeEventListener('scroll', handleScroll);
     }, [currentIndex, initialIndex]);
+
+    // Pull-to-refresh touch handlers
+    const handleTouchStart = useCallback((e) => {
+        const container = containerRef.current;
+        if (!container || isRefreshing) return;
+
+        // Only activate when at the very top
+        if (container.scrollTop === 0 && currentIndex === 0) {
+            touchStartY.current = e.touches[0].clientY;
+            isPulling.current = true;
+        }
+    }, [currentIndex, isRefreshing]);
+
+    const handleTouchMove = useCallback((e) => {
+        if (!isPulling.current || isRefreshing) return;
+
+        const container = containerRef.current;
+        if (!container || container.scrollTop > 0) {
+            isPulling.current = false;
+            setPullDistance(0);
+            return;
+        }
+
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - touchStartY.current;
+
+        if (diff > 0) {
+            // Apply resistance to pull
+            const resistance = 0.4;
+            const distance = Math.min(diff * resistance, PULL_THRESHOLD * 1.5);
+            setPullDistance(distance);
+        }
+    }, [isRefreshing]);
+
+    const handleTouchEnd = useCallback(async () => {
+        if (!isPulling.current) return;
+        isPulling.current = false;
+
+        if (pullDistance >= PULL_THRESHOLD && onRefresh && !isRefreshing) {
+            setIsRefreshing(true);
+            setPullDistance(PULL_THRESHOLD); // Hold at threshold during refresh
+
+            try {
+                await onRefresh();
+            } catch (error) {
+                console.error('Refresh failed:', error);
+            } finally {
+                setIsRefreshing(false);
+                setPullDistance(0);
+            }
+        } else {
+            setPullDistance(0);
+        }
+    }, [pullDistance, onRefresh, isRefreshing]);
 
     // PRELOADER: Aggressively fetch next/prev post content
     useEffect(() => {
@@ -84,6 +148,11 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0 }) => {
         return indices;
     }, [currentIndex, posts.length]);
 
+    // Calculate rocket animation progress
+    const pullProgress = Math.min(pullDistance / PULL_THRESHOLD, 1);
+    const rocketRotation = isRefreshing ? 0 : -45 + (pullProgress * 45); // -45deg to 0deg
+    const rocketScale = 0.5 + (pullProgress * 0.5); // 0.5 to 1
+
     return (
         <div
             ref={containerRef}
@@ -92,12 +161,83 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0 }) => {
                 height: '100vh',
                 width: '100vw',
                 overflowY: 'scroll',
-                scrollSnapType: 'y mandatory',
+                scrollSnapType: pullDistance > 0 ? 'none' : 'y mandatory',
                 position: 'relative',
                 scrollBehavior: 'smooth',
                 willChange: 'scroll-position'
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
         >
+            {/* Pull-to-Refresh Indicator - Rocket */}
+            {(pullDistance > 0 || isRefreshing) && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 1000,
+                        height: `${Math.max(pullDistance, isRefreshing ? PULL_THRESHOLD : 0)}px`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                        transition: isRefreshing ? 'none' : 'height 0.1s ease-out'
+                    }}
+                >
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}
+                    >
+                        <div
+                            style={{
+                                transform: `rotate(${rocketRotation}deg) scale(${rocketScale})`,
+                                transition: isRefreshing ? 'none' : 'transform 0.1s ease-out',
+                                animation: isRefreshing ? 'rocketLaunch 0.6s ease-in-out infinite' : 'none'
+                            }}
+                        >
+                            <FaRocket size={32} color="#7FFFD4" />
+                        </div>
+                        {isRefreshing && (
+                            <span style={{
+                                fontSize: '0.7rem',
+                                color: 'rgba(127, 255, 212, 0.8)',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em'
+                            }}>
+                                Launching...
+                            </span>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Rocket animation keyframes */}
+            <style>{`
+                @keyframes rocketLaunch {
+                    0%, 100% { 
+                        transform: translateY(0) rotate(0deg) scale(1); 
+                    }
+                    25% { 
+                        transform: translateY(-8px) rotate(-5deg) scale(1.1); 
+                    }
+                    50% { 
+                        transform: translateY(-4px) rotate(0deg) scale(1.05); 
+                    }
+                    75% { 
+                        transform: translateY(-6px) rotate(5deg) scale(1.08); 
+                    }
+                }
+            `}</style>
+
             {/* Phantom Spacer for Scrollbar */}
             <div style={{ height: totalHeight, width: '1px', position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} />
 
@@ -135,3 +275,4 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0 }) => {
 };
 
 export default React.memo(VirtualizedPostContainer);
+

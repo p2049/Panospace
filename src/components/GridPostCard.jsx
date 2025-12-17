@@ -1,11 +1,19 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaImage } from 'react-icons/fa';
+import { FaImage, FaAlignLeft } from 'react-icons/fa';
 import SmartImage from './SmartImage';
 import { getDerivedDate } from '@/core/utils/dates';
 import SpaceCardBadge from './SpaceCardBadge';
 import SoundTagBadge from './SoundTagBadge';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
+
+const WRITER_THEMES = {
+    default: { name: 'Default', bg: '#121212', text: '#ffffff', border: '1px solid #333' },
+    paper: { name: 'Paper', bg: '#fdfbf7', text: '#2a2a2a', border: '1px solid #e0d0b0' },
+    night: { name: 'Night', bg: '#050510', text: '#e0e0ff', border: '1px solid #2a2a40' },
+    mono: { name: 'Mono', bg: '#ffffff', text: '#000000', border: '1px solid #ccc' },
+    aurora: { name: 'Aurora', bg: '#002b36', text: '#eee8d5', border: '1px solid #073642' }
+};
 
 const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAspectRatio }) => {
     const navigate = useNavigate();
@@ -26,19 +34,15 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
     const isFiltered = selectedOrientation || selectedAspectRatio;
 
     // OPTIMIZATION: Prioritize thumbnail URL for grid views
-    // Post structure from Firestore:
-    // - images: [{url, thumbnailUrl, tinyUrl, ...}]
-    // - imageUrls: [url1, url2, ...]
-    // - thumbnailUrls: [thumb1, thumb2, ...]
     const displaySrc =
-        post.thumbnailUrls?.[0] ||           // Root-level thumbnail array
-        post.images?.[0]?.thumbnailUrl ||     // First image in images array
-        post.images?.[0]?.url ||              // Full URL from images array
-        post.imageUrls?.[0] ||                // Root-level URL array
-        post.thumbnailUrl ||                  // Legacy: root thumbnailUrl
-        post.items?.[0]?.thumbnailUrl ||      // Legacy: items array
-        post.items?.[0]?.url ||               // Legacy: items URL
-        post.imageUrl;                        // Legacy: single imageUrl
+        post.thumbnailUrls?.[0] ||
+        post.images?.[0]?.thumbnailUrl ||
+        post.images?.[0]?.url ||
+        post.imageUrls?.[0] ||
+        post.thumbnailUrl ||
+        post.items?.[0]?.thumbnailUrl ||
+        post.items?.[0]?.url ||
+        post.imageUrl;
 
     // Use previewUrl or tinyUrl for the blur placeholder if available
     const placeholderSrc =
@@ -99,7 +103,34 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                     width: '100%',
                     height: '100%'
                 }}>
-                    {displaySrc ? (
+                    {post.postType === 'text' ? (
+                        <div style={{
+                            width: '100%',
+                            height: '100%',
+                            background: WRITER_THEMES[post.writerTheme]?.bg || WRITER_THEMES.default.bg,
+                            color: WRITER_THEMES[post.writerTheme]?.text || WRITER_THEMES.default.text,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: '1rem',
+                            textAlign: 'center'
+                        }}>
+                            <FaAlignLeft size={24} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                            <div style={{
+                                fontWeight: '800',
+                                fontSize: '1rem',
+                                fontFamily: '"Rajdhani", sans-serif',
+                                lineHeight: 1.2,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden'
+                            }}>
+                                {post.title || 'Untitled'}
+                            </div>
+                        </div>
+                    ) : displaySrc ? (
                         <SmartImage
                             src={displaySrc}
                             previewSrc={placeholderSrc}
@@ -157,7 +188,7 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                 </div>
 
                 {/* Post Type Indicator */}
-                {post.postType && post.postType !== 'standard' && (
+                {post.postType && post.postType !== 'standard' && post.postType !== 'text' && (
                     <div
                         style={{
                             position: 'absolute',

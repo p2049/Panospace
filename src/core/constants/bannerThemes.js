@@ -13,10 +13,34 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic-earth',
-        label: 'Cosmic Earth',
+        label: 'Earth',
         previewGradient: 'linear-gradient(110deg, #004a9f 0%, #000 60%)',
         needsColor: false,
-        description: 'Station view of Earth at night'
+        description: 'View of Earth from space'
+    },
+    {
+        id: 'planet',
+        label: 'Planet',
+        previewGradient: 'linear-gradient(to right, #1B82FF, #5A3FFF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Apple-style glowing planet border'
+    },
+    {
+        id: 'ice-planet',
+        label: 'Ice Planet',
+        previewGradient: 'linear-gradient(to bottom, #7FFFD4, #1B82FF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Frozen world with aurora borealis'
+    },
+    {
+        id: 'northern-lights',
+        label: 'Northern Lights',
+        previewGradient: 'linear-gradient(to right, #00ff88, #5A3FFF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Intense magnetic storm'
     },
 
     {

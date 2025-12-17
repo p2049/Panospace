@@ -13,7 +13,7 @@ import { useBlock } from '@/hooks/useBlock';
 import { getUserNSFWPreference, setUserNSFWPreference } from '@/core/constants/nsfwTags';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { useFeedStore } from '@/core/store/useFeedStore';
-import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar, FaUsers, FaGem } from 'react-icons/fa';
+import { FaArrowLeft, FaUserEdit, FaSignOutAlt, FaShieldAlt, FaBell, FaTrash, FaExclamationTriangle, FaChevronRight, FaEnvelope, FaLock, FaGlobe, FaPalette, FaCreditCard, FaHistory, FaFileContract, FaLifeRing, FaAward, FaSmile, FaCheck, FaStar, FaUsers, FaGem, FaSearch, FaPlus } from 'react-icons/fa';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -23,7 +23,12 @@ const Settings = () => {
     const { activePost } = useActivePost();
     const { blockUser } = useBlock();
     const [loading, setLoading] = useState(false);
-    const { currentFeed, switchToFeed, followingOnly, setFollowingOnly } = useFeedStore();
+    const {
+        currentFeed, switchToFeed, followingOnly, setFollowingOnly,
+        feedDefault, profileDefault, createDefault, searchDefault,
+        setFeedDefault, setAllFeedDefaults, ratingSystemDefault, setRatingSystemDefault,
+        showHumor, toggleShowHumor
+    } = useFeedStore();
 
     // Language State
     const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -479,7 +484,7 @@ const Settings = () => {
                     <SettingsRow icon={FaPalette} label={t('settings.theme')} onClick={() => alert('Theme selection coming soon')} />
                 </div>
 
-                {/* Feed Preferences Section */}
+                {/* Content Defaults Section */}
                 <h3 style={{
                     color: 'var(--text-secondary, #6b7f78)',
                     fontSize: '0.75rem',
@@ -488,7 +493,7 @@ const Settings = () => {
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase',
                     fontWeight: '600'
-                }}>FEED PREFERENCES</h3>
+                }}>DEFAULT CONTENT MODE</h3>
                 <div style={{
                     background: 'var(--bg-card, #050808)',
                     borderRadius: '12px',
@@ -496,21 +501,121 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
+                    {/* Master Switch Actions */}
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                        <button
+                            onClick={() => setAllFeedDefaults('social')}
+                            style={{ flex: 1, padding: '10px', background: 'rgba(110, 255, 216, 0.1)', border: '1px solid var(--accent)', borderRadius: '6px', color: 'var(--accent)', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                            Set All Social
+                        </button>
+                        <button
+                            onClick={() => setAllFeedDefaults('art')}
+                            style={{ flex: 1, padding: '10px', background: 'rgba(255, 92, 138, 0.1)', border: '1px solid #FF5C8A', borderRadius: '6px', color: '#FF5C8A', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                            Set All Art
+                        </button>
+                    </div>
+
+                    <SettingsRow
+                        icon={FaGlobe}
+                        label={`Main Feed: ${feedDefault === 'art' ? 'Art' : 'Social'}`}
+                        onClick={() => setFeedDefault('feed', feedDefault === 'art' ? 'social' : 'art')}
+                    />
+                    <SettingsRow
+                        icon={FaUserEdit}
+                        label={`Profile: ${profileDefault === 'art' ? 'Art' : 'Social'}`}
+                        onClick={() => setFeedDefault('profile', profileDefault === 'art' ? 'social' : 'art')}
+                    />
+                    <SettingsRow
+                        icon={FaSearch}
+                        label={`Search: ${searchDefault === 'art' ? 'Art' : 'Social'}`}
+                        onClick={() => setFeedDefault('search', searchDefault === 'art' ? 'social' : 'art')}
+                    />
+                    <SettingsRow
+                        icon={FaPlus}
+                        label={`Create Post: ${createDefault === 'art' ? 'Art' : 'Social'}`}
+                        onClick={() => setFeedDefault('create', createDefault === 'art' ? 'social' : 'art')}
+                    />
                     <SettingsRow
                         icon={FaUsers}
-                        label={followingOnly ? 'Default: Following Only' : 'Default: Global Feed'}
-                        onClick={() => {
-                            setFollowingOnly(!followingOnly);
-                            // Persisted automatically by useFeedStore
-                        }}
+                        label={followingOnly ? 'Initial View: Following Only' : 'Initial View: Global Feed'}
+                        onClick={() => setFollowingOnly(!followingOnly)}
                     />
                     <SettingsRow
-                        icon={FaPalette}
-                        label={currentFeed === 'art' ? 'Default: Art Feed' : 'Default: Social Feed'}
-                        onClick={() => {
-                            switchToFeed(currentFeed === 'art' ? 'social' : 'art');
-                        }}
+                        icon={ratingSystemDefault === 'stars' ? FaStar : FaSmile}
+                        label={`Rating System: ${ratingSystemDefault === 'stars' ? '5-Star' : 'Standard Like'}`}
+                        onClick={() => setRatingSystemDefault(ratingSystemDefault === 'stars' ? 'smiley' : 'stars')}
                     />
+                </div>
+
+                {/* Content Filters Section */}
+                <h3 style={{
+                    color: 'var(--text-secondary, #6b7f78)',
+                    fontSize: '0.75rem',
+                    marginBottom: '12px',
+                    marginLeft: '4px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    fontWeight: '600'
+                }}>CONTENT FILTERS</h3>
+                <div style={{
+                    background: 'var(--bg-card, #050808)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    border: '1px solid rgba(110, 255, 216, 0.1)'
+                }}>
+                    <button
+                        type="button"
+                        onClick={toggleShowHumor}
+                        style={{
+                            width: '100%',
+                            height: '50px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0 20px',
+                            background: 'transparent',
+                            border: '1px solid rgba(110, 255, 216, 0.15)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #d8fff1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            // CRITICAL: Ensure clickability
+                            pointerEvents: 'auto',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            position: 'relative',
+                            zIndex: 1
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'none' }}>
+                            <FaSmile size={18} color="var(--accent, #6effd8)" />
+                            <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>Show Humor Posts</span>
+                        </div>
+                        <div style={{
+                            width: '44px',
+                            height: '24px',
+                            borderRadius: '12px',
+                            background: showHumor ? 'var(--accent, #6effd8)' : 'rgba(255,255,255,0.2)',
+                            position: 'relative',
+                            transition: 'background 0.2s'
+                        }}>
+                            <div style={{
+                                width: '20px',
+                                height: '20px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: showHumor ? '22px' : '2px',
+                                transition: 'left 0.2s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                            }} />
+                        </div>
+                    </button>
+                    <div style={{ padding: '0 20px', marginTop: '10px', fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>
+                        Enabling this allows jokes, memes, and comedic content in your feed.
+                    </div>
                 </div>
 
                 {/* Content Preferences Section */}

@@ -53,6 +53,29 @@ const PostDetailsSidebar = ({
         }
     }, [isVisible, post]);
 
+    const [linkedPosts, setLinkedPosts] = useState([]);
+
+    // Fetch Linked Posts
+    useEffect(() => {
+        if (isVisible && post?.linkedPostIds?.length > 0) {
+            const fetchLinkedPosts = async () => {
+                try {
+                    const promises = post.linkedPostIds.map(id => getDoc(doc(db, 'posts', id)));
+                    const snapshots = await Promise.all(promises);
+                    const loaded = snapshots
+                        .filter(s => s.exists())
+                        .map(s => ({ id: s.id, ...s.data() }));
+                    setLinkedPosts(loaded);
+                } catch (err) {
+                    logger.error("Error fetching linked posts:", err);
+                }
+            };
+            fetchLinkedPosts();
+        } else {
+            setLinkedPosts([]);
+        }
+    }, [isVisible, post]);
+
     // Check for linked shop item or general shop existence
     useEffect(() => {
         if (isVisible && post) {
@@ -267,6 +290,54 @@ const PostDetailsSidebar = ({
                     </div>
                 )}
 
+                {/* Linked Posts (New) */}
+                {linkedPosts.length > 0 && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                            <FaInfoCircle color="#7FFFD4" size={14} /> RELATED
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {linkedPosts.map(lp => (
+                                <div
+                                    key={lp.id}
+                                    onClick={() => navigate(`/post/${lp.id}`)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.8rem',
+                                        padding: '0.6rem',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                >
+                                    {/* Thumbnail */}
+                                    <div style={{ width: 40, height: 40, borderRadius: '4px', overflow: 'hidden', background: '#222', flexShrink: 0 }}>
+                                        {lp.postType === 'image' && (lp.thumbnailUrls?.[0] || lp.images?.[0]?.url) ? (
+                                            <img src={lp.thumbnailUrls?.[0] || lp.images?.[0]?.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '0.8rem', fontWeight: 'bold' }}>T</div>
+                                        )}
+                                    </div>
+                                    {/* Info */}
+                                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                                        <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {lp.title || 'Untitled Post'}
+                                        </div>
+                                        <div style={{ color: '#aaa', fontSize: '0.75rem' }}>
+                                            {lp.postType === 'text' ? 'Text Post' : 'Image Post'}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Engagement Stats - "Footnote" Style */}
                 <div style={{ padding: '0 0.5rem' }}>
                     <div style={{
@@ -290,7 +361,7 @@ const PostDetailsSidebar = ({
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <FaSmile color="#7FFFD4" size={12} />
                                 <span style={{ color: '#fff', fontFamily: 'monospace' }}>
-                                    {stats.likeCount} Likes
+                                    {stats.likeCount} Stars
                                 </span>
                             </div>
                         )}
@@ -338,9 +409,15 @@ const PostDetailsSidebar = ({
                             <button onClick={handleEditPost} style={{ padding: '0.8rem', background: '#333', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
                                 Edit Post
                             </button>
-                            <button onClick={() => {
+                            <button onClick={async () => {
                                 if (window.confirm("Delete this post?")) {
-                                    deleteDoc(doc(db, "posts", post.id)).then(() => navigate('/'));
+                                    try {
+                                        await deleteDoc(doc(db, "posts", post.id));
+                                        navigate('/');
+                                    } catch (error) {
+                                        console.error("Error deleting post:", error);
+                                        alert(`Failed to delete post: ${error.message}`);
+                                    }
                                 }
                             }} style={{ padding: '0.8rem', background: 'rgba(255,0,0,0.2)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left' }}>
                                 Delete Post

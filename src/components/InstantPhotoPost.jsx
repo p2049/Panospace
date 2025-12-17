@@ -13,6 +13,7 @@ import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { logger } from '@/core/utils/logger';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
+import ZoomableImageWrapper from './ZoomableImageWrapper';
 import '@/styles/instant-photo-post.css';
 
 /**
@@ -100,14 +101,18 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                             >
                                 {isUrl ? (
                                     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                                        <SmartImage
-                                            src={url}
-                                            alt={`Slide ${index + 1}`}
-                                            priority={index === 0 ? priority : 'low'}
-                                            objectFit="cover"
-                                            className="polaroid-image"
-                                            style={{ width: '100%', height: '100%' }}
-                                        />
+                                        <ZoomableImageWrapper>
+                                            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                                <SmartImage
+                                                    src={url}
+                                                    alt={`Slide ${index + 1}`}
+                                                    priority={index === 0 ? priority : 'low'}
+                                                    objectFit="cover"
+                                                    className="polaroid-image"
+                                                    style={{ width: '100%', height: '100%' }}
+                                                />
+                                            </div>
+                                        </ZoomableImageWrapper>
                                     </div>
                                 ) : (
                                     <div style={{

@@ -16,6 +16,7 @@ import ToastManager from './components/ToastManager';
 import { CartProvider } from './context/CartContext';
 import './styles/tap-targets.css';
 import './styles/rarity-system.css';
+import OnboardingPopup from './components/onboarding/OnboardingPopup';
 
 // Lazy load pages for performance optimization
 const Login = lazy(() => import('./pages/Login'));
@@ -314,6 +315,7 @@ function App() {
                           </Suspense>
 
                           <MobileNavigation />
+                          <OnboardingPopup />
                         </div>
                       </OrientationGuard>
                     </Router>

@@ -29,7 +29,11 @@ import {
     FaTrophy,
     FaArrowLeft,
     FaBell,
-    FaSatellite
+    FaSatellite,
+    FaGlobeAmericas,
+    FaUserFriends,
+    FaPalette,
+    FaGlobe
 } from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
@@ -1243,7 +1247,17 @@ const MobileNavigation = () => {
                             }}
                             disabled={customFeedEnabled}
                         >
-                            {followingOnly ? 'ADDED' : 'GLOBAL'}
+                            {followingOnly ? (
+                                <>
+                                    <FaUserFriends size={12} style={{ marginRight: '6px' }} />
+                                    ADDED
+                                </>
+                            ) : (
+                                <>
+                                    <FaGlobeAmericas size={12} style={{ marginRight: '6px' }} />
+                                    GLOBAL
+                                </>
+                            )}
                         </button>
                         <button
                             onClick={(e) => {
@@ -1273,7 +1287,17 @@ const MobileNavigation = () => {
                             }}
                             disabled={customFeedEnabled}
                         >
-                            {currentFeed === 'art' ? 'ART' : 'SOCIAL'}
+                            {currentFeed === 'art' ? (
+                                <>
+                                    <FaPalette size={12} style={{ marginRight: '6px' }} />
+                                    ART
+                                </>
+                            ) : (
+                                <>
+                                    <FaGlobe size={12} style={{ marginRight: '6px' }} />
+                                    SOCIAL
+                                </>
+                            )}
                         </button>
 
                         {/* Custom Feeds Button */}

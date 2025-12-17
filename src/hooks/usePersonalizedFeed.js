@@ -11,6 +11,7 @@ import { collection, query, where, orderBy, limit, getDocs, startAfter, doc, get
 import { useAuth } from '@/context/AuthContext';
 import { useFollowing } from '@/hooks/useFollowing';
 import { logger } from '@/core/utils/logger';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
 export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialPosts = false, followingOnly = false, customFeedEnabled = false, activeCustomFeedId = null) => {
     const [posts, setPosts] = useState([]);
@@ -23,6 +24,9 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
     const { followingList: rawFollowingList, loading: followingLoading } = useFollowing(currentUser?.uid);
     // Safety: ensure array
     const followingList = Array.isArray(rawFollowingList) ? rawFollowingList : [];
+
+    // Humor Filter State
+    const { showHumor } = useFeedStore();
 
 
     // Custom Feed State
@@ -142,13 +146,26 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
             // ---------------------------------------------------------
 
             // 1. Filter Own Posts (Common)
-            // USER REQUEST: Show your own posts in feed (Previous logic filtered them out)
-            // if (currentUser && (feedType === 'HOME' || feedType === 'EXPLORE')) {
             //    newPosts = newPosts.filter(p => p.userId !== currentUser.uid && p.authorId !== currentUser.uid);
             // }
 
+            // 1.5 Humor Logic (Global vs Custom)
+            let applyGlobalHumorFilter = !showHumor;
+
             // 2. Custom Feed Advanced Filters
             if (customFeedEnabled && customFeedConfig) {
+
+                // Override Global Humor Filter if Custom Feed has explicit setting
+                if (customFeedConfig.humorSetting) {
+                    applyGlobalHumorFilter = false; // Custom feed takes control
+
+                    if (customFeedConfig.humorSetting === 'hide') {
+                        newPosts = newPosts.filter(p => !p.isHumor);
+                    } else if (customFeedConfig.humorSetting === 'only') {
+                        newPosts = newPosts.filter(p => p.isHumor);
+                    }
+                    // 'any' falls through (shows everything)
+                }
 
                 // Filter: Source (Global / Following)
                 if (!customFeedConfig.includeGlobal) {
@@ -178,8 +195,11 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                         return customFeedConfig.locations.some(l => locString.includes(l.toLowerCase()));
                     });
                 }
+            }
 
-                // Filter: Colors (Skipped complex logic for now, just placeholder)
+            // Apply Global Humor Filter (if not overridden)
+            if (applyGlobalHumorFilter) {
+                newPosts = newPosts.filter(p => !p.isHumor);
             }
             // 3. Standard Following Only Filter
             else if (followingOnly && currentUser) {

@@ -262,6 +262,8 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
             </div>
 
             {/* Compact Rating Info */}
+            {/* Compact Rating Info - REMOVED per user request (only shown in sidebar) */}
+            {/*
             {showCount && totalVotes > 0 && (
                 <span style={{
                     color: '#7FFFD4',
@@ -273,6 +275,7 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
                     {averageRating.toFixed(1)} ({totalVotes})
                 </span>
             )}
+            */}
         </div>
     );
 };

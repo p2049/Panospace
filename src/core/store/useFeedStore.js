@@ -34,6 +34,43 @@ export const useFeedStore = create(
                 set((state) => ({ followingOnly: !state.followingOnly }));
             },
 
+            // Humor Filter (New)
+            showHumor: true,
+            toggleShowHumor: () => {
+                set((state) => ({ showHumor: !state.showHumor }));
+            },
+
+            // Page Defaults (Default to Social as requested)
+            feedDefault: 'social',
+            profileDefault: 'social',
+            createDefault: 'social',
+            searchDefault: 'social',
+            ratingSystemDefault: 'smiley', // 'smiley' or 'stars'
+
+            setFeedDefault: (page, value) => {
+                set((state) => ({ [`${page}Default`]: value }));
+                // If setting feed default, also update current feed to match if desired? 
+                // Or just let it be the default for next reset. 
+                // For now just set preference.
+                if (page === 'feed') {
+                    set({ currentFeed: value });
+                }
+            },
+
+            setAllFeedDefaults: (value) => {
+                set({
+                    feedDefault: value,
+                    profileDefault: value,
+                    createDefault: value,
+                    searchDefault: value,
+                    currentFeed: value // Sync current feed too
+                });
+            },
+
+            setRatingSystemDefault: (value) => {
+                set({ ratingSystemDefault: value });
+            },
+
             // Set following only
             setFollowingOnly: (value) => {
                 set({ followingOnly: value });
@@ -70,7 +107,11 @@ export const useFeedStore = create(
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem(TOOLTIP_KEY);
                 }
-            }
+            },
+
+            // View Mode (Session Only - 'image' | 'list')
+            feedViewMode: 'image',
+            setFeedViewMode: (mode) => set({ feedViewMode: mode })
         }),
         {
             name: 'panospace-feed-storage',
@@ -80,7 +121,12 @@ export const useFeedStore = create(
                 followingOnly: state.followingOnly,
                 customFeedEnabled: state.customFeedEnabled,
                 activeCustomFeedId: state.activeCustomFeedId,
-                activeCustomFeedName: state.activeCustomFeedName
+                activeCustomFeedName: state.activeCustomFeedName,
+                feedDefault: state.feedDefault,
+                profileDefault: state.profileDefault,
+                createDefault: state.createDefault,
+                searchDefault: state.searchDefault,
+                ratingSystemDefault: state.ratingSystemDefault
             })
         }
     )

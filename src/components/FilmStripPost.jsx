@@ -10,6 +10,7 @@ import PlanetUserIcon from './PlanetUserIcon';
 import PostDetailsSidebar from './PostDetailsSidebar';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { FaMapMarkerAlt } from 'react-icons/fa';
+import ZoomableImageWrapper from './ZoomableImageWrapper';
 
 // Static sprockets renderer to avoid re-creation
 const Sprockets = React.memo(() => (
@@ -106,19 +107,23 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
                 <div className="cyber-image-container">
                     {isUrl ? (
                         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                            <SmartImage
-                                src={itemUrl}
-                                alt={`Frame ${index + 1}`}
-                                context="feedThumbnail"
-                                className="cyber-image"
-                                priority={Math.abs(priority) <= 2 ? 'high' : 'normal'}
-                                objectFit="cover"
-                                fillContainer={true}
-                                style={{ width: '100%', height: '100%' }}
-                            />
-                            {uiOverlays?.quartzDate && (
-                                <DateStampOverlay quartzDate={uiOverlays.quartzDate} />
-                            )}
+                            <ZoomableImageWrapper>
+                                <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                                    <SmartImage
+                                        src={itemUrl}
+                                        alt={`Frame ${index + 1}`}
+                                        context="feedThumbnail"
+                                        className="cyber-image"
+                                        priority={Math.abs(priority) <= 2 ? 'high' : 'normal'}
+                                        objectFit="cover"
+                                        fillContainer={true}
+                                        style={{ width: '100%', height: '100%' }}
+                                    />
+                                    {uiOverlays?.quartzDate && (
+                                        <DateStampOverlay quartzDate={uiOverlays.quartzDate} />
+                                    )}
+                                </div>
+                            </ZoomableImageWrapper>
                         </div>
                     ) : (
                         <div className="cyber-text-fallback">

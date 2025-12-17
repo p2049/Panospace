@@ -7,6 +7,7 @@ import FilmStripPost from './FilmStripPost';
 import InstantPhotoPost from './InstantPhotoPost';
 import StandardPost from './StandardPost';
 import { useActivePost } from '@/context/ActivePostContext';
+import FeedPostCard from './FeedPostCard';
 import '@/styles/Post.css';
 
 import { isNSFW, getUserNSFWPreference } from '@/core/constants/nsfwTags';
@@ -22,7 +23,7 @@ import { logger } from '@/core/utils/logger';
  * 3. Event Handling (Deleting, Reporting - propagated or handled via Context)
  * 4. Renderer Selection (Film vs Instant vs Standard)
  */
-const Post = ({ post, priority = 'normal' }) => {
+const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick }) => {
     // Contexts
     const { currentUser } = useAuth();
     const { setActivePost } = useActivePost();
@@ -32,6 +33,11 @@ const Post = ({ post, priority = 'normal' }) => {
     const containerRef = useRef(null);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showDetailsSidebar, setShowDetailsSidebar] = useState(false);
+
+    // --- 0. VIEW MODE CHECK ---
+    if (viewMode === 'list') {
+        return <FeedPostCard post={post} contextPosts={contextPosts} onClick={onClick} />;
+    }
 
     // --- 1. DATA PREP ---
     // Early return if invalid
@@ -132,6 +138,16 @@ const Post = ({ post, priority = 'normal' }) => {
     }, [navigate, post.userId, post.authorId]);
 
     // --- 4. RENDERER SELECTION ---
+    if (post.postType === 'text') {
+        return (
+            <div ref={containerRef} style={{ width: '100%', height: '100%', overflowY: 'auto', display: 'flex', justifyContent: 'center', boxSizing: 'border-box', padding: '2rem 1rem' }}>
+                <div style={{ maxWidth: '600px', width: '100%' }}>
+                    <FeedPostCard post={post} />
+                </div>
+            </div>
+        );
+    }
+
     // Strict priority: Film -> Instant -> Standard
     const useFilmStripMode = post.uiOverlays?.sprocketBorder === true;
     const hasInstantBorder = post.uiOverlays?.instantPhotoBorder === true;

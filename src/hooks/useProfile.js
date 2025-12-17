@@ -28,6 +28,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
 
     const [user, setUser] = useState(null);
     const [posts, setPosts] = useState([]);
+    const [textPosts, setTextPosts] = useState([]);
     const [shopItems, setShopItems] = useState([]);
     const [spaceCards, setSpaceCards] = useState([]);
     const [badges, setBadges] = useState([]);
@@ -167,6 +168,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
             if (PROFILE_CACHE[userId]?.tabs?.[cacheKey]) {
                 const cached = PROFILE_CACHE[userId].tabs[cacheKey];
                 if (activeTab === 'posts') setPosts(cached);
+                if (activeTab === 'writings') setTextPosts(cached);
                 if (activeTab === 'shop') setShopItems(cached);
                 if (activeTab === 'cards') setSpaceCards(cached);
                 return;
@@ -199,10 +201,13 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                                 // 2. Filter showInProfile (TEMPORARILY DISABLED)
                                 const notHidden = true; // post.showInProfile !== false;
 
+                                // 3. Exclude text posts from posts grid - they go to Writings tab
+                                const isNotTextPost = post.postType !== 'text';
+
                                 if (!matchesType) logger.log(`[useProfile] Filtered out post ${post.id}: wrong type (${postType} != ${feedType})`);
                                 // if (!notHidden) console.log(`[useProfile] Filtered out post ${post.id}: hidden from profile`);
 
-                                return matchesType && notHidden;
+                                return matchesType && notHidden && isNotTextPost;
                             });
 
                         logger.log(`[useProfile] Final posts count: ${filteredPosts.length}`);
@@ -248,6 +253,29 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                         if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
                         if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
                         PROFILE_CACHE[userId].tabs[cacheKey] = userCards;
+                    }
+                }
+
+                // Writings (Text Posts)
+                if (activeTab === 'writings') {
+                    setTextPosts([]);
+
+                    const textPostsQuery = query(
+                        collection(db, 'posts'),
+                        where('authorId', '==', userId),
+                        where('postType', '==', 'text'),
+                        orderBy('createdAt', 'desc'),
+                        limit(50)
+                    );
+                    const textPostsSnap = await getDocs(textPostsQuery);
+                    if (isMountedRef.current) {
+                        const fetchedTextPosts = textPostsSnap.docs.map(normalizePost);
+                        setTextPosts(fetchedTextPosts);
+
+                        // Cache It
+                        if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                        if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
+                        PROFILE_CACHE[userId].tabs[cacheKey] = fetchedTextPosts;
                     }
                 }
             } catch (err) {
@@ -328,6 +356,7 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
     return {
         user,
         posts,
+        textPosts,
         shopItems,
         spaceCards,
         badges,

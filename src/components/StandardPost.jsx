@@ -11,6 +11,7 @@ import DateStampOverlay from './DateStampOverlay';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { getQuartzDateStyle } from '@/core/utils/quartzDateUtils';
 import { formatExifForDisplay } from '@/core/utils/exif';
+import ZoomableImageWrapper from './ZoomableImageWrapper';
 import '@/styles/Post.css';
 
 // Wrappers and Helper Components
@@ -133,23 +134,27 @@ const StandardPost = ({
 
             const imageContent = (
                 <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                    <SmartImage
-                        src={url}
-                        alt={`Slide ${index + 1} `}
-                        priority={index === 0 ? priority : 'low'}
-                        eager={isNearby}
-                        objectFit="contain" // Standard fit
-                        style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
-                    />
-                    {post.uiOverlays?.quartzDate && (
-                        /* Use dynamic sizing to stick to image even in contain mode */
-                        <QuartzDateWrapper
-                            quartzDate={post.uiOverlays.quartzDate}
-                            imageWidth={item.width}
-                            imageHeight={item.height}
-                            containerRef={containerRef}
-                        />
-                    )}
+                    <ZoomableImageWrapper>
+                        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                            <SmartImage
+                                src={url}
+                                alt={`Slide ${index + 1} `}
+                                priority={index === 0 ? priority : 'low'}
+                                eager={isNearby}
+                                objectFit="contain" // Standard fit
+                                style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
+                            />
+                            {post.uiOverlays?.quartzDate && (
+                                /* Use dynamic sizing to stick to image even in contain mode */
+                                <QuartzDateWrapper
+                                    quartzDate={post.uiOverlays.quartzDate}
+                                    imageWidth={item.width}
+                                    imageHeight={item.height}
+                                    containerRef={containerRef}
+                                />
+                            )}
+                        </div>
+                    </ZoomableImageWrapper>
                 </div>
             );
 
@@ -439,94 +444,122 @@ const StandardPost = ({
 
             {/* Author Info & Location - REDESIGNED */}
             <div
-                className="author-overlay"
                 style={{
                     position: 'absolute',
                     bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
                     left: '20px',
                     display: 'flex',
-                    alignItems: 'stretch', // Ensure equal height
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    backdropFilter: 'blur(8px)',
-                    borderRadius: '8px',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '4px',
                     zIndex: 10,
-                    width: 'fit-content',
-                    maxWidth: '300px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    overflow: 'hidden' // For border radius
+                    maxWidth: '300px'
                 }}
             >
-                {/* 1. Profile Picture Button (Left) */}
                 <div
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleAuthorClick();
-                    }}
+                    className="author-overlay"
                     style={{
-                        width: '40px', // Fixed square width
-                        height: '40px', // Fixed square height
-                        padding: '0', // Removing padding to fill the box
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'rgba(255,255,255,0.05)',
-                        borderRight: '1px solid rgba(255,255,255,0.1)',
-                        cursor: 'pointer'
+                        alignItems: 'stretch', // Ensure equal height
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: '8px',
+                        width: 'fit-content',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        overflow: 'hidden' // For border radius
                     }}
                 >
-                    {authorPhoto && authorPhoto.startsWith('http') ? (
-                        <img
-                            src={authorPhoto}
-                            alt={post.username}
-                            style={{
-                                width: '100%', // Fill container
-                                height: '100%', // Fill container
-                                objectFit: 'cover',
-                                borderRadius: '0'
-                            }}
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex'; // Flex to center icon
-                            }}
-                        />
-                    ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {/* 1. Profile Picture Button (Left) */}
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleAuthorClick();
+                        }}
+                        style={{
+                            width: '40px', // Fixed square width
+                            height: '40px', // Fixed square height
+                            padding: '0', // Removing padding to fill the box
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRight: '1px solid rgba(255,255,255,0.1)',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {authorPhoto && authorPhoto.startsWith('http') ? (
+                            <img
+                                src={authorPhoto}
+                                alt={post.username}
+                                style={{
+                                    width: '100%', // Fill container
+                                    height: '100%', // Fill container
+                                    objectFit: 'cover',
+                                    borderRadius: '0'
+                                }}
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.nextSibling.style.display = 'flex'; // Flex to center icon
+                                }}
+                            />
+                        ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <PlanetUserIcon size={28} color="#7FFFD4" />
+                            </div>
+                        )}
+                        {/* Fallback */}
+                        <div style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
                             <PlanetUserIcon size={28} color="#7FFFD4" />
                         </div>
-                    )}
-                    {/* Fallback */}
-                    <div style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                        <PlanetUserIcon size={28} color="#7FFFD4" />
+                    </div>
+
+                    {/* 2. Username Button (Right) */}
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDetailsSidebar(true);
+                        }}
+                        style={{
+                            padding: '0.4rem 0.8rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            gap: '2px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <span style={{
+                            color: '#7FFFD4',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            fontFamily: '"Rajdhani", monospace',
+                            letterSpacing: '1px',
+                            textTransform: 'uppercase',
+                            lineHeight: 1
+                        }}>
+                            {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
+                        </span>
                     </div>
                 </div>
 
-                {/* 2. Username Button (Right) */}
-                <div
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDetailsSidebar(true);
-                    }}
-                    style={{
-                        padding: '0.4rem 0.8rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        gap: '2px',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <span style={{
-                        color: '#7FFFD4',
-                        fontWeight: '700',
-                        fontSize: '0.9rem',
+                {/* Frame Counter Below Profile */}
+                {items.length > 1 && (
+                    <div style={{
+                        padding: '2px 6px',
+                        background: 'rgba(0, 0, 0, 0.5)',
+                        backdropFilter: 'blur(4px)',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        fontSize: '0.75rem',
+                        color: 'rgba(255, 255, 255, 0.85)',
                         fontFamily: '"Rajdhani", monospace',
+                        fontWeight: '600',
                         letterSpacing: '1px',
-                        textTransform: 'uppercase',
-                        lineHeight: 1
+                        marginLeft: '2px' // Align slightly with the profile box visual weight
                     }}>
-                        {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
-                    </span>
-                </div>
+                        {currentSlide + 1}/{items.length}
+                    </div>
+                )}
             </div>
 
             {/* DETAILS SIDEBAR */}
@@ -541,20 +574,7 @@ const StandardPost = ({
 
             {/* Like Button & Slide Counter */}
             <div className="post-actions-container">
-                {items.length > 1 && (
-                    <div style={{
-                        color: 'rgba(255, 255, 255, 0.85)',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        fontFamily: '"Rajdhani", "SF Mono", "Monaco", monospace',
-                        letterSpacing: '1px',
-                        textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)',
-                        fontVariantNumeric: 'tabular-nums'
-                    }}>
-                        {currentSlide + 1}/{items.length}
-                    </div>
-                )}
-                <LikeButton postId={post.id} enableRatings={true} showCount={false} />
+                <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={false} />
             </div>
 
         </div >

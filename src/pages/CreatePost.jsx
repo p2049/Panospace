@@ -15,6 +15,7 @@ import { useCreatePost } from '@/hooks/useCreatePost';
 import { useCollections } from '@/hooks/useCollections';
 import { isFeatureEnabled } from '@/config/featureFlags';
 import { useDraftSaving } from '@/hooks/useDraftSaving';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
 import ThumbnailStrip from '@/components/create-post/ThumbnailStrip';
 import ImageCarousel from '@/components/create-post/ImageCarousel';
@@ -24,12 +25,13 @@ import ManualExifEditor from '@/components/create-post/ManualExifEditor';
 import CollectionSelector from '@/components/create-post/CollectionSelector';
 import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
 import ShopOptionsPanel from '@/components/create-post/ShopOptionsPanel';
+import SearchEmojiPicker from '@/components/SearchEmojiPicker';
 import ImageSizeWarningModal from '@/components/ImageSizeWarningModal';
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
-import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft } from 'react-icons/fa';
 import Post from '@/components/Post';
 import { extractDominantHue } from '@/core/utils/colorUtils';
 import { generateStackPreview } from '@/core/utils/stackUtils';
@@ -41,6 +43,14 @@ import { scaleImageToFit } from '@/core/utils/imageScaler';
 
 
 
+
+const WRITER_THEMES = {
+    default: { name: 'Default', bg: '#121212', text: '#ffffff', border: '1px solid #333' },
+    paper: { name: 'Paper', bg: '#fdfbf7', text: '#2a2a2a', border: '1px solid #e0d0b0' },
+    night: { name: 'Night', bg: '#050510', text: '#e0e0ff', border: '1px solid #2a2a40' },
+    mono: { name: 'Mono', bg: '#ffffff', text: '#000000', border: '1px solid #ccc' },
+    aurora: { name: 'Aurora', bg: '#002b36', text: '#eee8d5', border: '1px solid #073642' }
+};
 
 const StackThumbnail = ({ file }) => {
     const [src, setSrc] = useState(null);
@@ -61,6 +71,7 @@ const CreatePost = () => {
     const { createPost, loading, error, progress } = useCreatePost();
     const { collections } = useCollections(currentUser?.uid);
     const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSaving();
+    const { createDefault, ratingSystemDefault, setFeedViewMode } = useFeedStore(); // Get default from settings
     const [selectedCollectionId, setSelectedCollectionId] = useState('');
     const fileInputRef = useRef(null);
     const submittingRef = useRef(false);
@@ -85,7 +96,21 @@ const CreatePost = () => {
     const [title, setTitle] = useState('');
     const [tags, setTags] = useState([]);
     const [location, setLocation] = useState({ city: '', state: '', country: '' });
-    const [postType, setPostType] = useState('art'); // Unified Post Type State
+    const [primaryMode, setPrimaryMode] = useState(createDefault || 'social'); // Was postType (social/art)
+    const [postType, setPostType] = useState('image'); // 'image' | 'text'
+    const [textContent, setTextContent] = useState('');
+    const [writerTheme, setWriterTheme] = useState('default'); // 'default' | 'paper' | 'night' | 'mono' | 'aurora'
+    const [linkedPostIds, setLinkedPostIds] = useState([]);
+    const [showLinkSelector, setShowLinkSelector] = useState(false);
+    const [userPosts, setUserPosts] = useState([]); // For link selector
+    const [isHumor, setIsHumor] = useState(false); // Humor Flag
+
+    // Emoji Picker
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+    const handleEmojiSelect = (emoji) => {
+        setTitle(prev => prev + emoji);
+    };
 
     // Slides State
     const [slides, setSlides] = useState([]);
@@ -152,7 +177,7 @@ const CreatePost = () => {
     const [instantPhotoStyle, setInstantPhotoStyle] = useState('thin'); // 'thin' or 'thick'
     const [filmMode, setFilmMode] = useState('continuous'); // 'continuous' or 'cut'
     const [enableQuartzDate, setEnableQuartzDate] = useState(false);
-    const [enableRatings, setEnableRatings] = useState(true); // true = 5-star rating, false = simple like
+    const [enableRatings, setEnableRatings] = useState(ratingSystemDefault ? ratingSystemDefault === 'stars' : false); // Default based on settings (smiley = false)
     const [showInProfile, setShowInProfile] = useState(true); // Whether to show in user's profile feed
     const [quartzDateString, setQuartzDateString] = useState(() => {
         const today = new Date();
@@ -595,9 +620,14 @@ const CreatePost = () => {
         }
         submittingRef.current = true;
 
-        if (slides.length === 0) {
+        if (postType === 'image' && slides.length === 0) {
             submittingRef.current = false;
             return alert("Add at least one image");
+        }
+
+        if (postType === 'text' && !textContent.trim()) {
+            submittingRef.current = false;
+            return alert("Text post body cannot be empty");
         }
 
         // Rate Limiting Check
@@ -648,14 +678,18 @@ const CreatePost = () => {
             await createPost({
                 title,
                 tags,
-                type: postType, // Pass selected type
+                type: primaryMode, // Legacy compatibility (Art/Social)
+                postType: postType, // 'image' or 'text'
+                primaryMode: primaryMode, // 'social' or 'art'
+                isHumor: isHumor,
                 location,
-                filmMetadata: filmMetadata.isFilm ? filmMetadata : null,
+                // Image specific
+                filmMetadata: (postType === 'image' && filmMetadata.isFilm) ? filmMetadata : null,
                 enableRatings: enableRatings,
                 collectionId: selectedCollectionId || null,
                 collectionPostToFeed: selectedCollection?.postToFeed ?? null,
                 showInProfile: showInProfile,
-                uiOverlays: {
+                uiOverlays: postType === 'image' ? {
                     sprocketBorder: enableSprocketOverlay || false,
                     instantPhotoBorder: enableInstantPhotoOverlay || false,
                     instantPhotoCount: (enableInstantPhotoOverlay && instantPhotoCount) ? instantPhotoCount : 1,
@@ -666,10 +700,14 @@ const CreatePost = () => {
                         color: quartzColor || '#000000',
                         format: quartzDateFormat || 'DD MM YY'
                     } : null
-                },
-                atmosphereBackground: (slides.length === 1 && atmosphereBackground) ? atmosphereBackground : 'black',
-                gradientColor: (slides.length === 1 && extractedColor) ? extractedColor : null,
-            }, processedSlides);
+                } : null,
+                atmosphereBackground: (postType === 'image' && slides.length === 1 && atmosphereBackground) ? atmosphereBackground : 'black',
+                gradientColor: (postType === 'image' && slides.length === 1 && extractedColor) ? extractedColor : null,
+                // Text specific
+                body: postType === 'text' ? textContent : null,
+                writerTheme: postType === 'text' ? writerTheme : null,
+                linkedPostIds: postType === 'text' ? linkedPostIds : null,
+            }, postType === 'image' ? processedSlides : []);
 
             // Create SpaceCard if requested
             if (createSpaceCard) {
@@ -723,6 +761,11 @@ const CreatePost = () => {
             clearDraft();
             setHasUnsavedChanges(false);
 
+            // If text post, switch feed to list view so user can see it
+            if (postType === 'text') {
+                setFeedViewMode('list');
+            }
+
             // Navigate directly to feed without alert
             navigate('/');
         } catch (err) {
@@ -738,7 +781,16 @@ const CreatePost = () => {
 
     const getPublishButtonState = () => {
         if (loading) return { text: "Publishing...", disabled: true };
-        if (slides.length === 0) return { text: "Add Images", action: () => fileInputRef.current?.click(), disabled: false };
+        if (postType === 'image') {
+            if (slides.length === 0) {
+                return { text: 'Add Images', disabled: true };
+            }
+        } else {
+            // Text mode
+            if (!textContent.trim()) {
+                return { text: 'Write Something', disabled: true };
+            }
+        }
         // Title no longer required
         return { text: "Publish", action: handleSubmit, disabled: false };
     };
@@ -909,317 +961,482 @@ const CreatePost = () => {
 
 
 
+            {/* Format Selector */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '1rem 0 0.5rem',
+                gap: '1rem'
+            }}>
+                <button
+                    onClick={() => setPostType('image')}
+                    style={{
+                        padding: '0.6rem 1.2rem',
+                        borderRadius: '20px',
+                        border: postType === 'image' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                        background: postType === 'image' ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
+                        color: postType === 'image' ? '#7FFFD4' : '#888',
+                        fontSize: '0.9rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <FaImages /> IMAGE POST
+                </button>
+                <button
+                    onClick={() => setPostType('text')}
+                    style={{
+                        padding: '0.6rem 1.2rem',
+                        borderRadius: '20px',
+                        border: postType === 'text' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                        background: postType === 'text' ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
+                        color: postType === 'text' ? '#7FFFD4' : '#888',
+                        fontSize: '0.9rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <FaAlignLeft /> TEXT POST
+                </button>
+            </div>
+
             <div className="create-post-layout">
-                {/* LEFT COLUMN: Images, Previews, Tags */}
+                {/* LEFT COLUMN: Content (Image Previews OR Text Editor) */}
                 <div className="preview-column">
-                    {/* MOBILE TITLE INPUT (Visible only on Mobile Portrait) */}
-                    <div className="mobile-only-title" style={{ marginBottom: '1rem', display: 'none' }}>
-                        <input
-                            type="text"
-                            placeholder="Title your post"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="form-input"
-                            style={{
-                                fontSize: '1.2rem',
-                                fontWeight: '700',
-                                border: 'none',
-                                borderBottom: '1px solid #333',
-                                borderRadius: 0,
-                                padding: '0.5rem 0',
-                                background: 'transparent',
-                                color: '#7FFFD4',
-                                transition: 'all 110ms ease-out',
-                                boxShadow: 'none',
-                                width: '100%',
-                                fontFamily: '"Rajdhani", sans-serif',
-                                textTransform: 'uppercase',
-                                marginBottom: '1rem'
-                            }}
-                        />
 
-                        {/* Mobile Post Type Toggle */}
-                        <div className="post-type-toggle" style={{ display: 'flex', alignItems: 'center' }}>
-                            <button
-                                type="button"
-                                onClick={() => setPostType("art")}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    marginRight: '0.5rem',
-                                    borderRadius: '6px',
-                                    border: postType === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                    background: postType === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                    color: postType === "art" ? '#7FFFD4' : '#888',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
-                                }}
-                            >
-                                Art
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPostType("social")}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    borderRadius: '6px',
-                                    border: postType === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                    background: postType === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                    color: postType === "social" ? '#7FFFD4' : '#888',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
-                                }}
-                            >
-                                Social
-                            </button>
-                        </div>
-                    </div>
+                    {/* TEXT COMPOSER */}
+                    {postType === 'text' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
+                            {/* Theme Selector */}
+                            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                                {Object.entries(WRITER_THEMES).map(([key, theme]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setWriterTheme(key)}
+                                        style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            background: theme.bg,
+                                            border: writerTheme === key ? '2px solid #7FFFD4' : '1px solid #555',
+                                            cursor: 'pointer',
+                                            flexShrink: 0
+                                        }}
+                                        title={theme.name}
+                                    />
+                                ))}
+                            </div>
 
-                    {/* Loading Indicator for Photo Processing */}
-                    {isProcessingStack && (
-                        <div style={{
-                            width: '100%',
-                            height: '2px',
-                            background: 'rgba(255,255,255,0.1)',
-                            marginBottom: '1rem',
-                            overflow: 'hidden',
-                            borderRadius: '2px',
-                            position: 'relative'
-                        }}>
+                            {/* Writer Canvas */}
                             <div style={{
-                                width: '50%',
-                                height: '100%',
-                                background: 'var(--ice-mint)',
-                                position: 'absolute',
-                                animation: 'loading-line 1s infinite linear',
-                            }}></div>
-                            <style>{`
+                                flex: 1,
+                                background: WRITER_THEMES[writerTheme].bg,
+                                border: WRITER_THEMES[writerTheme].border,
+                                borderRadius: '12px',
+                                padding: '2rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '1rem',
+                                minHeight: '400px',
+                                transition: 'all 0.3s ease'
+                            }}>
+                                <input
+                                    type="text"
+                                    placeholder="Title (Optional)"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        fontSize: '1.8rem',
+                                        fontWeight: '800',
+                                        color: WRITER_THEMES[writerTheme].text,
+                                        fontFamily: '"Rajdhani", sans-serif',
+                                        width: '100%',
+                                        outline: 'none'
+                                    }}
+                                />
+                                <textarea
+                                    placeholder="Write your story..."
+                                    value={textContent}
+                                    onChange={(e) => setTextContent(e.target.value)}
+                                    style={{
+                                        flex: 1,
+                                        background: 'transparent',
+                                        border: 'none',
+                                        resize: 'none',
+                                        fontSize: '1.1rem',
+                                        lineHeight: '1.6',
+                                        color: WRITER_THEMES[writerTheme].text,
+                                        fontFamily: 'var(--font-family-body)',
+                                        outline: 'none',
+                                        minHeight: '300px'
+                                    }}
+                                />
+                            </div>
+
+                            <p style={{ fontSize: '0.8rem', color: '#666', textAlign: 'center' }}>
+                                Text posts appear in List View. Linked posts appear in the post info panel.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* IMAGE PREVIEW COLUMN Content (Only show if Image mode) */}
+                    {postType === 'image' && (
+                        <>
+                            {/* MOBILE TITLE INPUT (Visible only on Mobile Portrait) */}
+                            <div className="mobile-only-title" style={{ marginBottom: '1rem', display: 'none' }}>
+                                <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Title your post"
+                                            value={title}
+                                            onChange={(e) => setTitle(e.target.value)}
+                                            className="form-input"
+                                            style={{
+                                                fontSize: '1.2rem',
+                                                fontWeight: '700',
+                                                border: 'none',
+                                                borderBottom: '1px solid #333',
+                                                borderRadius: 0,
+                                                padding: '0.5rem 0',
+                                                background: 'transparent',
+                                                color: '#7FFFD4',
+                                                transition: 'all 110ms ease-out',
+                                                boxShadow: 'none',
+                                                width: '100%',
+                                                fontFamily: '"Rajdhani", sans-serif',
+                                                textTransform: 'uppercase',
+                                                flex: 1
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                padding: '0.5rem',
+                                                color: showEmojiPicker ? '#7FFFD4' : '#666',
+                                                transition: 'color 0.2s',
+                                                display: 'flex',
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <FaSmile size={24} />
+                                        </button>
+                                    </div>
+                                    <SearchEmojiPicker
+                                        visible={showEmojiPicker}
+                                        onSelect={handleEmojiSelect}
+                                        isMobile={true}
+                                    />
+                                </div>
+
+                                {/* Mobile Post Type Toggle */}
+                                <div className="post-type-toggle" style={{ display: 'flex', alignItems: 'center' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrimaryMode("art")}
+                                        style={{
+                                            padding: '0.4rem 0.8rem',
+                                            marginRight: '0.5rem',
+                                            borderRadius: '6px',
+                                            border: primaryMode === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                            background: primaryMode === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                            color: primaryMode === "art" ? '#7FFFD4' : '#888',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '700',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem'
+                                        }}
+                                    >
+                                        Art
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrimaryMode("social")}
+                                        style={{
+                                            padding: '0.4rem 0.8rem',
+                                            borderRadius: '6px',
+                                            border: primaryMode === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                            background: primaryMode === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                            color: primaryMode === "social" ? '#7FFFD4' : '#888',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '700',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem'
+                                        }}
+                                    >
+                                        Social
+                                    </button>
+                                    {/* Humor Checkbox (Mobile) */}
+                                    <label title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={isHumor}
+                                            onChange={(e) => setIsHumor(e.target.checked)}
+                                            style={{ accentColor: '#7FFFD4', transform: 'scale(1.1)' }}
+                                        />
+                                        HUMOR
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Loading Indicator for Photo Processing */}
+                            {isProcessingStack && (
+                                <div style={{
+                                    width: '100%',
+                                    height: '2px',
+                                    background: 'rgba(255,255,255,0.1)',
+                                    marginBottom: '1rem',
+                                    overflow: 'hidden',
+                                    borderRadius: '2px',
+                                    position: 'relative'
+                                }}>
+                                    <div style={{
+                                        width: '50%',
+                                        height: '100%',
+                                        background: 'var(--ice-mint)',
+                                        position: 'absolute',
+                                        animation: 'loading-line 1s infinite linear',
+                                    }}></div>
+                                    <style>{`
                                 @keyframes loading-line {
                                     0% { left: -50%; width: 50%; }
                                     50% { left: 25%; width: 75%; }
                                     100% { left: 100%; width: 50%; }
                                 }
                             `}</style>
-                        </div>
-                    )}
+                                </div>
+                            )}
 
-                    {/* 1. Image Carousel & Stack Controls */}
-                    <div className="stack-controls-row" style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
+                            {/* 1. Image Carousel & Stack Controls */}
+                            <div className="stack-controls-row" style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: isProcessingStack ? 0.5 : 1, pointerEvents: isProcessingStack ? 'none' : 'auto' }}>
 
-                        {/* Vertical Stack Button */}
-                        <label className="stack-btn" style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '8px',
-                            padding: '0.6rem 0.8rem', /* Reduced horizontal padding */
-                            color: '#e0e0e0',
-                            display: 'flex', alignItems: 'center', gap: '0.4rem', /* Reduced gap */
-                            cursor: 'pointer', fontSize: '0.85rem',
-                            position: 'relative',
-                            whiteSpace: 'nowrap' /* Prevent text wrap */
-                        }}>
-                            <FaArrowsAltV size={16} />
-                            <span className="stack-btn-text">Vertical Stack</span>
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handleStackSelect(e, 'vertical')}
-                            />
-                        </label>
+                                {/* Vertical Stack Button */}
+                                <label className="stack-btn" style={{
+                                    background: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '8px',
+                                    padding: '0.6rem 0.8rem', /* Reduced horizontal padding */
+                                    color: '#e0e0e0',
+                                    display: 'flex', alignItems: 'center', gap: '0.4rem', /* Reduced gap */
+                                    cursor: 'pointer', fontSize: '0.85rem',
+                                    position: 'relative',
+                                    whiteSpace: 'nowrap' /* Prevent text wrap */
+                                }}>
+                                    <FaArrowsAltV size={16} />
+                                    <span className="stack-btn-text">Vertical Stack</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handleStackSelect(e, 'vertical')}
+                                    />
+                                </label>
 
-                        {/* Horizontal Row Button */}
-                        <label className="stack-btn" style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '8px',
-                            padding: '0.6rem 0.8rem',
-                            color: '#e0e0e0',
-                            display: 'flex', alignItems: 'center', gap: '0.4rem',
-                            cursor: 'pointer', fontSize: '0.85rem',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            <FaArrowsAltH size={16} />
-                            <span className="stack-btn-text">Horizontal Row</span>
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handleStackSelect(e, 'horizontal')}
-                            />
-                        </label>
+                                {/* Horizontal Row Button */}
+                                <label className="stack-btn" style={{
+                                    background: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '8px',
+                                    padding: '0.6rem 0.8rem',
+                                    color: '#e0e0e0',
+                                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                    cursor: 'pointer', fontSize: '0.85rem',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    <FaArrowsAltH size={16} />
+                                    <span className="stack-btn-text">Horizontal Row</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handleStackSelect(e, 'horizontal')}
+                                    />
+                                </label>
 
-                        {/* Grid Collage Button */}
-                        <label className="stack-btn" style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '8px',
-                            padding: '0.6rem 0.8rem',
-                            color: '#e0e0e0',
-                            display: 'flex', alignItems: 'center', gap: '0.4rem',
-                            cursor: 'pointer', fontSize: '0.85rem',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            <FaThLarge size={14} />
-                            <span className="stack-btn-text">Grid Collage</span>
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={(e) => handleStackSelect(e, 'grid')}
-                            />
-                        </label>
-                    </div>
-
-                    <ImageCarousel
-                        slides={slides}
-                        activeSlideIndex={activeSlideIndex}
-                        setActiveSlideIndex={setActiveSlideIndex}
-                        removeSlide={removeSlide}
-                        updateSlide={updateSlide}
-                        onTouchStart={onTouchStart}
-                        onTouchMove={onTouchMove}
-                        onTouchEnd={onTouchEnd}
-                        handleDragStart={handleDragStart}
-                        handleDragOver={handleDragOver}
-                        handleDrop={handleDrop}
-                        moveSlide={moveSlide}
-                        onAddMoreClick={() => fileInputRef.current?.click()}
-                    />
-
-
-                    {/* Stack Order Settings - Below Image Preview */}
-                    {activeSlide?.type === 'stack' && activeSlide?.items && (
-                        <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontWeight: '600' }}>Stack Order</span>
-                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{activeSlide.items.length} items</span>
+                                {/* Grid Collage Button */}
+                                <label className="stack-btn" style={{
+                                    background: 'rgba(255,255,255,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '8px',
+                                    padding: '0.6rem 0.8rem',
+                                    color: '#e0e0e0',
+                                    display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                    cursor: 'pointer', fontSize: '0.85rem',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    <FaThLarge size={14} />
+                                    <span className="stack-btn-text">Grid Collage</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handleStackSelect(e, 'grid')}
+                                    />
+                                </label>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                                {activeSlide.items.map((file, idx) => (
-                                    <div key={idx} style={{
-                                        position: 'relative',
-                                        width: '70px',
-                                        flexShrink: 0,
-                                        opacity: isProcessingStack ? 0.5 : 1
-                                    }}>
-                                        <div style={{
-                                            width: '70px',
-                                            height: '70px',
-                                            borderRadius: '8px',
-                                            overflow: 'hidden',
-                                            marginBottom: '0.3rem',
-                                            border: '1px solid rgba(255,255,255,0.2)'
-                                        }}>
-                                            <StackThumbnail file={file} />
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.25rem' }}>
-                                            <button
-                                                onClick={() => reorderStackItems(activeSlideIndex, idx, 'left')}
-                                                disabled={idx === 0 || isProcessingStack}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.1)',
-                                                    border: 'none',
-                                                    borderRadius: '4px',
-                                                    color: '#fff',
-                                                    width: '32px',
-                                                    height: '26px',
-                                                    cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    opacity: idx === 0 ? 0.3 : 1,
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <FaChevronLeft size={10} />
-                                            </button>
-                                            <button
-                                                onClick={() => reorderStackItems(activeSlideIndex, idx, 'right')}
-                                                disabled={idx === activeSlide.items.length - 1 || isProcessingStack}
-                                                style={{
-                                                    background: 'rgba(255,255,255,0.1)',
-                                                    border: 'none',
-                                                    borderRadius: '4px',
-                                                    color: '#fff',
-                                                    width: '32px',
-                                                    height: '26px',
-                                                    cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    opacity: idx === activeSlide.items.length - 1 ? 0.3 : 1,
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <FaChevronRight size={10} />
-                                            </button>
-                                        </div>
+
+                            <ImageCarousel
+                                slides={slides}
+                                activeSlideIndex={activeSlideIndex}
+                                setActiveSlideIndex={setActiveSlideIndex}
+                                removeSlide={removeSlide}
+                                updateSlide={updateSlide}
+                                onTouchStart={onTouchStart}
+                                onTouchMove={onTouchMove}
+                                onTouchEnd={onTouchEnd}
+                                handleDragStart={handleDragStart}
+                                handleDragOver={handleDragOver}
+                                handleDrop={handleDrop}
+                                moveSlide={moveSlide}
+                                onAddMoreClick={() => fileInputRef.current?.click()}
+                            />
+
+
+                            {/* Stack Order Settings - Below Image Preview */}
+                            {activeSlide?.type === 'stack' && activeSlide?.items && (
+                                <div style={{ marginTop: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px' }}>
+                                    <div style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: '600' }}>Stack Order</span>
+                                        <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{activeSlide.items.length} items</span>
                                     </div>
-                                ))}
+                                    <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                                        {activeSlide.items.map((file, idx) => (
+                                            <div key={idx} style={{
+                                                position: 'relative',
+                                                width: '70px',
+                                                flexShrink: 0,
+                                                opacity: isProcessingStack ? 0.5 : 1
+                                            }}>
+                                                <div style={{
+                                                    width: '70px',
+                                                    height: '70px',
+                                                    borderRadius: '8px',
+                                                    overflow: 'hidden',
+                                                    marginBottom: '0.3rem',
+                                                    border: '1px solid rgba(255,255,255,0.2)'
+                                                }}>
+                                                    <StackThumbnail file={file} />
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.25rem' }}>
+                                                    <button
+                                                        onClick={() => reorderStackItems(activeSlideIndex, idx, 'left')}
+                                                        disabled={idx === 0 || isProcessingStack}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.1)',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            color: '#fff',
+                                                            width: '32px',
+                                                            height: '26px',
+                                                            cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            opacity: idx === 0 ? 0.3 : 1,
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <FaChevronLeft size={10} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => reorderStackItems(activeSlideIndex, idx, 'right')}
+                                                        disabled={idx === activeSlide.items.length - 1 || isProcessingStack}
+                                                        style={{
+                                                            background: 'rgba(255,255,255,0.1)',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            color: '#fff',
+                                                            width: '32px',
+                                                            height: '26px',
+                                                            cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            opacity: idx === activeSlide.items.length - 1 ? 0.3 : 1,
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        <FaChevronRight size={10} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {isProcessingStack && <div style={{ fontSize: '0.75rem', color: 'var(--ice-mint)', marginTop: '0.5rem', textAlign: 'center' }}>Updating stack...</div>}
+                                </div>
+                            )}
+
+                            {/* FEED PREVIEW BUTTON */}
+                            {slides.length > 0 && (
+                                <button
+                                    onClick={() => setShowFeedPreview(true)}
+                                    style={{
+                                        width: '100%',
+                                        marginTop: '0.5rem',
+                                        padding: '0.75rem',
+                                        background: 'rgba(255, 255, 255, 0.1)',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        borderRadius: '8px',
+                                        color: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        cursor: 'pointer',
+                                        fontWeight: '600',
+                                        fontSize: '0.9rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    className="preview-feed-btn"
+                                >
+                                    <FaEye /> Feed Preview
+                                </button>
+                            )}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
+
+                            {/* 2. Tags & Categories (Moved to Left) */}
+                            {/* 2. Tags & Categories (Moved to Left) - Collapsible on Mobile */}
+                            {/* 2. Tags & Categories */}
+                            <div style={{ marginTop: '1rem' }}>
+                                <TagCategoryPanel
+                                    tags={tags}
+                                    handleTagToggle={handleTagToggle}
+                                    expandedCategories={expandedCategories}
+                                    toggleCategory={toggleCategory}
+                                />
                             </div>
-                            {isProcessingStack && <div style={{ fontSize: '0.75rem', color: 'var(--ice-mint)', marginTop: '0.5rem', textAlign: 'center' }}>Updating stack...</div>}
-                        </div>
+                        </>
                     )}
-
-                    {/* FEED PREVIEW BUTTON */}
-                    {slides.length > 0 && (
-                        <button
-                            onClick={() => setShowFeedPreview(true)}
-                            style={{
-                                width: '100%',
-                                marginTop: '0.5rem',
-                                padding: '0.75rem',
-                                background: 'rgba(255, 255, 255, 0.1)',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '8px',
-                                color: '#fff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem',
-                                cursor: 'pointer',
-                                fontWeight: '600',
-                                fontSize: '0.9rem',
-                                transition: 'all 0.2s'
-                            }}
-                            className="preview-feed-btn"
-                        >
-                            <FaEye /> Feed Preview
-                        </button>
-                    )}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleFileSelect}
-                        style={{ display: 'none' }}
-                    />
-
-                    {/* 2. Tags & Categories (Moved to Left) */}
-                    {/* 2. Tags & Categories (Moved to Left) - Collapsible on Mobile */}
-                    {/* 2. Tags & Categories */}
-                    <div style={{ marginTop: '1rem' }}>
-                        <TagCategoryPanel
-                            tags={tags}
-                            handleTagToggle={handleTagToggle}
-                            expandedCategories={expandedCategories}
-                            toggleCategory={toggleCategory}
-                        />
-                    </div>
                 </div>
 
                 {/* RIGHT COLUMN: Post Details & Settings */}
@@ -1285,6 +1502,16 @@ const CreatePost = () => {
                             >
                                 Social
                             </button>
+                            {/* Humor Checkbox (Desktop) */}
+                            <label title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={isHumor}
+                                    onChange={(e) => setIsHumor(e.target.checked)}
+                                    style={{ accentColor: '#7FFFD4', transform: 'scale(1.1)', cursor: 'pointer' }}
+                                />
+                                Humor
+                            </label>
                         </div>
 
                         {/* Cinematic Background Toggle (Single Photo Only) */}
@@ -1362,25 +1589,49 @@ const CreatePost = () => {
                             </div>
                         )}
 
-                        <div className="desktop-only-title" style={{ marginBottom: '0.5rem' }}>
-                            <input
-                                type="text"
-                                placeholder="Title your post"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="form-input"
-                                style={{
-                                    fontSize: '0.95rem',
-                                    fontWeight: '500',
-                                    border: 'none',
-                                    borderBottom: '1px solid #333',
-                                    borderRadius: 0,
-                                    padding: '0.5rem 0',
-                                    background: 'transparent',
-                                    color: '#7FFFD4',
-                                    transition: 'all 110ms ease-out',
-                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
-                                }}
+                        <div className="desktop-only-title" style={{ marginBottom: '0.5rem', position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Title your post"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="form-input"
+                                    style={{
+                                        fontSize: '0.95rem',
+                                        fontWeight: '500',
+                                        border: 'none',
+                                        borderBottom: '1px solid #333',
+                                        borderRadius: 0,
+                                        padding: '0.5rem 0',
+                                        background: 'transparent',
+                                        color: '#7FFFD4',
+                                        transition: 'all 110ms ease-out',
+                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
+                                        flex: 1
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '0.5rem',
+                                        color: showEmojiPicker ? '#7FFFD4' : '#666',
+                                        transition: 'color 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <FaSmile size={18} />
+                                </button>
+                            </div>
+                            <SearchEmojiPicker
+                                visible={showEmojiPicker}
+                                onSelect={handleEmojiSelect}
+                                isMobile={false}
                             />
                         </div>
 
@@ -1471,7 +1722,7 @@ const CreatePost = () => {
                         </div>
                     </div>
 
-                    {/* Collection Selection - Compact */}
+                    {/* Collection Selection (Common) */}
                     <CollectionSelector
                         collections={collections}
                         selectedCollectionId={selectedCollectionId}
@@ -1480,27 +1731,118 @@ const CreatePost = () => {
                         setShowInProfile={setShowInProfile}
                     />
 
-                    {/* Film Options Panel with added Instant Photo toggle */}
-                    <FilmOptionsPanel
-                        filmMetadata={filmMetadata}
-                        setFilmMetadata={setFilmMetadata}
-                        enableQuartzDate={enableQuartzDate}
-                        setEnableQuartzDate={setEnableQuartzDate}
-                        quartzDateString={quartzDateString}
-                        setQuartzDateString={setQuartzDateString}
-                        quartzColor={quartzColor}
-                        setQuartzColor={setQuartzColor}
-                        quartzDateFormat={quartzDateFormat}
-                        setQuartzDateFormat={setQuartzDateFormat}
-                        enableSprocketOverlay={enableSprocketOverlay}
-                        setEnableSprocketOverlay={handleSprocketToggle}
-                        enableInstantPhotoOverlay={enableInstantPhotoOverlay}
-                        setEnableInstantPhotoOverlay={handleInstantPhotoToggle}
-                        instantPhotoStyle={instantPhotoStyle}
-                        setInstantPhotoStyle={setInstantPhotoStyle}
-                    />
+                    {/* Linked Posts Selector (Text Mode Only) */}
+                    {postType === 'text' && (
+                        <div className="form-section markdown-section" style={{ marginTop: '1rem', padding: '1rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#fff', marginBottom: '0.5rem' }}>
+                                Linked Posts
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                {linkedPostIds.map(id => (
+                                    <div key={id} style={{ background: 'rgba(127,255,212,0.1)', color: '#7FFFD4', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span>Post {id.slice(0, 5)}...</span>
+                                        <button onClick={() => setLinkedPostIds(prev => prev.filter(pid => pid !== id))} style={{ background: 'none', border: 'none', color: '#7FFFD4', cursor: 'pointer' }}>×</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    if (userPosts.length === 0) {
+                                        try {
+                                            const q = query(collection(db, 'posts'), where('authorId', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(10));
+                                            const snap = await getDocs(q);
+                                            setUserPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                                        } catch (e) {
+                                            console.error("Error fetching user posts", e);
+                                        }
+                                    }
+                                    setShowLinkSelector(true);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px dashed rgba(255,255,255,0.2)',
+                                    color: '#ccc',
+                                    cursor: 'pointer',
+                                    borderRadius: '4px'
+                                }}
+                            >
+                                + Link Existing Post
+                            </button>
 
+                            {/* Simple Modal for Selection */}
+                            {showLinkSelector && (
+                                <div style={{
+                                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <div style={{ width: '400px', maxHeight: '80vh', background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '1rem', overflowY: 'auto' }}>
+                                        <h3 style={{ color: '#fff', marginTop: 0 }}>Select Post to Link</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            {userPosts.map(p => (
+                                                <div
+                                                    key={p.id}
+                                                    onClick={() => {
+                                                        if (!linkedPostIds.includes(p.id)) {
+                                                            setLinkedPostIds(prev => [...prev, p.id]);
+                                                        }
+                                                        setShowLinkSelector(false);
+                                                    }}
+                                                    style={{
+                                                        padding: '0.5rem',
+                                                        border: '1px solid #333',
+                                                        borderRadius: '4px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.5rem',
+                                                        background: linkedPostIds.includes(p.id) ? 'rgba(127,255,212,0.1)' : 'transparent'
+                                                    }}
+                                                >
+                                                    {/* Abstract Thumbnail */}
+                                                    <div style={{ width: 40, height: 40, background: '#333', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        {p.thumbnailUrls?.[0] || p.images?.[0]?.url ? (
+                                                            <img src={p.thumbnailUrls?.[0] || p.images?.[0]?.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        ) : (
+                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: '0.6rem' }}>TXT</div>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                                                        <div style={{ color: '#fff', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title || 'Untitled'}</div>
+                                                        <div style={{ color: '#666', fontSize: '0.75rem' }}>{new Date(p.createdAt?.seconds * 1000).toLocaleDateString()}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={() => setShowLinkSelector(false)} style={{ marginTop: '1rem', width: '100%', padding: '0.8rem', background: '#333', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
+                    {/* Film Options Panel (Image Mode Only) */}
+                    {postType === 'image' && (
+                        <FilmOptionsPanel
+                            filmMetadata={filmMetadata}
+                            setFilmMetadata={setFilmMetadata}
+                            enableQuartzDate={enableQuartzDate}
+                            setEnableQuartzDate={setEnableQuartzDate}
+                            quartzDateString={quartzDateString}
+                            setQuartzDateString={setQuartzDateString}
+                            quartzColor={quartzColor}
+                            setQuartzColor={setQuartzColor}
+                            quartzDateFormat={quartzDateFormat}
+                            setQuartzDateFormat={setQuartzDateFormat}
+                            enableSprocketOverlay={enableSprocketOverlay}
+                            setEnableSprocketOverlay={handleSprocketToggle}
+                            enableInstantPhotoOverlay={enableInstantPhotoOverlay}
+                            setEnableInstantPhotoOverlay={handleInstantPhotoToggle}
+                            instantPhotoStyle={instantPhotoStyle}
+                            setInstantPhotoStyle={setInstantPhotoStyle}
+                        />
+                    )}
                     {/* Rating System Toggle */}
                     <RatingSystemSelector
                         enableRatings={enableRatings}

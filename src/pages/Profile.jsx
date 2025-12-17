@@ -23,7 +23,7 @@ import WalletModal from '@/components/WalletModal';
 import UpgradeModal from '@/components/monetization/AddFundsModal';
 import DisciplinesModal from '@/components/DisciplinesModal';
 import { getUnreadCount } from '@/services/notificationService';
-import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette, FaStar, FaStore } from 'react-icons/fa';
+import { FaPlus, FaLayerGroup, FaTh, FaShoppingBag, FaRocket, FaCheck, FaCog, FaIdBadge, FaFlag, FaBan, FaUserPlus, FaImage, FaWallet, FaPalette, FaStar, FaStore, FaAlignLeft } from 'react-icons/fa';
 import FollowListModal from '@/components/FollowListModal';
 import { getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { isFeatureEnabled } from '@/config/featureFlags';
@@ -76,7 +76,16 @@ const Profile = () => {
     const [showDisciplinesModal, setShowDisciplinesModal] = useState(false);
     const [showFollowList, setShowFollowList] = useState(false);
     const [followListType, setFollowListType] = useState('followers');
-    const { currentFeed: feedType, toggleFeed } = useFeedStore();
+
+    const { currentFeed: feedType, toggleFeed, profileDefault, switchToFeed } = useFeedStore();
+
+    // Enforce default profile feed type on mount
+    React.useEffect(() => {
+        if (profileDefault) {
+            switchToFeed(profileDefault);
+        }
+    }, []);
+
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showWalletModal, setShowWalletModal] = useState(false);
     const [showProfilePopout, setShowProfilePopout] = useState(false);
@@ -88,6 +97,7 @@ const Profile = () => {
     const {
         user,
         posts,
+        textPosts,
         shopItems,
         spaceCards,
         badges,
@@ -676,15 +686,7 @@ const Profile = () => {
                                         </div>
 
                                         {/* Actions Section */}
-                                        {!isOwnProfile && (
-                                            <div>
-                                                <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.5px', color: user.profileTheme?.usernameColor }}>Actions</h4>
-                                                <div onClick={() => { setShowCommissionModal(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <FaRocket size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
-                                                    <span style={{ fontSize: '0.9rem' }}>Commission</span>
-                                                </div>
-                                            </div>
-                                        )}
+
                                     </div>
                                 </>
                             )}
@@ -794,6 +796,7 @@ const Profile = () => {
                 }}>
                     {[
                         { id: 'posts', label: t('tab.posts'), icon: FaTh, enabled: true },
+                        { id: 'writings', label: 'Writings', icon: FaAlignLeft, enabled: true },
                         { id: 'collections', label: 'Collections', icon: FaLayerGroup, enabled: isFeatureEnabled('COLLECTIONS') },
                         { id: 'shop', label: t('tab.shop'), icon: FaShoppingBag, enabled: true },
                         { id: 'gallery', label: t('tab.galleries'), icon: FaImage, enabled: isFeatureEnabled('GALLERIES') },
@@ -845,7 +848,13 @@ const Profile = () => {
                         return (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
+                                onClick={() => {
+                                    if (tab.id === 'posts' && activeTab === 'posts') {
+                                        toggleFeed();
+                                    } else {
+                                        setActiveTab(tab.id);
+                                    }
+                                }}
                                 style={{
                                     flex: '0 0 auto',
                                     height: isMobile ? '1.5rem' : '2rem', // Match username height (1.5rem)
@@ -951,6 +960,81 @@ const Profile = () => {
                                 </div>
                             )}
                         />
+                    </>
+                )}
+
+                {/* Writings Tab - Text Posts Only */}
+                {activeTab === 'writings' && (
+                    <>
+                        {(!textPosts || textPosts.length === 0) ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '3rem 1rem',
+                                color: '#888'
+                            }}>
+                                <FaAlignLeft size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No writings yet</p>
+                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Text posts will appear here</p>
+                            </div>
+                        ) : (
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '1rem',
+                                maxWidth: '600px',
+                                margin: '0 auto'
+                            }}>
+                                {textPosts.map((post, index) => (
+                                    <div
+                                        key={post.id}
+                                        onClick={() => navigate(`/post/${post.id}`)}
+                                        style={{
+                                            background: '#111',
+                                            borderRadius: '12px',
+                                            padding: '1.5rem',
+                                            cursor: 'pointer',
+                                            border: '1px solid #222',
+                                            transition: 'border-color 0.2s'
+                                        }}
+                                    >
+                                        {post.title && (
+                                            <h3 style={{
+                                                margin: '0 0 0.75rem 0',
+                                                fontSize: '1.2rem',
+                                                fontWeight: '600',
+                                                color: '#fff'
+                                            }}>
+                                                {post.title}
+                                            </h3>
+                                        )}
+                                        {post.body && (
+                                            <p style={{
+                                                margin: 0,
+                                                color: '#aaa',
+                                                fontSize: '0.95rem',
+                                                lineHeight: '1.6',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden'
+                                            }}>
+                                                {post.body}
+                                            </p>
+                                        )}
+                                        {post.linkedPostIds?.length > 0 && (
+                                            <div style={{
+                                                marginTop: '0.75rem',
+                                                fontSize: '0.8rem',
+                                                color: '#7FFFD4',
+                                                opacity: 0.8
+                                            }}>
+                                                {post.linkedPostIds.length} linked post{post.linkedPostIds.length > 1 ? 's' : ''}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </>
                 )}
 

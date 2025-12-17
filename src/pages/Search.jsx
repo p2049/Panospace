@@ -16,6 +16,7 @@ import SearchFilters from '@/components/search/SearchFilters';
 import SearchResults from '@/components/search/SearchResults';
 import { convertSearchInput } from '@/utils/convertSearchInput';
 import { filterVisiblePosts, filterVisibleItems, filterVisibleUsers } from '@/core/utils/filterHelpers';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
 
 
@@ -134,12 +135,13 @@ const Search = () => {
             setSelectedMuseum(null);
         }
     }, [searchParams]);
+    const { searchDefault } = useFeedStore();
     const [selectedCamera, setSelectedCamera] = useState(null);
     const [selectedFilm, setSelectedFilm] = useState(null);
     const [selectedOrientation, setSelectedOrientation] = useState(null);
     const [selectedAspectRatio, setSelectedAspectRatio] = useState(null);
     const [sortBy, setSortBy] = useState('newest');
-    const [searchMode, setSearchMode] = useState('art'); // Phase 3: Search Mode State ('art' | 'social')
+    const [searchMode, setSearchMode] = useState(searchDefault || 'social'); // Phase 3: Search Mode State ('art' | 'social')
     const [isMarketplaceMode, setIsMarketplaceMode] = useState(false); // NEW: Marketplace Toggle
 
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'

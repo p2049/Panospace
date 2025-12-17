@@ -207,10 +207,11 @@ PRINTFUL_API_KEY=your_printful_key
 # Start Firebase emulators (recommended)
 firebase emulators:start
 
-# In new terminal: Start frontend
+# Start local dev environment (RUNS VERCEL DEV)
+# REQUIRED: Must use this to support API routes /api/*
 npm run dev
 
-# Visit: http://localhost:5173
+# Visit: http://localhost:3000
 ```
 
 ### Production Build:

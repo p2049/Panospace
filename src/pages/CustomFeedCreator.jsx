@@ -15,9 +15,10 @@ const CustomFeedCreator = () => {
     const [locations, setLocations] = useState([]);
     const [locationInput, setLocationInput] = useState('');
     const [orientation, setOrientation] = useState('any'); // any, portrait, landscape
+    const [humorSetting, setHumorSetting] = useState('any'); // any, hide, only
     const [includeGlobal, setIncludeGlobal] = useState(true);
     const [includeFollowing, setIncludeFollowing] = useState(true);
-    const [selectedColors, setSelectedColors] = useState([]);
+
 
     // Tag Panel State
     const [expandedCategories, setExpandedCategories] = useState({
@@ -54,13 +55,7 @@ const CustomFeedCreator = () => {
         setLocations(locations.filter(l => l !== loc));
     };
 
-    const toggleColor = (color) => {
-        if (selectedColors.includes(color)) {
-            setSelectedColors(selectedColors.filter(c => c !== color));
-        } else {
-            setSelectedColors([...selectedColors, color]);
-        }
-    };
+
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -75,9 +70,9 @@ const CustomFeedCreator = () => {
                 tags,
                 locations,
                 orientation,
+                humorSetting,
                 includeGlobal,
-                includeFollowing,
-                colorFilters: selectedColors
+                includeFollowing
             });
             navigate('/custom-feeds');
         } catch (error) {
@@ -88,10 +83,7 @@ const CustomFeedCreator = () => {
     };
 
     // Simple color palette for selection
-    const availableColors = [
-        '#FF0000', '#FFA500', '#FFFF00', '#008000', '#0000FF', '#4B0082', '#EE82EE', // Rainbow
-        '#FFFFFF', '#000000', '#808080', '#A52A2A', '#FFC0CB', '#40E0D0' // Others
-    ];
+
 
     return (
         <div style={{
@@ -235,36 +227,62 @@ const CustomFeedCreator = () => {
                     </div>
                 </div>
 
-                {/* Colors */}
+                {/* Content Filters (Humor) */}
                 <div style={sectionStyle}>
-                    <h3 style={sectionHeaderStyle}>Color Filter</h3>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                        {availableColors.map(color => {
-                            const isSelected = selectedColors.includes(color);
-                            return (
-                                <button
-                                    key={color}
-                                    onClick={() => toggleColor(color)}
-                                    style={{
-                                        width: '32px',
-                                        height: '32px',
-                                        borderRadius: '50%',
-                                        background: color,
-                                        border: isSelected ? '2px solid #fff' : '2px solid transparent',
-                                        cursor: 'pointer',
-                                        boxShadow: isSelected ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
-                                        position: 'relative',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    {isSelected && <FaCheck size={12} color={['#FFFFFF', '#FFFF00', '#40E0D0', '#FFC0CB'].includes(color) ? '#000' : '#fff'} />}
-                                </button>
-                            );
-                        })}
+                    <h3 style={sectionHeaderStyle}>Content Types</h3>
+                    <div style={{ display: 'flex', gap: '0.5rem', background: '#000', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <button
+                            onClick={() => setHumorSetting('any')}
+                            style={{
+                                flex: 1,
+                                padding: '0.6rem',
+                                background: humorSetting === 'any' ? 'rgba(110, 255, 216, 0.15)' : 'transparent',
+                                color: humorSetting === 'any' ? '#7FFFD4' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            Mixed
+                        </button>
+                        <button
+                            onClick={() => setHumorSetting('hide')}
+                            style={{
+                                flex: 1,
+                                padding: '0.6rem',
+                                background: humorSetting === 'hide' ? 'rgba(255, 92, 138, 0.15)' : 'transparent',
+                                color: humorSetting === 'hide' ? '#FF5C8A' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            No Humor
+                        </button>
+                        <button
+                            onClick={() => setHumorSetting('only')}
+                            style={{
+                                flex: 1,
+                                padding: '0.6rem',
+                                background: humorSetting === 'only' ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                color: humorSetting === 'only' ? '#7FFFD4' : 'var(--text-secondary)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            Humor Only
+                        </button>
                     </div>
                 </div>
+
+
 
                 {/* Locations */}
                 <div style={sectionStyle}>

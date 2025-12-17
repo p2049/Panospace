@@ -1,13 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 
-const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4' }) => {
+import BannerColorSelector from './BannerColorSelector';
+
+const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4', bannerColor, onColorSelect }) => {
     const [activeCategory, setActiveCategory] = useState('City');
 
     const getCategory = (id) => {
         if (id.startsWith('city') || id === 'panospace_beyond') return 'City';
         if (id.startsWith('ocean') || id === 'underwaterY2K') return 'Ocean';
-        if (['stars', 'nebula', 'orbital'].includes(id)) return 'Cosmic';
+        if (['stars', 'nebula', 'orbital', 'cosmic-earth', 'planet', 'ice-planet', 'northern-lights'].includes(id)) return 'Cosmic';
         return 'Abstract';
     };
 
@@ -30,6 +32,8 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
         }
         return color; // Return raw if not hex (e.g. gradient string unlikely but safe fallback)
     };
+
+    const selectedThemeDef = BANNER_TYPES.find(t => t.id === selectedType);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -142,6 +146,17 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                     );
                 })}
             </div>
+
+            {/* Embedded Color Selector for Supported Themes */}
+            {selectedThemeDef?.needsColor && (
+                <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+
+                    <BannerColorSelector
+                        selectedColor={bannerColor}
+                        onSelect={onColorSelect}
+                    />
+                </div>
+            )}
         </div>
     );
 };

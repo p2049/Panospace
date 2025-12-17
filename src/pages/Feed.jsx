@@ -12,6 +12,8 @@ import { filterVisiblePosts } from '@/core/utils/filterHelpers';
 import { useToast } from '@/context/ToastContext';
 import { useFeedStore } from '@/core/store/useFeedStore';
 import VirtualizedPostContainer from '@/components/feed/VirtualizedPostContainer';
+import ListViewContainer from '@/components/feed/ListViewContainer';
+import FeedViewMenu from '@/components/feed/FeedViewMenu';
 
 // Feed component - Main home feed view
 const Feed = () => {
@@ -19,12 +21,32 @@ const Feed = () => {
     const { showToast } = useToast();
     const scrollContainerRef = useRef(null);
     const location = useLocation();
-    const lastScrollPositionRef = useRef(0);
-    const isRestoringScrollRef = useRef(false);
 
-    // Pass currentFeed to hook if dual feeds enabled
-    const { currentFeed, followingOnly, customFeedEnabled, activeCustomFeedId } = useFeedStore();
+    // Feed State
+    const {
+        currentFeed,
+        followingOnly,
+        customFeedEnabled,
+        activeCustomFeedId,
+        feedDefault,
+        switchToFeed,
+        setFollowingOnly,
+        feedViewMode,
+        setFeedViewMode
+    } = useFeedStore();
+
     const showSocialPosts = currentFeed === 'social';
+
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [menuConfig, setMenuConfig] = useState(null);
+    const longPressTimerRef = useRef(null);
+
+    // Enforce default feed type on mount
+    useEffect(() => {
+        if (feedDefault) {
+            switchToFeed(feedDefault);
+        }
+    }, []); // Run once on mount
 
     const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed(
         'HOME',
@@ -47,13 +69,19 @@ const Feed = () => {
     }, [rawBlockedUsers]);
 
     const navigate = useNavigate();
-    const { setFollowingOnly } = useFeedStore(); // Needed for switch button
 
     // Filter out blocked content - memoized to prevent re-renders
     // STABILITY: Ensure posts is always an array
     const visiblePosts = React.useMemo(() =>
         filterVisiblePosts(posts || [], blockedUsers),
         [posts, blockedUsers]
+    );
+
+    // Filter for image feed only - excludes text posts (postType === 'text')
+    // Legacy posts without postType field are included (they are image posts)
+    const imageOnlyPosts = React.useMemo(() =>
+        visiblePosts.filter(p => p.postType !== 'text'),
+        [visiblePosts]
     );
 
     // Scroll behavior: Always start at top
@@ -66,17 +94,74 @@ const Feed = () => {
         }
     }, [location.pathname]); // Run on navigation to this page
 
+    // --- VIEW MODE INTERACTION LOGIC ---
+
+    const isSafeTarget = (target) => {
+        // Exclude interactive elements and media
+        if (target.tagName === 'IMG' || target.tagName === 'VIDEO') return false;
+        if (target.closest('a, button, input, textarea, .interactive')) return false;
+        return true;
+    };
+
+    const handleContextMenu = (e) => {
+        // Desktop Right Click
+        if (isSafeTarget(e.target)) {
+            e.preventDefault();
+            setMenuConfig({ x: e.clientX, y: e.clientY, isMobile: false });
+        }
+    };
+
+    const handleTouchStart = (e) => {
+        if (!isSafeTarget(e.target)) return;
+        // Start long press timer
+        longPressTimerRef.current = setTimeout(() => {
+            // Trigger Mobile Menu
+            if (navigator.vibrate) navigator.vibrate(50);
+            setMenuConfig({ isMobile: true });
+        }, 500);
+    };
+
+    const handleTouchCancel = () => {
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
+
+    // Keyboard Shortcut 'V'
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (
+                e.key.toLowerCase() === 'v' &&
+                !e.metaKey && !e.ctrlKey && !e.altKey && // No modifiers
+                document.activeElement.tagName !== 'INPUT' &&
+                document.activeElement.tagName !== 'TEXTAREA' &&
+                !document.activeElement.isContentEditable
+            ) {
+                const newMode = feedViewMode === 'image' ? 'list' : 'image';
+                setFeedViewMode(newMode);
+                showToast(`Switched to ${newMode === 'image' ? 'Image Feed' : 'List View'}`);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [feedViewMode, setFeedViewMode, showToast]);
+
     return (
-        <div style={{
-            height: '100vh',
-            width: '100vw',
-            background: '#000',
-            overflow: 'hidden',
-            position: 'relative',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            WebkitTouchCallout: 'none'
-        }}>
+        <div
+            style={{
+                height: '100vh',
+                width: '100vw',
+                background: '#000',
+                overflow: 'hidden',
+                position: 'relative',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitTouchCallout: 'none'
+            }}
+            onContextMenu={handleContextMenu}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchCancel}
+            onTouchMove={handleTouchCancel}
+        >
             <SEO title="Home" description="Your personalized feed of amazing art and photography." />
 
             {/* Deep Space Background - Only show when empty */}
@@ -242,29 +327,66 @@ const Feed = () => {
                             }
                         `}
                     </style>
-                    <div
-                        style={{
-                            height: '100%',
-                            background: '#000' // Ensure background is black specifically for the container
-                        }}
-                    >
-                        <VirtualizedPostContainer
+
+                    {/* Render Container Based on Mode */}
+                    {feedViewMode === 'image' ? (
+                        <div
+                            style={{
+                                height: '100%',
+                                background: '#000'
+                            }}
+                        >
+                            <VirtualizedPostContainer
+                                posts={imageOnlyPosts}
+                                initialIndex={activeIndex}
+                                onIndexChange={setActiveIndex}
+                                onRefresh={refresh}
+                                renderPost={(post, index, isCurrent) => (
+                                    <Post
+                                        post={post}
+                                        contextPosts={imageOnlyPosts}
+                                        viewMode="image"
+                                        displayMode="feed"
+                                        priority={isCurrent ? 'high' : 'normal'}
+                                    />
+                                )}
+                            />
+                        </div>
+                    ) : (
+                        <ListViewContainer
                             posts={visiblePosts}
-                            initialIndex={0}
+                            initialIndex={activeIndex}
+                            onIndexChange={setActiveIndex}
+                            onRefresh={refresh}
                             renderPost={(post, index, isCurrent) => (
                                 <Post
                                     post={post}
+                                    contextPosts={visiblePosts}
+                                    viewMode="list"
                                     displayMode="feed"
                                     priority={isCurrent ? 'high' : 'normal'}
+                                    onClick={() => {
+                                        setActiveIndex(index);
+                                        setFeedViewMode('image');
+                                        showToast('Switched to Image Feed');
+                                    }}
                                 />
                             )}
                         />
-                    </div>
+                    )}
                 </>
+            )}
+
+            {/* View Mode Menu */}
+            {menuConfig && (
+                <FeedViewMenu
+                    anchorPoint={menuConfig}
+                    isMobile={menuConfig.isMobile}
+                    onClose={() => setMenuConfig(null)}
+                />
             )}
         </div>
     );
 };
-
 
 export default Feed;
