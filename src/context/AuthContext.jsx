@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { auth } from '@/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import AppLoading from '@/components/AppLoading';
+import { migrateUserPosts } from '@/utils/postMigration';
 
 const AuthContext = createContext();
 
@@ -12,6 +13,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const migrationRanRef = useRef(false);
 
     function signup(email, password) {
         return createUserWithEmailAndPassword(auth, email, password);
@@ -36,6 +38,15 @@ export const AuthProvider = ({ children }) => {
             // AuthContext: onAuthStateChanged fired
             setCurrentUser(user);
             setLoading(false);
+
+            // Run one-time migration for user's posts
+            if (user && !migrationRanRef.current) {
+                migrationRanRef.current = true;
+                // Run in background, don't await
+                migrateUserPosts(user.uid).catch(err => {
+                    console.error('[AuthContext] Post migration failed:', err);
+                });
+            }
         }, (error) => {
             console.error("AuthContext: Auth error", error);
             setLoading(false);
@@ -73,3 +84,4 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
