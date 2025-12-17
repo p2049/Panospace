@@ -164,11 +164,10 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
 
             const cacheKey = `${activeTab}_${feedType}`;
 
-            // CACHE HIT: Tab Data
-            if (PROFILE_CACHE[userId]?.tabs?.[cacheKey]) {
+            // CACHE HIT: Tab Data (DISABLED for posts/writings to ensure postType filtering works)
+            // Only cache shop and cards, not posts or writings
+            if ((activeTab === 'shop' || activeTab === 'cards') && PROFILE_CACHE[userId]?.tabs?.[cacheKey]) {
                 const cached = PROFILE_CACHE[userId].tabs[cacheKey];
-                if (activeTab === 'posts') setPosts(cached);
-                if (activeTab === 'writings') setTextPosts(cached);
                 if (activeTab === 'shop') setShopItems(cached);
                 if (activeTab === 'cards') setSpaceCards(cached);
                 return;
@@ -204,8 +203,12 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                                 // 3. Exclude text posts from posts grid - they go to Writings tab
                                 const isNotTextPost = post.postType !== 'text';
 
+                                // Debug logging
+                                if (post.postType === 'text') {
+                                    logger.log(`[useProfile] Filtered out TEXT post: ${post.id}, postType=${post.postType}`);
+                                }
+
                                 if (!matchesType) logger.log(`[useProfile] Filtered out post ${post.id}: wrong type (${postType} != ${feedType})`);
-                                // if (!notHidden) console.log(`[useProfile] Filtered out post ${post.id}: hidden from profile`);
 
                                 return matchesType && notHidden && isNotTextPost;
                             });
