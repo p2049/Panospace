@@ -33,8 +33,10 @@ import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
 import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft } from 'react-icons/fa';
 import Post from '@/components/Post';
-import { extractDominantHue } from '@/core/utils/colorUtils';
+import { extractDominantHue, fadeColor } from '@/core/utils/colorUtils';
+import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
 import { generateStackPreview } from '@/core/utils/stackUtils';
+import { useTextEditor, EditorToolbar, EditorCanvas } from '@/components/create-post/RichTextEditor';
 import { logger } from '@/core/utils/logger';
 import { validateImageSize, getMaxImageSizeMB, formatFileSizeMB, getMaxImageSize } from '@/core/constants/imageLimits';
 import { scaleImageToFit } from '@/core/utils/imageScaler';
@@ -44,13 +46,23 @@ import { scaleImageToFit } from '@/core/utils/imageScaler';
 
 
 
-const WRITER_THEMES = {
-    default: { name: 'Default', bg: '#121212', text: '#ffffff', border: '1px solid #333' },
-    paper: { name: 'Paper', bg: '#fdfbf7', text: '#2a2a2a', border: '1px solid #e0d0b0' },
-    night: { name: 'Night', bg: '#050510', text: '#e0e0ff', border: '1px solid #2a2a40' },
-    mono: { name: 'Mono', bg: '#ffffff', text: '#000000', border: '1px solid #ccc' },
-    aurora: { name: 'Aurora', bg: '#002b36', text: '#eee8d5', border: '1px solid #073642' }
+const BASE_WRITER_THEMES = {
+    default: { id: 'default', name: 'Obsidian', bg: 'rgba(20, 20, 20, 0.6)', text: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' },
 };
+
+const WRITER_THEMES = { ...BASE_WRITER_THEMES };
+
+// Hydrate from Color Packs
+FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
+    WRITER_THEMES[colorOption.id] = {
+        id: colorOption.id,
+        name: colorOption.name,
+        bg: colorOption.isGradient ? colorOption.color : fadeColor(colorOption.color, 0.20),
+        text: colorOption.color,
+        border: colorOption.isGradient ? 'none' : `1px solid ${fadeColor(colorOption.color, 0.4)}`,
+        isGradient: colorOption.isGradient || false
+    };
+});
 
 const StackThumbnail = ({ file }) => {
     const [src, setSrc] = useState(null);
@@ -97,9 +109,23 @@ const CreatePost = () => {
     const [tags, setTags] = useState([]);
     const [location, setLocation] = useState({ city: '', state: '', country: '' });
     const [primaryMode, setPrimaryMode] = useState(createDefault || 'social'); // Was postType (social/art)
-    const [postType, setPostType] = useState('image'); // 'image' | 'text'
+    const [postType, setPostType] = useState('image');
     const [textContent, setTextContent] = useState('');
+    const [bodyRichText, setBodyRichText] = useState(null);
+    const [fontStyle, setFontStyle] = useState('modern');
+
+    // Initialize Rich Text Editor (Always active to persist state switch)
+    const editor = useTextEditor({
+        content: null, // Initial only
+        placeholder: "Write your story...",
+        limit: 3000,
+        onChange: (json, text) => {
+            setBodyRichText(json);
+            setTextContent(text);
+        }
+    });
     const [writerTheme, setWriterTheme] = useState('default'); // 'default' | 'paper' | 'night' | 'mono' | 'aurora'
+    const [writerTextColor, setWriterTextColor] = useState(null); // Custom text color override
     const [linkedPostIds, setLinkedPostIds] = useState([]);
     const [showLinkSelector, setShowLinkSelector] = useState(false);
     const [userPosts, setUserPosts] = useState([]); // For link selector
@@ -705,7 +731,10 @@ const CreatePost = () => {
                 gradientColor: (postType === 'image' && slides.length === 1 && extractedColor) ? extractedColor : null,
                 // Text specific
                 body: postType === 'text' ? textContent : null,
+                bodyRichText: postType === 'text' ? bodyRichText : null,
+                fontStyle: postType === 'text' ? fontStyle : null,
                 writerTheme: postType === 'text' ? writerTheme : null,
+                writerTextColor: postType === 'text' && writerTextColor ? writerTextColor : null,
                 linkedPostIds: postType === 'text' ? linkedPostIds : null,
             }, postType === 'image' ? processedSlides : []);
 
@@ -1015,77 +1044,102 @@ const CreatePost = () => {
                     {/* TEXT COMPOSER */}
                     {postType === 'text' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
-                            {/* Theme Selector */}
-                            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                                {Object.entries(WRITER_THEMES).map(([key, theme]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setWriterTheme(key)}
-                                        style={{
-                                            width: '32px',
-                                            height: '32px',
-                                            borderRadius: '50%',
-                                            background: theme.bg,
-                                            border: writerTheme === key ? '2px solid #7FFFD4' : '1px solid #555',
-                                            cursor: 'pointer',
-                                            flexShrink: 0
-                                        }}
-                                        title={theme.name}
-                                    />
-                                ))}
-                            </div>
-
-                            {/* Writer Canvas */}
+                            {/* Color & Theme Editor (Organized) */}
                             <div style={{
-                                flex: 1,
-                                background: WRITER_THEMES[writerTheme].bg,
-                                border: WRITER_THEMES[writerTheme].border,
+                                padding: '1.5rem',
+                                border: '1px solid rgba(127, 255, 212, 0.1)',
                                 borderRadius: '12px',
-                                padding: '2rem',
+                                background: 'rgba(20, 20, 20, 0.3)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '1rem',
-                                minHeight: '400px',
-                                transition: 'all 0.3s ease'
+                                gap: '2rem'
                             }}>
-                                <input
-                                    type="text"
-                                    placeholder="Title (Optional)"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        fontSize: '1.8rem',
-                                        fontWeight: '800',
-                                        color: WRITER_THEMES[writerTheme].text,
-                                        fontFamily: '"Rajdhani", sans-serif',
-                                        width: '100%',
-                                        outline: 'none'
-                                    }}
-                                />
-                                <textarea
-                                    placeholder="Write your story..."
-                                    value={textContent}
-                                    onChange={(e) => setTextContent(e.target.value)}
-                                    style={{
-                                        flex: 1,
-                                        background: 'transparent',
-                                        border: 'none',
-                                        resize: 'none',
-                                        fontSize: '1.1rem',
-                                        lineHeight: '1.6',
-                                        color: WRITER_THEMES[writerTheme].text,
-                                        fontFamily: 'var(--font-family-body)',
-                                        outline: 'none',
-                                        minHeight: '300px'
-                                    }}
-                                />
+                                {/* Font selection removed per user request */}
+
+                                {/* Theme Section */}
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#e0e0e0', letterSpacing: '0.5px' }}>CARD THEME</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.8rem' }}>
+                                        {Object.entries(WRITER_THEMES)
+                                            .filter(([key]) => key !== 'default')
+                                            .map(([key, theme]) => (
+                                                <button
+                                                    key={key}
+                                                    onClick={() => setWriterTheme(key)}
+                                                    style={{
+                                                        width: '100%',
+                                                        aspectRatio: '3/4',
+                                                        borderRadius: '8px',
+                                                        background: theme.bg,
+                                                        border: writerTheme === key ? '2px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                                        cursor: 'pointer',
+                                                        boxShadow: writerTheme === key ? '0 0 12px rgba(127, 255, 212, 0.3)' : 'none',
+                                                        transition: 'all 0.2s',
+                                                        position: 'relative'
+                                                    }}
+                                                    title={theme.name}
+                                                >
+                                                    {writerTheme === key && (
+                                                        <div style={{
+                                                            position: 'absolute', inset: 0,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            background: 'rgba(0,0,0,0.4)', borderRadius: '6px'
+                                                        }}>
+                                                            <FaCheckCircle size={16} color="#7FFFD4" />
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                    </div>
+                                </div>
+
+                                {/* Text Color Section */}
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#e0e0e0', letterSpacing: '0.5px' }}>TEXT COLOR</span>
+                                        {writerTextColor && (
+                                            <button
+                                                onClick={() => setWriterTextColor(null)}
+                                                style={{ fontSize: '0.75rem', color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                                            >
+                                                Reset Default
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.8rem', justifyItems: 'center' }}>
+                                        {FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').map(option => (
+                                            <button
+                                                key={option.id}
+                                                onClick={() => setWriterTextColor(option.color)}
+                                                style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '50%',
+                                                    background: option.color,
+                                                    border: (writerTextColor === option.color) ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
+                                                    cursor: 'pointer',
+                                                    transform: (writerTextColor === option.color) ? 'scale(1.1)' : 'scale(1)',
+                                                    boxShadow: (writerTextColor === option.color) ? '0 0 10px rgba(255,255,255,0.3)' : 'none',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                title={option.name}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
 
-                            <p style={{ fontSize: '0.8rem', color: '#666', textAlign: 'center' }}>
-                                Text posts appear in List View. Linked posts appear in the post info panel.
-                            </p>
+                            {/* Tags (Below Colors) */}
+                            <div style={{ marginTop: '0.5rem' }}>
+                                <TagCategoryPanel
+                                    tags={tags}
+                                    handleTagToggle={handleTagToggle}
+                                    expandedCategories={expandedCategories}
+                                    toggleCategory={toggleCategory}
+                                />
+                            </div>
                         </div>
                     )}
 
@@ -1441,6 +1495,54 @@ const CreatePost = () => {
 
                 {/* RIGHT COLUMN: Post Details & Settings */}
                 <div className="form-column">
+                    {/* Text Post Live Preview (Moved to Right) */}
+                    {postType === 'text' && (
+                        <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s ease' }}>
+                            <div style={{
+                                background: WRITER_THEMES[writerTheme].bg,
+                                border: WRITER_THEMES[writerTheme].border,
+                                borderRadius: '12px',
+                                padding: '0', // Removed padding here, will be applied to inner divs
+                                transition: 'all 0.3s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                position: 'relative' // For toolbar positioning
+                            }}>
+                                {/* Toolbar (Only for Text Mode) */}
+                                {editor && <EditorToolbar editor={editor} />}
+
+                                {/* Meta Header Sim - Padded to not overlap toolbar? No, Toolbar is sticky/block above */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', marginBottom: '0.8rem', color: writerTextColor || WRITER_THEMES[writerTheme].text, padding: '0 1.5rem' }}>
+                                    <span>{currentUser?.displayName || 'Writer'}</span>
+                                    <span>Just Now</span>
+                                </div>
+
+                                <div style={{ padding: '0 1.5rem 1.5rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="TITLE"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            fontSize: '1.4rem',
+                                            fontWeight: '700',
+                                            fontFamily: '"Rajdhani", sans-serif',
+                                            lineHeight: 1.2,
+                                            textTransform: 'uppercase',
+                                            color: writerTextColor || WRITER_THEMES[writerTheme].text,
+                                            width: '100%',
+                                            outline: 'none',
+                                            marginBottom: '0.8rem'
+                                        }}
+                                    />
+                                    <EditorCanvas editor={editor} fontStyle={fontStyle} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="form-section" style={{
                         padding: '0.75rem 0.75rem 0.75rem',
                         border: '1px solid rgba(127, 255, 212, 0.15)',
@@ -1453,66 +1555,69 @@ const CreatePost = () => {
                         `}</style>
 
                         {/* Post Type Toggle */}
-                        <div className="post-type-toggle desktop-only-post-type" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-                            <span style={{ marginRight: '0.75rem', fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa' }}>
-                                POST TYPE:
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setPostType("art")}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    marginRight: '0.5rem',
-                                    borderRadius: '6px',
-                                    border: postType === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                    background: postType === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                    color: postType === "art" ? '#7FFFD4' : '#888',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
-                                }}
-                            >
-                                Art
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPostType("social")}
-                                style={{
-                                    padding: '0.4rem 0.8rem',
-                                    borderRadius: '6px',
-                                    border: postType === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                    background: postType === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                    color: postType === "social" ? '#7FFFD4' : '#888',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
-                                }}
-                            >
-                                Social
-                            </button>
-                            {/* Humor Checkbox (Desktop) */}
-                            <label title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={isHumor}
-                                    onChange={(e) => setIsHumor(e.target.checked)}
-                                    style={{ accentColor: '#7FFFD4', transform: 'scale(1.1)', cursor: 'pointer' }}
-                                />
-                                Humor
-                            </label>
-                        </div>
+                        {/* Post Type Toggle */}
+                        {postType !== 'text' && (
+                            <div className="post-type-toggle desktop-only-post-type" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                                <span style={{ marginRight: '0.75rem', fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa' }}>
+                                    POST TYPE:
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setPostType("art")}
+                                    style={{
+                                        padding: '0.4rem 0.8rem',
+                                        marginRight: '0.5rem',
+                                        borderRadius: '6px',
+                                        border: postType === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                        background: postType === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                        color: postType === "art" ? '#7FFFD4' : '#888',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem'
+                                    }}
+                                >
+                                    Art
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setPostType("social")}
+                                    style={{
+                                        padding: '0.4rem 0.8rem',
+                                        borderRadius: '6px',
+                                        border: postType === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                        background: postType === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                        color: postType === "social" ? '#7FFFD4' : '#888',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem'
+                                    }}
+                                >
+                                    Social
+                                </button>
+                                {/* Humor Checkbox (Desktop) */}
+                                <label title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isHumor}
+                                        onChange={(e) => setIsHumor(e.target.checked)}
+                                        style={{ accentColor: '#7FFFD4', transform: 'scale(1.1)', cursor: 'pointer' }}
+                                    />
+                                    Humor
+                                </label>
+                            </div>
+                        )}
 
                         {/* Cinematic Background Toggle (Single Photo Only) */}
                         {slides.length === 1 && extractedColor && (
@@ -1589,81 +1694,85 @@ const CreatePost = () => {
                             </div>
                         )}
 
-                        <div className="desktop-only-title" style={{ marginBottom: '0.5rem', position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <input
-                                    type="text"
-                                    placeholder="Title your post"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    className="form-input"
-                                    style={{
-                                        fontSize: '0.95rem',
-                                        fontWeight: '500',
-                                        border: 'none',
-                                        borderBottom: '1px solid #333',
-                                        borderRadius: 0,
-                                        padding: '0.5rem 0',
-                                        background: 'transparent',
-                                        color: '#7FFFD4',
-                                        transition: 'all 110ms ease-out',
-                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
-                                        flex: 1
-                                    }}
+                        {postType !== 'text' && (
+                            <div className="desktop-only-title" style={{ marginBottom: '0.5rem', position: 'relative' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Title your post"
+                                        value={title}
+                                        onChange={(e) => setTitle(e.target.value)}
+                                        className="form-input"
+                                        style={{
+                                            fontSize: '0.95rem',
+                                            fontWeight: '500',
+                                            border: 'none',
+                                            borderBottom: '1px solid #333',
+                                            borderRadius: 0,
+                                            padding: '0.5rem 0',
+                                            background: 'transparent',
+                                            color: '#7FFFD4',
+                                            transition: 'all 110ms ease-out',
+                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)',
+                                            flex: 1
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '0.5rem',
+                                            color: showEmojiPicker ? '#7FFFD4' : '#666',
+                                            transition: 'color 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <FaSmile size={18} />
+                                    </button>
+                                </div>
+                                <SearchEmojiPicker
+                                    visible={showEmojiPicker}
+                                    onSelect={handleEmojiSelect}
+                                    isMobile={false}
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    style={{
-                                        background: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        padding: '0.5rem',
-                                        color: showEmojiPicker ? '#7FFFD4' : '#666',
-                                        transition: 'color 0.2s',
-                                        display: 'flex',
-                                        alignItems: 'center'
-                                    }}
-                                >
-                                    <FaSmile size={18} />
-                                </button>
                             </div>
-                            <SearchEmojiPicker
-                                visible={showEmojiPicker}
-                                onSelect={handleEmojiSelect}
-                                isMobile={false}
-                            />
-                        </div>
+                        )}
 
                         {/* Share Title Toggle */}
-                        <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#aaa' }}>
-                                <style>{`
-                                    input::placeholder {
-                                        color: rgba(255, 255, 255, 0.45);
-                                    }
-                                `}</style>
-                                <div style={{ position: 'relative', width: '36px', height: '18px' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={shareTitleAcrossImages}
-                                        onChange={(e) => setShareTitleAcrossImages(e.target.checked)}
-                                        style={{ opacity: 0, width: 0, height: 0 }}
-                                    />
-                                    <div style={{
-                                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                                        background: shareTitleAcrossImages ? '#7FFFD4' : '#333',
-                                        borderRadius: '18px', transition: '0.3s'
-                                    }}></div>
-                                    <div style={{
-                                        position: 'absolute', top: '2px', left: shareTitleAcrossImages ? '20px' : '2px',
-                                        width: '14px', height: '14px', background: '#fff',
-                                        borderRadius: '50%', transition: '0.3s'
-                                    }}></div>
-                                </div>
-                                Use one title for all photos
-                            </label>
-                        </div>
+                        {postType !== 'text' && (
+                            <div style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#aaa' }}>
+                                    <style>{`
+                                        input::placeholder {
+                                            color: rgba(255, 255, 255, 0.45);
+                                        }
+                                    `}</style>
+                                    <div style={{ position: 'relative', width: '36px', height: '18px' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={shareTitleAcrossImages}
+                                            onChange={(e) => setShareTitleAcrossImages(e.target.checked)}
+                                            style={{ opacity: 0, width: 0, height: 0 }}
+                                        />
+                                        <div style={{
+                                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                            background: shareTitleAcrossImages ? '#7FFFD4' : '#333',
+                                            borderRadius: '18px', transition: '0.3s'
+                                        }}></div>
+                                        <div style={{
+                                            position: 'absolute', top: '2px', left: shareTitleAcrossImages ? '20px' : '2px',
+                                            width: '14px', height: '14px', background: '#fff',
+                                            borderRadius: '50%', transition: '0.3s'
+                                        }}></div>
+                                    </div>
+                                    Use one title for all photos
+                                </label>
+                            </div>
+                        )}
 
                         {/* Collapsible Location Grid */}
                         <div style={{ marginBottom: '1rem' }}>
@@ -1929,67 +2038,69 @@ const CreatePost = () => {
             </div>
 
             {/* FEED PREVIEW OVERLAY */}
-            {showFeedPreview && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100vw',
-                    height: '100dvh', // Dynamic viewport height
-                    background: '#000',
-                    zIndex: 9999,
-                    overflow: 'hidden', // Lock scroll
-                    overscrollBehavior: 'none', // Prevent bounce
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}>
+            {
+                showFeedPreview && (
                     <div style={{
-                        position: 'absolute',
-                        top: 'max(env(safe-area-inset-top), 20px)',
-                        left: '20px',
-                        zIndex: 100,
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100dvh', // Dynamic viewport height
+                        background: '#000',
+                        zIndex: 9999,
+                        overflow: 'hidden', // Lock scroll
+                        overscrollBehavior: 'none', // Prevent bounce
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        pointerEvents: 'auto'
+                        flexDirection: 'column'
                     }}>
-                        <button
-                            onClick={() => setShowFeedPreview(false)}
-                            style={{
-                                background: 'rgba(0,0,0,0.6)',
-                                backdropFilter: 'blur(10px)',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                borderRadius: '50%',
-                                width: '44px',
-                                height: '44px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                fontSize: '1.2rem',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-                            }}
-                        >
-                            <FaArrowLeft />
-                        </button>
-                        <span style={{
-                            color: 'rgba(255,255,255,0.8)',
-                            fontWeight: '600',
-                            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-                            background: 'rgba(0,0,0,0.4)',
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '20px'
+                        <div style={{
+                            position: 'absolute',
+                            top: 'max(env(safe-area-inset-top), 20px)',
+                            left: '20px',
+                            zIndex: 100,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            pointerEvents: 'auto'
                         }}>
-                            Preview Mode
-                        </span>
+                            <button
+                                onClick={() => setShowFeedPreview(false)}
+                                style={{
+                                    background: 'rgba(0,0,0,0.6)',
+                                    backdropFilter: 'blur(10px)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    borderRadius: '50%',
+                                    width: '44px',
+                                    height: '44px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    fontSize: '1.2rem',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                                }}
+                            >
+                                <FaArrowLeft />
+                            </button>
+                            <span style={{
+                                color: 'rgba(255,255,255,0.8)',
+                                fontWeight: '600',
+                                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                                background: 'rgba(0,0,0,0.4)',
+                                padding: '0.4rem 0.8rem',
+                                borderRadius: '20px'
+                            }}>
+                                Preview Mode
+                            </span>
+                        </div>
+                        {/* Render Post with full height/width */}
+                        <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                            <Post post={previewPostData} priority="high" />
+                        </div>
                     </div>
-                    {/* Render Post with full height/width */}
-                    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-                        <Post post={previewPostData} priority="high" />
-                    </div>
-                </div>
-            )}
+                )
+            }
 
             <style>{`
                 @keyframes twinkle {
@@ -2629,7 +2740,7 @@ const CreatePost = () => {
                 onCancel={handleCancelOversized}
                 isScaling={sizeWarningModal.isScaling}
             />
-        </div>
+        </div >
     );
 };
 

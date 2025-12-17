@@ -38,6 +38,8 @@ import { useFeedStore } from '@/core/store/useFeedStore';
 
 import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 import SmartImage from '@/components/SmartImage';
+import ListViewContainer from '@/components/feed/ListViewContainer';
+import Post from '@/components/Post';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 
 
@@ -964,6 +966,7 @@ const Profile = () => {
                 )}
 
                 {/* Writings Tab - Text Posts Only */}
+                {/* Writings Tab - Text Posts Only */}
                 {activeTab === 'writings' && (
                     <>
                         {(!textPosts || textPosts.length === 0) ? (
@@ -977,61 +980,16 @@ const Profile = () => {
                                 <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Text posts will appear here</p>
                             </div>
                         ) : (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '1rem',
-                                maxWidth: '600px',
-                                margin: '0 auto'
-                            }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '4rem', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
                                 {textPosts.map((post, index) => (
-                                    <div
+                                    <Post
                                         key={post.id}
-                                        onClick={() => navigate(`/post/${post.id}`)}
-                                        style={{
-                                            background: '#111',
-                                            borderRadius: '12px',
-                                            padding: '1.5rem',
-                                            cursor: 'pointer',
-                                            border: '1px solid #222',
-                                            transition: 'border-color 0.2s'
-                                        }}
-                                    >
-                                        {post.title && (
-                                            <h3 style={{
-                                                margin: '0 0 0.75rem 0',
-                                                fontSize: '1.2rem',
-                                                fontWeight: '600',
-                                                color: '#fff'
-                                            }}>
-                                                {post.title}
-                                            </h3>
-                                        )}
-                                        {post.body && (
-                                            <p style={{
-                                                margin: 0,
-                                                color: '#aaa',
-                                                fontSize: '0.95rem',
-                                                lineHeight: '1.6',
-                                                display: '-webkit-box',
-                                                WebkitLineClamp: 3,
-                                                WebkitBoxOrient: 'vertical',
-                                                overflow: 'hidden'
-                                            }}>
-                                                {post.body}
-                                            </p>
-                                        )}
-                                        {post.linkedPostIds?.length > 0 && (
-                                            <div style={{
-                                                marginTop: '0.75rem',
-                                                fontSize: '0.8rem',
-                                                color: '#7FFFD4',
-                                                opacity: 0.8
-                                            }}>
-                                                {post.linkedPostIds.length} linked post{post.linkedPostIds.length > 1 ? 's' : ''}
-                                            </div>
-                                        )}
-                                    </div>
+                                        post={post}
+                                        contextPosts={textPosts}
+                                        viewMode="list"
+                                        displayMode="feed"
+                                        priority={index < 3 ? 'high' : 'normal'}
+                                    />
                                 ))}
                             </div>
                         )}

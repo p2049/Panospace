@@ -8,12 +8,14 @@ export interface ColorOption {
 
 export const FREE_COLOR_PACK: ColorOption[] = [
     { id: 'brand-colors', name: 'Rainbow', color: 'brand', isPremium: false, isGradient: true }, // Special: multi-color stars
+
     { id: 'aurora-blue', name: 'Aurora Blue', color: '#7FDBFF', isPremium: false },
     { id: 'ion-blue', name: 'Ion Blue', color: '#1B82FF', isPremium: false },
     { id: 'nebula-pink', name: 'Nebula Pink', color: '#FFB7D5', isPremium: false },
     { id: 'solar-flare-pink', name: 'Solar Flare Pink', color: '#FF5C8A', isPremium: false },
     { id: 'cosmic-periwinkle', name: 'Cosmic Periwinkle', color: '#A7B6FF', isPremium: false },
     { id: 'deep-orbit-purple', name: 'Deep Orbit Purple', color: '#5A3FFF', isPremium: false },
+
     { id: 'ice-white', name: 'Ice White', color: '#F2F7FA', isPremium: false },
     { id: 'event-horizon-black', name: 'Event Horizon Black', color: '#000000', isPremium: false },
     { id: 'stellar-orange', name: 'Stellar Orange', color: '#FF914D', isPremium: false },

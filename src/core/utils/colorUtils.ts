@@ -139,3 +139,25 @@ function hslToHex(h: number, s: number, l: number): string {
 
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
+
+/**
+ * Converts a hex color to rgba with given opacity
+ */
+export const fadeColor = (hex: string, opacity: number): string => {
+    if (!hex) return `rgba(255,255,255,${opacity})`;
+
+    // Check if it's already rgba or gradient
+    if (hex.startsWith('rgba') || hex.startsWith('linear-gradient')) return hex;
+
+    let c: any;
+    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+        c = hex.substring(1).split('');
+        if (c.length === 3) {
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        // @ts-ignore
+        return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + opacity + ')';
+    }
+    return hex;
+}

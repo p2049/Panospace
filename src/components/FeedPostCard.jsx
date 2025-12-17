@@ -1,17 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaImage, FaLink, FaQuoteLeft } from 'react-icons/fa';
+import { fadeColor } from '@/core/utils/colorUtils';
+import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
+import { RichTextRenderer } from '@/components/RichTextRenderer';
 
-const WRITER_THEMES = {
-    default: { name: 'Default', bg: '#121212', text: '#ffffff', border: '1px solid #333' },
-    paper: { name: 'Paper', bg: '#fdfbf7', text: '#2a2a2a', border: '1px solid #e0d0b0' },
-    night: { name: 'Night', bg: '#050510', text: '#e0e0ff', border: '1px solid #2a2a40' },
-    mono: { name: 'Mono', bg: '#ffffff', text: '#000000', border: '1px solid #ccc' },
-    aurora: { name: 'Aurora', bg: '#002b36', text: '#eee8d5', border: '1px solid #073642' }
+const BASE_WRITER_THEMES = {
+    default: { id: 'default', name: 'Obsidian', bg: 'rgba(20, 20, 20, 0.6)', text: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' },
 };
+
+const WRITER_THEMES = { ...BASE_WRITER_THEMES };
+
+// Hydrate from Color Packs
+FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
+    WRITER_THEMES[colorOption.id] = {
+        id: colorOption.id,
+        name: colorOption.name,
+        bg: colorOption.isGradient ? colorOption.color : fadeColor(colorOption.color, 0.20),
+        text: colorOption.color,
+        border: colorOption.isGradient ? 'none' : `1px solid ${fadeColor(colorOption.color, 0.4)}`,
+        isGradient: colorOption.isGradient || false
+    };
+});
 
 const FeedPostCard = ({ post, contextPosts, onClick }) => {
     const navigate = useNavigate();
+    const [isExpanded, setIsExpanded] = useState(false);
 
     // Format date
     const formatDate = (date) => {
@@ -23,6 +37,8 @@ const FeedPostCard = ({ post, contextPosts, onClick }) => {
     // --- TEXT POST RENDERING ---
     if (post.postType === 'text') {
         const theme = WRITER_THEMES[post.writerTheme] || WRITER_THEMES.default;
+        const textColor = post.writerTextColor || theme.text;
+
         return (
             <div
                 onClick={() => {
@@ -42,7 +58,7 @@ const FeedPostCard = ({ post, contextPosts, onClick }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '1rem',
-                    color: theme.text,
+                    color: textColor,
                     position: 'relative',
                     overflow: 'hidden'
                 }}
@@ -70,18 +86,49 @@ const FeedPostCard = ({ post, contextPosts, onClick }) => {
                         </h3>
                     )}
                     <div style={{
-                        fontSize: '1rem',
-                        lineHeight: '1.6',
-                        fontFamily: 'var(--font-family-body)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 10, // Show fair amount, but truncate eventually
-                        WebkitBoxOrient: 'vertical',
+                        position: 'relative',
+                        maxHeight: isExpanded ? 'none' : '300px',
                         overflow: 'hidden',
-                        opacity: 0.9,
-                        whiteSpace: 'pre-line'
+                        maskImage: (!isExpanded) ? 'linear-gradient(to bottom, black 70%, transparent 100%)' : 'none',
+                        WebkitMaskImage: (!isExpanded) ? 'linear-gradient(to bottom, black 70%, transparent 100%)' : 'none',
+                        transition: 'max-height 0.3s ease'
                     }}>
-                        {post.body}
+                        {post.bodyRichText ? (
+                            <RichTextRenderer content={post.bodyRichText} fontStyle={post.fontStyle} />
+                        ) : (
+                            <div style={{
+                                color: '#ffffff',
+                                fontSize: '1rem',
+                                lineHeight: '1.6',
+                                fontFamily: 'var(--font-family-body)', // Legacy font
+                                whiteSpace: 'pre-line',
+                                opacity: 0.9
+                            }}>
+                                {post.body}
+                            </div>
+                        )}
                     </div>
+
+                    {!isExpanded && (
+                        <div style={{ marginTop: '-1rem', position: 'relative', zIndex: 10, textAlign: 'center' }}>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
+                                style={{
+                                    background: 'rgba(255,255,255,0.1)',
+                                    backdropFilter: 'blur(4px)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    color: '#fff',
+                                    padding: '0.4rem 1rem',
+                                    borderRadius: '20px',
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    marginTop: '0.5rem'
+                                }}
+                            >
+                                Read Article
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Linked Post Indicator */}

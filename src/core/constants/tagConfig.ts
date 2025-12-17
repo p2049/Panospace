@@ -235,6 +235,26 @@ export const TIME_TAGS: TagMap = {
 };
 
 // ============================================================================
+// 11. WRITING
+// ============================================================================
+export const WRITING_TAGS: TagMap = {
+    'Genres': [
+        'poetry', 'short-story', 'essay', 'journal', 'review', 'haiku', 'prose',
+        'screenplay', 'mythology', 'scifi-story', 'fantasy-story', 'horror-story',
+        'romance-story', 'flash-fiction', 'micro-fiction'
+    ],
+    'Themes': [
+        'philosophical', 'personal', 'educational', 'satire', 'comedy', 'drama',
+        'melancholy', 'surrealism', 'stream-of-consciousness', 'existential',
+        'romance', 'adventure', 'mystery'
+    ],
+    'Style': [
+        'free-verse', 'rhyming', 'narrative', 'descriptive', 'minimalist-writing',
+        'experimental-writing', 'abstract-writing'
+    ]
+};
+
+// ============================================================================
 // HELPER FUNCTIONS TO FLATTEN SUBCATEGORIES
 // ============================================================================
 
@@ -253,6 +273,7 @@ export const TECHNIQUE_TAGS_FLAT = flattenTags(TECHNIQUE_TAGS);
 export const PORTRAIT_TAGS_FLAT = flattenTags(PORTRAIT_TAGS);
 export const ANIMAL_TAGS_FLAT = flattenTags(ANIMAL_TAGS);
 export const TIME_TAGS_FLAT = flattenTags(TIME_TAGS);
+export const WRITING_TAGS_FLAT = flattenTags(WRITING_TAGS);
 
 // Legacy exports (mapped to new structure)
 export const aestheticTags = AESTHETIC_TAGS_FLAT;
@@ -280,7 +301,8 @@ export const getAllDefaultTags = (): string[] => {
         ...TECHNIQUE_TAGS_FLAT,
         ...PORTRAIT_TAGS_FLAT,
         ...ANIMAL_TAGS_FLAT,
-        ...TIME_TAGS_FLAT
+        ...TIME_TAGS_FLAT,
+        ...WRITING_TAGS_FLAT
     ];
 };
 
@@ -297,7 +319,8 @@ export const getTagsByCategory = (category: string): string[] => {
         'portraits': PORTRAIT_TAGS_FLAT,
         'portrait': PORTRAIT_TAGS_FLAT,
         'animals': ANIMAL_TAGS_FLAT,
-        'time': TIME_TAGS_FLAT
+        'time': TIME_TAGS_FLAT,
+        'writing': WRITING_TAGS_FLAT
     };
 
     return categoryMap[category] || [];
@@ -313,7 +336,8 @@ export const tagCategories = {
     technique: TECHNIQUE_TAGS,
     portraits: PORTRAIT_TAGS,
     animals: ANIMAL_TAGS,
-    time: TIME_TAGS
+    time: TIME_TAGS,
+    writing: WRITING_TAGS
 };
 
 export const ALL_TAGS = getAllDefaultTags();

@@ -619,6 +619,7 @@ export const useCreatePost = () => {
                 // Text Post Fields
                 body: postData.body || null,
                 writerTheme: postData.writerTheme || null,
+                writerTextColor: postData.writerTextColor || null,
                 linkedPostIds: postData.linkedPostIds || [],
             };
 

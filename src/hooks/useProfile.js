@@ -200,17 +200,23 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                                 // 2. Filter showInProfile (TEMPORARILY DISABLED)
                                 const notHidden = true; // post.showInProfile !== false;
 
-                                // 3. Exclude text posts from posts grid - they go to Writings tab
+                                // 3. Exclude text posts AND posts with no images from main grid
+                                // The main grid is for visual content only.
+                                // FIX: Check normalized properties (imageUrl or items), not raw imageUrls
+                                const hasImages = !!post.imageUrl || (post.items && post.items.length > 0);
                                 const isNotTextPost = post.postType !== 'text';
 
                                 // Debug logging
                                 if (post.postType === 'text') {
-                                    logger.log(`[useProfile] Filtered out TEXT post: ${post.id}, postType=${post.postType}`);
+                                    logger.log(`[useProfile] Filtered out TEXT post: ${post.id}`);
+                                } else if (!hasImages) {
+                                    logger.log(`[useProfile] Filtered out IMAGELESS post: ${post.id}`);
                                 }
 
                                 if (!matchesType) logger.log(`[useProfile] Filtered out post ${post.id}: wrong type (${postType} != ${feedType})`);
 
-                                return matchesType && notHidden && isNotTextPost;
+                                // MUST match type, not be hidden, NOT be text, AND MUST HAVE IMAGES
+                                return matchesType && notHidden && isNotTextPost && hasImages;
                             });
 
                         logger.log(`[useProfile] Final posts count: ${filteredPosts.length}`);
@@ -263,22 +269,46 @@ export const useProfile = (userId, currentUser, activeTab = 'posts', feedType = 
                 if (activeTab === 'writings') {
                     setTextPosts([]);
 
+                    // Fetch all posts for user and filter client-side to avoid index issues of (authorId + postType + createdAt)
                     const textPostsQuery = query(
                         collection(db, 'posts'),
                         where('authorId', '==', userId),
-                        where('postType', '==', 'text'),
                         orderBy('createdAt', 'desc'),
                         limit(50)
                     );
-                    const textPostsSnap = await getDocs(textPostsQuery);
-                    if (isMountedRef.current) {
-                        const fetchedTextPosts = textPostsSnap.docs.map(normalizePost);
-                        setTextPosts(fetchedTextPosts);
 
-                        // Cache It
-                        if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
-                        if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
-                        PROFILE_CACHE[userId].tabs[cacheKey] = fetchedTextPosts;
+                    try {
+                        const textPostsSnap = await getDocs(textPostsQuery);
+                        if (isMountedRef.current) {
+                            const fetchedTextPosts = textPostsSnap.docs
+                                .map(doc => {
+                                    const normalized = normalizePost(doc);
+                                    const data = doc.data();
+                                    // Manually attach text fields as normalizePost might skip them
+                                    return {
+                                        ...normalized,
+                                        postType: data.postType || 'image', // explicit field
+                                        body: data.body || data.textContent || '',
+                                        writerTheme: data.writerTheme || 'default',
+                                        linkedPostIds: data.linkedPostIds || []
+                                    };
+                                })
+                                .filter(p => {
+                                    const hasImages = (p.items && p.items.length > 0) || !!p.imageUrl;
+                                    // Robust check for text posts
+                                    return p.postType === 'text' || (!!p.body && !hasImages);
+                                });
+
+                            logger.log(`[useProfile] Fetched ${fetchedTextPosts.length} text posts`);
+                            setTextPosts(fetchedTextPosts);
+
+                            // Cache It (Disabled for now to ensure freshness)
+                            // if (!PROFILE_CACHE[userId]) PROFILE_CACHE[userId] = { tabs: {} };
+                            // if (!PROFILE_CACHE[userId].tabs) PROFILE_CACHE[userId].tabs = {};
+                            // PROFILE_CACHE[userId].tabs[cacheKey] = fetchedTextPosts;
+                        }
+                    } catch (err) {
+                        logger.error('Error fetching writings data:', err);
                     }
                 }
             } catch (err) {

@@ -14,6 +14,7 @@ import {
     PORTRAIT_TAGS,
     ANIMAL_TAGS,
     TIME_TAGS,
+    WRITING_TAGS,
     ALL_TAGS,
     tagCategories,
     type TagMap
@@ -31,6 +32,7 @@ export {
     PORTRAIT_TAGS,
     ANIMAL_TAGS,
     TIME_TAGS,
+    WRITING_TAGS,
     ALL_TAGS,
     tagCategories
 };
@@ -47,6 +49,11 @@ export const TAG_CATEGORIES: Record<string, TagCategoryDefinition> = {
         id: 'art_types',
         label: 'Art Types',
         subcategories: ART_TYPES
+    },
+    WRITING: {
+        id: 'writing',
+        label: 'Writing',
+        subcategories: WRITING_TAGS
     },
     ENVIRONMENT: {
         id: 'environment',
