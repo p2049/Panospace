@@ -151,11 +151,16 @@
 
   /* === Z-INDEX === */
   --z-base: 1;
-  --z-dropdown: 1000;
-  --z-sticky: 1100;
-  --z-modal-backdrop: 1300;
-  --z-modal: 1400;
-  --z-tooltip: 1500;
+  --z-sidebar: 10000;
+  --z-drawer: 20000;
+  --z-sticky: 30000;
+  --z-dropdown: 40000;
+  --z-modal-backdrop: 50000;
+  --z-modal: 60000;
+  --z-nav-overlay: 70000;
+  --z-nav-return: 80000;
+  --z-nav-button: 100000;
+  --z-tooltip: 110000;
 }
 
 /* === GOOGLE FONTS IMPORT === */
@@ -173,7 +178,7 @@ img {
   -khtml-user-drag: none;
   -moz-user-drag: none;
   -o-user-drag: none;
-  user-drag: none;
+  -webkit-user-drag: none;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -1076,23 +1081,106 @@ button>span,
 button>svg {
   pointer-events: none;
 }
+
 /* === RICH TEXT EDITOR & TYPOGRAPHY === */
-.font-style-modern { font-family: 'Inter', -apple-system, sans-serif; letter-spacing: -0.01em; }
-.font-style-editorial { font-family: 'Georgia', 'Cambria', 'Times New Roman', serif; letter-spacing: 0; }
-.font-style-mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; letter-spacing: -0.02em; }
-.rich-text-content { font-size: 1rem; line-height: 1.7; word-wrap: break-word; }
-.rich-text-content p { margin-bottom: 1em; min-height: 1em; }
-.rich-text-content h2 { font-family: inherit; font-size: 1.4em; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; line-height: 1.3; }
-.rich-text-content h3 { font-family: inherit; font-size: 1.2em; font-weight: 600; margin-top: 1.25em; margin-bottom: 0.5em; line-height: 1.3; }
-.rich-text-content blockquote { border-left: 3px solid currentColor; padding-left: 1em; margin: 1.5em 0; font-style: italic; opacity: 0.85; }
-.rich-text-content ul, .rich-text-content ol { margin: 1em 0; padding-left: 1.4em; }
-.rich-text-content li { margin-bottom: 0.4em; }
-.rich-text-link { text-decoration: underline; text-underline-offset: 3px; opacity: 0.9; cursor: pointer; }
-.rich-text-link:hover { opacity: 1; }
-.ProseMirror { outline: none; min-height: 200px; }
-.ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; color: rgba(255, 255, 255, 0.3); pointer-events: none; height: 0; }
+.font-style-modern {
+  font-family: 'Inter', -apple-system, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.font-style-editorial {
+  font-family: 'Georgia', 'Cambria', 'Times New Roman', serif;
+  letter-spacing: 0;
+}
+
+.font-style-mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  letter-spacing: -0.02em;
+}
+
+.rich-text-content {
+  font-size: 1rem;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+
+.rich-text-content p {
+  margin-bottom: 1em;
+  min-height: 1em;
+}
+
+.rich-text-content h2 {
+  font-family: inherit;
+  font-size: 1.4em;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.rich-text-content h3 {
+  font-family: inherit;
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.rich-text-content blockquote {
+  border-left: 3px solid currentColor;
+  padding-left: 1em;
+  margin: 1.5em 0;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.rich-text-content ul,
+.rich-text-content ol {
+  margin: 1em 0;
+  padding-left: 1.4em;
+}
+
+.rich-text-content li {
+  margin-bottom: 0.4em;
+}
+
+.rich-text-link {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.rich-text-link:hover {
+  opacity: 1;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 200px;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  height: 0;
+}
 
 /* Document Level Font Classes */
-.font-modern { font-family: 'Inter', -apple-system, system-ui, sans-serif !important; letter-spacing: -0.01em; }
-.font-editorial { font-family: 'Georgia', 'Cambria', 'Times New Roman', serif !important; letter-spacing: 0; }
-.font-mono { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace !important; letter-spacing: -0.02em; }
+.font-modern {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+.font-editorial {
+  font-family: 'Georgia', 'Cambria', 'Times New Roman', serif !important;
+  letter-spacing: 0;
+}
+
+.font-mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace !important;
+  letter-spacing: -0.02em;
+}

@@ -8,7 +8,8 @@ import { useAuth } from '@/context/AuthContext';
 import { WalletService } from '@/services/WalletService';
 
 // Initialize Stripe with the provided test key
-const stripePromise = loadStripe('pk_test_51SVxZtF3FCQ1N5YCyooRPhAZiECp9ivHgrIcOcomZPy6fbcCy34C6I7mT4dgC27yh51VcwPebwCAuVdOkgtaJKBa00mB4c8yta');
+// Initialize Stripe with the provided test key
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const CheckoutButton = ({ post, selectedSize, buttonStyle }) => {
     const { currentUser } = useAuth();
@@ -35,11 +36,13 @@ const CheckoutButton = ({ post, selectedSize, buttonStyle }) => {
 
     // Check if user can afford with wallet
     useEffect(() => {
-        if (price > 0 && walletBalance >= price) {
-            setShowWalletOption(true);
-        } else {
-            setShowWalletOption(false);
-        }
+        // if (price > 0 && walletBalance >= price) {
+        //     setShowWalletOption(true);
+        // } else {
+        // PHASE 7: STRIPE CONNECT REQUIRED
+        // Wallet payments are disabled to prevent money transmission risk.
+        // Users cannot spend internal balance until we release Stripe Connect (Standard/Express Accounts).
+        setShowWalletOption(false);
     }, [price, walletBalance]);
 
     const handleWalletPurchase = async () => {

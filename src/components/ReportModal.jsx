@@ -97,7 +97,7 @@ const ReportModal = ({ isOpen, targetType, targetId, targetTitle, onClose }) => 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 2000,
+                zIndex: 900000,
                 padding: '1rem'
             }}>
                 <div style={{

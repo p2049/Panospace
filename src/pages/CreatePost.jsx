@@ -41,6 +41,7 @@ import { logger } from '@/core/utils/logger';
 import { validateImageSize, getMaxImageSizeMB, formatFileSizeMB, getMaxImageSize } from '@/core/constants/imageLimits';
 import { scaleImageToFit } from '@/core/utils/imageScaler';
 import { checkContent } from '@/core/utils/moderation/moderator';
+import { LEGAL_TEXT } from '@/core/constants/legalText';
 
 
 
@@ -211,10 +212,10 @@ const CreatePost = () => {
         const d = String(today.getDate());
         const m = String(today.getMonth() + 1);
         const y = String(today.getFullYear()).slice(2);
-        return `${d.padStart(2, '0')} ${m.padStart(2, '0')} ${y}`;
+        return `${d.padStart(2, '0')}' ${m.padStart(2, '0')} ${y}`;
     });
     const [quartzColor, setQuartzColor] = useState('#7FFFD4');
-    const [quartzDateFormat, setQuartzDateFormat] = useState('DD MM YY');
+    const [quartzDateFormat, setQuartzDateFormat] = useState("DD' MM YY");
 
     const [shareTitleAcrossImages, setShareTitleAcrossImages] = useState(true); // Share title across all images
     const [isProcessingStack, setIsProcessingStack] = useState(false); // Loading state for stack generation
@@ -227,6 +228,7 @@ const CreatePost = () => {
     const [isMobile, setIsMobile] = useState(false);
     const [isLocationExpanded, setIsLocationExpanded] = useState(false);
     const [isTagsPanelExpanded, setIsTagsPanelExpanded] = useState(true);
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     // Initial Mobile Check
     useEffect(() => {
@@ -638,6 +640,8 @@ const CreatePost = () => {
 
 
 
+
+
     // Handle form submission
     const handleSubmit = async () => {
         // 🔒 DOUBLE-POST PREVENTION
@@ -645,6 +649,12 @@ const CreatePost = () => {
             logger.warn('Submit blocked: already submitting');
             return;
         }
+
+        if (!termsAccepted) {
+            alert("You must verify ownership of your content to post.");
+            return;
+        }
+
         submittingRef.current = true;
 
         if (postType === 'image' && slides.length === 0) {
@@ -1180,6 +1190,7 @@ const CreatePost = () => {
                                     handleTagToggle={handleTagToggle}
                                     expandedCategories={expandedCategories}
                                     toggleCategory={toggleCategory}
+                                    postType={postType}
                                 />
                             </div>
                         </div>
@@ -1248,9 +1259,9 @@ const CreatePost = () => {
                                             padding: '0.4rem 0.8rem',
                                             marginRight: '0.5rem',
                                             borderRadius: '6px',
-                                            border: primaryMode === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                            background: primaryMode === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                            color: primaryMode === "art" ? '#7FFFD4' : '#888',
+                                            border: primaryMode === "art" ? '1px solid #FF5C8A' : '1px solid rgba(255,255,255,0.1)',
+                                            background: primaryMode === "art" ? 'rgba(255, 92, 138, 0.15)' : 'transparent',
+                                            color: primaryMode === "art" ? '#FF5C8A' : '#888',
                                             fontSize: '0.75rem',
                                             fontWeight: '700',
                                             textTransform: 'uppercase',
@@ -1262,6 +1273,7 @@ const CreatePost = () => {
                                             gap: '0.4rem'
                                         }}
                                     >
+                                        <FaPalette size={12} />
                                         Art
                                     </button>
                                     <button
@@ -1284,6 +1296,7 @@ const CreatePost = () => {
                                             gap: '0.4rem'
                                         }}
                                     >
+                                        <FaGlobe size={12} />
                                         Social
                                     </button>
                                     {/* Humor Checkbox (Mobile) */}
@@ -1529,6 +1542,7 @@ const CreatePost = () => {
                                     handleTagToggle={handleTagToggle}
                                     expandedCategories={expandedCategories}
                                     toggleCategory={toggleCategory}
+                                    postType={postType}
                                 />
                             </div>
                         </>
@@ -1605,14 +1619,14 @@ const CreatePost = () => {
                                 </span>
                                 <button
                                     type="button"
-                                    onClick={() => setPostType("art")}
+                                    onClick={() => setPrimaryMode("art")}
                                     style={{
                                         padding: '0.4rem 0.8rem',
                                         marginRight: '0.5rem',
                                         borderRadius: '6px',
-                                        border: postType === "art" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                        background: postType === "art" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                        color: postType === "art" ? '#7FFFD4' : '#888',
+                                        border: primaryMode === "art" ? '1px solid #FF5C8A' : '1px solid rgba(255,255,255,0.1)',
+                                        background: primaryMode === "art" ? 'rgba(255, 92, 138, 0.15)' : 'transparent',
+                                        color: primaryMode === "art" ? '#FF5C8A' : '#888',
                                         fontSize: '0.75rem',
                                         fontWeight: '700',
                                         textTransform: 'uppercase',
@@ -1624,17 +1638,18 @@ const CreatePost = () => {
                                         gap: '0.4rem'
                                     }}
                                 >
+                                    <FaPalette size={12} />
                                     Art
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setPostType("social")}
+                                    onClick={() => setPrimaryMode("social")}
                                     style={{
                                         padding: '0.4rem 0.8rem',
                                         borderRadius: '6px',
-                                        border: postType === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                        background: postType === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                        color: postType === "social" ? '#7FFFD4' : '#888',
+                                        border: primaryMode === "social" ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
+                                        background: primaryMode === "social" ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
+                                        color: primaryMode === "social" ? '#7FFFD4' : '#888',
                                         fontSize: '0.75rem',
                                         fontWeight: '700',
                                         textTransform: 'uppercase',
@@ -1646,6 +1661,7 @@ const CreatePost = () => {
                                         gap: '0.4rem'
                                     }}
                                 >
+                                    <FaGlobe size={12} />
                                     Social
                                 </button>
                                 {/* Humor Checkbox (Desktop) */}
@@ -2044,6 +2060,19 @@ const CreatePost = () => {
                             />
                         </div>
                     )}
+
+                    {/* LEGAL CHECKBOX */}
+                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', marginTop: '1.5rem', marginBottom: '4rem' }}>
+                        <label style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start', cursor: 'pointer', color: '#ccc', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                            <input
+                                type="checkbox"
+                                checked={termsAccepted}
+                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                style={{ transform: 'scale(1.2)', marginTop: '2px', accentColor: '#7FFFD4', cursor: 'pointer' }}
+                            />
+                            <span>{LEGAL_TEXT.OWNERSHIP_AFFIRMATION}</span>
+                        </label>
+                    </div>
                 </div>
             </div >
 
@@ -2150,20 +2179,32 @@ const CreatePost = () => {
                     50% { opacity: 1; transform: scale(1.2); }
                 }
                 
+                html, body {
+                    overflow: hidden;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+                
                 body {
                     overflow-x: hidden;
                     max-width: 100vw;
+                    overscroll-behavior: none;
                 }
                 
                 .create-post-container * { box-sizing: border-box; }
                 .create-post-container {
                     height: 100vh; /* 🔒 ROOT LOCK */
+                    height: 100dvh;
                     background: var(--black);
                     color: #fff;
                     display: flex;
                     flex-direction: column;
                     overflow: hidden; /* 🔒 NO SCROLL ON ROOT */
                     width: 100%;
+                    position: fixed; /* 🔒 STABILIZE POSITION */
+                    top: 0;
+                    left: 0;
                 }
                 .header-btn, .header-btn-primary {
                     padding: 0.6rem 1.2rem;
@@ -2211,7 +2252,7 @@ const CreatePost = () => {
                 }
 
                 .create-post-layout {
-                    flex: 1 1 auto; /* 🔒 FILL REMAINING SPACE */
+                    flex: 1; /* 🔒 FILL REMAINING SPACE */
                     display: grid;
                     grid-template-columns: 480px 1fr; /* Restored column widths */
                     gap: 2.75rem;
@@ -2219,7 +2260,7 @@ const CreatePost = () => {
                     margin: 0 auto;
                     padding: 0; /* 🔒 NO PADDING ON WRAPPER */
                     width: 100%;
-                    height: auto; /* 🔒 NO HEIGHT MATH */
+                    min-height: 0; /* 🔒 ALLOW FLEX SHRINK */
                     overflow: hidden; /* 🔒 TRAP CHILD SCROLL */
                     position: relative;
                     z-index: 1;
@@ -2484,9 +2525,10 @@ const CreatePost = () => {
                     /* .form-column { order: -1; } */
                     
                     .create-post-container {
+                        position: relative !important; /* 🔓 UNLOCK FOR MOBILE SCROLL */
                         overflow-x: hidden;
                         overflow-y: auto;
-                        height: auto;
+                        height: auto !important;
                         min-height: 100dvh;
                         padding-bottom: 80px; /* Space for mobile nav if needed */
                     }

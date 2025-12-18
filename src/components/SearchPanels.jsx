@@ -90,7 +90,7 @@ const SearchPanels = ({
                     flexDirection: 'column',
                     flexShrink: 0,
                     transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    zIndex: 100,
+                    zIndex: 1000,
                     position: 'relative',
                     overflow: 'hidden'
                 }}
@@ -739,21 +739,7 @@ const SearchPanels = ({
                 /* Custom Scrollbar for Horizontal Grids */
                 .parks-grid::-webkit-scrollbar,
                 .tags-grid::-webkit-scrollbar {
-                    height: 4px;
-                }
-                .parks-grid::-webkit-scrollbar-track,
-                .tags-grid::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.02);
-                    border-radius: 3px;
-                }
-                .parks-grid::-webkit-scrollbar-thumb,
-                .tags-grid::-webkit-scrollbar-thumb {
-                    background: rgba(127, 255, 212, 0.3);
-                    border-radius: 3px;
-                }
-                .parks-grid::-webkit-scrollbar-thumb:hover,
-                .tags-grid::-webkit-scrollbar-thumb:hover {
-                    background: rgba(127, 255, 212, 0.5);
+                    display: none;
                 }
 
 
@@ -769,7 +755,7 @@ const SearchPanels = ({
                         background: rgba(0, 0, 0, 0.95) !important;
                         backdrop-filter: blur(10px);
                         flex-shrink: 0 !important;
-                        z-index: 9999 !important;
+                        z-index: 70000 !important;
                     }
                     
                     .filters-sidebar.mobile-open {

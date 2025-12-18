@@ -24,7 +24,8 @@ const TagCategoryPanel = ({
     tags,
     handleTagToggle,
     expandedCategories,
-    toggleCategory
+    toggleCategory,
+    postType = 'image'
 }) => {
     const [customTagInput, setCustomTagInput] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -186,6 +187,12 @@ const TagCategoryPanel = ({
             }}>
 
                 {Object.values(TAG_CATEGORIES)
+                    .filter(category => {
+                        // If it's a writing post, we definitely show writing category
+                        // If it's an image post, we HIDE writing category
+                        if (postType === 'text') return true;
+                        return category.id !== 'writing';
+                    })
                     .map(category => (
                         <TagFilterPanel
                             key={category.id}

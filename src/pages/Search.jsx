@@ -410,7 +410,8 @@ const Search = () => {
                                 aspectRatio: currentSelectedAspectRatioRef.current,
                                 sort: hasFilters ? currentSortByRef.current : exploreSort,
                                 authorIds: searchAuthorIds,
-                                postType: activePostType // Pass 'image' or 'text'
+                                postType: activePostType, // Pass 'image' or 'text'
+                                type: searchMode // Link search state to backend type filter
                             },
                             isLoadMore ? lastPostDoc : null
                         );

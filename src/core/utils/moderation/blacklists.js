@@ -59,5 +59,6 @@ export const EXCEPTIONS = [
     'assassin',  // Contains 'ass'
     'pass',      // Contains 'ass'
     'glass',     // Contains 'ass'
-    'class'      // Contains 'ass'
+    'class',     // Contains 'ass'
+    'snigger'    // Contains valid word often confused with slur
 ];

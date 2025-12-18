@@ -21,6 +21,8 @@ export interface NotificationInput {
     message: string;
     actionUrl?: string;
     imageUrl?: string | null;
+    actorId?: string;    // ID of the user who performed the action
+    actorName?: string;  // Name of the user who performed the action
 }
 
 export interface Notification extends NotificationInput {
@@ -128,6 +130,54 @@ export const markAllAsRead = async (userId: string): Promise<void> => {
         throw error;
     }
 };
+
+/**
+ * Interaction Notification Helpers
+ */
+
+// Notify user when someone follows them
+export const notifyUserFollowed = async (targetUserId: string, followerId: string, followerName: string): Promise<Notification> => {
+    return createNotification({
+        userId: targetUserId,
+        type: 'user_followed',
+        title: 'New Space Added',
+        message: `${followerName} added you to their space`,
+        actionUrl: `/profile/${followerId}`,
+        actorId: followerId,
+        actorName: followerName
+    });
+};
+
+// Notify user when someone rates their post (Stars)
+export const notifyPostRated = async (postAuthorId: string, postId: string, raterId: string, raterName: string, rating: number): Promise<Notification | null> => {
+    if (postAuthorId === raterId) return null; // Don't notify self
+
+    return createNotification({
+        userId: postAuthorId,
+        type: 'post_rated',
+        title: 'New Rating',
+        message: `${raterName} rated your post ${rating} stars`,
+        actionUrl: `/post/${postId}`,
+        actorId: raterId,
+        actorName: raterName
+    });
+};
+
+// Notify user when someone likes their post (Smiley)
+export const notifyPostLiked = async (postAuthorId: string, postId: string, likerId: string, likerName: string): Promise<Notification | null> => {
+    if (postAuthorId === likerId) return null; // Don't notify self
+
+    return createNotification({
+        userId: postAuthorId,
+        type: 'post_liked',
+        title: 'New Interaction',
+        message: `${likerName} liked your post`,
+        actionUrl: `/post/${postId}`,
+        actorId: likerId,
+        actorName: likerName
+    });
+};
+
 
 /**
  * Magazine-specific notification helpers

@@ -54,20 +54,21 @@ const AddFundsModal = ({ onClose }) => {
         setError('');
 
         try {
-            // Call the Stripe Subscription Cloud Function
-            // We use the function created in previous step: createCreatorSubscriptionCheckout
-            const { httpsCallable, getFunctions } = await import('firebase/functions');
-            const functions = getFunctions();
-            const createCheckout = httpsCallable(functions, 'createCreatorSubscriptionCheckout');
+            const res = await fetch('/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.uid
+                }),
+            });
 
-            const { data } = await createCheckout();
-
-            if (data?.url) {
-                window.location.href = data.url;
-            } else {
-                throw new Error("No checkout URL returned");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to create checkout session');
             }
 
+            const { url } = await res.json();
+            window.location.href = url;
         } catch (err) {
             console.error("Subscription failed:", err);
             setError(err.message || "Failed to initiate upgrade.");

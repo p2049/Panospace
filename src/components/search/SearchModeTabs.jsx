@@ -22,9 +22,9 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile, children }) => 
                     .tab-label {
                         display: none !important;
                     }
-                    .search-mode-switcher button {
-                        /* Force visible background/border for icons on mobile if needed */
-                    }
+                }
+                .search-mode-switcher::-webkit-scrollbar {
+                    display: none;
                 }
             `}</style>
 

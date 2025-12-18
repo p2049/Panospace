@@ -424,20 +424,30 @@ const Settings = () => {
                             <button
                                 onClick={async () => {
                                     try {
+                                        console.log('[Checkout] Initiating checkout for user:', currentUser.uid);
                                         const res = await fetch('/api/create-checkout-session', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                userId: currentUser.uid,
+                                                customerId: userData?.stripeCustomerId
+                                            })
                                         });
 
                                         if (!res.ok) {
-                                            throw new Error('Failed to create checkout session');
+                                            const errText = await res.text();
+                                            console.error('[Checkout] API functionality check failed:', res.status, errText);
+                                            throw new Error(`Checkout API missing or failed (${res.status}): ${errText}`);
                                         }
 
                                         const { url } = await res.json();
+                                        if (!url) throw new Error("No checkout URL returned from API");
+
+                                        console.log('[Checkout] Redirecting to:', url);
                                         window.location.href = url;
                                     } catch (e) {
-                                        console.error(e);
-                                        alert('Checkout failed: ' + e.message);
+                                        console.error('[Checkout] Critical Error:', e);
+                                        alert('Checkout Failed: ' + e.message);
                                     }
                                 }}
                                 style={{
@@ -717,7 +727,35 @@ const Settings = () => {
                     marginBottom: '24px',
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
-                    <SettingsRow icon={FaCreditCard} label={t('settings.manageSubscription')} onClick={() => window.open('https://billing.stripe.com/p/login/test_...', '_blank')} />
+                    {userData?.stripeCustomerId && (
+                        <SettingsRow
+                            icon={FaCreditCard}
+                            label={t('settings.manageSubscription')}
+                            onClick={async () => {
+                                try {
+                                    console.log('[BillingPortal] Initiating portal for user:', currentUser.uid);
+                                    const res = await fetch('/api/create-billing-portal-session', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ userId: currentUser.uid })
+                                    });
+
+                                    if (!res.ok) {
+                                        const errText = await res.text();
+                                        throw new Error(`Portal API Error (${res.status}): ${errText}`);
+                                    }
+
+                                    const { url } = await res.json();
+                                    if (!url) throw new Error("No portal URL returned");
+
+                                    console.log('[BillingPortal] Redirecting to:', url);
+                                    window.location.href = url;
+                                } catch (e) {
+                                    console.error('[BillingPortal] Error:', e);
+                                    alert('Failed to open billing portal: ' + e.message);
+                                }
+                            }}
+                        />)}
                     {/* Note: In a real app, you'd generate a customer portal link dynamically */}
                     <SettingsRow icon={FaHistory} label={t('settings.purchaseHistory')} onClick={() => alert('Coming soon')} />
                 </div>

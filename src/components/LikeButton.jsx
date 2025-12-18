@@ -4,6 +4,7 @@ import { doc, updateDoc, setDoc, getDoc, serverTimestamp } from 'firebase/firest
 import { useAuth } from '@/context/AuthContext';
 import { usePreferenceLearning } from '@/hooks/usePersonalizedFeed';
 import { FaStar, FaRegStar, FaSmile, FaRegSmile } from 'react-icons/fa';
+import { notifyPostRated, notifyPostLiked } from '@/services/notificationService';
 
 const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, showCount = true }) => {
     const { currentUser } = useAuth();
@@ -98,6 +99,11 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
                 setAverageRating(avg);
                 setTotalVotes(total);
                 trackLike(postId);
+
+                // Notify author
+                if (data.userId) {
+                    notifyPostRated(data.userId, postId, currentUser.uid, currentUser.displayName || 'Someone', rating);
+                }
             }
         } catch (error) {
             console.error('Error updating rating:', error);
@@ -148,6 +154,11 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
                         likeCount: newLikes.length
                     });
                     trackLike(postId);
+
+                    // Notify author
+                    if (data.userId) {
+                        notifyPostLiked(data.userId, postId, currentUser.uid, currentUser.displayName || 'Someone');
+                    }
                 }
             }
         } catch (error) {
@@ -210,7 +221,7 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
             <div
                 style={{
                     display: 'flex',
-                    gap: '0.15rem'
+                    gap: '0'
                 }}
                 onMouseLeave={() => setHoveredStar(0)}
             >
@@ -228,14 +239,13 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
                                 transform: animating && star === userRating ? 'scale(1.3) rotate(15deg)' :
                                     hoveredStar === star ? 'scale(1.15)' : 'scale(1)',
                                 filter: isFilled ? 'drop-shadow(0 0 4px rgba(127, 255, 212, 0.6))' : 'none',
-                                // ✅ APPLE 44PX TAP TARGET
-                                minWidth: '44px',
-                                minHeight: '44px',
+                                // Reduced container size to 24px width to bring stars closer while keeping accurate hit targets
+                                minWidth: '24px',
+                                minHeight: '36px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                // Negative margin to maintain visual spacing
-                                margin: '-14px -14px',
+                                transition: 'all 0.2s ease',
                                 opacity: isProcessing ? 0.6 : 1
                             }}
                         >

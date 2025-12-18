@@ -44,7 +44,7 @@ const SearchHeader = ({
             height: 'auto',
             width: '100%',
             boxSizing: 'border-box',
-            zIndex: 50,
+            zIndex: 'var(--z-sticky)',
             WebkitTransform: 'translateZ(0)',
             overflow: 'visible',
             transition: 'transform 0.3s ease',

@@ -1,5 +1,6 @@
 import { db } from '@/firebase';
 import { collection, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, getDocs, serverTimestamp, orderBy, limit, DocumentData } from 'firebase/firestore';
+import { logger } from '@/core/utils/logger';
 
 export interface Magazine {
     id: string;
@@ -49,7 +50,7 @@ export const createMagazine = async (magazineData: Partial<Magazine>): Promise<M
         const docRef = await addDoc(magazineRef, newMagazine);
         return { id: docRef.id, ...newMagazine } as Magazine;
     } catch (error) {
-        console.error('Error creating magazine:', error);
+        logger.error('Error creating magazine:', error);
         throw error;
     }
 };
@@ -68,7 +69,7 @@ export const getMagazine = async (magazineId: string): Promise<Magazine> => {
             throw new Error('Magazine not found');
         }
     } catch (error) {
-        console.error('Error getting magazine:', error);
+        logger.error('Error getting magazine:', error);
         throw error;
     }
 };
@@ -84,7 +85,7 @@ export const updateMagazine = async (magazineId: string, updates: Partial<Magazi
             updatedAt: serverTimestamp()
         });
     } catch (error) {
-        console.error('Error updating magazine:', error);
+        logger.error('Error updating magazine:', error);
         throw error;
     }
 };
@@ -97,7 +98,7 @@ export const deleteMagazine = async (magazineId: string): Promise<void> => {
         const magazineRef = doc(db, 'magazines', magazineId);
         await deleteDoc(magazineRef);
     } catch (error) {
-        console.error('Error deleting magazine:', error);
+        logger.error('Error deleting magazine:', error);
         throw error;
     }
 };
@@ -117,7 +118,7 @@ export const getMagazinesByOwner = async (ownerId: string): Promise<Magazine[]> 
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Magazine));
     } catch (error) {
-        console.error('Error getting magazines by owner:', error);
+        logger.error('Error getting magazines by owner:', error);
         throw error;
     }
 };
@@ -137,7 +138,7 @@ export const getMagazinesByGallery = async (galleryId: string): Promise<Magazine
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Magazine));
     } catch (error) {
-        console.error('Error getting magazines by gallery:', error);
+        logger.error('Error getting magazines by gallery:', error);
         throw error;
     }
 };
@@ -209,7 +210,7 @@ export const searchMagazines = async (searchTerm: string | null = null, lastDoc:
             lastDoc: lastVisible
         };
     } catch (error) {
-        console.error('Error searching magazines:', error);
+        logger.error('Error searching magazines:', error);
         throw error;
     }
 };
@@ -240,7 +241,7 @@ export const getMagazineIssues = async (magazineId: string, status: string | nul
         const querySnapshot = await getDocs(q);
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MagazineIssue));
     } catch (error) {
-        console.error('Error getting magazine issues:', error);
+        logger.error('Error getting magazine issues:', error);
         throw error;
     }
 };
@@ -259,7 +260,7 @@ export const getMagazineIssue = async (issueId: string): Promise<MagazineIssue> 
             throw new Error('Issue not found');
         }
     } catch (error) {
-        console.error('Error getting issue:', error);
+        logger.error('Error getting issue:', error);
         throw error;
     }
 };
@@ -294,7 +295,7 @@ export const publishIssue = async (issueId: string): Promise<MagazineIssue> => {
 
         return { id: issueId, ...issue, status: 'published' } as MagazineIssue;
     } catch (error) {
-        console.error('Error publishing issue:', error);
+        logger.error('Error publishing issue:', error);
         throw error;
     }
 };
@@ -307,7 +308,7 @@ export const deleteIssue = async (issueId: string): Promise<void> => {
         const issueRef = doc(db, 'magazineIssues', issueId);
         await deleteDoc(issueRef);
     } catch (error) {
-        console.error('Error deleting issue:', error);
+        logger.error('Error deleting issue:', error);
         throw error;
     }
 };

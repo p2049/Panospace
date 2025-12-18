@@ -160,7 +160,9 @@ export const useSearch = () => {
             orientation = '',
             aspectRatio = '',
             sort = 'newest',
-            authorIds = [] // New filter for following only
+            authorIds = [],
+            postType = 'image',
+            type = 'art' // Art vs Social
         } = filters;
 
         const term = (searchTerm || '').toLowerCase().trim();
@@ -266,28 +268,50 @@ export const useSearch = () => {
                 q = query(
                     postsRef,
                     where('postType', '==', 'text'),
-                    limit(100) // increased limit to capture more candidates since we can't sort by time server-side without index
+                    orderBy(orderByField, orderDirection), // Added ordering for consistency
+                    limit(50) // Reduced from 100 for cost efficiency
                 );
-
-                const snapshot = await getDocs(q);
-                mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-            } else {
-                // Fallback (Recent/Sorted)
-                // If filtering by 'image', we just fetch general recent and client-filter, 
-                // because '!=' query is expensive/restrictive.
-                q = query(
-                    postsRef,
-                    orderBy(orderByField, orderDirection),
-                    limit(50)
-                );
-
                 const snapshot = await Promise.race([
                     getDocs(q),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Search timed out')), 15000))
                 ]);
-
                 mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            } else {
+                // Fallback (Recent/Sorted) - Standard Image Search
+                // PH3 OPTIMIZATION: Move common filters to backend when possible
+                const targetContentMode = type || 'art';
+
+                let constraints = [
+                    where('type', '==', targetContentMode),
+                    orderBy(orderByField, orderDirection),
+                    limit(50)
+                ];
+
+                // Add specific location/event filters if present (using indices added to firestore.indexes.json)
+                if (filters.parkId) {
+                    constraints.unshift(where('parkId', '==', filters.parkId));
+                } else if (filters.cityName) {
+                    constraints.unshift(where('city', '==', filters.cityName));
+                } else if (filters.eventId) {
+                    constraints.unshift(where('eventId', '==', filters.eventId));
+                }
+
+                q = query(postsRef, ...constraints);
+
+                try {
+                    const snapshot = await Promise.race([
+                        getDocs(q),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Search timed out')), 15000))
+                    ]);
+                    mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                } catch (err) {
+                    logger.error('Search: Fallback query failed, likely missing index', err);
+                    // Critical Fallback: if adding multiple filters failed because index isn't ready,
+                    // try the most basic query to at least show something.
+                    const basicQ = query(postsRef, where('type', '==', targetContentMode), orderBy(orderByField, orderDirection), limit(50));
+                    const basicSnapshot = await getDocs(basicQ);
+                    mergedDocs = basicSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                }
             }
 
             // Apply pagination if needed (Note: Parallel queries break simple cursor pagination, 

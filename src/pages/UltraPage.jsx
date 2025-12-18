@@ -24,10 +24,36 @@ const UltraPage = () => {
 
     const handleSubscribe = async () => {
         if (!currentUser) return;
+        setLoading(true);
 
-        // In a real app, we'd check balance here or open the wallet modal
-        // For this page, we'll just redirect them to open their wallet
-        alert("Please open your Wallet (top right) to upgrade to Space Creator!");
+        try {
+            console.log('[UltraPage] Initiating checkout for user:', currentUser.uid);
+            const res = await fetch('/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.uid
+                    // Not passing customerId here to keep it simple, backend handles defaults
+                }),
+            });
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('[UltraPage] API Error:', res.status, errorText);
+                throw new Error(`Checkout API missing or failed (${res.status}): ${errorText}`);
+            }
+
+            const { url } = await res.json();
+            if (!url) throw new Error("No checkout URL returned from API");
+
+            console.log('[UltraPage] Redirecting to:', url);
+            window.location.href = url;
+        } catch (error) {
+            console.error('[UltraPage] Checkout Critical Error:', error);
+            alert('Checkout Error: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const features = [
@@ -210,7 +236,7 @@ const UltraPage = () => {
                         onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = 'scale(1.05)')}
                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
-                        {loading ? 'Processing...' : 'Upgrade via Wallet'}
+                        {loading ? 'Processing...' : 'Upgrade with Card'}
                     </button>
                 </div>
 

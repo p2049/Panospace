@@ -31,58 +31,67 @@ async function fulfillPrintfulOrder(payload: any) {
  *  1️⃣ createCheckoutSession – callable from the client
  * --------------------------------------------------------------- */
 export const createCheckoutSession = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError("unauthenticated", "User must be signed in");
-    }
-    const { shopItemId, size, quantity } = data;
-    if (!shopItemId || !size || !quantity) {
-        throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
-    }
-    const shopDoc = await db.collection("shopItems").doc(shopItemId).get();
-    if (!shopDoc.exists) {
-        throw new functions.https.HttpsError("not-found", "Shop item not found");
-    }
-    const shopData = shopDoc.data()!;
-    const variant = shopData.variants.find((v: any) => v.size === size);
-    if (!variant) {
-        throw new functions.https.HttpsError("invalid-argument", "Size not available");
-    }
-    const amount = variant.price; // cents
-    const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-            {
-                price_data: {
-                    currency: "usd",
-                    product_data: { name: shopData.title, description: shopData.description },
-                    unit_amount: amount,
+    try {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be signed in");
+        }
+        const { shopItemId, size, quantity } = data;
+        if (!shopItemId || !size || !quantity) {
+            throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
+        }
+        const shopDoc = await db.collection("shopItems").doc(shopItemId).get();
+        if (!shopDoc.exists) {
+            throw new functions.https.HttpsError("not-found", "Shop item not found");
+        }
+        const shopData = shopDoc.data()!;
+        if (!shopData.variants) {
+            throw new functions.https.HttpsError("internal", "Shop item has no variants");
+        }
+        const variant = shopData.variants.find((v: any) => v.size === size);
+        if (!variant) {
+            throw new functions.https.HttpsError("invalid-argument", "Size not available");
+        }
+        const amount = variant.price; // cents
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            line_items: [
+                {
+                    price_data: {
+                        currency: "usd",
+                        product_data: { name: shopData.title, description: shopData.description || "" },
+                        unit_amount: amount,
+                    },
+                    quantity,
                 },
+            ],
+            mode: "payment",
+            success_url: `${process.env.APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.APP_URL}/checkout-cancel`,
+            metadata: {
+                shopItemId,
+                size,
                 quantity,
+                artistUid: shopData.artistUid || "",
+                platformCut: Math.round(amount * 0.5),
+                artistCut: Math.round(amount * 0.5),
             },
-        ],
-        mode: "payment",
-        success_url: `${process.env.APP_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_URL}/checkout-cancel`,
-        metadata: {
+        });
+        await db.collection("orders").add({
             shopItemId,
             size,
             quantity,
-            artistUid: shopData.artistUid,
-            platformCut: Math.round(amount * 0.5),
-            artistCut: Math.round(amount * 0.5),
-        },
-    });
-    await db.collection("orders").add({
-        shopItemId,
-        size,
-        quantity,
-        amount,
-        status: "pending",
-        stripeSessionId: session.id,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        buyerUid: context.auth.uid,
-    });
-    return { url: session.url };
+            amount,
+            status: "pending",
+            stripeSessionId: session.id,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            buyerUid: context.auth.uid,
+        });
+        return { url: session.url };
+    } catch (error: any) {
+        console.error("Checkout session creation failed:", error);
+        if (error instanceof functions.https.HttpsError) throw error;
+        throw new functions.https.HttpsError("internal", error.message || "Checkout failed");
+    }
 });
 
 /** ---------------------------------------------------------------
@@ -115,8 +124,17 @@ export const handleStripeWebhook = functions.https.onRequest(async (req: any, re
                 paidAt: admin.firestore.FieldValue.serverTimestamp(),
                 stripePaymentIntent: session.payment_intent,
             });
-            // Fire‑and‑forget fulfillment
-            createPrintfulOrder(orderRef.id, orderSnap.docs[0].data(), metadata).catch(console.error);
+
+            try {
+                // Await fulfillment to ensure we handle errors
+                await createPrintfulOrder(orderRef.id, orderSnap.docs[0].data(), metadata);
+            } catch (fulfillmentError) {
+                console.error(`Fulfillment failed for order ${orderRef.id}:`, fulfillmentError);
+                await orderRef.update({
+                    status: "fulfillment_failed",
+                    error: (fulfillmentError as Error).message
+                });
+            }
         }
     }
     res.json({ received: true });

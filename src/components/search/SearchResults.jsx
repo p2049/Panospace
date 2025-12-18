@@ -69,7 +69,7 @@ const SearchResults = ({
                                 // For this step, I'm just adding the UI switch.
                                 // Let's render a "Shop Item Version" of the card.
                                 return (
-                                    <div key={post.id} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' }}>
+                                    <div key={post.id} style={{ position: 'relative', borderRadius: '12px', overflow: 'visible', border: '1px solid #333' }}>
                                         <GridPostCard
                                             post={post}
                                             contextPosts={results.posts}
@@ -273,30 +273,30 @@ const SearchResults = ({
     }
 
     /* Mobile Landscape Optimization */
-    @media(orientation: landscape) and(max - height: 500px) {
-                            .search - header {
-    padding: 0.25rem 1rem!important;
-}
-                            .search - mode - switcher {
-    margin - bottom: 0.25rem!important;
-}
-                            .search - mode - switcher button {
-    padding: 0.3rem 0.6rem!important;
-    font - size: 0.8rem!important;
-}
-                            .search - bar - container {
-    margin - bottom: 0.25rem!important;
-    flex - direction: row!important;
-    align - items: center!important;
-}
-                            .search - bar - container input {
-    padding: 0.4rem 1rem 0.4rem 2.5rem!important;
-    font - size: 0.85rem!important;
-}
-                            .search - bar - container label {
-    padding: 0.4rem 0.8rem!important;
-}
-                        }
+    @media (orientation: landscape) and (max-height: 500px) {
+        .search-header {
+            padding: 0.25rem 1rem !important;
+        }
+        .search-mode-switcher {
+            margin-bottom: 0.25rem !important;
+        }
+        .search-mode-switcher button {
+            padding: 0.3rem 0.6rem !important;
+            font-size: 0.8rem !important;
+        }
+        .search-bar-container {
+            margin-bottom: 0.25rem !important;
+            flex-direction: row !important;
+            align-items: center !important;
+        }
+        .search-bar-container input {
+            padding: 0.4rem 1rem 0.4rem 2.5rem !important;
+            font-size: 0.85rem !important;
+        }
+        .search-bar-container label {
+            padding: 0.4rem 0.8rem !important;
+        }
+    }
 `}</style>
                     </div>
                 )

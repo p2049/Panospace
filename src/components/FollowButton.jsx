@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc, Timestamp, s
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { FaUserPlus, FaUserCheck } from 'react-icons/fa';
+import { notifyUserFollowed } from '@/services/notificationService';
 
 const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
     const [isFollowing, setIsFollowing] = useState(false);
@@ -66,6 +67,9 @@ const FollowButton = ({ targetUserId, targetUserName, style = {} }) => {
                 setIsFollowing(true);
                 setFollowDocId(docRef.id);
                 showSuccess('Added to Spaces');
+
+                // Notify the recipient
+                notifyUserFollowed(targetUserId, currentUser.uid, currentUser.displayName || 'Someone');
             }
         } catch (error) {
             console.error('Error toggling follow:', error);

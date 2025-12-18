@@ -34,6 +34,12 @@ export interface WalletTransaction {
     createdAt: Date;
 }
 
+/**
+ * 🔒 LEGAL SAFETY NOTICE (PHASE 7 PREP)
+ * This service tracks "virtual" earnings. It must NOT be used to hold real funds
+ * or process payouts until Stripe Connect is integrated.
+ * Panospace is not a bank. All real-money payouts must go through Stripe.
+ */
 export const WalletService = {
     getWallet: async (userId: string): Promise<Wallet> => {
         try {

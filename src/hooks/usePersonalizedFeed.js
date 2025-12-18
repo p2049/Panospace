@@ -119,6 +119,8 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                 logger.log('Feed: Using Custom Query Strategy');
             } else {
                 // 3. STRATEGY: Standard Global Logic
+                // We default to strictly 'image' posts to prevent redundant reads of text/social content
+                // unless social is explicitly enabled.
                 constraints = [
                     orderBy('createdAt', 'desc'),
                     limit(limitSize)
@@ -126,17 +128,20 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
 
                 // Apply filters based on feedType
                 if (feedType === 'PARK' && options.parkId) {
+                    // Add index: posts_parkId_createdAt_desc
                     constraints.unshift(where('parkId', '==', options.parkId));
                 } else if (feedType === 'CITY' && options.cityName) {
+                    // Add index: posts_city_createdAt_desc
                     constraints.unshift(where('city', '==', options.cityName));
                 } else if (feedType === 'EVENT' && options.eventId) {
+                    // Add index: posts_eventId_createdAt_desc
                     constraints.unshift(where('eventId', '==', options.eventId));
                 }
 
                 if (showSocialPosts) {
-                    constraints.unshift(where('type', '==', 'social'));
+                    constraints.push(where('type', '==', 'social'));
                 } else {
-                    constraints.unshift(where('type', '==', 'art'));
+                    constraints.push(where('type', '==', 'art'));
                 }
                 logger.log('Feed: Using Standard Global Query Strategy');
             }
@@ -146,17 +151,28 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                 constraints.push(startAfter(lastDocRef.current));
             }
 
-            const q = query(collection(db, 'posts'), ...constraints);
+            const postsRef = collection(db, 'posts');
+            const q = query(postsRef, ...constraints);
+            let snapshot;
 
             // 🛡️ SAFETY: Add timeout to prevent eternal loading
             const timeoutPromise = new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Feed request timed out')), 15000)
             );
 
-            const snapshot = await Promise.race([
-                getDocs(q),
-                timeoutPromise
-            ]);
+            try {
+                // Execute primary query with timeout
+                snapshot = (await Promise.race([
+                    getDocs(q),
+                    timeoutPromise
+                ]));
+            } catch (err) {
+                logger.error('Feed: Primary query failed, attempting safe fallback', err);
+                // SAFE FALLBACK: If the filtered query (e.g. by parkId) failed because index isn't ready or timed out,
+                // fetch the general feed so the user sees SOMETHING.
+                const fallbackQ = query(postsRef, orderBy('createdAt', 'desc'), limit(limitSize));
+                snapshot = await getDocs(fallbackQ);
+            }
 
             let newPosts = snapshot.docs.map(doc => ({
                 id: doc.id,

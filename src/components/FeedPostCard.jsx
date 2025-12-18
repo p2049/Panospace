@@ -99,8 +99,9 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                 width: '100%',
                 boxSizing: 'border-box',
                 // Strict height control: 100% matches the Grid Cell (Span 2) when collapsed
-                height: isExpanded ? 'auto' : '100%',
-                minHeight: '100%',
+                height: isExpanded ? 'auto' : (onResize ? '100%' : 'auto'),
+                maxHeight: isExpanded ? 'none' : (onResize ? 'none' : '320px'),
+                minHeight: onResize ? '100%' : '160px',
                 justifyContent: 'space-between',
                 zIndex: isExpanded ? 10 : 1
             }}

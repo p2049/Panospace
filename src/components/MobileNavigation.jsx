@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { getUnreadCount } from '@/services/notificationService';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import PlanetUserIcon from './PlanetUserIcon';
+import NotificationList from './NotificationList';
 import {
     FaHome,
     FaSearch,
@@ -262,7 +263,7 @@ const MobileNavigation = () => {
         position: 'fixed',
         top: 'max(0.75rem, env(safe-area-inset-top))',
         right: '1rem',
-        zIndex: 99999, // Highest z-index in the app
+        zIndex: 1000000, // Highest z-index in the app
         cursor: 'pointer',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -301,7 +302,7 @@ const MobileNavigation = () => {
         borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
         boxShadow: '-10px 0 30px rgba(0,0,0,0.8)',
         transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 9999,
+        zIndex: 80000,
         paddingTop: '80px', // Space for button
         display: 'flex',
         flexDirection: 'column',
@@ -326,7 +327,7 @@ const MobileNavigation = () => {
         position: 'fixed',
         top: 'max(0.75rem, env(safe-area-inset-top))',
         right: '4.5rem',
-        zIndex: 10001,
+        zIndex: 80020,
         display: isOpen ? 'flex' : 'none',
         alignItems: 'center',
         background: 'rgba(0,0,0,0.6)',
@@ -377,7 +378,7 @@ const MobileNavigation = () => {
                         width: '44px',
                         background: 'rgba(5, 5, 5, 0.9)',
                         backdropFilter: 'blur(10px)',
-                        zIndex: 10010,
+                        zIndex: 90000,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -444,7 +445,7 @@ const MobileNavigation = () => {
                     position: 'fixed',
                     top: 'max(0.75rem, env(safe-area-inset-top))',
                     right: '1rem',
-                    zIndex: 99999,
+                    zIndex: 1000000,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     // Glass Effect
@@ -553,7 +554,7 @@ const MobileNavigation = () => {
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
                 transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: isMobileVertical ? 10005 : 9999, // Higher z-index on mobile to overlay main drawer
+                zIndex: isMobileVertical ? 85000 : 80000, // Higher z-index on mobile to overlay main drawer
                 paddingTop: '80px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -686,7 +687,7 @@ const MobileNavigation = () => {
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
                 transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: isMobileVertical ? 10005 : 9999,
+                zIndex: isMobileVertical ? 85000 : 80000,
                 paddingTop: '80px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1140,12 +1141,11 @@ const MobileNavigation = () => {
 
                 {/* Notifications Header with Back to Station */}
                 <div style={{
-                    padding: '1rem',
+                    padding: '1.2rem 1rem',
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    marginBottom: '0.5rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem'
+                    justifyContent: 'space-between'
                 }}>
                     <button
                         onClick={() => setShowNotifications(false)}
@@ -1161,36 +1161,65 @@ const MobileNavigation = () => {
                             padding: '0.5rem 0.8rem',
                             fontSize: '0.8rem',
                             fontWeight: 'bold',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.05em',
+                            transition: 'all 0.2s ease'
                         }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                     >
-                        <FaArrowLeft size={12} />
-                        STATION
+                        <FaArrowLeft size={10} />
+                        BACK
                     </button>
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#fff', letterSpacing: '0.1em', marginLeft: 'auto' }}>NOTIFICATIONS</h3>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: '0.8rem',
+                        color: '#fff',
+                        letterSpacing: '0.2em',
+                        fontWeight: '800',
+                        opacity: 0.9,
+                        position: 'absolute',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        pointerEvents: 'none'
+                    }}>
+                        NOTIFICATIONS
+                    </h3>
+                    <div style={{ width: '60px' }}></div> {/* Spacer for symmetry */}
                 </div>
 
-                {/* Simple Notification List Placeholder - In real app, import NotificationList component */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666', fontSize: '0.85rem' }}>
-                        <FaBell size={24} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-                        <br />
-                        No new notifications
-                    </div>
+                {/* Real Notification List */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
+                    <NotificationList
+                        userId={currentUser?.uid}
+                        onNotificationClick={() => {
+                            // Optionally refresh unread count
+                        }}
+                    />
+
                     <button
-                        onClick={() => handleNavClick('/notifications')}
+                        onClick={() => {
+                            handleNavClick('/notifications');
+                            setShowNotifications(false);
+                            setIsOpen(false);
+                        }}
                         style={{
-                            marginTop: 'auto',
+                            width: 'calc(100% - 1rem)',
+                            margin: '1rem 0.5rem',
                             padding: '0.8rem',
-                            background: 'rgba(255,255,255,0.05)',
-                            border: 'none',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.05)',
                             borderRadius: '8px',
                             color: accentColor,
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            letterSpacing: '0.1em',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
                         }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
                     >
-                        View All
+                        VIEW ALL ACTIVITY
                     </button>
                 </div>
             </div>

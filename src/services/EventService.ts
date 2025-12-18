@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import type { AppEvent, AppEventFeedItem } from '@/core/types';
 import { normalizeAppEvent } from '@/core/schemas/firestoreModels';
+import { logger } from '@/core/utils/logger';
 
 const EVENTS_COLLECTION = 'events';
 
@@ -58,7 +59,7 @@ export const EventService = {
             }
             return null;
         } catch (error) {
-            console.error("Error fetching event:", error);
+            logger.error("Error fetching event:", error);
             return null;
         }
     },
@@ -96,7 +97,7 @@ export const EventService = {
             return postIds;
 
         } catch (error) {
-            console.error("Error fetching event feed posts:", error);
+            logger.error("Error fetching event feed posts:", error);
             return [];
         }
     },

@@ -17,7 +17,10 @@ import {
 } from '@/domain/shop/pricing';
 
 import { formatPrice } from '@/core/utils/helpers';
+
+
 import { isFeatureEnabled } from '@/config/featureFlags';
+import { LEGAL_TEXT } from '@/core/constants/legalText';
 
 const PRINT_SIZES = getPrintifyProducts();
 
@@ -998,7 +1001,11 @@ const ShopItemDetail = () => {
                             }}
                         />
 
-
+                        {/* LEGAL DISCLAIMERS */}
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#666', lineHeight: '1.4', textAlign: 'center' }}>
+                            <p style={{ marginBottom: '0.5rem' }}>{LEGAL_TEXT.MARKETPLACE_DISCLAIMER}</p>
+                            <p>{LEGAL_TEXT.REFUND_POLICY}</p>
+                        </div>
                     </div>
 
                     {/* Preview on Wall Modal (Placeholder) */}

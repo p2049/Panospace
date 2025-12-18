@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase';
 
+import { logger } from '@/core/utils/logger';
+
 /**
  * Monetization Service
  * Handles PanoSpace Ultra, Boosts, Commissions, and Partner Tiers.
@@ -41,23 +43,20 @@ export const BOOST_LEVELS = {
 export const getUserTier = async (userId: string) => {
     if (!userId) return USER_TIERS.FREE;
 
-    const DEV_EMAILS = ['appreview@paxus.app', 'dev@paxus.app', 'admin@paxus.app'];
-
     try {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (!userDoc.exists()) return USER_TIERS.FREE;
 
         const data = userDoc.data();
 
-        if (data.email && DEV_EMAILS.includes(data.email)) {
-            return USER_TIERS.PARTNER;
-        }
+        // Partner check is primary (Admin/Staff)
+        if (data.isPartner || data.isAdmin) return USER_TIERS.PARTNER;
+        // Ultra check
+        if (data.isUltra || data.isPro) return USER_TIERS.ULTRA;
 
-        if (data.isPartner) return USER_TIERS.PARTNER;
-        if (data.isUltra) return USER_TIERS.ULTRA;
         return USER_TIERS.FREE;
     } catch (error) {
-        console.error("Error getting user tier:", error);
+        logger.error("Error getting user tier:", error);
         return USER_TIERS.FREE;
     }
 };
@@ -176,7 +175,7 @@ export const getCommissions = async (userId: string, role = 'editor') => {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
-        console.error("Error getting commissions:", error);
+        logger.error("Error getting commissions:", error);
         return [];
     }
 };
@@ -199,7 +198,7 @@ export const createMuseum = async (partnerId: string, museumData: any) => {
         const docRef = await addDoc(collection(db, 'museums'), data);
         return { id: docRef.id, ...data };
     } catch (error) {
-        console.error("Error creating museum:", error);
+        logger.error("Error creating museum:", error);
         throw error;
     }
 };

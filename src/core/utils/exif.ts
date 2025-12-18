@@ -194,12 +194,12 @@ export function validateExifData(data: any): boolean {
 // ============================================================================
 
 export const QUARTZ_DATE_FORMATS = [
-    { value: "MM DD 'YY", label: "MM DD 'YY (US Classic - Default)" },
+    { value: "MM' DD YY", label: "MM' DD YY (US Classic)" },
+    { value: "YY' MM DD", label: "YY' MM DD (Classic)" },
+    { value: "DD' MM YY", label: "DD' MM YY (Euro Classic)" },
     { value: "YY.MM.DD", label: "YY.MM.DD" },
     { value: "MM.DD.YY", label: "MM.DD.YY (US)" },
-    { value: "DD.MM.YY", label: "DD.MM.YY (EU)" },
-    { value: "DD MM 'YY", label: "DD MM 'YY (Classic)" },
-    { value: "YY MM DD", label: "YY MM DD (Classic)" }
+    { value: "DD.MM.YY", label: "DD.MM.YY (EU)" }
 ];
 
 /**
@@ -214,12 +214,9 @@ export function generateQuartzDateString(format: string, date: Date = new Date()
         case 'YY.MM.DD': return `${y}.${m}.${d}`;
         case 'MM.DD.YY': return `${m}.${d}.${y}`;
         case 'DD.MM.YY': return `${d}.${m}.${y}`;
-        case "DD MM 'YY": return `${date.getDate()} ${Number(m)} '${y}`; // Note: Month is number in js, logic was Number(date.getMonth() + 1).. wait
-        // JS version: return `${date.getDate()} ${date.getMonth() + 1} '${y}`;
-        // My previous code line 222: `${date.getDate()} ${date.getMonth() + 1} '${y}`. 
-        // This outputs "15 1 '24" for Jan 15. The JS version did this.
-        case "MM DD 'YY": return `${Number(m)} ${date.getDate()} '${y}`;
-        case "YY MM DD": return `${y} ${m} ${d}`;
-        default: return `${Number(m)} ${date.getDate()} '${y}`;
+        case "DD' MM YY": return `${d}' ${m} ${y}`;
+        case "MM' DD YY": return `${m}' ${d} ${y}`;
+        case "YY' MM DD": return `${y}' ${m} ${d}`;
+        default: return `${d}' ${m} ${y}`;
     }
 }
