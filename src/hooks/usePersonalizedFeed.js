@@ -81,28 +81,49 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                 setError(null);
             }
 
-            let limitSize = 10;
-            // Fetch more if filtering aggressively
-            if (followingOnly || customFeedEnabled) limitSize = 50;
+            let limitSize = followingOnly ? 50 : 15;
+            let constraints = [];
 
-            let constraints = [
-                orderBy('createdAt', 'desc'),
-                limit(limitSize)
-            ];
+            // Determination of Query Strategy
+            const useFollowingQuery = followingOnly && currentUser && !customFeedEnabled;
 
-            // ---------------------------------------------------------
-            // Custom Feed Logic
-            // ---------------------------------------------------------
-            if (customFeedEnabled && customFeedConfig) {
+            if (useFollowingQuery) {
+                // 1. STRATEGY: Following List Query (Uses existing index on authorId + createdAt)
+                // Combine followingList and currentUser.uid, limit to 30 for Firestore IN limit
+                const authorIds = [...followingList.slice(0, 29), currentUser.uid];
+
+                if (followingList.length > 0 || currentUser) {
+                    constraints = [
+                        where('authorId', 'in', authorIds),
+                        orderBy('createdAt', 'desc'),
+                        limit(limitSize)
+                    ];
+                } else {
+                    // Fallback if truly no one is followed and no currentUser (shouldn't happen with auth)
+                    constraints = [
+                        orderBy('createdAt', 'desc'),
+                        limit(limitSize)
+                    ];
+                }
+                logger.log('Feed: Using Following Query Strategy', { authorCount: authorIds.length });
+            } else if (customFeedEnabled && customFeedConfig) {
+                // 2. STRATEGY: Custom Feed Logic
+                constraints = [
+                    orderBy('createdAt', 'desc'),
+                    limit(limitSize)
+                ];
                 // 1. Tags Filter (Firestore)
                 if (customFeedConfig.tags && customFeedConfig.tags.length > 0) {
                     constraints.unshift(where('tags', 'array-contains-any', customFeedConfig.tags.slice(0, 10)));
                 }
-            }
-            // ---------------------------------------------------------
-            // Standard Logic
-            // ---------------------------------------------------------
-            else {
+                logger.log('Feed: Using Custom Query Strategy');
+            } else {
+                // 3. STRATEGY: Standard Global Logic
+                constraints = [
+                    orderBy('createdAt', 'desc'),
+                    limit(limitSize)
+                ];
+
                 // Apply filters based on feedType
                 if (feedType === 'PARK' && options.parkId) {
                     constraints.unshift(where('parkId', '==', options.parkId));
@@ -117,6 +138,7 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                 } else {
                     constraints.unshift(where('type', '==', 'art'));
                 }
+                logger.log('Feed: Using Standard Global Query Strategy');
             }
 
             // Pagination
@@ -140,6 +162,24 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // ---------------------------------------------------------
+            // Filter Logic (Common + Custom)
+            // ---------------------------------------------------------
+
+            // 1. Filter Own Posts (Commented out as we now prioritize showing own posts in Added)
+            // if (!followingOnly) {
+            //    newPosts = newPosts.filter(p => p.userId !== currentUser.uid && p.authorId !== currentUser.uid);
+            // }
+
+            // 1.1 Post-query Filtering for Following mode (Filter by Type in memory since we used authorId index)
+            if (useFollowingQuery) {
+                if (showSocialPosts) {
+                    newPosts = newPosts.filter(p => p.type === 'social');
+                } else {
+                    newPosts = newPosts.filter(p => p.type === 'art');
+                }
+            }
 
             // ---------------------------------------------------------
             // Filter Logic (Common + Custom)
@@ -177,7 +217,6 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                     }
                 }
 
-                // Filter: Orientation
                 if (customFeedConfig.orientation && customFeedConfig.orientation !== 'any') {
                     newPosts = newPosts.filter(p => {
                         const ratio = p.imageDetails?.aspectRatio || 1;
@@ -185,6 +224,18 @@ export const usePersonalizedFeed = (feedType = 'HOME', options = {}, showSocialP
                         if (customFeedConfig.orientation === 'landscape') return ratio > 1;
                         return true;
                     });
+                }
+
+                // Filter: Content Type (Text vs Image)
+                if (customFeedConfig.contentType && customFeedConfig.contentType !== 'any') {
+                    if (customFeedConfig.contentType === 'text') {
+                        // Only Text Posts
+                        newPosts = newPosts.filter(p => p.postType === 'text');
+                    } else if (customFeedConfig.contentType === 'image') {
+                        // Only Image Posts (exclude text)
+                        // Note: Legacy image posts might not have postType, but they definitely aren't 'text'
+                        newPosts = newPosts.filter(p => p.postType !== 'text');
+                    }
                 }
 
                 // Filter: Locations

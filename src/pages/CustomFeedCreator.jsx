@@ -18,6 +18,7 @@ const CustomFeedCreator = () => {
     const [humorSetting, setHumorSetting] = useState('any'); // any, hide, only
     const [includeGlobal, setIncludeGlobal] = useState(true);
     const [includeFollowing, setIncludeFollowing] = useState(true);
+    const [contentType, setContentType] = useState('any'); // any, image, text
 
 
     // Tag Panel State
@@ -71,6 +72,7 @@ const CustomFeedCreator = () => {
                 locations,
                 orientation,
                 humorSetting,
+                contentType,
                 includeGlobal,
                 includeFollowing
             });
@@ -211,8 +213,8 @@ const CustomFeedCreator = () => {
                                 style={{
                                     flex: 1,
                                     padding: '0.6rem',
-                                    background: orientation === opt ? 'var(--dark-grey)' : 'transparent',
-                                    color: orientation === opt ? '#fff' : 'var(--text-secondary)',
+                                    background: orientation === opt ? 'rgba(110, 255, 216, 0.15)' : 'transparent',
+                                    color: orientation === opt ? '#7FFFD4' : 'var(--text-secondary)',
                                     border: 'none',
                                     borderRadius: '6px',
                                     textTransform: 'capitalize',
@@ -227,9 +229,36 @@ const CustomFeedCreator = () => {
                     </div>
                 </div>
 
-                {/* Content Filters (Humor) */}
+                {/* Content Type (Text/Image) */}
                 <div style={sectionStyle}>
-                    <h3 style={sectionHeaderStyle}>Content Types</h3>
+                    <h3 style={sectionHeaderStyle}>Content Type</h3>
+                    <div style={{ display: 'flex', gap: '0.5rem', background: '#000', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {['any', 'image', 'text'].map(opt => (
+                            <button
+                                key={opt}
+                                onClick={() => setContentType(opt)}
+                                style={{
+                                    flex: 1,
+                                    padding: '0.6rem',
+                                    background: contentType === opt ? 'rgba(110, 255, 216, 0.15)' : 'transparent',
+                                    color: contentType === opt ? '#7FFFD4' : 'var(--text-secondary)',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    textTransform: 'capitalize',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                            >
+                                {opt === 'any' ? 'Mixed' : opt}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Humor Settings */}
+                <div style={sectionStyle}>
+                    <h3 style={sectionHeaderStyle}>Humor</h3>
                     <div style={{ display: 'flex', gap: '0.5rem', background: '#000', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <button
                             onClick={() => setHumorSetting('any')}

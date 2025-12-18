@@ -261,8 +261,21 @@ export const useSearch = () => {
                 const snapshot = await getDocs(q);
                 mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
+            } else if (filters.postType === 'text') {
+                // Specific Text Post Feed (Explore Text)
+                q = query(
+                    postsRef,
+                    where('postType', '==', 'text'),
+                    limit(100) // increased limit to capture more candidates since we can't sort by time server-side without index
+                );
+
+                const snapshot = await getDocs(q);
+                mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
             } else {
                 // Fallback (Recent/Sorted)
+                // If filtering by 'image', we just fetch general recent and client-filter, 
+                // because '!=' query is expensive/restrictive.
                 q = query(
                     postsRef,
                     orderBy(orderByField, orderDirection),
@@ -418,12 +431,23 @@ export const useSearch = () => {
                 });
             }
 
-            // PHASE 3: Post Type Filter
+            // PHASE 3: Post Type Filter (Text vs Image)
             if (filters.postType) {
                 const beforeCount = filtered.length;
                 filtered = filtered.filter(post => {
-                    const postType = post.type || 'art'; // Default to 'art' if no type field
-                    return postType === filters.postType;
+                    // Check actual postType property first, fall back to type
+                    const pType = post.postType || post.type;
+                    console.log('[DEBUG] Filtering Post:', post.id, 'postType:', post.postType, 'type:', post.type, 'pType:', pType, 'Filter:', filters.postType);
+
+                    if (filters.postType === 'text') {
+                        return pType === 'text';
+                    } else if (filters.postType === 'image') {
+                        // For 'image' mode, we exclude text posts
+                        return pType !== 'text';
+                    }
+
+                    // Fallback for direct match if needed in future
+                    return pType === filters.postType;
                 });
                 logger.log(`[useSearch] postType filter (${filters.postType}): ${beforeCount} -> ${filtered.length} posts`);
             }

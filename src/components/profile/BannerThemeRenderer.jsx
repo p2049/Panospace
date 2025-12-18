@@ -414,28 +414,62 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
 
     // 1. CYBERPUNK LINES - Futurstic HUD style
     if (mode === 'cyberpunkLines') {
+        const isBrand = color === 'brand';
         const hexToRgb = (hex) => {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 255';
         };
-        const colorRgb = hexToRgb(color);
+        const colorRgb = hexToRgb(isBrand ? '#7FFFD4' : color);
+
+        // Brand Palette
+        const colors = {
+            mint: '#7FFFD4',
+            pink: '#FF5C8A',
+            purple: '#5A3FFF',
+            blue: '#1B82FF',
+            orange: '#FF914D'
+        };
 
         return (
             <div style={overlayStyle}>
-                {/* Tech Background Grid (Subtle) */}
+                {/* Tron Rainbow Grid - Static 2D version */}
                 <div style={{
                     position: 'absolute', inset: 0,
-                    backgroundImage: `
-                        linear-gradient(rgba(${colorRgb}, 0.05) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(${colorRgb}, 0.05) 1px, transparent 1px)
+                    zIndex: 0,
+                    background: isBrand
+                        ? 'linear-gradient(135deg, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF)'
+                        : `rgba(${colorRgb}, 0.5)`,
+                    WebkitMaskImage: `
+                        linear-gradient(to bottom, #000 1px, transparent 1px),
+                        linear-gradient(to right, #000 1px, transparent 1px)
                     `,
-                    backgroundSize: '20px 20px',
-                    maskImage: 'radial-gradient(ellipse at center, black 40%, transparent 100%)'
+                    WebkitMaskSize: '30px 30px',
+                    maskImage: `
+                        linear-gradient(to bottom, #000 1px, transparent 1px),
+                        linear-gradient(to right, #000 1px, transparent 1px)
+                    `,
+                    maskSize: '30px 30px',
+                    opacity: 0.4,
+                    filter: 'drop-shadow(0 0 5px rgba(127, 255, 212, 0.5))'
+                }} />
+
+                {/* Ambient Void Glow */}
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.8) 100%)',
+                    zIndex: 1
                 }} />
 
                 {/* SVG HUD Frame */}
                 <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
                     <defs>
+                        <linearGradient id="rainbowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor={colors.mint} />
+                            <stop offset="25%" stopColor={colors.pink} />
+                            <stop offset="50%" stopColor={colors.purple} />
+                            <stop offset="75%" stopColor={colors.blue} />
+                            <stop offset="100%" stopColor={colors.orange} />
+                        </linearGradient>
                         <filter id="glow">
                             <feGaussianBlur stdDeviation="2" result="coloredBlur" />
                             <feMerge>
@@ -446,26 +480,26 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
                     </defs>
 
                     {/* Top Left Bracket */}
-                    <path d="M10,40 V10 H40" fill="none" stroke={color} strokeWidth="2" filter="url(#glow)" />
-                    <circle cx="10" cy="10" r="2" fill={color} filter="url(#glow)" />
+                    <path d="M10,40 V10 H40" fill="none" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="2" filter="url(#glow)" />
+                    <circle cx="10" cy="10" r="2" fill={isBrand ? colors.mint : color} filter="url(#glow)" />
 
                     {/* Top Right Bracket */}
-                    <path d="Mcalc(100% - 40),10 Hcalc(100% - 10) V40" fill="none" stroke={color} strokeWidth="2" filter="url(#glow)" />
-                    <circle cx="calc(100% - 10)" cy="10" r="2" fill={color} filter="url(#glow)" />
+                    <path d="Mcalc(100% - 40),10 Hcalc(100% - 10) V40" fill="none" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="2" filter="url(#glow)" />
+                    <circle cx="calc(100% - 10)" cy="10" r="2" fill={isBrand ? colors.pink : color} filter="url(#glow)" />
 
                     {/* Bottom Left Bracket */}
-                    <path d="M10,calc(100% - 40) Vcalc(100% - 10) H40" fill="none" stroke={color} strokeWidth="2" filter="url(#glow)" />
-                    <circle cx="10" cy="calc(100% - 10)" r="2" fill={color} filter="url(#glow)" />
+                    <path d="M10,calc(100% - 40) Vcalc(100% - 10) H40" fill="none" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="2" filter="url(#glow)" />
+                    <circle cx="10" cy="calc(100% - 10)" r="2" fill={isBrand ? colors.blue : color} filter="url(#glow)" />
 
                     {/* Connecting Data Lines - Thin & Low Opacity */}
-                    <path d="M60,10 Hcalc(100% - 60)" stroke={color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 5" />
-                    <path d="M10,60 Vcalc(100% - 60)" stroke={color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 5" />
-                    <path d="Mcalc(100% - 10),60 Vcalc(100% - 60)" stroke={color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 5" />
+                    <path d="M60,10 Hcalc(100% - 60)" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 5" />
+                    <path d="M10,60 Vcalc(100% - 60)" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 5" />
+                    <path d="Mcalc(100% - 10),60 Vcalc(100% - 60)" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="1" strokeOpacity="0.3" strokeDasharray="5 5" />
 
                     {/* Decorative Circuit Nodes */}
-                    <circle cx="50" cy="20" r="1.5" fill={color} fillOpacity="0.5" />
-                    <circle cx="70" cy="20" r="1.5" fill={color} fillOpacity="0.5" />
-                    <line x1="50" y1="20" x2="80" y2="20" stroke={color} strokeWidth="1" strokeOpacity="0.3" />
+                    <circle cx="50" cy="20" r="1.5" fill={isBrand ? colors.mint : color} fillOpacity="0.5" />
+                    <circle cx="70" cy="20" r="1.5" fill={isBrand ? colors.pink : color} fillOpacity="0.5" />
+                    <line x1="50" y1="20" x2="80" y2="20" stroke={isBrand ? 'url(#rainbowGrad)' : color} strokeWidth="1" strokeOpacity="0.3" />
                 </svg>
 
                 {/* Central Pulse */}
@@ -473,7 +507,9 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
                     position: 'absolute',
                     top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                     width: '60%', height: '60%',
-                    background: `radial-gradient(circle, rgba(${colorRgb}, 0.1) 0%, transparent 70%)`,
+                    background: isBrand
+                        ? `radial-gradient(circle, rgba(127, 255, 212, 0.1) 0%, rgba(90, 63, 255, 0.05) 40%, transparent 70%)`
+                        : `radial-gradient(circle, rgba(${colorRgb}, 0.1) 0%, transparent 70%)`,
                     animation: 'gentlePulse 4s infinite ease-in-out'
                 }} />
                 <style>{`@keyframes gentlePulse { 0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); } }`}</style>
@@ -481,61 +517,110 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
         );
     }
 
-    // 2. NEON GRID - Retrowave
+    // 2. NEON GRID - Retrowave / TRON
     if (mode === 'neonGrid') {
+        const isBrand = color === 'brand';
+        const brandRainbow = 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D)';
+
         return (
             <div style={overlayStyle}>
                 <div style={{
                     position: 'absolute',
-                    bottom: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: `linear-gradient(to top, ${color}20 0%, transparent 60%)`
+                    inset: 0,
+                    background: '#000'
                 }} />
-                {/* Grid */}
+
+                {/* Perspective Grid */}
                 <div style={{
                     position: 'absolute',
-                    inset: '-50% -50%',
+                    inset: '-100% -50%',
                     width: '200%',
                     height: '200%',
-                    backgroundImage: `
-                        linear-gradient(${color}40 1px, transparent 1px),
-                        linear-gradient(90deg, ${color}40 1px, transparent 1px)
+                    background: isBrand
+                        ? 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF)'
+                        : color,
+                    WebkitMaskImage: `
+                        linear-gradient(#000 2px, transparent 2px),
+                        linear-gradient(90deg, #000 2px, transparent 2px)
                     `,
-                    backgroundSize: '40px 40px',
-                    transform: 'perspective(300px) rotateX(60deg) translateY(-100px) translateZ(-100px)',
-                    animation: 'gridScroll 20s linear infinite',
-                    opacity: 0.5,
-                    maskImage: 'linear-gradient(to top, black 20%, transparent 80%)'
+                    WebkitMaskSize: '60px 60px',
+                    maskImage: `
+                        linear-gradient(#000 2px, transparent 2px),
+                        linear-gradient(90deg, #000 2px, transparent 2px)
+                    `,
+                    maskSize: '60px 60px',
+                    transform: 'perspective(400px) rotateX(65deg) translateY(-80px)',
+                    animation: 'gridScroll 15s linear infinite',
+                    opacity: isBrand ? 0.6 : 0.4,
+                    filter: `drop-shadow(0 0 8px ${isBrand ? '#5A3FFF' : color})`
                 }} />
-                <style>{`@keyframes gridScroll { from { background-position: 0 0; } to { background-position: 0 40px; } }`}</style>
+
+                {/* Horizon Glow */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '40%',
+                    left: 0, right: 0, height: '2px',
+                    background: isBrand ? brandRainbow : color,
+                    boxShadow: `0 0 20px 2px ${isBrand ? '#5A3FFF' : color}`,
+                    zIndex: 3
+                }} />
+
+                {/* Fog Fade */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to bottom, #000 20%, transparent 45%, transparent 70%, rgba(0,0,0,0.5) 100%)',
+                    zIndex: 2
+                }} />
+
+                {/* Bottom Reflection Glow */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: 0, left: 0, right: 0, height: '40%',
+                    background: `linear-gradient(to top, ${isBrand ? '#5A3FFF20' : color + '20'} 0%, transparent 100%)`,
+                    zIndex: 1
+                }} />
+
+                <style>{`@keyframes gridScroll { from { background-position: 0 0; } to { background-position: 0 60px; } }`}</style>
             </div>
         );
     }
 
     // 3. UNDERWATER - Classic Mario Atmospheric Depth
     if (mode === 'underwaterY2K') {
+        const isBrand = color === 'brand';
+
         const hexToRgb = (hex) => {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 255';
         };
+
         const colorRgb = hexToRgb(color);
+
+        // Brand Rainbow Support - Randomized Splotches
+        const brandRainbowSplotches = `
+            radial-gradient(circle at 10% 20%, rgba(127, 255, 212, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 90% 80%, rgba(255, 92, 138, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(90, 63, 255, 0.4) 0%, transparent 60%),
+            radial-gradient(circle at 30% 70%, rgba(27, 130, 255, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 70% 30%, rgba(255, 145, 77, 0.4) 0%, transparent 50%),
+            radial-gradient(circle at 80% 10%, rgba(255, 183, 213, 0.3) 0%, transparent 40%),
+            radial-gradient(circle at 20% 90%, rgba(127, 219, 255, 0.3) 0%, transparent 40%)
+        `;
 
         return (
             <div style={overlayStyle}>
                 {/* 1. Base Gradient: Lighter Top -> Deep Dark Bottom */}
                 <div style={{
                     position: 'absolute', inset: 0,
-                    // Linear gradient from theme color (mixed with light) to deep black-mix
-                    background: `linear-gradient(to bottom, 
-                        rgba(${colorRgb}, 0.6) 0%, 
-                        rgba(${colorRgb}, 0.3) 40%, 
-                        rgba(0,0,0,0.8) 100%)`,
-                    backgroundColor: '#000', // Fallback base
+                    background: isBrand
+                        ? brandRainbowSplotches
+                        : `linear-gradient(to bottom, rgba(${colorRgb}, 0.6) 0%, rgba(${colorRgb}, 0.3) 40%, rgba(0,0,0,0.8) 100%)`,
+                    backgroundColor: '#000',
                     zIndex: 1
                 }} />
 
-                {/* 2. Surface Water Glow (The top "waterline" effect) */}
+                {/* 2. Surface Water Glow */}
                 <div style={{
                     position: 'absolute', top: 0, left: 0, right: 0, height: '30%',
                     background: `linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 100%)`,
@@ -544,7 +629,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
                     mixBlendMode: 'screen'
                 }} />
 
-                {/* 3. Caustic Light Pattern (The "swimming pool" reflection look) - STATIC */}
+                {/* 3. Caustic Light Pattern */}
                 <div style={{
                     position: 'absolute', inset: 0,
                     opacity: 0.15,
@@ -555,14 +640,14 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
                         radial-gradient(circle at 40% 10%, white 0%, transparent 15%),
                         radial-gradient(circle at 70% 80%, white 0%, transparent 12%)
                     `,
-                    backgroundSize: '120px 120px', // Repeating pattern size
+                    backgroundSize: '120px 120px',
                     backgroundRepeat: 'repeat',
                     mixBlendMode: 'overlay',
                     filter: 'blur(5px)',
                     zIndex: 2
                 }} />
 
-                {/* 4. Deep Depth Vignette (Darkens the corners and bottom heavily) */}
+                {/* 4. Deep Depth Vignette */}
                 <div style={{
                     position: 'absolute', inset: 0,
                     background: 'radial-gradient(circle at 50% 0%, transparent 40%, #000 120%)',
@@ -570,7 +655,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
                     opacity: 0.7
                 }} />
 
-                {/* 5. Subtle Wavy Distortion Overlay (Simulated via repeating gradient) */}
+                {/* 5. Subtle Wavy Distortion */}
                 <div style={{
                     position: 'absolute', inset: 0,
                     opacity: 0.05,
@@ -583,10 +668,10 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
                 {/* 6. Soft Light Rays (Diagonal, top-left to center) */}
                 <div style={{
                     position: 'absolute', inset: 0,
-                    background: `
-                        linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%),
-                        linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.03) 30%, transparent 40%)
-                    `,
+                    background: isBrand
+                        ? `linear-gradient(110deg, transparent 20%, rgba(127, 255, 212, 0.05) 30%, rgba(255, 92, 138, 0.05) 40%, rgba(90, 63, 255, 0.05) 50%, rgba(27, 130, 255, 0.05) 60%, transparent 80%)`
+                        : `linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%),
+                           linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.03) 30%, transparent 40%)`,
                     mixBlendMode: 'screen',
                     zIndex: 3
                 }} />
@@ -598,10 +683,15 @@ const BannerThemeRenderer = ({ mode, color, starSettings }) => {
 
 
     if (mode === 'simple_gradient') {
+        const isBrand = color === 'brand';
+        const brandRainbow = 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D)';
+
         return (
             <div style={{
                 ...overlayStyle,
-                background: `linear-gradient(to bottom, #000000 0%, #111111 40%, ${color} 100%)`
+                background: isBrand
+                    ? `linear-gradient(to bottom, #000000 0%, #111111 40%, transparent 100%), ${brandRainbow}`
+                    : `linear-gradient(to bottom, #000000 0%, #111111 40%, ${color} 100%)`
             }} />
         )
     }

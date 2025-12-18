@@ -23,6 +23,7 @@ import { invalidateProfileCache } from '@/hooks/useProfile';
 import { logger } from '@/core/utils/logger';
 import StarBackground from '@/components/StarBackground';
 import { uploadFile } from '@/services/storageUploader'; // Static import
+import { checkContent } from '@/core/utils/moderation/moderator';
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -284,6 +285,19 @@ const EditProfile = () => {
             // 2. Sanitation Checks
             const sanitizedUsername = sanitizeDisplayName(username); // Use sanitizeDisplayName for username too as it handles basic trim
             const sanitizedBio = sanitizeBio(bio);
+
+            // 🛡️ MODERATION CHECK (Username & Bio)
+            const usernameModeration = checkContent(sanitizedUsername);
+            if (!usernameModeration.allowed) {
+                setLoading(false);
+                return alert("This content contains language that isn’t allowed on Panospace.");
+            }
+
+            const bioModeration = checkContent(sanitizedBio);
+            if (!bioModeration.allowed) {
+                setLoading(false);
+                return alert("This content contains language that isn’t allowed on Panospace.");
+            }
 
             // 2.5 Username Validation (If changed)
             if (username !== originalUsername) {
@@ -758,7 +772,7 @@ const EditProfile = () => {
                                     color: usernameColor,
                                     textShadow: textGlow ? `0 0 10px ${usernameColor}80` : 'none'
                                 }}>
-                                    {renderCosmicUsername(username, bannerColor, textGlow)}
+                                    {renderCosmicUsername(username, profileBorderColor, textGlow)}
                                 </span>
                             </div>
 
@@ -1260,6 +1274,7 @@ const EditProfile = () => {
                                 opacity: loading ? 0.7 : 1,
                                 position: 'sticky',
                                 bottom: '20px',
+                                zIndex: 1000,
                                 boxShadow: '0 4px 20px rgba(127, 255, 212, 0.3)',
                                 transition: 'all 0.2s',
                                 fontFamily: 'var(--font-family-heading)',

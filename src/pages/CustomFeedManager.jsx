@@ -77,24 +77,6 @@ const CustomFeedManager = () => {
                     textTransform: 'uppercase',
                     margin: 0
                 }}>Custom Feeds</h1>
-                <button
-                    onClick={handleCreateNew}
-                    style={{
-                        marginLeft: 'auto',
-                        background: 'var(--accent, #6effd8)',
-                        color: '#000',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '32px',
-                        height: '32px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <FaPlus size={14} />
-                </button>
             </div>
 
             <div style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto' }}>
@@ -216,6 +198,30 @@ const CustomFeedManager = () => {
                     </div>
                 )}
             </div>
+
+            {/* Floating Action Button */}
+            <button
+                onClick={handleCreateNew}
+                style={{
+                    position: 'fixed',
+                    bottom: '2rem',
+                    right: '2rem',
+                    background: 'var(--accent, #6effd8)',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '56px',
+                    height: '56px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    zIndex: 100
+                }}
+            >
+                <FaPlus size={20} />
+            </button>
         </div>
     );
 };

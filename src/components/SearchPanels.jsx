@@ -35,6 +35,8 @@ const SearchPanels = ({
     isMobile, // NEW
     isMarketplaceMode, // NEW
     onMarketplaceToggle, // NEW
+    activePostType, // NEW
+    setActivePostType, // NEW
     children
 }) => {
     const [expandedPanels, setExpandedPanels] = useState({
@@ -226,6 +228,62 @@ const SearchPanels = ({
                     {/* Current App Events Box */}
                     {(currentMode === 'posts' || currentMode === 'events') && (
                         <CurrentAppEventsBox />
+                    )}
+
+                    {/* Post Type Toggle (Image vs Text) - Only in Posts Mode */}
+                    {currentMode === 'posts' && (
+                        <div style={{ marginBottom: '0.8rem', display: 'flex', gap: '0.5rem' }}>
+                            <button
+                                onClick={() => setActivePostType('image')}
+                                style={{
+                                    flex: 1,
+                                    padding: '0.75rem',
+                                    background: activePostType === 'image' ? 'rgba(127, 255, 212, 0.15)' : 'rgba(0, 0, 0, 0.4)',
+                                    border: activePostType === 'image' ? '1px solid var(--ice-mint)' : '1px solid rgba(127, 255, 212, 0.3)',
+                                    borderRadius: '12px',
+                                    color: activePostType === 'image' ? 'var(--ice-mint)' : '#fff',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    backdropFilter: 'blur(10px)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'all 0.2s',
+                                    fontFamily: 'var(--font-family-heading)',
+                                    fontSize: '0.9rem',
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                <ModernIcon icon={FaCamera} size={14} color={activePostType === 'image' ? 'var(--ice-mint)' : '#fff'} />
+                                Image
+                            </button>
+                            <button
+                                onClick={() => setActivePostType('text')}
+                                style={{
+                                    flex: 1,
+                                    padding: '0.75rem',
+                                    background: activePostType === 'text' ? 'rgba(127, 255, 212, 0.15)' : 'rgba(0, 0, 0, 0.4)',
+                                    border: activePostType === 'text' ? '1px solid var(--ice-mint)' : '1px solid rgba(127, 255, 212, 0.3)',
+                                    borderRadius: '12px',
+                                    color: activePostType === 'text' ? 'var(--ice-mint)' : '#fff',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    backdropFilter: 'blur(10px)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'all 0.2s',
+                                    fontFamily: 'var(--font-family-heading)',
+                                    fontSize: '0.9rem',
+                                    textTransform: 'uppercase'
+                                }}
+                            >
+                                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>T</span>
+                                Text
+                            </button>
+                        </div>
                     )}
 
                     {/* Marketplace Toggle - Show for Posts only AND Mobile Vertical (using isMobile as proxy) */}

@@ -187,32 +187,7 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                     )}
                 </div>
 
-                {/* Post Type Indicator */}
-                {post.postType && post.postType !== 'standard' && post.postType !== 'text' && (
-                    <div
-                        style={{
-                            position: 'absolute',
-                            top: '10px',
-                            right: '10px',
-                            background: 'rgba(127, 255, 212, 0.9)',
-                            color: '#000',
-                            padding: '4px 8px',
-                            borderRadius: '5px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-                            pointerEvents: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            zIndex: 2
-                        }}
-                    >
-                        {post.postType === 'flipbook' && '🎞️'}
-                        {post.postType === 'multi-layout' && '🖼️'}
-                        {post.postType === 'pano-stack' && '🏔️'}
-                    </div>
-                )}
+
 
                 {/* Username pill - hover on desktop, always visible on mobile */}
                 <div

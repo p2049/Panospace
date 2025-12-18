@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaImage, FaLock, FaUsers, FaGlobe, FaCalendar, FaStore, FaRss } from 'react-icons/fa';
 import { useAuth } from '@/context/AuthContext';
 import { useCreateCollection } from '@/hooks/useCollections';
+import { checkContent } from '@/core/utils/moderation/moderator';
 
 const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) => {
     const { currentUser } = useAuth();
@@ -45,6 +46,19 @@ const CreateCollectionModal = ({ isOpen, onClose, onSuccess, userPosts = [] }) =
         if (!formData.title.trim()) {
             alert('Please enter a collection title');
             return;
+        }
+
+        // 🛡️ MODERATION CHECK
+        const titleCheck = checkContent(formData.title);
+        if (!titleCheck.allowed) {
+            return alert("This content contains language that isn’t allowed on Panospace.");
+        }
+
+        if (formData.description) {
+            const descCheck = checkContent(formData.description);
+            if (!descCheck.allowed) {
+                return alert("This content contains language that isn’t allowed on Panospace.");
+            }
         }
 
         try {

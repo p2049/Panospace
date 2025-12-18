@@ -70,7 +70,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                     display: 'flex',
                     gap: '12px',
                     overflowX: 'auto',
-                    padding: '4px 0 12px 0',
+                    padding: '16px 4px', // Increased to prevent glow clipping
                     WebkitOverflowScrolling: 'touch',
                     minHeight: '80px' // Prevent layout shift
                 }}>
@@ -108,7 +108,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                 overflow: 'hidden'
                             }}>
                                 {/* Stylized Visuals */}
-                                {type.id === 'neonGrid' && (
+                                {(type.id === 'neonGrid' || type.id === 'cyberpunkLines') && (
                                     <div style={{
                                         position: 'absolute',
                                         bottom: 0,

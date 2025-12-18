@@ -508,17 +508,11 @@ function renderCityToCanvas(canvas, themeId, starSettings) {
     if (theme.atmosphere?.grid) {
         const vanishY = height * 0.75; // Lower horizon (was 0.70)
 
-        // Explicit Black Ground for Holo Grid
-        if (themeId === 'city_holo') {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, vanishY, width, height - vanishY);
-        }
 
         // WATER GRID STYLING
         ctx.strokeStyle = COLORS.ionBlue; // Default Deep Water
         if (themeId === 'city_vaporwave') ctx.strokeStyle = COLORS.auroraBlue; // Tropical Water
         if (themeId === 'city_retrowave') ctx.strokeStyle = COLORS.ionBlue; // Deep Synth Water
-        if (themeId === 'city_holo') ctx.strokeStyle = COLORS.auroraMint; // Digital Water
 
         // Add Water Glow
         ctx.shadowBlur = 10;

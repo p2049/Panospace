@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { FaRocket } from 'react-icons/fa';
 import Post from '@/components/Post';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost, onRefresh }) => {
+const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost, onRefresh, style, className }) => {
     const containerRef = useRef(null);
     const itemRefs = useRef({});
     const [scrolledToInitial, setScrolledToInitial] = useState(false);
@@ -21,39 +22,6 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
             setScrolledToInitial(true);
         }
     }, [initialIndex, posts, scrolledToInitial]);
-
-    const handleScroll = () => {
-        if (!containerRef.current) return;
-
-        // Find the visible item
-        // We look for the first item whose top is >= 0 relative to container (or close to it)
-        const containerTop = containerRef.current.getBoundingClientRect().top;
-
-        let foundIndex = -1;
-
-        // Optimization: Binary search handles huge lists, but simple loop is fine for < 100 items visible
-        // Actually, checking every item on scroll is heavy.
-        // Let's use simple logic: loop through registered refs.
-
-        const indices = Object.keys(itemRefs.current).map(Number).sort((a, b) => a - b);
-
-        for (const idx of indices) {
-            const el = itemRefs.current[idx];
-            if (!el) continue;
-            const rect = el.getBoundingClientRect();
-
-            // If the element is mostly visible or just passed the top
-            // Define active as: The item taking up the top of the viewport
-            if (rect.bottom > containerTop + 50) {
-                foundIndex = idx;
-                break;
-            }
-        }
-
-        if (foundIndex !== -1 && onIndexChange) {
-            onIndexChange(foundIndex);
-        }
-    };
 
     // Pull-to-refresh touch handlers
     const handleTouchStart = useCallback((e) => {
@@ -114,9 +82,69 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
     const rocketRotation = isRefreshing ? 0 : -45 + (pullProgress * 45);
     const rocketScale = 0.5 + (pullProgress * 0.5);
 
+    // State for dynamic spans (Text posts expansion)
+    const [dynamicSpans, setDynamicSpans] = useState({});
+
+    const handleResize = useCallback((postId, height) => {
+        setDynamicSpans(prev => {
+            if (height === undefined) {
+                // Remove custom span
+                const next = { ...prev };
+                delete next[postId];
+                return next;
+            }
+
+            // Calculate needed rows (150px rows + 16px gap)
+            // height = rows * 150 + (rows - 1) * 16
+            // height = 150*r + 16*r - 16
+            // height + 16 = 166*r
+            // r = (height + 16) / 166
+            const neededRows = Math.ceil((height + 16) / 166);
+
+            // Only update if changed
+            if (prev[postId] === neededRows) return prev;
+
+            return { ...prev, [postId]: neededRows };
+        });
+    }, []);
+
+    const handleScroll = () => {
+        if (!containerRef.current) return;
+
+        // Find the visible item
+        // We look for the first item whose top is >= 0 relative to container (or close to it)
+        const containerTop = containerRef.current.getBoundingClientRect().top;
+
+        let foundIndex = -1;
+
+        // Optimization: Binary search handles huge lists, but simple loop is fine for < 100 items visible
+        // Actually, checking every item on scroll is heavy.
+        // Let's use simple logic: loop through registered refs.
+
+        const indices = Object.keys(itemRefs.current).map(Number).sort((a, b) => a - b);
+
+        for (const idx of indices) {
+            const el = itemRefs.current[idx];
+            if (!el) continue;
+            const rect = el.getBoundingClientRect();
+
+            // If the element is mostly visible or just passed the top
+            // Define active as: The item taking up the top of the viewport
+            if (rect.bottom > containerTop + 50) {
+                foundIndex = idx;
+                break;
+            }
+        }
+
+        if (foundIndex !== -1 && onIndexChange) {
+            onIndexChange(foundIndex);
+        }
+    };
+
     return (
         <div
             ref={containerRef}
+            className={className}
             onScroll={handleScroll}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -126,9 +154,10 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                 height: '100vh',
                 overflowY: 'auto',
                 background: '#000',
-                paddingTop: '60px', // Space for header/safe area
-                paddingBottom: '100px', // Space for bottom nav
-                boxSizing: 'border-box'
+                paddingTop: '60px',
+                paddingBottom: '100px',
+                boxSizing: 'border-box',
+                ...style // Allow override
             }}
         >
             {/* Pull-to-Refresh Indicator - Rocket */}
@@ -209,6 +238,8 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                         padding: 1rem;
                         max-width: 600px;
                         margin: 0 auto;
+                        /* Ensure grid itself is ready for motion */
+                        position: relative;
                     }
                     @media (min-width: 1024px) {
                         .list-view-grid {
@@ -218,53 +249,95 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                     }
                 `}
             </style>
-            <div className="list-view-grid">
-                {posts.map((post, index) => {
-                    const hasImages = (
-                        post.thumbnailUrls?.length > 0 ||
-                        (post.images && post.images.length > 0) ||
-                        (post.imageUrls && post.imageUrls.length > 0) ||
-                        !!post.imageUrl ||
-                        !!post.shopImageUrl
-                    );
-                    const isTextPost = post.postType === 'text' || !hasImages;
 
-                    let gridRowSpan = 'span 1';
-
-                    if (isTextPost) {
-                        const textContent = post.body || post.description || post.caption || '';
-                        const hasRichText = !!post.bodyRichText;
-                        const isLong = (
-                            hasRichText ||
-                            textContent.length > 120 ||
-                            (textContent.match(/\n/g) || []).length > 2 ||
-                            (post.title && post.title.length > 60)
+            {/* Motion Layout Group handles shared layout animations */}
+            <motion.div
+                className="list-view-grid"
+                layout
+                initial={false} // Disable initial mounting animation for performance
+            >
+                <AnimatePresence initial={false}>
+                    {posts.map((post, index) => {
+                        const hasImages = (
+                            post.thumbnailUrls?.length > 0 ||
+                            (post.images && post.images.length > 0) ||
+                            (post.imageUrls && post.imageUrls.length > 0) ||
+                            !!post.imageUrl ||
+                            !!post.shopImageUrl
                         );
+                        const isTextPost = post.postType === 'text' || !hasImages;
 
-                        if (isLong) {
-                            gridRowSpan = 'span 2';
+                        let gridRowSpan = 'span 1';
+
+                        if (isTextPost) {
+                            // Check explicit dynamic span first
+                            if (dynamicSpans[post.id]) {
+                                gridRowSpan = `span ${dynamicSpans[post.id]}`;
+                            } else {
+                                // Default sizing
+                                const textContent = post.body || post.description || post.caption || '';
+                                const hasRichText = !!post.bodyRichText;
+                                const isLong = (
+                                    hasRichText ||
+                                    textContent.length > 120 ||
+                                    (textContent.match(/\n/g) || []).length > 2 ||
+                                    (post.title && post.title.length > 60)
+                                );
+
+                                if (isLong) {
+                                    gridRowSpan = 'span 2';
+                                }
+                            }
                         }
-                    }
 
-                    return (
-                        <div
-                            key={post.id}
-                            ref={el => itemRefs.current[index] = el}
-                            data-index={index}
-                            style={{
-                                width: '100%',
-                                gridRow: gridRowSpan,
-                                height: '100%'
-                            }}
-                        >
-                            {/* We use renderPost if provided, or default to Post with viewMode='list' */}
-                            {renderPost ? renderPost(post, index, index === initialIndex) : (
-                                <Post post={post} priority="normal" viewMode="list" />
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
+                        // Prepare render props
+                        // We override onResize to intercept it
+                        const extendedRender = (p, i, curr) => {
+                            if (renderPost) {
+                                // Clone element or just render it? 
+                                // renderPost returns a Component/Element. 
+                                // We need to inject onResize into it.
+                                // Since renderPost is calling <Post .../>, we can't easily inject props into the *result* unless we cloneElement.
+                                // BUT Post component accepts onResize now.
+                                // Let's simplify: pass onResize to renderPost function if it accepts it? No.
+                                // Standard pattern is renderPost(post, index, isCurrent).
+                                // But we control ListViewContainer.
+                                // We can just invoke Post directly if renderPost is generic?
+                                // Or use React.cloneElement(renderPost(...), { onResize: ... })
+                                const element = renderPost(p, i, curr);
+                                return React.cloneElement(element, {
+                                    onResize: (h) => handleResize(p.id, h)
+                                });
+                            }
+                            return <Post post={p} priority="normal" viewMode="list" onResize={(h) => handleResize(p.id, h)} />;
+                        };
+
+                        return (
+                            <motion.div
+                                layout
+                                key={post.id}
+                                ref={el => itemRefs.current[index] = el}
+                                data-index={index}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                                transition={{
+                                    layout: { type: "spring", stiffness: 300, damping: 30 },
+                                    opacity: { duration: 0.2 }
+                                }}
+                                style={{
+                                    width: '100%',
+                                    gridRow: gridRowSpan,
+                                    height: '100%',
+                                    zIndex: dynamicSpans[post.id] ? 10 : 1 // Bring expanded items forward
+                                }}
+                            >
+                                {extendedRender(post, index, index === initialIndex)}
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
+            </motion.div>
         </div>
     );
 };

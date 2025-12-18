@@ -24,7 +24,7 @@ FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
     };
 });
 
-const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts }) => {
+const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts, onResize }) => {
     const textBodyRef = React.useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isOverflowing, setIsOverflowing] = useState(false);
@@ -42,12 +42,40 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts 
     React.useLayoutEffect(() => {
         if (textBodyRef.current) {
             // Check if scrollHeight is significantly larger than clientHeight
-            setIsOverflowing(textBodyRef.current.scrollHeight > textBodyRef.current.clientHeight + 5);
+            const overflowing = textBodyRef.current.scrollHeight > textBodyRef.current.clientHeight + 5;
+            setIsOverflowing(overflowing);
         }
     }, [post.bodyRichText, plainTextContent, post.title]);
 
+    // Measure height when expanding and notify parent
+    React.useLayoutEffect(() => {
+        if (onResize && textBodyRef.current) {
+            if (isExpanded) {
+                // Add header + padding + link height estimation or measure container?
+                // Measuring the text body scrollHeight isn't enough, we need total height.
+                // We don't have a ref to the container here easily unless we add one.
+                // Let's use internal ref for container? No, we need it on the root div.
+                // Actually, let's grab the ref from the click event or add a ref to the root.
+            }
+        }
+    }, [isExpanded, onResize]);
+
+    // Root Ref
+    const cardRef = React.useRef(null);
+
+    React.useLayoutEffect(() => {
+        if (onResize && isExpanded && cardRef.current) {
+            // Delay slightly to let layout settle? Or simple measure?
+            // scrollHeight should be correct if height is 'auto'.
+            onResize(cardRef.current.scrollHeight);
+        } else if (onResize && !isExpanded) {
+            onResize(undefined); // Reset
+        }
+    }, [isExpanded, onResize]);
+
     return (
         <div
+            ref={cardRef}
             onClick={(e) => {
                 if (isOverflowing) {
                     setIsExpanded(!isExpanded);
@@ -177,7 +205,7 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts 
     );
 };
 
-const FeedPostCard = ({ post, contextPosts, onClick }) => {
+const FeedPostCard = ({ post, contextPosts, onClick, onResize }) => {
     const navigate = useNavigate();
 
     // Format date
@@ -210,6 +238,7 @@ const FeedPostCard = ({ post, contextPosts, onClick }) => {
                 onClick={onClick}
                 navigate={navigate}
                 contextPosts={contextPosts}
+                onResize={onResize}
             />
         );
     }

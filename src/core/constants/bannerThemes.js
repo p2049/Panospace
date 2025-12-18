@@ -58,14 +58,14 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cyberpunkLines',
-        label: 'Cyberpunk Lines',
+        label: 'Grid',
         previewGradient: 'linear-gradient(90deg, #000 90%, #7FFFD4 100%)',
         needsColor: true,
-        description: 'Y2K neon circuitry'
+        description: 'Y2K neon tech grid'
     },
     {
         id: 'neonGrid',
-        label: 'Neon Grid',
+        label: 'Neon',
         previewGradient: 'linear-gradient(to top, #220033, #000)',
         needsColor: true,
         description: 'Retro synthwave horizon'
@@ -152,13 +152,6 @@ export const BANNER_TYPES = [
     },
 
 
-    {
-        id: 'city_holo',
-        label: 'Holo Grid',
-        previewGradient: 'linear-gradient(to bottom, #000, #1B82FF)',
-        needsColor: false,
-        description: 'Wireframe virtual reality'
-    },
     // --- CITY-3000 PACK ---
     {
         id: 'city3000_street',
@@ -227,10 +220,10 @@ export const BANNER_TYPES = [
     },
     {
         id: 'ocean_sunset_pastel',
-        label: 'Pastel Sunset',
+        label: 'Night Ocean',
         previewGradient: 'linear-gradient(to bottom, #A7B6FF, #FFB7D5)',
         needsColor: false,
-        description: 'Dreamy soft twilight'
+        description: 'Moonlit periwinkle waters'
     },
     {
         id: 'ocean_night_bio',

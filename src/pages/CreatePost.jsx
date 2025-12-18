@@ -40,6 +40,7 @@ import { useTextEditor, EditorToolbar, EditorCanvas } from '@/components/create-
 import { logger } from '@/core/utils/logger';
 import { validateImageSize, getMaxImageSizeMB, formatFileSizeMB, getMaxImageSize } from '@/core/constants/imageLimits';
 import { scaleImageToFit } from '@/core/utils/imageScaler';
+import { checkContent } from '@/core/utils/moderation/moderator';
 
 
 
@@ -649,6 +650,47 @@ const CreatePost = () => {
         if (postType === 'image' && slides.length === 0) {
             submittingRef.current = false;
             return alert("Add at least one image");
+        }
+
+        // 🛡️ MODERATION CHECK
+        // Check Title
+        const titleCheck = checkContent(title);
+        if (!titleCheck.allowed) {
+            submittingRef.current = false;
+            return alert("This content contains language that isn’t allowed on Panospace.");
+        }
+
+        // Check Text Body
+        if (postType === 'text') {
+            const bodyCheck = checkContent(textContent);
+            if (!bodyCheck.allowed) {
+                submittingRef.current = false;
+                return alert("This content contains language that isn’t allowed on Panospace.");
+            }
+        }
+
+        // Check Image Titles (if any)
+        if (postType === 'image') {
+            for (const slide of slides) {
+                if (slide.title) {
+                    const slideTitleCheck = checkContent(slide.title);
+                    if (!slideTitleCheck.allowed) {
+                        submittingRef.current = false;
+                        return alert("This content contains language that isn’t allowed on Panospace.");
+                    }
+                }
+            }
+        }
+
+        // Check Tags
+        if (tags && tags.length > 0) {
+            for (const tag of tags) {
+                const tagCheck = checkContent(tag);
+                if (!tagCheck.allowed) {
+                    submittingRef.current = false;
+                    return alert("This content contains language that isn’t allowed on Panospace.");
+                }
+            }
         }
 
         if (postType === 'text' && !textContent.trim()) {
@@ -1497,13 +1539,13 @@ const CreatePost = () => {
                 <div className="form-column">
                     {/* Text Post Live Preview (Moved to Right) */}
                     {postType === 'text' && (
-                        <div style={{ marginBottom: '1rem', animation: 'fadeIn 0.3s ease' }}>
+                        <div style={{ marginBottom: '1rem' }}>
                             <div style={{
                                 background: WRITER_THEMES[writerTheme].bg,
                                 border: WRITER_THEMES[writerTheme].border,
                                 borderRadius: '12px',
                                 padding: '0', // Removed padding here, will be applied to inner divs
-                                transition: 'all 0.3s ease',
+                                transition: 'background 0.3s ease, border 0.3s ease',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 position: 'relative' // For toolbar positioning

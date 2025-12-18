@@ -24,7 +24,7 @@ import { logger } from '@/core/utils/logger';
  * 3. Event Handling (Deleting, Reporting - propagated or handled via Context)
  * 4. Renderer Selection (Film vs Instant vs Standard)
  */
-const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick }) => {
+const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick, onResize }) => {
     // Contexts
     const { currentUser } = useAuth();
     const { setActivePost } = useActivePost();
@@ -37,7 +37,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
 
     // --- 0. VIEW MODE CHECK ---
     if (viewMode === 'list') {
-        return <FeedPostCard post={post} contextPosts={contextPosts} onClick={onClick} />;
+        return <FeedPostCard post={post} contextPosts={contextPosts} onClick={onClick} onResize={onResize} />;
     }
 
     // --- 1. DATA PREP ---
@@ -141,7 +141,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
     // --- 4. RENDERER SELECTION ---
     if (post.postType === 'text') {
         // Fullscreen text post with left-side panel, same as image posts
-        return <FullscreenTextPost post={post} containerRef={containerRef} />;
+        return <FullscreenTextPost post={post} containerRef={containerRef} viewMode={viewMode} />;
     }
 
     // Strict priority: Film -> Instant -> Standard

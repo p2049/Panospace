@@ -18,6 +18,7 @@ import { CityCardFrame } from './CityCardFrame';
 import StarBackground from './StarBackground';
 import { logger } from '@/core/utils/logger';
 import '@/styles/rarity-system.css';
+import { checkContent } from '@/core/utils/moderation/moderator';
 
 const CreateCardModal = ({ onClose, onCreated }) => {
     const { currentUser } = useAuth();
@@ -214,6 +215,26 @@ const CreateCardModal = ({ onClose, onCreated }) => {
         if (cardType === 'official' && !selectedTag) {
             alert('Please select a category and tag for the official card');
             return;
+        }
+
+        // 🛡️ MODERATION CHECK
+        const titleCheck = checkContent(title);
+        if (!titleCheck.allowed) {
+            return alert("This content contains language that isn’t allowed on Panospace.");
+        }
+
+        if (description) {
+            const descCheck = checkContent(description);
+            if (!descCheck.allowed) {
+                return alert("This content contains language that isn’t allowed on Panospace.");
+            }
+        }
+
+        if (customTag) {
+            const tagCheck = checkContent(customTag);
+            if (!tagCheck.allowed) {
+                return alert("This content contains language that isn’t allowed on Panospace.");
+            }
         }
 
         setLoading(true);

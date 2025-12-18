@@ -143,6 +143,7 @@ const Search = () => {
     const [sortBy, setSortBy] = useState('newest');
     const [searchMode, setSearchMode] = useState(searchDefault || 'social'); // Phase 3: Search Mode State ('art' | 'social')
     const [isMarketplaceMode, setIsMarketplaceMode] = useState(false); // NEW: Marketplace Toggle
+    const [activePostType, setActivePostType] = useState('image'); // 'image' | 'text' - NEW: Post Type Toggle
 
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'
     const [isSearching, setIsSearching] = useState(false);
@@ -246,7 +247,30 @@ const Search = () => {
     useEffect(() => {
         dispatch({ type: 'RESET_RESULTS' });
         performSearch();
-    }, [currentMode, followingOnly, searchMode]);
+    }, [currentMode, followingOnly, searchMode, activePostType]); // Added activePostType
+
+    // Auto-switch View Mode based on activePostType
+    useEffect(() => {
+        if (activePostType === 'text') {
+            setViewMode('feed'); // 'feed' is List View in Search logic usually, or depends on implementation.
+            // Wait, SearchHeader uses 'viewMode' state.
+            // Let's check SearchHeader usage. It passes 'viewMode'.
+            // In SearchResults, viewMode='feed' usually means List View.
+            // Let's check SearchResults to be sure.
+            // Actually, in Search.jsx state: viewMode is 'grid' or 'feed'
+            // In Feed.jsx it was 'list' vs 'image'. 
+            // Standardizing: 'feed' usually implies the vertical list.
+            setViewMode('feed');
+        } else {
+            // Optional: switch back to grid? Or leave as user pref?
+            // User said: "auto activat list mode on search when they hit the text filter"
+            // Implies we force list mode.
+            // If switching back to image, we probably want grid default, but maybe respect user choice?
+            // "do not let users view both at once its one or the other"
+            // I'll default to grid for image for now to enforce the distinction.
+            setViewMode('grid');
+        }
+    }, [activePostType]);
 
     // Reset filters when switching away from posts (Fix filter state bugs)
     useEffect(() => {
@@ -290,7 +314,8 @@ const Search = () => {
             sortBy: currentSortByRef.current,
             followingOnly,
             searchMode, // Art/Social
-            isMarketplaceMode
+            isMarketplaceMode,
+            activePostType // NEW
         });
 
         // --- CACHE CHECK (Only for fresh searches, not load more) ---
@@ -322,9 +347,12 @@ const Search = () => {
 
         try {
             // Check if we're in Explore mode (no filters)
+            // Treat 'text' mode as a filter so we don't restrict by exploreTags (which might not have text posts)
+            // Treat 'image' mode as default (no filter)
             const hasFilters = term || tags.length > 0 || parkId || date ||
                 currentSelectedCameraRef.current || currentSelectedFilmRef.current ||
-                currentSelectedOrientationRef.current || currentSelectedAspectRatioRef.current || selectedMuseum;
+                currentSelectedOrientationRef.current || currentSelectedAspectRatioRef.current || selectedMuseum ||
+                activePostType === 'text';
 
             // If Explore mode and we have recommendations, use them
             let exploreTags = [];
@@ -382,7 +410,7 @@ const Search = () => {
                                 aspectRatio: currentSelectedAspectRatioRef.current,
                                 sort: hasFilters ? currentSortByRef.current : exploreSort,
                                 authorIds: searchAuthorIds,
-                                postType: searchMode // Phase 3: Pass searchMode to filter
+                                postType: activePostType // Pass 'image' or 'text'
                             },
                             isLoadMore ? lastPostDoc : null
                         );
@@ -604,7 +632,7 @@ const Search = () => {
             }
             isLoadingRef.current = false;
         }
-    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchShopItems, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum, searchMode, isMarketplaceMode]);
+    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchShopItems, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum, searchMode, isMarketplaceMode, activePostType]);
 
     // Update refs when search params change
     useEffect(() => {
@@ -743,6 +771,8 @@ const Search = () => {
             onScroll={handleScroll}
             isMarketplaceMode={isMarketplaceMode} // NEW: Pass to Panels
             onMarketplaceToggle={setIsMarketplaceMode} // NEW: Pass to Panels
+            activePostType={activePostType}
+            setActivePostType={setActivePostType}
         >
             {/* Active Museum Filter Indicator */}
             {selectedMuseum && (

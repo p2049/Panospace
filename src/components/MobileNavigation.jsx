@@ -14,6 +14,7 @@ import { useThemeStore } from '@/core/store/useThemeStore';
 import { useTranslation } from 'react-i18next';
 import { getUnreadCount } from '@/services/notificationService';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
+import PlanetUserIcon from './PlanetUserIcon';
 import {
     FaHome,
     FaSearch,
@@ -57,6 +58,8 @@ const MobileNavigation = () => {
         followingOnly,
         toggleFollowingOnly,
         customFeedEnabled,
+        setCustomFeedEnabled,
+        setActiveCustomFeed,
         toggleCustomFeed,
         activeCustomFeedId,
         activeCustomFeedName
@@ -1222,30 +1225,31 @@ const MobileNavigation = () => {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                setCustomFeedEnabled(false);
                                 toggleFollowingOnly();
                                 handleInteraction();
                             }}
                             style={{
                                 padding: '0.35rem 0.5rem',
                                 borderRadius: '8px',
-                                border: `1px solid ${accentColor}`,
-                                background: (followingOnly && !customFeedEnabled) ? accentColor : 'rgba(0,0,0,0.6)',
-                                color: (followingOnly && !customFeedEnabled) ? '#000' : accentColor,
+                                border: `1px solid ${followingOnly ? '#A7B6FF' : '#7FDBFF'}`,
+                                background: followingOnly ? '#A7B6FF' : '#7FDBFF',
+                                color: '#000',
                                 fontSize: '0.7rem',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
-                                cursor: customFeedEnabled ? 'default' : 'pointer',
+                                cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                                 whiteSpace: 'nowrap',
                                 height: '32px',
                                 backdropFilter: 'blur(10px)',
-                                opacity: customFeedEnabled ? 0.5 : 1,
+                                opacity: 1,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                boxShadow: followingOnly ? '0 0 10px rgba(167, 182, 255, 0.4)' : '0 0 10px rgba(127, 219, 255, 0.4)'
                             }}
-                            disabled={customFeedEnabled}
                         >
                             {followingOnly ? (
                                 <>
@@ -1262,30 +1266,31 @@ const MobileNavigation = () => {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                setCustomFeedEnabled(false);
                                 toggleFeed();
                                 handleInteraction();
                             }}
                             style={{
                                 padding: '0.35rem 0.5rem',
                                 borderRadius: '8px',
-                                border: `1px solid ${accentColor}`,
-                                background: (currentFeed === 'art' && !customFeedEnabled) ? accentColor : 'rgba(0,0,0,0.6)',
-                                color: (currentFeed === 'art' && !customFeedEnabled) ? '#000' : accentColor,
+                                border: `1px solid ${currentFeed === 'art' ? '#FF5C8A' : '#7FFFD4'}`,
+                                background: currentFeed === 'art' ? '#FF5C8A' : '#7FFFD4',
+                                color: '#000',
                                 fontSize: '0.7rem',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
-                                cursor: customFeedEnabled ? 'default' : 'pointer',
+                                cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                                 whiteSpace: 'nowrap',
                                 height: '32px',
                                 backdropFilter: 'blur(10px)',
-                                opacity: customFeedEnabled ? 0.5 : 1,
+                                opacity: 1,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                boxShadow: currentFeed === 'art' ? '0 0 10px rgba(255, 92, 138, 0.4)' : '0 0 10px rgba(127, 255, 212, 0.4)'
                             }}
-                            disabled={customFeedEnabled}
                         >
                             {currentFeed === 'art' ? (
                                 <>
@@ -1374,17 +1379,17 @@ const MobileNavigation = () => {
                     paddingTop: '0.5rem',
                     marginTop: '1.5rem' // Ensure clearance from header buttons
                 }}>
-                    <div onClick={() => handleNavClick('/')} style={navItemStyle}>
+                    <div onClick={() => handleNavClick('/')} style={{ ...navItemStyle, color: location.pathname === '/' ? '#7FFFD4' : '#fff' }}>
                         <FaHome color="#7FFFD4" size={20} />
                         {t('nav.home')}
                     </div>
 
-                    <div onClick={() => handleNavClick('/search')} style={navItemStyle}>
+                    <div onClick={() => handleNavClick('/search')} style={{ ...navItemStyle, color: location.pathname === '/search' ? '#7FFFD4' : '#fff' }}>
                         <FaSearch color="#7FFFD4" size={20} />
                         {t('nav.search')}
                     </div>
 
-                    <div onClick={() => handleNavClick('/profile/me')} style={navItemStyle}>
+                    <div onClick={() => handleNavClick('/profile/me')} style={{ ...navItemStyle, color: location.pathname.startsWith('/profile') ? '#7FFFD4' : '#fff' }}>
                         {currentUser?.photoURL ? (
                             <img
                                 src={currentUser.photoURL}
@@ -1394,11 +1399,22 @@ const MobileNavigation = () => {
                                     height: '28px',
                                     borderRadius: '8px',
                                     objectFit: 'cover',
-                                    border: '1px solid #7FFFD4'
+                                    border: `1px solid ${location.pathname.startsWith('/profile') ? '#7FFFD4' : 'rgba(255,255,255,0.2)'}`
                                 }}
                             />
                         ) : (
-                            <FaUserCircle color="#7FFFD4" size={24} />
+                            <div style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '8px',
+                                background: 'rgba(0,0,0,0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: `1px solid ${location.pathname.startsWith('/profile') ? '#7FFFD4' : 'rgba(255,255,255,0.2)'}`
+                            }}>
+                                <PlanetUserIcon size={20} color="#7FFFD4" />
+                            </div>
                         )}
                         <span style={{
                             whiteSpace: 'nowrap',
@@ -1410,14 +1426,14 @@ const MobileNavigation = () => {
                         </span>
                     </div>
 
-                    <div onClick={() => handleNavClick('/create')} style={navItemStyle}>
+                    <div onClick={() => handleNavClick('/create')} style={{ ...navItemStyle, color: location.pathname === '/create' ? '#7FFFD4' : '#fff' }}>
                         <FaPlusSquare color="#7FFFD4" size={20} />
                         {t('nav.create')}
                     </div>
 
                     {/* Market and Calendar Removed from Main List (Moved to Hub) */}
 
-                    <div onClick={() => handleNavClick('/settings')} style={navItemStyle}>
+                    <div onClick={() => handleNavClick('/settings')} style={{ ...navItemStyle, color: location.pathname === '/settings' ? '#7FFFD4' : '#fff' }}>
                         <FaCog color="#7FFFD4" size={20} />
                         {t('settings.title')}
                     </div>

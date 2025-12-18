@@ -1,45 +1,37 @@
 import { useState, useCallback, useEffect } from 'react';
 import { db } from '@/firebase';
-import { collection, query, getDocs, doc, setDoc, deleteDoc, Timestamp, where } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc, deleteDoc, Timestamp, where, onSnapshot } from 'firebase/firestore';
 
 export const useFollowing = (userId) => {
     const [followingList, setFollowingList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Fetch the list of users that the current user is following
-    const fetchFollowing = useCallback(async () => {
+    // Subscribe to the list of users that the current user is following
+    useEffect(() => {
         if (!userId) {
             setFollowingList([]);
+            setLoading(false);
             return;
         }
 
         setLoading(true);
         setError(null);
 
-        try {
-            const followsRef = collection(db, 'follows');
-            const q = query(followsRef, where('followerId', '==', userId));
+        const followsRef = collection(db, 'follows');
+        const q = query(followsRef, where('followerId', '==', userId));
 
-            // 🛡️ SAFETY: Timeout
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Following list request timed out')), 10000)
-            );
-
-            const snapshot = await Promise.race([
-                getDocs(q),
-                timeoutPromise
-            ]);
-
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             const followedUserIds = snapshot.docs.map(doc => doc.data().followingId);
             setFollowingList(followedUserIds);
-        } catch (err) {
-            console.error('Error fetching following list:', err);
-            setError(err);
-            setFollowingList([]);
-        } finally {
             setLoading(false);
-        }
+        }, (err) => {
+            console.error('Error in following list subscription:', err);
+            setError(err);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [userId]);
 
     // Check if the current user is following a specific user
@@ -47,17 +39,10 @@ export const useFollowing = (userId) => {
         return followingList.includes(targetUserId);
     }, [followingList]);
 
-    // Auto-fetch following list when userId changes
-    useEffect(() => {
-        fetchFollowing();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userId]); // Only depend on userId, not fetchFollowing
-
     return {
         followingList,
         loading,
         error,
-        fetchFollowing,
         isFollowing
     };
 };

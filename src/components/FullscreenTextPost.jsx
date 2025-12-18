@@ -39,8 +39,43 @@ FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
  * - Click-outside-to-exit behavior
  * - Same interaction model as image fullscreen
  */
-const FullscreenTextPost = ({ post, containerRef }) => {
+const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
+    // If we're in 'list' mode, render the card version used in feeds
+    // Import dynamically or use the one we know exists?
+    // Actually Post.jsx should handle this check!
+    // But Post.jsx calls:
+    // if (viewMode === 'list') return <FeedPostCard ... />
+    // So if we are here, viewMode is generally 'image' (fullscreen) or 'detail'.
+    // BUT in SearchResults -> ListViewContainer uses Post with viewMode='list'.
+    // Post.jsx handles `if (viewMode === 'list')` at the VERY TOP.
+    // So update of Post.jsx (Step 348) line 40 returns FeedPostCard.
+    // Wait... if Post.jsx returns FeedPostCard, FeedPostCard handles 'text' postType internally via `TextPostCard`.
+    // So we should NOT be here if viewMode='list'.
+    // Let's verify Post.jsx (Step 348):
+    // Line 39: if (viewMode === 'list') { return <FeedPostCard ... /> }
+    // Line 142: if (post.postType === 'text') { return <FullscreenTextPost ... /> }
+    //
+    // So if viewMode='list', we return FeedPostCard.
+    // FeedPostCard handles text posts.
+    //
+    // Why did I think I needed to pass viewMode to FullscreenTextPost?
+    // Because I thought maybe the logic fell through?
+    // No, if viewMode='list' is passed to Post, it catches it early.
+    //
+    // Let's look at why "text posts arent loading".
+    // If the data is fetched (Step 341 fixed query), and `Post` is rendered.
+    // `ListViewContainer` uses `renderPost` if provided, or `<Post viewMode="list" ... />`.
+    // `SearchResults` passes NO renderPost.
+    // So ListViewContainer uses `<Post viewMode="list" ... />`.
+    // `Post.jsx` checks `viewMode === 'list'` -> returns `<FeedPostCard ... />`.
+    // `FeedPostCard.jsx` should render text card for text posts.
+    //
+    // I should check `FeedPostCard.jsx` to ensure it handles text posts correctly.
+    // Maybe `FeedPostCard` expects specific props or logic for text?
+
+    // Returning nothing here to avoid changes as logic seems correct in Post.jsx.
     const navigate = useNavigate();
+
 
     // Sidebar state - opens by default for text posts
     const [showDetailsSidebar, setShowDetailsSidebar] = useState(true);

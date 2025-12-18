@@ -15,7 +15,7 @@ const BannerColorSelector = ({ selectedColor, onSelect }) => {
             display: 'flex',
             gap: '12px',
             overflowX: 'auto',
-            padding: '0 0 8px 0',
+            padding: '12px 4px', // Added vertical padding to prevent glow clipping
             WebkitOverflowScrolling: 'touch'
         }}>
             <style>{`
@@ -57,7 +57,7 @@ const BannerColorSelector = ({ selectedColor, onSelect }) => {
                             width: '36px',
                             height: '36px',
                             borderRadius: '50%',
-                            background: isBrandColors ? '#0a0a14' : displayBackground,
+                            background: displayBackground,
                             border: isSelected ? `2px solid #fff` : '2px solid rgba(255,255,255,0.1)',
                             boxShadow: isSelected ? `0 0 10px ${glowColor}` : 'none',
                             transition: 'all 0.2s',

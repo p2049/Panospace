@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePersonalizedFeed } from '@/hooks/usePersonalizedFeed';
-import { FaRedo, FaCalendarAlt, FaRocket } from 'react-icons/fa';
+import { FaRedo, FaCalendarAlt, FaRocket, FaUserCircle, FaSearch } from 'react-icons/fa';
 import Post from '@/components/Post';
 import { getCurrentTheme } from '@/core/constants/monthlyThemes';
 import { useBlock } from '@/hooks/useBlock';
@@ -11,12 +11,15 @@ import { useThemeColors } from '@/core/store/useThemeStore';
 import { filterVisiblePosts } from '@/core/utils/filterHelpers';
 import { useToast } from '@/context/ToastContext';
 import { useFeedStore } from '@/core/store/useFeedStore';
+import { useAuth } from '@/context/AuthContext';
 import VirtualizedPostContainer from '@/components/feed/VirtualizedPostContainer';
 import ListViewContainer from '@/components/feed/ListViewContainer';
 import FeedViewMenu from '@/components/feed/FeedViewMenu';
+import PlanetUserIcon from '@/components/PlanetUserIcon';
 
 // Feed component - Main home feed view
 const Feed = () => {
+    const { currentUser } = useAuth();
     const { accentColor, secondaryColor, glowColorStrong } = useThemeColors();
     const { showToast } = useToast();
     const scrollContainerRef = useRef(null);
@@ -28,9 +31,11 @@ const Feed = () => {
         followingOnly,
         customFeedEnabled,
         activeCustomFeedId,
+        activeCustomFeedName,
         feedDefault,
         switchToFeed,
         setFollowingOnly,
+        setCustomFeedEnabled,
         feedViewMode,
         setFeedViewMode
     } = useFeedStore();
@@ -239,82 +244,104 @@ const Feed = () => {
                 )
             }
 
-            {
-                !loading && !error && visiblePosts.length === 0 && (
+
+
+            {!loading && visiblePosts.length === 0 && (
+                <div style={{
+                    minHeight: '100vh',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: '#fff',
+                    gap: '1rem',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    zIndex: 5
+                }}>
                     <div style={{
-                        height: '100vh',
-                        width: '100vw',
+                        position: 'relative',
+                        zIndex: 10,
+                        textAlign: 'center',
+                        padding: '2rem',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        color: '#fff',
                         gap: '1rem',
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        zIndex: 5
+                        alignItems: 'center'
                     }}>
-                        <div style={{
-                            position: 'relative',
-                            zIndex: 10,
-                            textAlign: 'center',
-                            padding: '2rem'
+                        <h2 style={{
+                            fontSize: '2rem',
+                            marginBottom: '0.5rem',
+                            color: '#7FFFD4',
+                            textShadow: '0 0 10px rgba(127, 255, 212, 0.5)',
+                            fontFamily: "'Rajdhani', sans-serif",
+                            fontWeight: '700',
+                            letterSpacing: '0.05em'
                         }}>
-                            <h2 style={{
-                                fontSize: '2rem',
-                                marginBottom: '1rem',
-                                color: '#7FFFD4',
-                                textShadow: '0 0 10px rgba(127, 255, 212, 0.5)',
-                                fontFamily: "'Rajdhani', sans-serif",
-                                fontWeight: '700',
-                                letterSpacing: '0.05em'
-                            }}>
-                                No posts yet
-                            </h2>
-                            <p style={{
-                                color: '#aaa',
-                                marginBottom: '1.5rem',
-                                fontSize: '1.1rem'
-                            }}>
-                                Follow some creators to see their work here!
-                            </p>
+                            {customFeedEnabled ? (activeCustomFeedName || 'No Matching Posts') : 'No Posts Yet'}
+                        </h2>
+                        <p style={{
+                            color: '#aaa',
+                            marginBottom: '1rem',
+                            fontSize: '1.1rem',
+                            maxWidth: '300px'
+                        }}>
+                            {customFeedEnabled
+                                ? "This custom orbit didn't capture anything."
+                                : "Follow some creators to see their work here!"}
+                        </p>
+
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '250px' }}>
+                            {/* Home Button */}
+                            <button
+                                onClick={() => {
+                                    setCustomFeedEnabled(false);
+                                    switchToFeed('HOME');
+                                }}
+                                style={emptyStateButtonStyle}
+                            >
+                                <FaRocket size={16} /> Return Home
+                            </button>
+
+                            {/* Profile Button */}
+                            <button
+                                onClick={() => navigate(`/profile/${currentUser?.uid}`)}
+                                style={emptyStateButtonStyle}
+                            >
+                                <div style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '6px',
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: 'rgba(0,0,0,0.3)',
+                                    border: '1px solid rgba(127, 255, 212, 0.4)'
+                                }}>
+                                    {currentUser?.photoURL ? (
+                                        <img src={currentUser.photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <PlanetUserIcon size={16} color="#7FFFD4" />
+                                    )}
+                                </div>
+                                My Profile
+                            </button>
+
+                            {/* Search Button */}
                             <button
                                 onClick={() => navigate('/search')}
-                                style={{
-                                    padding: '0.75rem 1.5rem',
-                                    background: 'rgba(127, 255, 212, 0.1)',
-                                    color: '#7FFFD4',
-                                    border: '1px solid #7FFFD4',
-                                    borderRadius: '8px',
-                                    fontSize: '1rem',
-                                    fontWeight: 'bold',
-                                    cursor: 'pointer',
-                                    boxShadow: '0 0 20px rgba(127, 255, 212, 0.2)',
-                                    transition: 'all 0.2s',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    backdropFilter: 'blur(5px)',
-                                    margin: '0 auto'
-                                }}
-                                onMouseOver={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1.05)';
-                                    e.currentTarget.style.background = 'rgba(127, 255, 212, 0.2)';
-                                    e.currentTarget.style.boxShadow = '0 0 30px rgba(127, 255, 212, 0.4)';
-                                }}
-                                onMouseOut={(e) => {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                    e.currentTarget.style.background = 'rgba(127, 255, 212, 0.1)';
-                                    e.currentTarget.style.boxShadow = '0 0 20px rgba(127, 255, 212, 0.2)';
-                                }}
+                                style={emptyStateButtonStyle}
                             >
-                                Find Creators
+                                <FaSearch size={16} /> Search
                             </button>
                         </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {visiblePosts.length > 0 && (
                 <>
@@ -368,7 +395,15 @@ const Feed = () => {
                                     displayMode="feed"
                                     priority={isCurrent ? 'high' : 'normal'}
                                     onClick={() => {
-                                        setActiveIndex(index);
+                                        // Find index in image feed
+                                        let targetIndex = imageOnlyPosts.findIndex(p => p.id === post.id);
+
+                                        // If not found (e.g. mixed content), default to first item to guarantee switch
+                                        if (targetIndex === -1) {
+                                            targetIndex = 0;
+                                        }
+
+                                        setActiveIndex(targetIndex);
                                         setFeedViewMode('image');
                                         showToast('Switched to Image Feed');
                                     }}
@@ -389,6 +424,26 @@ const Feed = () => {
             )}
         </div>
     );
+};
+
+const emptyStateButtonStyle = {
+    padding: '0.8rem 1.5rem',
+    background: 'rgba(127, 255, 212, 0.1)',
+    color: '#7FFFD4',
+    border: '1px solid rgba(127, 255, 212, 0.3)',
+    borderRadius: '12px',
+    fontSize: '0.95rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.8rem',
+    transition: 'all 0.2s',
+    width: '100%',
+    backdropFilter: 'blur(5px)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em'
 };
 
 export default Feed;

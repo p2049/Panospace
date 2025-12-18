@@ -3,6 +3,7 @@ import { FaRocket } from 'react-icons/fa';
 import StarBackground from '@/components/StarBackground';
 import GridPostCard from '@/components/GridPostCard';
 import FeedPostCard from '@/components/FeedPostCard';
+import ListViewContainer from '@/components/feed/ListViewContainer';
 import UserCard from '@/components/UserCard';
 import GalleryCard from '@/components/ui/cards/GalleryCard';
 import CollectionCard from '@/components/CollectionCard';
@@ -36,7 +37,11 @@ const SearchResults = ({
     return (
         <>
             {/* Results Area */}
-            <div style={{ padding: isMobile ? '0.8rem 0.8rem 1.5rem 0.8rem' : '1.5rem' }}>
+            <div style={{
+                padding: viewMode === 'feed' ? '0' : (isMobile ? '0.8rem 0.8rem 1.5rem 0.8rem' : '1.5rem'),
+                width: '100%',
+                height: '100%'
+            }}>
                 {viewMode === 'grid' ? (
                     <div
                         key={`${currentMode}-${results[currentMode]?.length || 0}-${sortBy}`}
@@ -121,13 +126,24 @@ const SearchResults = ({
                         ))}
                     </div>
                 ) : (
-                    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                        {currentMode === 'posts' && results.posts.map(post => (
-                            <div key={post.id} style={{ marginBottom: '1rem' }}>
-                                <FeedPostCard post={post} />
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        {currentMode === 'posts' && (
+                            <ListViewContainer
+                                posts={results.posts}
+                                style={{
+                                    height: 'auto', // Let parent control scrolling or fit content
+                                    overflowY: 'visible', // Avoid double scrollbars if parent scrolls
+                                    paddingTop: '0',
+                                    paddingBottom: '2rem'
+                                }}
+                            />
+                        )}
+                        {/* Fallback for other modes if they ever support feed view */}
+                        {currentMode !== 'posts' && (
+                            <div style={{ maxWidth: '600px', margin: '0 auto', color: '#888', padding: '2rem' }}>
+                                List view not available for {currentMode}
                             </div>
-                        ))}
-                        {/* Add other modes for feed view if needed */}
+                        )}
                     </div>
                 )}
             </div>
