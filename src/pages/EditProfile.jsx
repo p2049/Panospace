@@ -18,6 +18,8 @@ import CosmicGuideModal from '@/components/CosmicGuideModal';
 import { getRenderedUsernameLength, renderCosmicUsername, CHAR_MAP, PATTERNS } from '@/utils/usernameRenderer';
 import BannerTypeSelector from '@/components/edit-profile/BannerTypeSelector';
 import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
+import BannerOverlaySelector from '@/components/edit-profile/BannerOverlaySelector';
+import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
 import { logger } from '@/core/utils/logger';
@@ -58,6 +60,7 @@ const EditProfile = () => {
     const [bannerColor, setBannerColor] = useState('#7FFFD4'); // Separate from border color
     const [useStarsOverlay, setUseStarsOverlay] = useState(false);
     const [textGlow, setTextGlow] = useState(false);
+    const [selectedOverlays, setSelectedOverlays] = useState([]);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -89,6 +92,7 @@ const EditProfile = () => {
                         setBannerColor(data.profileTheme.bannerColor || data.profileTheme.borderColor || '#7FFFD4'); // Fallback for legacy
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
                         setTextGlow(data.profileTheme.textGlow || false);
+                        setSelectedOverlays(data.profileTheme.overlays || []);
                     }
                 }
             }
@@ -453,7 +457,8 @@ const EditProfile = () => {
                     bannerMode: bannerMode,
                     bannerColor: bannerColor,
                     useStarsOverlay: useStarsOverlay,
-                    textGlow: textGlow
+                    textGlow: textGlow,
+                    overlays: selectedOverlays
                 }
             };
 
@@ -1007,6 +1012,32 @@ const EditProfile = () => {
                                 Customize your profile with different themes and gradients.
                             </p>
 
+                            {/* Live Banner Preview */}
+                            <div style={{
+                                width: '100%',
+                                height: '140px',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                position: 'relative',
+                                marginBottom: '1.5rem',
+                                border: `1px solid ${profileBorderColor}40`,
+                                background: '#000',
+                                boxShadow: `0 8px 32px rgba(0,0,0,0.4)`
+                            }}>
+                                <BannerThemeRenderer
+                                    mode={bannerMode}
+                                    color={bannerColor}
+                                    starSettings={{
+                                        enabled: useStarsOverlay,
+                                        color: starColor
+                                    }}
+                                    overlays={selectedOverlays}
+                                />
+                                <div style={{ position: 'absolute', top: '8px', right: '12px', background: 'rgba(0,0,0,0.6)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', zIndex: 1000 }}>
+                                    Live Preview
+                                </div>
+                            </div>
+
                             {/* Modular Banner Theme Selectors */}
                             <div style={{ marginBottom: '1rem' }}>
                                 <BannerTypeSelector
@@ -1017,6 +1048,13 @@ const EditProfile = () => {
                                     onColorSelect={setBannerColor}
                                 />
                             </div>
+
+                            {/* Visual Overlays (Lens) Selection */}
+                            <BannerOverlaySelector
+                                selectedOverlays={selectedOverlays}
+                                onSelect={setSelectedOverlays}
+                                highlightColor={profileBorderColor}
+                            />
 
 
 

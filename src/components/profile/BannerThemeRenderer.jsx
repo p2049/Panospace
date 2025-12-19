@@ -5,6 +5,31 @@ import React from 'react';
 import CityscapeBanner from './CityscapeBanner';
 import OceanBanner from './OceanBanner';
 import EarthBanner from './EarthBanner';
+import DreamworldBanner from './DreamworldBanner';
+import AbsoluteAbstractBanner from './AbsoluteAbstractBanner';
+import GenesisAbstractBanner from './GenesisAbstractBanner';
+import SingularityBanner from './SingularityBanner';
+import BlackMirrorBanner from './BlackMirrorBanner';
+import PinballBanner from './PinballBanner';
+import BlackHoleBanner from './BlackHoleBanner';
+import SingularityCityBanner from './SingularityCityBanner';
+import NebulaBanner from './NebulaBanner';
+import GalaxyBanner from './GalaxyBanner';
+import AetherGateBanner from './AetherGateBanner';
+import SeraphimBanner from './SeraphimBanner';
+import OmegasphereBanner from './OmegasphereBanner';
+import InfiniteBanner from './InfiniteBanner';
+import AscendantBanner from './AscendantBanner';
+import ApexBanner from './ApexBanner';
+import ParadoxBanner from './ParadoxBanner';
+import SpectrumBanner from './OpusBanner';
+import FluxBanner from './FluxBanner';
+import EtherBanner from './EtherBanner';
+import ResonanceBanner from './ResonanceBanner';
+import InterferenceBanner from './InterferenceBanner';
+import OmniscienceBanner from './OmniscienceBanner';
+import AbsoluteBanner from './AbsoluteBanner';
+import StaticSystemBanners from './SystemAbstractBanners';
 import BannerOverlayRenderer from './BannerOverlayRenderer';
 
 const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
@@ -27,9 +52,89 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
             return <OceanBanner themeId={mode} starSettings={starSettings} />;
         }
 
+        // 6.5 ABSTRACT PACK
+        if (mode === 'abstract_neural_silk') {
+            return <AbsoluteAbstractBanner variant={mode} color={color} />;
+        }
+        if (mode === 'abstract_genesis_core') {
+            return <GenesisAbstractBanner color={color} />;
+        }
+        if (mode === 'abstract_singularity') {
+            return <SingularityBanner />;
+        }
+        if (mode === 'abstract_black_mirror') {
+            return <BlackMirrorBanner />;
+        }
+        if (mode === 'abstract_pinball') {
+            return <PinballBanner />;
+        }
+
         // 7. COSMIC EARTH (Station Theme)
         if (mode === 'cosmic-earth') {
             return <EarthBanner color={color} starSettings={starSettings} />;
+        }
+        if (mode === 'cosmic_black_hole') {
+            return <BlackHoleBanner />;
+        }
+        if (mode === 'cosmic_singularity_city') {
+            return <SingularityCityBanner />;
+        }
+        if (mode === 'cosmic_nebula') {
+            return <NebulaBanner />;
+        }
+        if (mode === 'cosmic_galaxy') {
+            return <GalaxyBanner />;
+        }
+        if (mode === 'cosmic_aether_gate') {
+            return <AetherGateBanner />;
+        }
+        if (mode === 'cosmic_seraphim') {
+            return <SeraphimBanner />;
+        }
+        if (mode === 'cosmic_omegasphere') {
+            return <OmegasphereBanner />;
+        }
+        if (mode === 'cosmic_infinite') {
+            return <InfiniteBanner />;
+        }
+        if (mode === 'cosmic_ascendant') {
+            return <AscendantBanner />;
+        }
+        if (mode === 'cosmic_apex') {
+            return <ApexBanner />;
+        }
+        if (mode === 'cosmic_paradox') {
+            return <ParadoxBanner />;
+        }
+        if (mode === 'cosmic_opus') {
+            return <SpectrumBanner />;
+        }
+        if (mode === 'cosmic_flux') {
+            return <FluxBanner />;
+        }
+        if (mode === 'cosmic_ether') {
+            return <EtherBanner />;
+        }
+        if (mode === 'cosmic_resonance') {
+            return <ResonanceBanner />;
+        }
+        if (mode === 'cosmic_interference') {
+            return <InterferenceBanner />;
+        }
+        if (mode === 'cosmic_omniscience') {
+            return <OmniscienceBanner />;
+        }
+        if (mode === 'cosmic_absolute') {
+            return <AbsoluteBanner />;
+        }
+
+        if (mode === 'cosmic_dreamworld') {
+            return <DreamworldBanner />;
+        }
+
+        // 7.5 SYSTEM ENVIRONMENTS (Memory)
+        if (mode.startsWith('system_')) {
+            return <StaticSystemBanners variant={mode} />;
         }
 
         // 8. PLANET - Apple-style abstract cosmic border (Over-Designed Premium)
@@ -697,9 +802,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         }
 
         if (mode === 'nebula') {
-            return (
-                <div style={{ ...overlayStyle, background: 'radial-gradient(circle at 50% 120%, #4a148c 0%, transparent 60%), radial-gradient(circle at 80% 20%, #311b92 0%, transparent 50%)', opacity: 0.6 }} />
-            );
+            return <NebulaBanner />;
         }
 
         // 4. ORBITAL - Signature PanoSpace Cosmic Aesthetic

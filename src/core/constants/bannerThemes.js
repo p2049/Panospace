@@ -40,7 +40,16 @@ export const BANNER_TYPES = [
         previewGradient: 'linear-gradient(to right, #00ff88, #5A3FFF)',
         needsColor: false,
         isCosmic: true,
+        isCosmic: true,
         description: 'Intense magnetic storm'
+    },
+    {
+        id: 'cosmic_dreamworld',
+        label: 'Stardust Playground',
+        previewGradient: 'linear-gradient(to top, #FFB7D5, #7FDBFF, #2A0E61)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Childlike wonderland of spacetime'
     },
 
     {
@@ -80,13 +89,7 @@ export const BANNER_TYPES = [
 
 
     // --- CITYSCAPE PACK ---
-    {
-        id: 'city_vaporwave',
-        label: 'Galaxy City',
-        previewGradient: 'linear-gradient(to bottom, #5A3FFF, #FFB7D5)',
-        needsColor: false,
-        description: 'Cosmic metropolis & ring planet'
-    },
+    // --- CITYSCAPE PACK ---
     {
         id: 'city_space',
         label: 'Space City',
@@ -101,20 +104,7 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'NASA Moon Base & Earthrise'
     },
-    {
-        id: 'city_realistic',
-        label: 'Night City',
-        previewGradient: 'linear-gradient(to bottom, #000, #1b263b)',
-        needsColor: false,
-        description: 'Cozy modern skyline lights'
-    },
-    {
-        id: 'city_retrowave',
-        label: 'Ocean City',
-        previewGradient: 'linear-gradient(to bottom, #2A0E61, #FF5C8A)',
-        needsColor: false,
-        description: 'Split-sun retro horizon'
-    },
+
     {
         id: 'city_cyberpunk',
         label: 'Cyberpunk Rain',
@@ -202,6 +192,13 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Neo-Gothic Future Megacity'
     },
+    {
+        id: 'city_time_aware',
+        label: 'Omni City (Time Aware)',
+        previewGradient: 'linear-gradient(to right, #1B82FF, #FF5C8A, #FF914D)',
+        needsColor: false,
+        description: 'Atmospheric cityscape that changes with your local time'
+    },
 
     // --- OCEAN PACK ---
     {
@@ -210,13 +207,6 @@ export const BANNER_TYPES = [
         previewGradient: 'linear-gradient(to bottom, #2A0E61, #FF914D)',
         needsColor: false,
         description: 'Ocean dunes & orange sun'
-    },
-    {
-        id: 'ocean_sunset_vapor',
-        label: 'Vapor Sunset',
-        previewGradient: 'linear-gradient(to bottom, #5A3FFF, #FFB7D5)',
-        needsColor: false,
-        description: 'Retrowave sun & palms'
     },
     {
         id: 'ocean_sunset_pastel',
@@ -248,17 +238,211 @@ export const BANNER_TYPES = [
         description: 'Lava flows & smoke'
     },
     {
-        id: 'ps2_2000',
-        label: '2000',
-        previewGradient: 'linear-gradient(to bottom, #000000, #1B82FF)',
+        id: 'ocean_volcano',
+        label: 'Volcano Island',
+        previewGradient: 'linear-gradient(to bottom, #000, #ff3333)',
         needsColor: false,
-        description: 'PS2 inspired abstract console vibes'
+        description: 'Lava flows & smoke'
     },
+    {
+        id: 'abstract_genesis_core',
+        label: 'Genesis Core (Abstract)',
+        previewGradient: 'radial-gradient(circle, #5A3FFF, #FF5C8A, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'The primordial digital seed of humanity'
+    },
+    {
+        id: 'abstract_neural_silk',
+        label: 'Neural Silk (Abstract)',
+        previewGradient: 'linear-gradient(45deg, #FF5C8A, #1B82FF, #8CFFE9)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Breathtaking generative threads of light and data'
+    },
+    {
+        id: 'abstract_singularity',
+        label: 'The Singularity',
+        previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #FFF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Where data becomes matter'
+    },
+    {
+        id: 'abstract_black_mirror',
+        label: 'Black Mirror',
+        previewGradient: 'radial-gradient(circle, #000 60%, #1B82FF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Liquid darkness and light'
+    },
+    {
+        id: 'abstract_pinball',
+        label: 'Hyperspace Cadet',
+        previewGradient: 'radial-gradient(circle, #5A3FFF, #1B82FF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Abstract velocity gate & mission data'
+    },
+
     {
         id: 'deep_underwater',
         label: 'Deep Underwater',
         previewGradient: 'linear-gradient(to bottom, #010408, #0D2B36)',
         needsColor: false,
         description: 'Atmospheric depth in the deep blue abyss'
+    },
+
+    {
+        id: 'cosmic_black_hole',
+        label: 'Void Black Hole',
+        previewGradient: 'radial-gradient(circle, #000 60%, #1a0505)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'The end of all things'
+    },
+    {
+        id: 'cosmic_singularity_city',
+        label: 'Cyber-Horizon',
+        previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Metropolis at the edge of forever'
+    },
+    {
+        id: 'cosmic_nebula',
+        label: 'Deep Nebula',
+        previewGradient: 'radial-gradient(circle, #2A0E61, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Turbulent cosmic clouds'
+    },
+    {
+        id: 'cosmic_galaxy',
+        label: 'Grand Galaxy',
+        previewGradient: 'radial-gradient(circle, #FF5C8A, #1B82FF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'A spiral of infinite color'
+    },
+    {
+        id: 'cosmic_aether_gate',
+        label: 'Aether Gate',
+        previewGradient: 'radial-gradient(circle, #FFF, #5A3FFF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Orbital energy citadel'
+    },
+    {
+        id: 'cosmic_seraphim',
+        label: 'Digital Seraphim',
+        previewGradient: 'radial-gradient(circle, #FF5C8A, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'BE NOT AFRAID'
+    },
+    {
+        id: 'cosmic_omegasphere',
+        label: 'The Omega',
+        previewGradient: 'radial-gradient(circle, #8CFFE9, #5A3FFF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'The final frontier of computing'
+    },
+    {
+        id: 'cosmic_infinite',
+        label: 'The Infinite',
+        previewGradient: 'radial-gradient(circle, #FF5C8A, #1B82FF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Chaos theory visualised'
+    },
+    {
+        id: 'cosmic_ascendant',
+        label: 'The Quintessence',
+        previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #FFF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Alien code architecture'
+    },
+    {
+        id: 'cosmic_apex',
+        label: 'The Apex',
+        previewGradient: 'radial-gradient(circle, #FFF, #8CFFE9, #5A3FFF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Hyper-Engineered Core'
+    },
+    {
+        id: 'cosmic_paradox',
+        label: 'The Paradox',
+        previewGradient: 'linear-gradient(135deg, #5A3FFF, #FF5C8A, #8CFFE9)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Hyper-Manifold Artifact'
+    },
+    {
+        id: 'cosmic_opus',
+        label: 'The Spectrum',
+        previewGradient: 'linear-gradient(to right, #FFF, #8CFFE9, #FF5C8A, #5A3FFF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Prismatic Light Refraction'
+    },
+    {
+        id: 'cosmic_flux',
+        label: 'The Flux',
+        previewGradient: 'radial-gradient(circle at 30% 30%, #FFF, #CCC, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Digital Silk Flow'
+    },
+    {
+        id: 'cosmic_ether',
+        label: 'The Ether',
+        previewGradient: 'radial-gradient(circle, rgba(255,255,255,0.2), #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Next-Gen Glass OS'
+    },
+    {
+        id: 'cosmic_resonance',
+        label: 'The Resonance',
+        previewGradient: 'radial-gradient(circle, #5A3FFF, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Divine Frequency 963Hz'
+    },
+    {
+        id: 'cosmic_interference',
+        label: 'The Interference',
+        previewGradient: 'linear-gradient(90deg, #F00, #0F0, #00F)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'VISUAL HAZARD'
+    },
+    {
+        id: 'cosmic_omniscience',
+        label: 'The Omniscience',
+        previewGradient: 'radial-gradient(circle, #FFF, #ff0055, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'ALL SEEING'
+    },
+    {
+        id: 'cosmic_absolute',
+        label: 'The Absolute',
+        previewGradient: 'radial-gradient(circle, #FFF, #5A3FFF)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Infinite Complexity'
+    },
+    // --- SYSTEM & LIMINAL ---
+    {
+        id: 'system_memory',
+        label: 'Memory Field',
+        previewGradient: 'radial-gradient(#1B82FF 10%, #000 90%)',
+        needsColor: false,
+        description: 'Data dreaming in the dark'
     }
 ];

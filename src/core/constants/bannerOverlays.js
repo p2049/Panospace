@@ -137,3 +137,19 @@ export const areOverlaysCompatible = (id1, id2) => {
     // Check if ov1 explicitly allows ov2 or vice versa
     return ov1.compatibleWith?.includes(id2) || ov2.compatibleWith?.includes(id1);
 };
+
+/**
+ * GUIDELINES FOR ADDING FUTURE OVERLAYS:
+ * 1. Define ID and Category: Ensure ID is snake_case and Category is from OVERLAY_CATEGORIES.
+ * 2. Compatibility Matrix: 
+ *    - New overlays must explicitly list compatible IDs in `compatibleWith`.
+ *    - Avoid stacking effects that manipulate the same properties (e.g., two heavy blurs).
+ *    - Sensor characteristics (CAPTURE) should usually be compatible with viewing characteristics (DISPLAY).
+ * 3. Implementation in BannerOverlayRenderer.jsx:
+ *    - Use CSS properties that are GPU-accelerated: filter, opacity, mix-blend-mode, backdrop-filter.
+ *    - For complex noise or masks, use SVG data URIs to keep the system code-based and asset-free.
+ *    - Ensure `pointerEvents: 'none'` is kept to allow interaction with UI below (though z-stacking usually handles this).
+ * 4. Performance:
+ *    - Limit heavy animations. Use steps() for digital artifacts or very long transition times (30s+).
+ */
+

@@ -17,29 +17,30 @@ const BannerOverlayRenderer = ({ overlays = [], children }) => {
         .filter(Boolean);
 
     return (
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>
             {/* The actual banner content */}
-            <div style={{ position: 'absolute', inset: 0 }}>
+            <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
                 {children}
             </div>
 
             {/* Overlay Layers */}
             {activeOverlays.map((ov, index) => (
-                <OverlayLayer key={`${ov.id}-${index}`} overlay={ov} />
+                <OverlayLayer key={`${ov.id}-${index}`} overlay={ov} index={index} />
             ))}
         </div>
     );
 };
 
-const OverlayLayer = ({ overlay }) => {
+const OverlayLayer = ({ overlay, index }) => {
     const { id } = overlay;
 
     // Common style for full-cover overlays
+    // We use high base zIndex to ensure we stay above any theme-specific layers
     const fullCoverStyle = {
         position: 'absolute',
         inset: 0,
         pointerEvents: 'none',
-        zIndex: 10 + BANNER_OVERLAYS.findIndex(o => o.id === id) // Dynamic z-stacking based on definition order
+        zIndex: 100 + index // Guaranteed to be above content
     };
 
     switch (id) {
@@ -49,26 +50,38 @@ const OverlayLayer = ({ overlay }) => {
                     {/* Scanlines */}
                     <div style={{
                         ...fullCoverStyle,
-                        background: 'linear-gradient(rgba(18, 16, 16, 0.1) 50%, rgba(0, 0, 0, 0.2) 50%)',
+                        background: 'linear-gradient(rgba(18, 16, 16, 0.15) 50%, rgba(0, 0, 0, 0.3) 50%)',
                         backgroundSize: '100% 4px',
                         mixBlendMode: 'multiply',
-                        opacity: 0.4
+                        opacity: 0.6
                     }} />
-                    {/* RGB Subpixel Mask (Simulated with fine noise) */}
+                    {/* RGB Subpixel Mask */}
                     <div style={{
                         ...fullCoverStyle,
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='2' height='6' fill='rgba(255,0,0,0.05)'/%3E%3Crect x='2' width='2' height='6' fill='rgba(0,255,0,0.05)'/%3E%3Crect x='4' width='2' height='6' fill='rgba(0,0,255,0.05)'/%3E%3C/svg%3E")`,
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='2' height='6' fill='rgba(255,0,0,0.1)'/%3E%3Crect x='2' width='2' height='6' fill='rgba(0,255,0,0.1)'/%3E%3Crect x='4' width='2' height='6' fill='rgba(0,0,255,0.1)'/%3E%3C/svg%3E")`,
                         backgroundSize: '3px 100%',
-                        mixBlendMode: 'screen'
+                        mixBlendMode: 'screen',
+                        opacity: 0.7
                     }} />
                     {/* Chromatic Aberration & Slight Bloom */}
                     <div style={{
                         ...fullCoverStyle,
-                        backdropFilter: 'blur(0.5px)',
-                        filter: 'contrast(1.1) brightness(1.1)',
-                        boxShadow: 'inset 0 0 100px rgba(0,0,0,0.2)'
+                        backdropFilter: 'blur(0.8px)',
+                        filter: 'contrast(1.2) brightness(1.1) saturate(1.1)',
+                        boxShadow: 'inset 0 0 120px rgba(0,0,0,0.3)'
                     }} />
                 </>
+            );
+
+        case 'signal_degradation':
+            return (
+                <div style={{
+                    ...fullCoverStyle,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.4' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+                    mixBlendMode: 'overlay',
+                    opacity: 0.4,
+                    filter: 'hue-rotate(5deg) contrast(1.1)'
+                }} />
             );
 
         case 'standard_digital':

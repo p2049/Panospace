@@ -239,3 +239,117 @@ export const CITY_THEMES = {
         }
     }
 };
+
+// --- TIME-AWARE CITY LOGIC ---
+/**
+ * Generates a dynamic city configuration based on the current time and season.
+ * @param {Date} date - Optional date to simulate time
+ * @returns {Object} City theme configuration
+ */
+export const getTimeAwareCityTheme = (date = new Date()) => {
+    const hour = date.getHours();
+    const month = date.getMonth(); // 0-11
+
+    // 1. Determine Time State
+    let state = 'day';
+    if (hour >= 0 && hour < 5) state = 'late_night';
+    else if (hour >= 5 && hour < 8) state = 'dawn';
+    else if (hour >= 8 && hour < 16) state = 'day';
+    else if (hour >= 16 && hour < 19) state = 'golden_hour';
+    else if (hour >= 19 && hour < 22) state = 'night';
+    else state = 'midnight';
+
+    // 2. Base Configuration Generation
+    const config = {
+        name: 'Omni City (Time Aware)',
+        density: 1.0,
+        glow: true
+    };
+
+    switch (state) {
+        case 'late_night':
+            config.sky = [BRAND_COLORS.black, '#02050a', BRAND_COLORS.voidPurple];
+            config.buildings = {
+                color: '#010103',
+                windowColor: [BRAND_COLORS.ionBlue, BRAND_COLORS.deepOrbitPurple, '#4A90E2'],
+                density: 0.9,
+                glow: true
+            };
+            config.celestial = { type: 'moon', color: BRAND_COLORS.iceWhite, x: 0.2, y: 0.15 };
+            config.atmosphere = { stars: true, fog: BRAND_COLORS.voidPurple, digital_hud: true };
+            break;
+
+        case 'dawn':
+            config.sky = ['#1a1a2e', BRAND_COLORS.deepOrbitPurple, BRAND_COLORS.nebulaPink];
+            config.buildings = {
+                color: '#0f0f1a',
+                windowColor: [BRAND_COLORS.iceWhite, BRAND_COLORS.nebulaPink],
+                density: 1.1,
+                glow: false
+            };
+            config.celestial = { type: 'sun', color: BRAND_COLORS.nebulaPink, x: 0.1, y: 0.7 };
+            config.atmosphere = { clouds: true, stars: false };
+            break;
+
+        case 'day':
+            config.sky = [BRAND_COLORS.ionBlue, BRAND_COLORS.auroraBlue, BRAND_COLORS.iceWhite];
+            config.buildings = {
+                color: '#1e293b',
+                windowColor: ['#ffffff', '#f8fafc'],
+                density: 1.2,
+                glow: false
+            };
+            config.celestial = { type: 'sun', color: '#fffdf0', x: 0.5, y: 0.2 };
+            config.atmosphere = { clouds: true, stars: false };
+            break;
+
+        case 'golden_hour':
+            config.sky = [BRAND_COLORS.voidPurple, BRAND_COLORS.solarPink, BRAND_COLORS.stellarOrange];
+            config.buildings = {
+                color: '#1a0d00',
+                windowColor: [BRAND_COLORS.stellarOrange, BRAND_COLORS.solarPink],
+                density: 1.0,
+                glow: true
+            };
+            config.celestial = { type: 'sun', color: [BRAND_COLORS.stellarOrange, BRAND_COLORS.solarPink], x: 0.8, y: 0.6 };
+            config.atmosphere = { clouds: true, stars: false };
+            break;
+
+        case 'night':
+            config.sky = [BRAND_COLORS.black, BRAND_COLORS.voidPurple, '#1a1a2e'];
+            config.buildings = {
+                color: '#050508',
+                windowColor: [BRAND_COLORS.ionBlue, BRAND_COLORS.solarPink, BRAND_COLORS.classicMint],
+                density: 1.3,
+                glow: true
+            };
+            config.celestial = { type: 'distant_jet', color: BRAND_COLORS.solarPink };
+            config.atmosphere = { stars: true, traffic: true, digital_hud: true };
+            break;
+
+        case 'midnight':
+            config.sky = [BRAND_COLORS.black, '#020205'];
+            config.buildings = {
+                color: '#000',
+                windowColor: [BRAND_COLORS.ionBlue, BRAND_COLORS.solarPink],
+                density: 0.8,
+                glow: true
+            };
+            config.celestial = { type: 'moon', color: BRAND_COLORS.iceWhite, x: 0.85, y: 0.2 };
+            config.atmosphere = { stars: true, grid: true, digital_hud: true }; // PS2 vibes at midnight
+            break;
+
+        default:
+            config.sky = [BRAND_COLORS.black, BRAND_COLORS.darkNebula];
+            config.buildings = { color: '#050505', windowColor: [BRAND_COLORS.iceWhite], density: 1.0, glow: true };
+            break;
+    }
+
+    // 3. Seasonal Subtle Shift (Winter Snow)
+    if (month === 11 || month === 0 || month === 1) { // Dec, Jan, Feb
+        if (!config.atmosphere) config.atmosphere = {};
+        config.atmosphere.snow = true;
+    }
+
+    return config;
+};

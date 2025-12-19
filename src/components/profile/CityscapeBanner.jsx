@@ -287,16 +287,18 @@ const STATIC_CITY = GENERATE_STATIC_CITY();
 const CITY_RENDER_CACHE = new Map();
 
 // --- PURE RENDER FUNCTION ---
-function renderCityToCanvas(canvas, themeId, starSettings) {
+function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
     if (!canvas) return '';
 
     // Defensive Fallback for Theme
-    let theme = CITY_THEMES[themeId];
+    let theme = themeOverride || CITY_THEMES[themeId];
     if (!theme) theme = CITY_THEMES['city_realistic'];
 
     // Check Cache
     const starKey = starSettings?.enabled !== undefined ? `_s${starSettings.enabled}_c${starSettings.color}` : '';
-    const cacheKey = (themeId || 'city_realistic') + starKey;
+    // If it's time-aware, we include the hour in the cache key
+    const timeKey = themeId === 'city_time_aware' ? `_h${new Date().getHours()}` : '';
+    const cacheKey = (themeId || 'city_realistic') + starKey + timeKey;
 
     if (CITY_RENDER_CACHE.has(cacheKey)) {
         return CITY_RENDER_CACHE.get(cacheKey);
@@ -669,6 +671,40 @@ function renderCityToCanvas(canvas, themeId, starSettings) {
         ctx.fillStyle = '#FFF';
         ctx.beginPath(); ctx.arc(rx, ry, 4, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0;
+    }
+
+    // --- 2.66 SNOW (Seasonal/Weather) ---
+    if (theme.atmosphere?.snow) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        for (let i = 0; i < 400; i++) {
+            const sx = rand() * width;
+            const sy = rand() * height;
+            const size = rand() * 3 + 1;
+            ctx.beginPath();
+            ctx.arc(sx, sy, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // --- 2.67 DIGITAL HUD (Time-Aware/Cyber) ---
+    if (theme.atmosphere?.digital_hud) {
+        ctx.strokeStyle = COLORS.ionBlue;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.3;
+
+        // Corner Frames
+        const pad = 40;
+        const len = 100;
+        // TL
+        ctx.beginPath(); ctx.moveTo(pad, pad + len); ctx.lineTo(pad, pad); ctx.lineTo(pad + len, pad); ctx.stroke();
+        // TR
+        ctx.beginPath(); ctx.moveTo(width - pad, pad + len); ctx.lineTo(width - pad, pad); ctx.lineTo(width - pad - len, pad); ctx.stroke();
+        // BL
+        ctx.beginPath(); ctx.moveTo(pad, height - pad - len); ctx.lineTo(pad, height - pad); ctx.lineTo(pad + len, height - pad); ctx.stroke();
+        // BR
+        ctx.beginPath(); ctx.moveTo(width - pad, height - pad - len); ctx.lineTo(width - pad, height - pad); ctx.lineTo(width - pad - len, height - pad); ctx.stroke();
+
+        ctx.globalAlpha = 1.0;
     }
 
     // --- 2.7 NEO-TOKYO BACKGROUND FX ---
@@ -1215,6 +1251,7 @@ function renderCityToCanvas(canvas, themeId, starSettings) {
 
 // Import StarBackground for brand color support
 import StarBackground from '@/components/StarBackground';
+import { getTimeAwareCityTheme } from '@/core/constants/cityThemes';
 
 const CityscapeBanner = ({ themeId, starSettings }) => {
     const canvasRef = useRef(null);
@@ -1224,11 +1261,14 @@ const CityscapeBanner = ({ themeId, starSettings }) => {
     const useBrandStars = starSettings?.enabled && starSettings?.color === 'brand';
 
     useEffect(() => {
+        // Calculate dynamic theme if needed
+        const themeOverride = themeId === 'city_time_aware' ? getTimeAwareCityTheme() : null;
+
         // If using brand stars, skip canvas stars rendering for that setting
         const modifiedSettings = useBrandStars
             ? { ...starSettings, skipCanvasStars: true }
             : starSettings;
-        const bg = renderCityToCanvas(canvasRef.current, themeId, modifiedSettings);
+        const bg = renderCityToCanvas(canvasRef.current, themeId, modifiedSettings, themeOverride);
         setBgImage(bg);
     }, [themeId, starSettings, useBrandStars]);
 
