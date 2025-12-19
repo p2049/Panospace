@@ -35,12 +35,13 @@ const ShopItemDetail = lazy(() => import('./pages/ShopItemDetail'));
 const Shop = lazy(() => import('./pages/Shop'));
 const Contest = lazy(() => import('./pages/Contest'));
 const CollectionDetail = lazy(() => import('./pages/CollectionDetail'));
+const TopicPage = lazy(() => import('./pages/TopicPage')); // NEW
 const CreateCollection = lazy(() => import('./pages/CreateCollection'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const EventCreator = lazy(() => import('./pages/EventCreator'));
 const AestheticGallery = lazy(() => import('./pages/AestheticGallery'));
-const CreateGallery = lazy(() => import('./pages/CreateGallery'));
-const GalleryDetail = lazy(() => import('./pages/GalleryDetail'));
+const CreateGallery = lazy(() => import('./pages/CreateStudio'));
+const GalleryDetail = lazy(() => import('./pages/StudioPage'));
 const Parks = lazy(() => import('./pages/Parks'));
 const ParkGallery = lazy(() => import('./pages/ParkGallery'));
 const Debug = lazy(() => import('./pages/Debug'));
@@ -179,6 +180,9 @@ const AnimatedRoutes = () => {
             <MotionWrapper><Contest /></MotionWrapper>
           </PrivateRoute>
         } />
+        <Route path="/start/collections/:collectionId" element={<MotionWrapper><CollectionDetail /></MotionWrapper>} />
+        <Route path="/start/topic/:slug" element={<MotionWrapper><TopicPage /></MotionWrapper>} />
+        <Route path="/start/contests" element={<MotionWrapper><Contest /></MotionWrapper>} />
         <Route path="/collection/:id" element={
           <PrivateRoute>
             <MotionWrapper><CollectionDetail /></MotionWrapper>
@@ -201,13 +205,15 @@ const AnimatedRoutes = () => {
         } />
         <Route path="/gallery/:type/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
         <Route path="/tag/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
-        <Route path="/gallery/create" element={
+        <Route path="/studio/create" element={
           <PrivateRoute>
             <MotionWrapper><CreateGallery /></MotionWrapper>
           </PrivateRoute>
         } />
-        <Route path="/create-gallery" element={<Navigate to="/gallery/create" replace />} />
-        <Route path="/gallery/:id" element={<MotionWrapper><GalleryDetail /></MotionWrapper>} />
+        <Route path="/gallery/create" element={<Navigate to="/studio/create" replace />} />
+        <Route path="/create-gallery" element={<Navigate to="/studio/create" replace />} />
+        <Route path="/studio/:id" element={<MotionWrapper><GalleryDetail /></MotionWrapper>} />
+        <Route path="/gallery/:id" element={<Navigate to="/studio/:id" replace />} />
         <Route path="/parks" element={
           <PrivateRoute>
             <MotionWrapper><Parks /></MotionWrapper>
@@ -226,6 +232,7 @@ const AnimatedRoutes = () => {
             <MotionWrapper><UltraPage /></MotionWrapper>
           </PrivateRoute>
         } />
+        <Route path="/museums" element={<Navigate to="/search?mode=museums" replace />} />
         <Route path="/museums/:museumId" element={
           <PrivateRoute>
             <MotionWrapper><MuseumPage /></MotionWrapper>

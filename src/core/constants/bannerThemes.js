@@ -246,6 +246,19 @@ export const BANNER_TYPES = [
         previewGradient: 'linear-gradient(to bottom, #000, #ff3333)',
         needsColor: false,
         description: 'Lava flows & smoke'
+    },
+    {
+        id: 'ps2_2000',
+        label: '2000',
+        previewGradient: 'linear-gradient(to bottom, #000000, #1B82FF)',
+        needsColor: false,
+        description: 'PS2 inspired abstract console vibes'
+    },
+    {
+        id: 'deep_underwater',
+        label: 'Deep Underwater',
+        previewGradient: 'linear-gradient(to bottom, #010408, #0D2B36)',
+        needsColor: false,
+        description: 'Atmospheric depth in the deep blue abyss'
     }
-
 ];

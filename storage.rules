@@ -1,159 +1,70 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Posts (Portfolio Images) - PUBLIC READ
-    // Users upload their portfolio photos which should be publicly viewable
-    match /posts/{userId}/{allPaths=**} {
-      // Public read for portfolio images (posts are public content)
-      allow read: if true;
-      
-      // Only authenticated users can upload to their own folder
-      // Hard limit: 30MB (premium max). Client enforces tier limits (20MB free, 30MB premium)
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 30 * 1024 * 1024 &&  // 30MB hard limit
-                     request.resource.contentType.matches('image/.*');
+
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // Displays (Optimized for Feed) - PUBLIC READ
-    match /posts_display/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 20 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
+    function isOwner(uid) {
+      // STRICT: Ensure both user is signed in AND matches the path UID
+      return signedIn() && request.auth.uid == uid;
     }
 
-    // Print Masters (High Res) - PRIVATE READ
-    match /prints_master/{userId}/{allPaths=**} {
-      // Only owner can read (and Cloud Functions via Admin SDK)
-      allow read: if request.auth != null && request.auth.uid == userId;
-      
-      // Verified sellers can upload masters
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 100 * 1024 * 1024 && // 100MB limit
-                     request.resource.contentType.matches('image/.*');
-    }
+    // --- SECURITY RULES BY CATEGORY ---
     
-    // Profile photos - PUBLIC READ
-    match /profile_photos/{userId}/{allPaths=**} {
-      // Public read for profile photos (avatars are public identity)
+    // Collections
+    match /collections/{uid}/{allPaths=**} {
       allow read: if true;
-      
-      // Users can only upload their own profile photo
-      // Validate file size (max 10MB) and type (images only)
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&  // 10MB limit (Increased from 5MB)
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Space Cards - PUBLIC READ
-    match /spacecards/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Shop Items - PUBLIC READ
-    match /shopItems/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Banners - PUBLIC READ
-    match /banners/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Badges - PUBLIC READ
-    match /badges/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 5 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Collections - PUBLIC READ
-    match /collections/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Galleries (Studios) - PUBLIC READ
-    // Added based on usage in studios.service.ts
-    match /galleries/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
+      allow write: if isOwner(uid);
     }
 
-    // Magazines - PUBLIC READ
-    // Covers uploaded by Owner: magazines/{ownerId}/...
-    match /magazines/{userId}/{allPaths=**} {
+    // Studios
+    match /studios/{uid}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
+      allow write: if isOwner(uid);
     }
 
-    // Magazine Issues - PUBLIC READ
-    // Path: magazines/{magazineId}/issues/{userId}/...
-    match /magazines/{magazineId}/issues/{userId}/{allPaths=**} {
+    // Museums
+    match /museums/{uid}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
+      allow write: if isOwner(uid);
     }
 
-    // Magazine Submissions - PUBLIC READ
-    // Path: magazines/{magazineId}/submissions/{userId}/...
-    // Allows any auth user to upload to their OWN submission folder within a magazine
-    match /magazines/{magazineId}/submissions/{userId}/{allPaths=**} {
+    // Magazines
+    match /magazines/{uid}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
-    }
-    
-    // Museums - PUBLIC READ
-    // Includes Covers: museums/{ownerId}/...
-    match /museums/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
+      allow write: if isOwner(uid);
     }
 
-    // Museum Exhibits - PUBLIC READ
-    // Path: exhibits/{museumId}/{userId}/...
-    // Enforces that the uploader puts their own UID in the path
-    match /exhibits/{museumId}/{userId}/{allPaths=**} {
+    // General Posts
+    match /posts/{uid}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && 
-                     request.auth.uid == userId &&
-                     request.resource.size < 10 * 1024 * 1024 &&
-                     request.resource.contentType.matches('image/.*');
+      allow write: if isOwner(uid);
+    }
+
+    // Profiles
+    match /profile_photos/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid);
+    }
+
+    // Banners
+    match /banners/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid);
+    }
+
+    // Shop Items
+    match /shopItems/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid);
+    }
+
+    // Legacy Support (Scoped as tightly as possible)
+    match /collectionCovers/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid);
     }
   }
 }

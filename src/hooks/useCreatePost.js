@@ -621,22 +621,19 @@ export const useCreatePost = () => {
                 writerTheme: postData.writerTheme || null,
                 writerTextColor: postData.writerTextColor || null,
                 linkedPostIds: postData.linkedPostIds || [],
+                parentType: postData.parentType || (postData.collectionId ? 'collection' : null) || postData.studioId ? 'studio' : null,
+                parentId: postData.parentId || postData.collectionId || postData.studioId || null,
             };
 
             // [PROD_DEBUG] Enhanced Logging around Firestore Write
-            logger.log('[PROD_DEBUG] Attempting addDoc in /posts for User:', currentUser.uid);
+
 
             let docRef;
             try {
                 docRef = await addDoc(collection(db, 'posts'), postDoc);
-                logger.log('[PROD_DEBUG] Post created successfully. ID:', docRef.id);
+
             } catch (fsErr) {
-                logger.error('[PROD_DEBUG] Firestore Write FAILED:', fsErr);
-                logger.error('[PROD_DEBUG] Error Code:', fsErr.code);
-                logger.error('[PROD_DEBUG] Error Message:', fsErr.message);
-                if (fsErr.code === 'permission-denied') {
-                    logger.error('[PROD_DEBUG] CRITICAL: Permission Denied. Check Firestore Rules for /posts.');
-                }
+
                 throw fsErr;
             }
 
@@ -767,15 +764,31 @@ export const useCreatePost = () => {
             // ---------------------------------------------------------------
             // 6️⃣ Add to Collection (if selected)
             // ---------------------------------------------------------------
-            if (postData.collectionId) {
+            if (postData.collectionId || (postData.parentType === 'collection' && postData.parentId)) {
                 try {
-                    const collectionRef = doc(db, 'collections', postData.collectionId);
-                    await updateDoc(collectionRef, {
-                        postRefs: arrayUnion(docRef.id),
-                        updatedAt: serverTimestamp()
+                    const collId = postData.collectionId || postData.parentId;
+                    const { CollectionService } = await import('@/core/services/firestore/collections.service');
+                    await CollectionService.addItem(collId, {
+                        postId: docRef.id,
+                        addedBy: currentUser.uid,
+                        orderIndex: Date.now()
                     });
                 } catch (collectionError) {
-                    logger.error('Failed to add post to collection:', collectionError);
+                    logger.error('Failed to add post to collection subcollection:', collectionError);
+                }
+            }
+
+            if (postData.studioId || (postData.parentType === 'studio' && postData.parentId)) {
+                try {
+                    const studioId = postData.studioId || postData.parentId;
+                    const { StudioService } = await import('@/core/services/firestore/studios.service');
+                    await StudioService.addItem(studioId, {
+                        postId: docRef.id,
+                        addedBy: currentUser.uid,
+                        orderIndex: Date.now()
+                    });
+                } catch (studioError) {
+                    logger.error('Failed to add post to studio subcollection:', studioError);
                 }
             }
 

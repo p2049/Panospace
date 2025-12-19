@@ -7,9 +7,10 @@ import { TAG_CATEGORIES } from '@/core/constants/tagCategories';
 import { PARKS_DATA } from '@/core/constants/parksData';
 import { CAMERA_MODELS, FILM_STOCKS, ASPECT_RATIOS, ORIENTATIONS } from '@/core/constants/searchFilters';
 import { formatDateForDisplay, formatDateForInput } from '@/core/utils/dates';
-import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp, FaArrowLeft, FaShoppingBag } from 'react-icons/fa';  // ADDED FaArrowLeft
+import { FaFilter, FaTimes, FaMountain, FaTree, FaCalendar, FaCamera, FaCrop, FaFilm, FaChevronDown, FaChevronUp, FaArrowLeft, FaShoppingBag, FaAlignLeft } from 'react-icons/fa';  // ADDED FaArrowLeft, FaAlignLeft
 import CurrentAppEventsBox from '@/components/search/CurrentAppEventsBox';
 import PanoDateInput from '@/components/common/PanoDateInput';
+import TopicContextBanner from '@/components/search/TopicContextBanner';
 
 const SearchPanels = ({
     selectedTags,
@@ -35,8 +36,6 @@ const SearchPanels = ({
     isMobile, // NEW
     isMarketplaceMode, // NEW
     onMarketplaceToggle, // NEW
-    activePostType, // NEW
-    setActivePostType, // NEW
     children
 }) => {
     const [expandedPanels, setExpandedPanels] = useState({
@@ -230,120 +229,12 @@ const SearchPanels = ({
                         <CurrentAppEventsBox />
                     )}
 
-                    {/* Post Type Toggle (Image vs Text) - Only in Posts Mode */}
-                    {currentMode === 'posts' && (
-                        <div style={{ marginBottom: '0.8rem', display: 'flex', gap: '0.5rem' }}>
-                            <button
-                                onClick={() => setActivePostType('image')}
-                                style={{
-                                    flex: 1,
-                                    padding: '0.75rem',
-                                    background: activePostType === 'image' ? 'rgba(127, 255, 212, 0.15)' : 'rgba(0, 0, 0, 0.4)',
-                                    border: activePostType === 'image' ? '1px solid var(--ice-mint)' : '1px solid rgba(127, 255, 212, 0.3)',
-                                    borderRadius: '12px',
-                                    color: activePostType === 'image' ? 'var(--ice-mint)' : '#fff',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    backdropFilter: 'blur(10px)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    transition: 'all 0.2s',
-                                    fontFamily: 'var(--font-family-heading)',
-                                    fontSize: '0.9rem',
-                                    textTransform: 'uppercase'
-                                }}
-                            >
-                                <ModernIcon icon={FaCamera} size={14} color={activePostType === 'image' ? 'var(--ice-mint)' : '#fff'} />
-                                Image
-                            </button>
-                            <button
-                                onClick={() => setActivePostType('text')}
-                                style={{
-                                    flex: 1,
-                                    padding: '0.75rem',
-                                    background: activePostType === 'text' ? 'rgba(127, 255, 212, 0.15)' : 'rgba(0, 0, 0, 0.4)',
-                                    border: activePostType === 'text' ? '1px solid var(--ice-mint)' : '1px solid rgba(127, 255, 212, 0.3)',
-                                    borderRadius: '12px',
-                                    color: activePostType === 'text' ? 'var(--ice-mint)' : '#fff',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    backdropFilter: 'blur(10px)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.5rem',
-                                    transition: 'all 0.2s',
-                                    fontFamily: 'var(--font-family-heading)',
-                                    fontSize: '0.9rem',
-                                    textTransform: 'uppercase'
-                                }}
-                            >
-                                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>T</span>
-                                Text
-                            </button>
-                        </div>
-                    )}
 
-                    {/* Marketplace Toggle - Show for Posts only AND Mobile Vertical (using isMobile as proxy) */}
-                    {currentMode === 'posts' && isMobile && (
-                        <div style={{ marginBottom: '0.8rem' }}>
-                            <button
-                                onClick={() => onMarketplaceToggle(!isMarketplaceMode)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem 1rem',
-                                    background: isMarketplaceMode ? 'rgba(127, 255, 212, 0.15)' : 'rgba(0, 0, 0, 0.4)',
-                                    border: isMarketplaceMode ? '1px solid var(--ice-mint)' : '1px solid rgba(127, 255, 212, 0.3)',
-                                    borderRadius: '12px',
-                                    color: isMarketplaceMode ? 'var(--ice-mint)' : '#fff',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    cursor: 'pointer',
-                                    backdropFilter: 'blur(10px)',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                                    <FaShoppingBag size={14} />
-                                    <span style={{
-                                        fontWeight: 700,
-                                        fontFamily: 'var(--font-family-heading)',
-                                        letterSpacing: '0.05em',
-                                        fontSize: '0.9rem',
-                                        textTransform: 'uppercase'
-                                    }}>
-                                        Shop Items
-                                    </span>
-                                </div>
-                                <div style={{
-                                    width: '36px',
-                                    height: '20px',
-                                    background: isMarketplaceMode ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.2)',
-                                    borderRadius: '10px',
-                                    position: 'relative',
-                                    transition: 'background 0.3s'
-                                }}>
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '2px',
-                                        left: isMarketplaceMode ? '18px' : '2px',
-                                        width: '16px',
-                                        height: '16px',
-                                        background: isMarketplaceMode ? '#000' : '#fff',
-                                        borderRadius: '50%',
-                                        transition: 'left 0.3s'
-                                    }} />
-                                </div>
-                            </button>
-                        </div>
-                    )}
 
-                    {/* Date Filter Panel - Show for Posts and Events */}
-                    {(currentMode === 'posts' || currentMode === 'events') && (
+
+
+                    {/* Date Filter Panel - Show for Posts, Events, and Text */}
+                    {(currentMode === 'posts' || currentMode === 'events' || currentMode === 'text') && (
                         <div style={{ marginBottom: '0.8rem' }}>
                             <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
                                 <PanoDateInput
@@ -724,6 +615,20 @@ const SearchPanels = ({
                 background: 'var(--black)'
             }}>
 
+                {/* Topic Context Banner - Appears when 2+ tags are active */}
+                {currentMode === 'posts' && (
+                    <TopicContextBanner
+                        selectedTags={selectedTags}
+                        onOpenTopic={(tags) => {
+                            // Canonicalize tags: sort alphabetically, join with '+'
+                            const canonicalSlug = [...tags].sort().join('+');
+                            // Use window.location or navigate if available (passed from parent or hook)
+                            // Since SearchPanels doesn't have navigate prop, we'll dispatch a custom event or use window
+                            // Better: Inject useNavigate in this component since it's inside Router context
+                            window.location.hash = `/start/topic/${canonicalSlug}`;
+                        }}
+                    />
+                )}
 
                 {/* Results Content */}
                 <div

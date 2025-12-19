@@ -263,19 +263,29 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                             (post.images && post.images.length > 0) ||
                             (post.imageUrls && post.imageUrls.length > 0) ||
                             !!post.imageUrl ||
-                            !!post.shopImageUrl
+                            !!post.shopImageUrl ||
+                            !!post.coverImage ||
+                            !!post.bannerUrl
                         );
-                        const isTextPost = post.postType === 'text' || !hasImages;
+
+                        // Detect item type
+                        const isTextPost = post.postType === 'text' || (!hasImages && post.postType !== 'image');
+                        const isUser = !!post.username;
+                        const isStudio = !!post.galleryIds || post.type === 'studio';
+                        const isCollection = post.type === 'collection' || post.type === 'museum';
 
                         let gridRowSpan = 'span 1';
 
-                        if (isTextPost) {
+                        if (isStudio || isCollection) {
+                            gridRowSpan = 'span 2';
+                        } else if (isTextPost) {
                             // Check explicit dynamic span first
-                            if (dynamicSpans[post.id]) {
-                                gridRowSpan = `span ${dynamicSpans[post.id]}`;
+                            const itemId = post.id || post.uid || index;
+                            if (dynamicSpans[itemId]) {
+                                gridRowSpan = `span ${dynamicSpans[itemId]}`;
                             } else {
                                 // Default sizing
-                                const textContent = post.body || post.description || post.caption || '';
+                                const textContent = post.body || post.description || post.caption || post.bio || '';
                                 const hasRichText = !!post.bodyRichText;
                                 const isLong = (
                                     hasRichText ||

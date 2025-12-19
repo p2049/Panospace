@@ -20,7 +20,7 @@ const POPULAR_TAGS = [
 
 const CreateStudio = () => {
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
     const { showError, showSuccess, showWarning } = useToast();
     const [userProfile, setUserProfile] = useState(null);
     const [fetchingProfile, setFetchingProfile] = useState(true);
@@ -65,8 +65,8 @@ const CreateStudio = () => {
         return <div className="loading-spinner">Loading profile...</div>;
     }
 
-    // Check if user is Ultra-tier Space Creator
-    if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+    // Check if user is Ultra-tier Space Creator or Admin
+    if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
         return (
             <>
                 <PaywallModal
@@ -152,7 +152,7 @@ const CreateStudio = () => {
 
             if (studio && studio.id) {
 
-                navigate(`/gallery/${studio.id}`);
+                navigate(`/studio/${studio.id}`);
             } else {
                 console.error('Studio created but no ID returned:', studio);
                 showWarning('Studio created but ID missing. Check console.');

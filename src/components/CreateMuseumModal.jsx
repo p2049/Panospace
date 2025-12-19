@@ -7,7 +7,7 @@ import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.
 import { useToast } from '@/context/ToastContext';
 
 const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
     const { createCollection, loading, error } = useCreateCollection();
     const { searchUsers, searchGalleries } = useSearch();
     const { showError } = useToast();
@@ -120,8 +120,8 @@ const CreateMuseumModal = ({ isOpen, onClose, onSuccess }) => {
         e.preventDefault();
         if (!formData.title.trim()) return;
 
-        // Check if user is Ultra-tier Space Creator
-        if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+        // Check if user is Ultra-tier Space Creator or Admin
+        if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
             showError('Museums are exclusive to Space Creator members. Please upgrade to continue.');
             onClose();
             return;

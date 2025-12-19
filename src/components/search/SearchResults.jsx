@@ -5,11 +5,12 @@ import GridPostCard from '@/components/GridPostCard';
 import FeedPostCard from '@/components/FeedPostCard';
 import ListViewContainer from '@/components/feed/ListViewContainer';
 import UserCard from '@/components/UserCard';
-import GalleryCard from '@/components/ui/cards/GalleryCard';
+import StudioCard from '@/components/ui/cards/StudioCard';
 import CollectionCard from '@/components/CollectionCard';
 import ContestCard from '@/components/ContestCard';
 import EventCard from '@/components/EventCard';
-import SpaceCard from '@/components/SpaceCard';
+import SpaceCardComponent from '@/components/SpaceCardComponent';
+import Post from '@/components/Post';
 import PSButton from '@/components/PSButton';
 
 const SearchResults = ({
@@ -106,11 +107,18 @@ const SearchResults = ({
                                 />
                             );
                         })}
+                        {currentMode === 'text' && results.text.map(post => (
+                            <GridPostCard
+                                key={post.id}
+                                post={post}
+                                contextPosts={results.text}
+                            />
+                        ))}
                         {currentMode === 'users' && results.users.map(user => (
                             <UserCard key={user.id} user={user} />
                         ))}
-                        {currentMode === 'galleries' && results.galleries.map(gallery => (
-                            <GalleryCard key={gallery.id} studio={gallery} />
+                        {currentMode === 'studios' && results.studios.map(studio => (
+                            <StudioCard key={studio.id} studio={studio} />
                         ))}
                         {currentMode === 'collections' && results.collections.map(collection => (
                             <CollectionCard key={collection.id} collection={collection} />
@@ -121,29 +129,52 @@ const SearchResults = ({
                         {currentMode === 'events' && results.events.map(event => (
                             <EventCard key={event.id} event={event} />
                         ))}
+                        {currentMode === 'museums' && results.museums.map(museum => (
+                            <CollectionCard key={museum.id} collection={museum} />
+                        ))}
                         {currentMode === 'spacecards' && results.spacecards.map(card => (
-                            <SpaceCard key={card.id} card={card} />
+                            <div key={card.id} style={{ width: '100%', maxWidth: '240px', margin: '0 auto' }}>
+                                <SpaceCardComponent card={card} compact={false} />
+                            </div>
                         ))}
                     </div>
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        {currentMode === 'posts' && (
-                            <ListViewContainer
-                                posts={results.posts}
-                                style={{
-                                    height: 'auto', // Let parent control scrolling or fit content
-                                    overflowY: 'visible', // Avoid double scrollbars if parent scrolls
-                                    paddingTop: '0',
-                                    paddingBottom: '2rem'
-                                }}
-                            />
-                        )}
-                        {/* Fallback for other modes if they ever support feed view */}
-                        {currentMode !== 'posts' && (
-                            <div style={{ maxWidth: '600px', margin: '0 auto', color: '#888', padding: '2rem' }}>
-                                List view not available for {currentMode}
-                            </div>
-                        )}
+                        <ListViewContainer
+                            posts={results[currentMode] || []}
+                            renderPost={(item) => {
+                                switch (currentMode) {
+                                    case 'users':
+                                        return <UserCard user={item} />;
+                                    case 'studios':
+                                        return <StudioCard studio={item} />;
+                                    case 'collections':
+                                    case 'museums':
+                                        return <CollectionCard collection={item} />;
+                                    case 'contests':
+                                        return <ContestCard contest={item} />;
+                                    case 'events':
+                                        return <EventCard event={item} />;
+                                    case 'spacecards':
+                                        return (
+                                            <div style={{ padding: '0.5rem', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <SpaceCardComponent card={item} compact={true} />
+                                            </div>
+                                        );
+                                    case 'posts':
+                                    case 'text':
+                                    default:
+                                        return <Post post={item} priority="normal" viewMode="list" />;
+                                }
+                            }}
+                            style={{
+                                height: 'auto',
+                                overflowY: 'visible',
+                                paddingTop: '0',
+                                paddingBottom: '2rem',
+                                background: 'transparent'
+                            }}
+                        />
                     </div>
                 )}
             </div>
@@ -155,13 +186,14 @@ const SearchResults = ({
                     const isEmpty =
                         currentMode === 'posts' ? results.posts?.length === 0 :
                             currentMode === 'users' ? results.users?.length === 0 :
-                                currentMode === 'galleries' ? results.galleries?.length === 0 :
+                                currentMode === 'studios' ? results.studios?.length === 0 : // Changed from galleries
                                     currentMode === 'collections' ? results.collections?.length === 0 :
                                         currentMode === 'contests' ? results.contests?.length === 0 :
                                             currentMode === 'events' ? results.events?.length === 0 :
                                                 currentMode === 'spacecards' ? results.spacecards?.length === 0 :
                                                     currentMode === 'museums' ? results.museums?.length === 0 :
-                                                        false; // Default to false (has results) for unknown modes
+                                                        currentMode === 'text' ? results.text?.length === 0 :
+                                                            false; // Default to false (has results) for unknown modes
 
                     return isEmpty;
                 })() && (
@@ -202,7 +234,7 @@ const SearchResults = ({
                                 marginBottom: '1.5rem',
                                 lineHeight: '1.5'
                             }}>
-                                No results found for {currentMode === 'galleries' ? 'studios' : currentMode}. Try adjusting your filters.
+                                No results found for {currentMode === 'studios' ? 'studios' : (currentMode === 'text' ? 'pings' : (currentMode === 'posts' ? 'visuals' : currentMode))}. Try adjusting your filters.
                             </p>
                             {currentMode === 'events' && (
                                 <p style={{

@@ -4,8 +4,9 @@ import { doc, getDoc, getDocs, query, where, collection as firestoreCollection, 
 import { db } from '@/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useCollection, useCreateCollection } from '@/hooks/useCollections';
-import { FaArrowLeft, FaLock, FaUsers, FaGlobe, FaStore, FaEdit, FaShoppingCart, FaPlus } from 'react-icons/fa';
+import { FaArrowLeft, FaLock, FaUsers, FaGlobe, FaStore, FaEdit, FaShoppingCart, FaPlus, FaQuestionCircle } from 'react-icons/fa';
 import SmartImage from '@/components/SmartImage';
+import Walkthrough from '@/components/common/Walkthrough';
 
 const CollectionDetail = () => {
     const { id } = useParams();
@@ -19,6 +20,24 @@ const CollectionDetail = () => {
     const [owner, setOwner] = useState(null);
     const [userPosts, setUserPosts] = useState([]);
     const [showAddPostModal, setShowAddPostModal] = useState(false);
+    const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+    const walkthroughSteps = [
+        {
+            title: "Collections",
+            description: "Collections let you group posts into a project. Add existing posts or post directly into a collection to share what you’re working on — separate from your main feed."
+        },
+        {
+            title: "Add Posts",
+            description: "You can add posts to your collection here.",
+            targetSelector: "#collection-add-post"
+        },
+        {
+            title: "Edit Collection",
+            description: "Adjust settings, visibility, and appearance of your collection.",
+            targetSelector: "#collection-edit"
+        }
+    ];
 
     useEffect(() => {
         const fetchCollectionImages = async () => {
@@ -176,22 +195,31 @@ const CollectionDetail = () => {
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem' }}>
             {/* Header */}
             <div className="container-md">
-                <button
-                    onClick={() => navigate(-1)}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#888',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginBottom: '2rem'
-                    }}
-                >
-                    <FaArrowLeft /> Back
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <button
+                        onClick={() => navigate(-1)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#888',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <FaArrowLeft /> Back
+                    </button>
+
+                    <button
+                        className="help-icon-btn"
+                        onClick={() => setShowWalkthrough(true)}
+                        title="Show tutorial"
+                    >
+                        <FaQuestionCircle />
+                    </button>
+                </div>
 
                 {/* Collection Info */}
                 <div style={{ marginBottom: '3rem' }}>
@@ -242,10 +270,7 @@ const CollectionDetail = () => {
                                 <div>{collection.postRefs?.length || 0} posts added</div>
 
                                 {collection.shopSettings?.showInStore && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#7FFFD4' }}>
-                                        <FaStore />
-                                        <span>In Store</span>
-                                    </div>
+                                    null
                                 )}
                             </div>
                         </div>
@@ -254,6 +279,7 @@ const CollectionDetail = () => {
                             {isOwner && (
                                 <>
                                     <button
+                                        id="collection-add-post"
                                         onClick={() => setShowAddPostModal(true)}
                                         style={{
                                             padding: '0.75rem 1.5rem',
@@ -271,6 +297,7 @@ const CollectionDetail = () => {
                                         <FaPlus /> Add Post
                                     </button>
                                     <button
+                                        id="collection-edit"
                                         onClick={() => navigate(`/collection/${id}/edit`)}
                                         style={{
                                             padding: '0.75rem 1.5rem',
@@ -291,23 +318,7 @@ const CollectionDetail = () => {
                             )}
 
                             {collection.shopSettings?.bundlePrice && collection.shopSettings?.showInStore && (
-                                <button
-                                    style={{
-                                        padding: '0.75rem 1.5rem',
-                                        background: '#7FFFD4',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        color: '#000',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        fontWeight: 'bold',
-                                        fontSize: '1.1rem'
-                                    }}
-                                >
-                                    <FaShoppingCart /> ${collection.shopSettings.bundlePrice.toFixed(2)}
-                                </button>
+                                null
                             )}
                         </div>
                     </div>
@@ -452,6 +463,13 @@ const CollectionDetail = () => {
                     </div>
                 </div>
             )}
+
+            <Walkthrough
+                steps={walkthroughSteps}
+                onboardingKey="collections"
+                forceShow={showWalkthrough}
+                onClose={() => setShowWalkthrough(false)}
+            />
         </div>
     );
 };

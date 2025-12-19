@@ -142,7 +142,7 @@ const Feed = () => {
             ) {
                 const newMode = feedViewMode === 'image' ? 'list' : 'image';
                 setFeedViewMode(newMode);
-                showToast(`Switched to ${newMode === 'image' ? 'Image Feed' : 'List View'}`);
+                showToast(`Switched to ${newMode === 'image' ? 'Visual Feed' : 'List View'}`);
             }
         };
 
@@ -191,7 +191,7 @@ const Feed = () => {
                     onClick={() => {
                         const newMode = feedViewMode === 'image' ? 'list' : 'image';
                         setFeedViewMode(newMode);
-                        showToast(`Switched to ${newMode === 'image' ? 'Image Feed' : 'List View'}`);
+                        showToast(`Switched to ${newMode === 'image' ? 'Visual Feed' : 'List View'}`);
                     }}
                     style={{
                         flexShrink: 0,
@@ -280,7 +280,7 @@ const Feed = () => {
                             fontWeight: '700',
                             letterSpacing: '0.05em'
                         }}>
-                            {customFeedEnabled ? (activeCustomFeedName || 'No Matching Posts') : 'No Posts Yet'}
+                            {customFeedEnabled ? (activeCustomFeedName || 'No Matching Visuals') : 'No Visuals Yet'}
                         </h2>
                         <p style={{
                             color: '#aaa',
@@ -362,24 +362,54 @@ const Feed = () => {
                         <div
                             style={{
                                 height: '100%',
-                                background: '#000'
+                                background: '#000',
+                                position: 'relative'
                             }}
                         >
-                            <VirtualizedPostContainer
-                                posts={imageOnlyPosts}
-                                initialIndex={activeIndex}
-                                onIndexChange={setActiveIndex}
-                                onRefresh={refresh}
-                                renderPost={(post, index, isCurrent) => (
-                                    <Post
-                                        post={post}
-                                        contextPosts={imageOnlyPosts}
-                                        viewMode="image"
-                                        displayMode="feed"
-                                        priority={isCurrent ? 'high' : 'normal'}
-                                    />
-                                )}
-                            />
+                            {imageOnlyPosts.length > 0 ? (
+                                <VirtualizedPostContainer
+                                    posts={imageOnlyPosts}
+                                    initialIndex={activeIndex}
+                                    onIndexChange={setActiveIndex}
+                                    onRefresh={refresh}
+                                    renderPost={(post, index, isCurrent) => (
+                                        <Post
+                                            post={post}
+                                            contextPosts={imageOnlyPosts}
+                                            viewMode="image"
+                                            displayMode="feed"
+                                            priority={isCurrent ? 'high' : 'normal'}
+                                        />
+                                    )}
+                                />
+                            ) : (
+                                <div style={{
+                                    height: '100%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    color: '#888',
+                                    gap: '1rem'
+                                }}>
+                                    <p>No visuals found in this feed.</p>
+                                    <button
+                                        onClick={() => setFeedViewMode('list')}
+                                        style={{
+                                            padding: '0.8rem 1.5rem',
+                                            background: 'rgba(127, 255, 212, 0.2)',
+                                            border: '1px solid #7FFFD4',
+                                            borderRadius: '8px',
+                                            color: '#7FFFD4',
+                                            cursor: 'pointer',
+                                            fontSize: '1rem',
+                                            marginTop: '1rem'
+                                        }}
+                                    >
+                                        Switch to List View
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <ListViewContainer
@@ -405,7 +435,7 @@ const Feed = () => {
 
                                         setActiveIndex(targetIndex);
                                         setFeedViewMode('image');
-                                        showToast('Switched to Image Feed');
+                                        showToast('Switched to Visual Feed');
                                     }}
                                 />
                             )}

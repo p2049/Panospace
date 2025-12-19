@@ -30,7 +30,7 @@ const FeedViewMenu = ({ anchorPoint, onClose, isMobile }) => {
     const handleSelect = (mode) => {
         if (feedViewMode !== mode) {
             setFeedViewMode(mode);
-            showToast(`Switched to ${mode === 'image' ? 'Image Feed' : 'List View'}`);
+            showToast(`Switched to ${mode === 'image' ? 'Visual Feed' : 'List View'}`);
         }
         onClose();
     };
@@ -68,7 +68,7 @@ const FeedViewMenu = ({ anchorPoint, onClose, isMobile }) => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <MenuOption
                             icon={FaImage}
-                            label="Image Feed"
+                            label="Visual Feed"
                             active={feedViewMode === 'image'}
                             onClick={() => handleSelect('image')}
                         />
@@ -123,7 +123,7 @@ const FeedViewMenu = ({ anchorPoint, onClose, isMobile }) => {
             </div>
             <MenuOption
                 icon={FaImage}
-                label="Image Feed"
+                label="Visual Feed"
                 active={feedViewMode === 'image'}
                 onClick={() => handleSelect('image')}
                 desktop

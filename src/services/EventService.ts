@@ -30,16 +30,17 @@ export const EventService = {
             const q = query(
                 eventsRef,
                 where('active', '==', true),
-                orderBy('visibleDate', 'desc'), // Show newest first
-                limit(50)
+                limit(100)
             );
 
             const snapshot = await getDocs(q);
             // Use normalizeAppEvent to ensure contract compliance
             const events = snapshot.docs.map(normalizeAppEvent);
 
-            // Filter client-side for visibleDate <= now
-            return events.filter(e => e.visibleDate.toMillis() <= now.toMillis());
+            // Sort and Filter client-side
+            return events
+                .sort((a, b) => b.visibleDate.toMillis() - a.visibleDate.toMillis())
+                .filter(e => e.visibleDate.toMillis() <= now.toMillis());
 
         } catch (error) {
             console.error("Error fetching visible events:", error);

@@ -4,9 +4,10 @@ import { doc, getDoc, updateDoc, arrayUnion, increment, collection, query, order
 import { db } from '@/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useCollection } from '@/hooks/useCollections';
-import { FaArrowLeft, FaUniversity, FaImage, FaUser, FaPlus, FaCheck, FaSearch } from 'react-icons/fa';
+import { FaArrowLeft, FaUniversity, FaImage, FaUser, FaPlus, FaCheck, FaSearch, FaQuestionCircle } from 'react-icons/fa';
 import SEO from '@/components/SEO';
-import GalleryCard from '@/components/ui/cards/GalleryCard';
+import StudioCard from '@/components/ui/cards/StudioCard';
+import Walkthrough from '@/components/common/Walkthrough';
 import StarBackground from '@/components/StarBackground';
 import CreateExhibitModal from '@/components/museums/CreateExhibitModal';
 import { FaClock } from 'react-icons/fa';
@@ -23,6 +24,24 @@ const MuseumView = () => {
     const [contentLoading, setContentLoading] = useState(true);
     const [joining, setJoining] = useState(false);
     const [showCreateExhibitModal, setShowCreateExhibitModal] = useState(false);
+    const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+    const walkthroughSteps = [
+        {
+            title: "Museums",
+            description: "Museums curate multiple Studios and/or Collections into one public hub. Use Museums to organize big bodies of work, collaborations, or themed worlds."
+        },
+        {
+            title: "Join Museum",
+            description: "Join the museum to show your support and get updates on new exhibits.",
+            targetSelector: "#museum-join-btn"
+        },
+        {
+            title: "Add Exhibit",
+            description: "Add exhibits or featured content to your museum.",
+            targetSelector: "#museum-add-exhibit-btn"
+        }
+    ];
 
     const isMember = museum?.members?.includes(currentUser?.uid);
     const isOwner = museum?.ownerId === currentUser?.uid;
@@ -148,8 +167,18 @@ const MuseumView = () => {
                         <FaSearch /> <span style={{ display: 'none', '@media (min-width: 768px)': { display: 'inline' } }}>Search</span>
                     </button>
 
+                    <button
+                        className="help-icon-btn"
+                        onClick={() => setShowWalkthrough(true)}
+                        style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', width: '40px', height: '40px' }}
+                        title="Show tutorial"
+                    >
+                        <FaQuestionCircle />
+                    </button>
+
                     {!isOwner && (
                         <button
+                            id="museum-join-btn"
                             onClick={handleJoinMuseum}
                             disabled={isMember || joining}
                             style={{
@@ -174,6 +203,7 @@ const MuseumView = () => {
 
                     {isOwner && (
                         <button
+                            id="museum-add-exhibit-btn"
                             onClick={() => setShowCreateExhibitModal(true)}
                             style={{
                                 background: '#7FFFD4',
@@ -270,7 +300,7 @@ const MuseumView = () => {
                         </h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                             {studios.map(studio => (
-                                <GalleryCard key={studio.id} studio={studio} />
+                                <StudioCard key={studio.id} studio={studio} />
                             ))}
                         </div>
                     </div>
@@ -340,6 +370,13 @@ const MuseumView = () => {
                     }
                 }}
                 museumId={id}
+            />
+
+            <Walkthrough
+                steps={walkthroughSteps}
+                onboardingKey="museums"
+                forceShow={showWalkthrough}
+                onClose={() => setShowWalkthrough(false)}
             />
         </div>
     );

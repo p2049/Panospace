@@ -1,9 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaTimes, FaCog, FaSignOutAlt, FaUser } from 'react-icons/fa';
+import { FaTimes, FaCog, FaSignOutAlt, FaUser, FaBug } from 'react-icons/fa';
+import { useAuth } from '@/context/AuthContext';
+import { isDevBypassActive } from '@/core/utils/accessControl';
 
 const SettingsModal = ({ isOpen, onClose, onLogout }) => {
     const navigate = useNavigate();
+    const { customClaims } = useAuth();
+
+    // Check for tester status
+    const isTester = customClaims?.isTester || isDevBypassActive();
 
     if (!isOpen) return null;
 
@@ -67,6 +73,20 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
                 }}>
                     <FaCog size={24} color="#fff" />
                     <h2 style={{ margin: 0, color: '#fff', fontSize: '1.5rem' }}>Settings</h2>
+                    {isTester && (
+                        <span style={{
+                            marginLeft: 'auto',
+                            background: '#ff00ff',
+                            color: '#fff',
+                            fontSize: '0.7rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                            letterSpacing: '1px'
+                        }}>
+                            TESTER MODE
+                        </span>
+                    )}
                 </div>
 
                 {/* Menu Items */}
@@ -114,6 +134,19 @@ const SettingsModal = ({ isOpen, onClose, onLogout }) => {
                         <FaSignOutAlt />
                         <span>Sign Out</span>
                     </button>
+
+                    {/* Developer Info Button (Only visible if isTester logic is active or user is manually flagged) */}
+                    {isTester && (
+                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #333', fontSize: '0.8rem', color: '#666' }}>
+                            <p style={{ margin: '0 0 0.5rem 0' }}><FaBug style={{ marginRight: '0.5rem' }} /> Developer Access Active</p>
+                            <button
+                                onClick={() => alert("To enable tester mode on a real account, set the custom claim 'isTester' to true via Admin SDK.")}
+                                style={{ background: 'transparent', border: 'none', color: '#888', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                            >
+                                How to enable?
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -6,18 +6,17 @@ import { FaCheck, FaTrash, FaBan, FaExclamationTriangle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const AdminModeration = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // Basic security check (replace with real admin check later)
-    // For now, just checking if user is logged in. In prod, check claims or specific UIDs.
+    // Secure check: Only admins can access this page
     useEffect(() => {
-        if (!currentUser) {
+        if (!loading && (!currentUser || !isAdmin)) {
             navigate('/login');
         }
-    }, [currentUser, navigate]);
+    }, [currentUser, isAdmin, loading, navigate]);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -74,9 +73,20 @@ const AdminModeration = () => {
     };
 
     const handleBanUser = async (report) => {
-        if (!window.confirm('Are you sure you want to BAN the reported user?')) return;
-        // This would require a backend function to disable auth, but we can mark them as banned in Firestore
-        alert('Ban functionality requires backend admin SDK. Marking report as resolved for now.');
+        if (!window.confirm('GOD MODE: Are you sure you want to PERMANENTLY DELETE this user profile from Firestore?')) return;
+        try {
+            await deleteDoc(doc(db, 'users', report.targetId));
+            // Mark report as resolved
+            await updateDoc(doc(db, 'reports', report.id), {
+                status: 'resolved',
+                resolution: 'user_deleted'
+            });
+            setReports(prev => prev.map(r => r.id === report.id ? { ...r, status: 'resolved' } : r));
+            alert('User profile deleted from Firestore');
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            alert('Failed to delete user profile: ' + error.message);
+        }
     };
 
     if (loading) return <div style={{ padding: '2rem', color: '#fff', textAlign: 'center' }}>Loading reports...</div>;

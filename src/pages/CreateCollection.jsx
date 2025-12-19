@@ -8,11 +8,11 @@ import { useCreateCollection } from '@/hooks/useCollections';
 import { db } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import exifr from 'exifr';
-import { PRINT_PRODUCTS, PRINT_TIERS, calculateBundlePricing } from '@/domain/shop/pricing';
+// import { PRINT_PRODUCTS, PRINT_TIERS, calculateBundlePricing } from '@/domain/shop/pricing';
 import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import PaywallModal from '@/components/monetization/PaywallModal';
 import { logger } from '@/core/utils/logger';
-const PRINT_SIZES = PRINT_PRODUCTS;
+// const PRINT_SIZES = PRINT_PRODUCTS;
 
 import { createMagazine, calculateNextReleaseDate } from '@/services/magazineService';
 import ImageUploadPanel from '@/components/create-collection/ImageUploadPanel';
@@ -31,7 +31,7 @@ import { sanitizeTitle, sanitizeDescription } from '@/core/utils/sanitize';
 import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 
 const CreateCollection = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
     const navigate = useNavigate();
     const { showError, showSuccess } = useToast();
     const { createCollection, loading: creating } = useCreateCollection();
@@ -43,7 +43,9 @@ const CreateCollection = () => {
     const containerStyle = {
         maxWidth: layout.containerWidth === '100%' ? '100%' : layout.containerWidth,
         margin: '0 auto',
-        padding: `${layout.paddingY} ${layout.paddingX}`,
+        paddingTop: layout.paddingY,
+        paddingLeft: layout.paddingX,
+        paddingRight: layout.paddingX,
         paddingBottom: '6rem', // Always ensure space for bottom bar/scrolling
         width: '100%',
         boxSizing: 'border-box',
@@ -80,9 +82,9 @@ const CreateCollection = () => {
     const [description, setDescription] = useState('');
     const [visibility, setVisibility] = useState('public');
     const [postToFeed, setPostToFeed] = useState(true);
-    const [showInStore, setShowInStore] = useState(false);
-    const [productTier, setProductTier] = useState(PRINT_TIERS.ECONOMY);
-    const [defaultSizeId, setDefaultSizeId] = useState('8x10');
+    // const [showInStore, setShowInStore] = useState(false); // Removed
+    // const [productTier, setProductTier] = useState(PRINT_TIERS.ECONOMY); // Removed
+    // const [defaultSizeId, setDefaultSizeId] = useState('8x10'); // Removed
 
     // Magazine-specific state
     const [releaseFrequency, setReleaseFrequency] = useState('monthly');
@@ -153,8 +155,8 @@ const CreateCollection = () => {
                     aspectRatio: img.width / img.height,
                     width: img.width,
                     height: img.height,
-                    sizeId: defaultSizeId,
-                    sizeLabel: PRINT_SIZES.find(s => s.id === defaultSizeId)?.label || '8" × 10"'
+                    // sizeId: defaultSizeId, // Removed
+                    // sizeLabel: PRINT_SIZES.find(s => s.id === defaultSizeId)?.label || '8" × 10"' // Removed
                 };
             })
         );
@@ -230,8 +232,8 @@ const CreateCollection = () => {
 
         // Museum mode
         if (creationMode === 'museum') {
-            // Check if user is Ultra-tier Space Creator
-            if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+            // Check if user is Ultra-tier Space Creator or Admin
+            if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
                 showError('Museums are exclusive to Space Creator members. Please upgrade to continue.');
                 return;
             }
@@ -288,8 +290,8 @@ const CreateCollection = () => {
             return;
         }
 
-        // Check if user is Ultra-tier Space Creator for Studio creation
-        if (creationMode === 'gallery' && userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
+        // Check if user is Ultra-tier Space Creator or Admin/Founder for Studio creation
+        if (creationMode === 'gallery' && userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
             showError('Studios are exclusive to Space Creator members. Please upgrade to continue.');
             return;
         }
@@ -316,14 +318,16 @@ const CreateCollection = () => {
                     imageUrl,
                     exif: image.exif,
                     aspectRatio: image.aspectRatio,
-                    storagePath: fileName,
-                    sizeId: image.sizeId,
-                    sizeLabel: image.sizeLabel
+                    storagePath: path,
+                    // sizeId: image.sizeId, // Removed
+                    // sizeLabel: image.sizeLabel // Removed
                 });
 
                 setUploadProgress(((i + 1) / images.length) * 100);
             }
 
+            // Bundle pricing removed
+            /*
             const bundlePricing = calculateBundlePricing(
                 uploadedItems.map(item => ({
                     sizeId: item.sizeId,
@@ -331,6 +335,7 @@ const CreateCollection = () => {
                 })),
                 productTier
             );
+            */
 
             const collectionData = {
                 type: creationMode, // 'collection' or 'gallery'
@@ -342,12 +347,9 @@ const CreateCollection = () => {
                 postRefs: [],
                 visibility,
                 postToFeed,
-                productTier,
-                bundlePricing,
-                shopSettings: {
-                    showInStore,
-                    productTier
-                }
+                // productTier, // Removed
+                // bundlePricing, // Removed
+                // shopSettings: { showInStore: false } // Removed or explicitly false
             };
 
             const newCollection = await createCollection(collectionData);
@@ -509,12 +511,12 @@ const CreateCollection = () => {
                                 setVisibility={setVisibility}
                                 postToFeed={postToFeed}
                                 setPostToFeed={setPostToFeed}
-                                showInStore={showInStore}
+                                /* showInStore={showInStore}
                                 setShowInStore={setShowInStore}
                                 productTier={productTier}
                                 setProductTier={setProductTier}
                                 defaultSizeId={defaultSizeId}
-                                setDefaultSizeId={setDefaultSizeId}
+                                setDefaultSizeId={setDefaultSizeId} */
                                 images={images}
                                 setImages={setImages}
                                 creationMode={creationMode}
@@ -529,12 +531,12 @@ const CreateCollection = () => {
                                 setVisibility={setVisibility}
                                 postToFeed={postToFeed}
                                 setPostToFeed={setPostToFeed}
-                                showInStore={showInStore}
+                                /* showInStore={showInStore}
                                 setShowInStore={setShowInStore}
                                 productTier={productTier}
                                 setProductTier={setProductTier}
                                 defaultSizeId={defaultSizeId}
-                                setDefaultSizeId={setDefaultSizeId}
+                                setDefaultSizeId={setDefaultSizeId} */
                                 images={images}
                                 setImages={setImages}
                                 creationMode={creationMode}

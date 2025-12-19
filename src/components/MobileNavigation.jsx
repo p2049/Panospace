@@ -35,7 +35,8 @@ import {
     FaGlobeAmericas,
     FaUserFriends,
     FaPalette,
-    FaGlobe
+    FaGlobe,
+    FaShoppingBag
 } from 'react-icons/fa';
 
 // Mobile Navigation / Hamburger Menu
@@ -848,7 +849,7 @@ const MobileNavigation = () => {
                         style={{
                             position: 'relative',
                             padding: '0.75rem',
-                            borderRadius: '4px', // Squared off for sci-fi look
+                            borderRadius: '4px',
                             border: '1px solid rgba(127, 255, 212, 0.15)',
                             background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
                             color: '#fff',
@@ -884,7 +885,6 @@ const MobileNavigation = () => {
                             border: `1px solid ${accentColor}40`,
                             position: 'relative'
                         }}>
-                            {/* Decorative corners */}
                             <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
                             <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
                             <FaStore size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
@@ -903,7 +903,72 @@ const MobileNavigation = () => {
                                 fontFamily: "'Rajdhani', sans-serif",
                                 letterSpacing: '0.02em',
                                 marginTop: '2px'
-                            }}>Shop prints</div>
+                            }}>Collect cards</div>
+                        </div>
+                    </button>
+
+                    {/* Shop */}
+                    <button
+                        onClick={() => handleNavClick('/shop')}
+                        className="station-hologram-btn"
+                        style={{
+                            position: 'relative',
+                            padding: '0.75rem',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(127, 255, 212, 0.15)',
+                            background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
+                            color: '#fff',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8)',
+                            overflow: 'hidden'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accentColor;
+                            e.currentTarget.style.background = `linear-gradient(90deg, ${accentColor}10, rgba(10, 10, 10, 0.95))`;
+                            e.currentTarget.style.boxShadow = `inset 4px 0 0 ${accentColor}, 0 0 15px ${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = 'rgba(127, 255, 212, 0.15)';
+                            e.currentTarget.style.background = 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))';
+                            e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0, 0, 0, 0.8)';
+                        }}
+                    >
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '4px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${accentColor}40`,
+                            position: 'relative'
+                        }}>
+                            <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
+                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
+                            <FaShoppingBag size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
+                        </div>
+                        <div>
+                            <div style={{
+                                fontWeight: '700',
+                                fontFamily: "'Orbitron', sans-serif",
+                                letterSpacing: '0.05em',
+                                fontSize: '0.95rem',
+                                textTransform: 'uppercase'
+                            }}>Shop</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                color: '#aaa',
+                                fontFamily: "'Rajdhani', sans-serif",
+                                letterSpacing: '0.02em',
+                                marginTop: '2px'
+                            }}>Prints & gear</div>
                         </div>
                     </button>
 

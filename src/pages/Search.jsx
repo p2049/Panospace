@@ -12,7 +12,6 @@ import { getRecommendations } from '@/core/utils/recommendations';
 import SearchLayoutWrapper from '@/components/search/SearchLayoutWrapper';
 import SearchHeader from '@/components/search/SearchHeader';
 import SearchModeTabs from '@/components/search/SearchModeTabs';
-import SearchFilters from '@/components/search/SearchFilters';
 import SearchResults from '@/components/search/SearchResults';
 import { convertSearchInput } from '@/utils/convertSearchInput';
 import { filterVisiblePosts, filterVisibleItems, filterVisibleUsers } from '@/core/utils/filterHelpers';
@@ -29,51 +28,56 @@ const searchReducer = (state, action) => {
                     ? {
                         posts: [...state.results.posts, ...action.payload.posts],
                         users: [...state.results.users, ...action.payload.users],
-                        galleries: [...state.results.galleries, ...action.payload.galleries],
+                        studios: [...state.results.studios, ...action.payload.studios],
                         collections: [...state.results.collections, ...(action.payload.collections || [])],
                         contests: [...state.results.contests, ...(action.payload.contests || [])],
                         events: [...state.results.events, ...(action.payload.events || [])],
                         spacecards: [...state.results.spacecards, ...(action.payload.spacecards || [])],
-                        museums: [...state.results.museums, ...(action.payload.museums || [])]
+                        museums: [...state.results.museums, ...(action.payload.museums || [])],
+                        text: [...state.results.text, ...(action.payload.text || [])]
                     }
                     : action.payload,
                 lastPostDoc: action.lastPostDoc !== undefined ? action.lastPostDoc : state.lastPostDoc,
                 lastUserDoc: action.lastUserDoc !== undefined ? action.lastUserDoc : state.lastUserDoc,
-                lastGalleryDoc: action.lastGalleryDoc !== undefined ? action.lastGalleryDoc : state.lastGalleryDoc,
+                lastStudioDoc: action.lastStudioDoc !== undefined ? action.lastStudioDoc : state.lastStudioDoc,
                 lastCollectionDoc: action.lastCollectionDoc !== undefined ? action.lastCollectionDoc : state.lastCollectionDoc,
                 lastContestDoc: action.lastContestDoc !== undefined ? action.lastContestDoc : state.lastContestDoc,
                 lastEventDoc: action.lastEventDoc !== undefined ? action.lastEventDoc : state.lastEventDoc,
                 lastSpaceCardDoc: action.lastSpaceCardDoc !== undefined ? action.lastSpaceCardDoc : state.lastSpaceCardDoc,
                 lastMuseumDoc: action.lastMuseumDoc !== undefined ? action.lastMuseumDoc : state.lastMuseumDoc,
+                lastTextDoc: action.lastTextDoc !== undefined ? action.lastTextDoc : state.lastTextDoc,
                 hasMorePosts: action.hasMorePosts !== undefined ? action.hasMorePosts : state.hasMorePosts,
                 hasMoreUsers: action.hasMoreUsers !== undefined ? action.hasMoreUsers : state.hasMoreUsers,
-                hasMoreGalleries: action.hasMoreGalleries !== undefined ? action.hasMoreGalleries : state.hasMoreGalleries,
+                hasMoreStudios: action.hasMoreStudios !== undefined ? action.hasMoreStudios : state.hasMoreStudios,
                 hasMoreCollections: action.hasMoreCollections !== undefined ? action.hasMoreCollections : state.hasMoreCollections,
                 hasMoreContests: action.hasMoreContests !== undefined ? action.hasMoreContests : state.hasMoreContests,
                 hasMoreEvents: action.hasMoreEvents !== undefined ? action.hasMoreEvents : state.hasMoreEvents,
                 hasMoreSpaceCards: action.hasMoreSpaceCards !== undefined ? action.hasMoreSpaceCards : state.hasMoreSpaceCards,
                 hasMoreMuseums: action.hasMoreMuseums !== undefined ? action.hasMoreMuseums : state.hasMoreMuseums,
+                hasMoreText: action.hasMoreText !== undefined ? action.hasMoreText : state.hasMoreText,
             };
         case 'RESET_RESULTS':
             return {
                 ...state,
-                results: { posts: [], users: [], galleries: [], collections: [], museums: [], contests: [], events: [], spacecards: [] },
+                results: { posts: [], users: [], studios: [], collections: [], museums: [], contests: [], events: [], spacecards: [], text: [] },
                 lastPostDoc: null,
                 lastUserDoc: null,
-                lastGalleryDoc: null,
+                lastStudioDoc: null,
                 lastCollectionDoc: null,
                 lastContestDoc: null,
                 lastEventDoc: null,
                 lastSpaceCardDoc: null,
                 lastMuseumDoc: null,
+                lastTextDoc: null,
                 hasMorePosts: true,
                 hasMoreUsers: true,
-                hasMoreGalleries: true,
+                hasMoreStudios: true,
                 hasMoreCollections: true,
                 hasMoreContests: true,
                 hasMoreEvents: true,
                 hasMoreSpaceCards: true,
                 hasMoreMuseums: true,
+                hasMoreText: true,
             };
         default:
             return state;
@@ -81,23 +85,25 @@ const searchReducer = (state, action) => {
 };
 
 const initialSearchState = {
-    results: { posts: [], users: [], galleries: [], collections: [], museums: [], contests: [], events: [], spacecards: [] },
+    results: { posts: [], users: [], studios: [], collections: [], museums: [], contests: [], events: [], spacecards: [], text: [] },
     lastPostDoc: null,
     lastUserDoc: null,
-    lastGalleryDoc: null,
+    lastStudioDoc: null,
     lastCollectionDoc: null,
     lastContestDoc: null,
     lastEventDoc: null,
     lastSpaceCardDoc: null,
+    lastTextDoc: null,
     hasMorePosts: true,
     hasMoreUsers: true,
-    hasMoreGalleries: true,
+    hasMoreStudios: true,
     hasMoreCollections: true,
     hasMoreContests: true,
     hasMoreEvents: true,
 
     hasMoreSpaceCards: true,
     hasMoreMuseums: true,
+    hasMoreText: true,
 };
 
 const Search = () => {
@@ -135,15 +141,21 @@ const Search = () => {
             setSelectedMuseum(null);
         }
     }, [searchParams]);
-    const { searchDefault } = useFeedStore();
+    const {
+        searchDefault,
+        currentFeed: searchMode,
+        switchToFeed: setSearchMode,
+        followingOnly,
+        setFollowingOnly
+    } = useFeedStore();
     const [selectedCamera, setSelectedCamera] = useState(null);
     const [selectedFilm, setSelectedFilm] = useState(null);
     const [selectedOrientation, setSelectedOrientation] = useState(null);
     const [selectedAspectRatio, setSelectedAspectRatio] = useState(null);
     const [sortBy, setSortBy] = useState('newest');
-    const [searchMode, setSearchMode] = useState(searchDefault || 'social'); // Phase 3: Search Mode State ('art' | 'social')
+    // const [searchMode, setSearchMode] = useState(searchDefault || 'social'); // Phase 3: Search Mode State ('art' | 'social')
     const [isMarketplaceMode, setIsMarketplaceMode] = useState(false); // NEW: Marketplace Toggle
-    const [activePostType, setActivePostType] = useState('image'); // 'image' | 'text' - NEW: Post Type Toggle
+
 
     const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'
     const [isSearching, setIsSearching] = useState(false);
@@ -153,8 +165,11 @@ const Search = () => {
     const [error, setError] = useState(null);
 
     // Mode Switcher State
-    const [currentMode, setCurrentMode] = useState('posts'); // 'posts' | 'galleries' | 'collections' | 'museums' | 'contests' | 'events' | 'users' | 'spacecards'
-    const [followingOnly, setFollowingOnly] = useState(false);
+    const [currentMode, setCurrentMode] = useState(() => {
+        const mode = searchParams.get('mode');
+        return mode === 'galleries' ? 'studios' : (mode || 'posts');
+    }); // 'posts' | 'studios' | 'collections' | 'museums' | 'contests' | 'events' | 'users' | 'spacecards'
+    // const [followingOnly, setFollowingOnly] = useState(false);
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
     const sortDropdownRef = useRef(null);
@@ -199,9 +214,9 @@ const Search = () => {
     };
 
     const [searchState, dispatch] = useReducer(searchReducer, initialSearchState);
-    const { results, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards } = searchState;
+    const { results, lastPostDoc, lastUserDoc, lastStudioDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, lastTextDoc, hasMorePosts, hasMoreUsers, hasMoreStudios, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, hasMoreText } = searchState;
 
-    const { searchUsers, searchPosts, searchShopItems, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, loading } = useSearch();
+    const { searchUsers, searchPosts, searchShopItems, searchStudios, searchCollections, searchContests, searchEvents, searchSpaceCards, loading } = useSearch();
     const { followingList, fetchFollowing } = useFollowing(currentUser?.uid);
     const { blockedUsers } = useBlock();
 
@@ -247,34 +262,20 @@ const Search = () => {
     useEffect(() => {
         dispatch({ type: 'RESET_RESULTS' });
         performSearch();
-    }, [currentMode, followingOnly, searchMode, activePostType]); // Added activePostType
+    }, [currentMode, followingOnly, searchMode]);
 
-    // Auto-switch View Mode based on activePostType
+    // Auto-switch View Mode based on currentMode
     useEffect(() => {
-        if (activePostType === 'text') {
-            setViewMode('feed'); // 'feed' is List View in Search logic usually, or depends on implementation.
-            // Wait, SearchHeader uses 'viewMode' state.
-            // Let's check SearchHeader usage. It passes 'viewMode'.
-            // In SearchResults, viewMode='feed' usually means List View.
-            // Let's check SearchResults to be sure.
-            // Actually, in Search.jsx state: viewMode is 'grid' or 'feed'
-            // In Feed.jsx it was 'list' vs 'image'. 
-            // Standardizing: 'feed' usually implies the vertical list.
-            setViewMode('feed');
-        } else {
-            // Optional: switch back to grid? Or leave as user pref?
-            // User said: "auto activat list mode on search when they hit the text filter"
-            // Implies we force list mode.
-            // If switching back to image, we probably want grid default, but maybe respect user choice?
-            // "do not let users view both at once its one or the other"
-            // I'll default to grid for image for now to enforce the distinction.
+        if (currentMode === 'text') {
+            setViewMode('feed'); // List View
+        } else if (currentMode === 'posts') {
             setViewMode('grid');
         }
-    }, [activePostType]);
+    }, [currentMode]);
 
     // Reset filters when switching away from posts (Fix filter state bugs)
     useEffect(() => {
-        if (currentMode !== 'posts') {
+        if (currentMode !== 'posts' && currentMode !== 'text') {
             setSelectedPark(null);
             setSelectedDate(null);
             setSelectedCamera(null);
@@ -314,8 +315,7 @@ const Search = () => {
             sortBy: currentSortByRef.current,
             followingOnly,
             searchMode, // Art/Social
-            isMarketplaceMode,
-            activePostType // NEW
+            isMarketplaceMode
         });
 
         // --- CACHE CHECK (Only for fresh searches, not load more) ---
@@ -352,7 +352,7 @@ const Search = () => {
             const hasFilters = term || tags.length > 0 || parkId || date ||
                 currentSelectedCameraRef.current || currentSelectedFilmRef.current ||
                 currentSelectedOrientationRef.current || currentSelectedAspectRatioRef.current || selectedMuseum ||
-                activePostType === 'text';
+                currentMode === 'text';
 
             // If Explore mode and we have recommendations, use them
             let exploreTags = [];
@@ -410,16 +410,36 @@ const Search = () => {
                                 aspectRatio: currentSelectedAspectRatioRef.current,
                                 sort: hasFilters ? currentSortByRef.current : exploreSort,
                                 authorIds: searchAuthorIds,
-                                postType: activePostType, // Pass 'image' or 'text'
+                                postType: 'image', // Handle text mode
                                 type: searchMode // Link search state to backend type filter
                             },
-                            isLoadMore ? lastPostDoc : null
+                            isLoadMore ? (currentMode === 'text' ? lastTextDoc : lastPostDoc) : null
                         );
                         // Filter blocked users
                         resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
                         newLastDoc = lastDoc;
                         hasMore = data.length > 0;
                     }
+                    break;
+                }
+
+                case 'text': {
+                    let searchAuthorIds = followingOnly ? followingList : [];
+
+                    const { data, lastDoc } = await searchPosts(
+                        term,
+                        {
+                            tags: hasFilters ? tags : exploreTags,
+                            sort: hasFilters ? currentSortByRef.current : exploreSort,
+                            authorIds: searchAuthorIds,
+                            postType: 'text',
+                            type: 'social' // Text posts are always social type
+                        },
+                        isLoadMore ? lastTextDoc : null
+                    );
+                    resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
+                    newLastDoc = lastDoc;
+                    hasMore = data.length > 0;
                     break;
                 }
 
@@ -436,23 +456,23 @@ const Search = () => {
                     break;
                 }
 
-                case 'galleries': {
-                    const { data, lastDoc } = await searchGalleries(
+                case 'studios': {
+                    const { data, lastDoc } = await searchStudios(
                         term,
                         {
                             tags: tags,
-                            galleryIds: selectedMuseum ? (selectedMuseum.galleryIds || []) : []
+                            studioIds: selectedMuseum ? (selectedMuseum.galleryIds || []) : []
                         },
-                        isLoadMore ? lastGalleryDoc : null
+                        isLoadMore ? lastStudioDoc : null
                     );
                     // Filter blocked users
-                    resultData = data.filter(gallery => !blockedUsers.has(gallery.ownerId));
+                    resultData = data.filter(studio => !blockedUsers.has(studio.ownerId));
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
 
                     // Apply Following filter
                     if (followingOnly && followingList.length > 0) {
-                        resultData = resultData.filter(gallery => followingList.includes(gallery.ownerId));
+                        resultData = resultData.filter(studio => followingList.includes(studio.ownerId));
                     }
                     break;
                 }
@@ -541,12 +561,13 @@ const Search = () => {
             const payload = {
                 posts: currentMode === 'posts' ? resultData : [],
                 users: currentMode === 'users' ? resultData : [],
-                galleries: currentMode === 'galleries' ? resultData : [],
+                studios: currentMode === 'studios' ? resultData : [],
                 collections: currentMode === 'collections' ? resultData : [],
                 contests: currentMode === 'contests' ? resultData : [],
                 events: currentMode === 'events' ? resultData : [],
                 spacecards: currentMode === 'spacecards' ? resultData : [],
-                museums: currentMode === 'museums' ? resultData : []
+                museums: currentMode === 'museums' ? resultData : [],
+                text: currentMode === 'text' ? resultData : []
             };
 
             // --- UPDATE CACHE ---
@@ -565,12 +586,13 @@ const Search = () => {
                 finalResults = {
                     posts: [...prevResults.posts, ...payload.posts],
                     users: [...prevResults.users, ...payload.users],
-                    galleries: [...prevResults.galleries, ...payload.galleries],
+                    studios: [...prevResults.studios, ...payload.studios],
                     collections: [...prevResults.collections, ...payload.collections],
                     contests: [...prevResults.contests, ...payload.contests],
                     events: [...prevResults.events, ...payload.events],
                     spacecards: [...prevResults.spacecards, ...payload.spacecards],
-                    museums: [...prevResults.museums, ...payload.museums]
+                    museums: [...prevResults.museums, ...payload.museums],
+                    text: [...prevResults.text, ...payload.text]
                 };
             } else if (isLoadMore) {
                 // Edge case: Loading more but cache was cleared?
@@ -584,22 +606,24 @@ const Search = () => {
                 cursors: {
                     lastPostDoc: currentMode === 'posts' ? newLastDoc : (isLoadMore ? lastPostDoc : null), // Logic needs to match reducer
                     lastUserDoc: currentMode === 'users' ? newLastDoc : (isLoadMore ? lastUserDoc : null),
-                    lastGalleryDoc: currentMode === 'galleries' ? newLastDoc : (isLoadMore ? lastGalleryDoc : null),
+                    lastStudioDoc: currentMode === 'studios' ? newLastDoc : (isLoadMore ? lastStudioDoc : null),
                     lastCollectionDoc: currentMode === 'collections' ? newLastDoc : (isLoadMore ? lastCollectionDoc : null),
                     lastContestDoc: currentMode === 'contests' ? newLastDoc : (isLoadMore ? lastContestDoc : null),
                     lastEventDoc: currentMode === 'events' ? newLastDoc : (isLoadMore ? lastEventDoc : null),
                     lastSpaceCardDoc: currentMode === 'spacecards' ? newLastDoc : (isLoadMore ? lastSpaceCardDoc : null),
                     lastMuseumDoc: currentMode === 'museums' ? newLastDoc : (isLoadMore ? lastMuseumDoc : null),
+                    lastTextDoc: currentMode === 'text' ? newLastDoc : (isLoadMore ? lastTextDoc : null),
                 },
                 hasMoreFlags: {
                     hasMorePosts: currentMode === 'posts' ? hasMore : (isLoadMore ? hasMorePosts : true),
                     hasMoreUsers: currentMode === 'users' ? hasMore : (isLoadMore ? hasMoreUsers : true),
-                    hasMoreGalleries: currentMode === 'galleries' ? hasMore : (isLoadMore ? hasMoreGalleries : true),
+                    hasMoreStudios: currentMode === 'studios' ? hasMore : (isLoadMore ? hasMoreStudios : true),
                     hasMoreCollections: currentMode === 'collections' ? hasMore : (isLoadMore ? hasMoreCollections : true),
                     hasMoreContests: currentMode === 'contests' ? hasMore : (isLoadMore ? hasMoreContests : true),
                     hasMoreEvents: currentMode === 'events' ? hasMore : (isLoadMore ? hasMoreEvents : true),
                     hasMoreSpaceCards: currentMode === 'spacecards' ? hasMore : (isLoadMore ? hasMoreSpaceCards : true),
                     hasMoreMuseums: currentMode === 'museums' ? hasMore : (isLoadMore ? hasMoreMuseums : true),
+                    hasMoreText: currentMode === 'text' ? hasMore : (isLoadMore ? hasMoreText : true),
                 }
             };
 
@@ -609,20 +633,22 @@ const Search = () => {
                 isLoadMore,
                 lastPostDoc: currentMode === 'posts' ? newLastDoc : lastPostDoc,
                 lastUserDoc: currentMode === 'users' ? newLastDoc : lastUserDoc,
-                lastGalleryDoc: currentMode === 'galleries' ? newLastDoc : lastGalleryDoc,
+                lastStudioDoc: currentMode === 'studios' ? newLastDoc : lastStudioDoc,
                 lastCollectionDoc: currentMode === 'collections' ? newLastDoc : lastCollectionDoc,
                 lastContestDoc: currentMode === 'contests' ? newLastDoc : lastContestDoc,
                 lastEventDoc: currentMode === 'events' ? newLastDoc : lastEventDoc,
                 lastSpaceCardDoc: currentMode === 'spacecards' ? newLastDoc : lastSpaceCardDoc,
                 hasMorePosts: currentMode === 'posts' ? hasMore : hasMorePosts,
                 hasMoreUsers: currentMode === 'users' ? hasMore : hasMoreUsers,
-                hasMoreGalleries: currentMode === 'galleries' ? hasMore : hasMoreGalleries,
+                hasMoreStudios: currentMode === 'studios' ? hasMore : hasMoreStudios,
                 hasMoreCollections: currentMode === 'collections' ? hasMore : hasMoreCollections,
                 hasMoreContests: currentMode === 'contests' ? hasMore : hasMoreContests,
                 hasMoreEvents: currentMode === 'events' ? hasMore : hasMoreEvents,
                 hasMoreSpaceCards: currentMode === 'spacecards' ? hasMore : hasMoreSpaceCards,
                 hasMoreMuseums: currentMode === 'museums' ? hasMore : hasMoreMuseums,
+                hasMoreText: currentMode === 'text' ? hasMore : hasMoreText,
                 lastMuseumDoc: currentMode === 'museums' ? newLastDoc : lastMuseumDoc,
+                lastTextDoc: currentMode === 'text' ? newLastDoc : lastTextDoc,
             });
         } catch (err) {
             console.error('Search error:', err);
@@ -633,7 +659,7 @@ const Search = () => {
             }
             isLoadingRef.current = false;
         }
-    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchShopItems, searchGalleries, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastGalleryDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, hasMorePosts, hasMoreUsers, hasMoreGalleries, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, recommendations, blockedUsers, selectedMuseum, searchMode, isMarketplaceMode, activePostType]);
+    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchShopItems, searchStudios, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastStudioDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, lastTextDoc, hasMorePosts, hasMoreUsers, hasMoreStudios, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, hasMoreText, recommendations, blockedUsers, selectedMuseum, searchMode, isMarketplaceMode]);
 
     // Update refs when search params change
     useEffect(() => {
@@ -671,8 +697,31 @@ const Search = () => {
                 const documentHeight = document.documentElement.scrollHeight;
                 const threshold = documentHeight - 800; // Trigger 800px before bottom
 
-                // Prefetch if near bottom, not already loading, and has more posts
-                if (scrollPosition >= threshold && !loading && hasMorePosts && results.posts.length > 0) {
+                // Determine current mode state
+                const currentHasMore =
+                    currentMode === 'posts' ? hasMorePosts :
+                        currentMode === 'text' ? hasMoreText :
+                            currentMode === 'users' ? hasMoreUsers :
+                                currentMode === 'studios' ? hasMoreStudios :
+                                    currentMode === 'collections' ? hasMoreCollections :
+                                        currentMode === 'museums' ? hasMoreMuseums :
+                                            currentMode === 'contests' ? hasMoreContests :
+                                                currentMode === 'events' ? hasMoreEvents :
+                                                    currentMode === 'spacecards' ? hasMoreSpaceCards : false;
+
+                const currentResultsCount =
+                    currentMode === 'posts' ? results.posts.length :
+                        currentMode === 'text' ? results.text.length :
+                            currentMode === 'users' ? results.users.length :
+                                currentMode === 'studios' ? results.studios.length :
+                                    currentMode === 'collections' ? results.collections.length :
+                                        currentMode === 'museums' ? results.museums.length :
+                                            currentMode === 'contests' ? results.contests.length :
+                                                currentMode === 'events' ? results.events.length :
+                                                    currentMode === 'spacecards' ? results.spacecards.length : 0;
+
+                // Prefetch if near bottom, not already loading, and has more results
+                if (scrollPosition >= threshold && !loading && currentHasMore && currentResultsCount > 0) {
                     performSearch(true); // Load more
                 }
             }, 300);
@@ -683,7 +732,7 @@ const Search = () => {
             window.removeEventListener('scroll', handleScroll);
             if (prefetchTimer) clearTimeout(prefetchTimer);
         };
-    }, [loading, hasMorePosts, results.posts.length, performSearch]);
+    }, [loading, hasMorePosts, hasMoreText, hasMoreUsers, hasMoreStudios, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, results, currentMode, performSearch]);
 
     // Hide header on scroll
     useEffect(() => {
@@ -763,7 +812,8 @@ const Search = () => {
                                 currentMode === 'contests' ? results.contests.length :
                                     currentMode === 'events' ? results.events.length :
                                         currentMode === 'spacecards' ? results.spacecards.length :
-                                            currentMode === 'museums' ? results.museums.length : 0
+                                            currentMode === 'museums' ? results.museums.length :
+                                                currentMode === 'text' ? results.text.length : 0
             }
             currentMode={currentMode}
             isMobileFiltersOpen={isMobileFiltersOpen}
@@ -772,8 +822,6 @@ const Search = () => {
             onScroll={handleScroll}
             isMarketplaceMode={isMarketplaceMode} // NEW: Pass to Panels
             onMarketplaceToggle={setIsMarketplaceMode} // NEW: Pass to Panels
-            activePostType={activePostType}
-            setActivePostType={setActivePostType}
         >
             {/* Active Museum Filter Indicator */}
             {selectedMuseum && (

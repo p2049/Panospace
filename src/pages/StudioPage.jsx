@@ -1,49 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { useGallery } from '@/hooks/useGallery';
-import {
-    getGalleryPosts,
-    getGalleryCollections
-} from '@/core/services/firestore/studios.service';
+import { useStudio } from '@/hooks/useStudios';
+import { StudioService } from '@/core/services/firestore/studios.service';
 import { db } from '@/firebase';
 import { PageSkeleton, SkeletonGrid } from '@/components/ui/Skeleton';
 import {
-    FaArrowLeft,
-    FaLock,
-    FaGlobe,
-    FaUserPlus,
     FaImage,
     FaFolderOpen,
-    FaUsers
+    FaUsers,
+    FaQuestionCircle,
+    FaArrowLeft,
+    FaUserPlus,
+    FaGlobe,
+    FaLock,
+    FaBriefcase
 } from 'react-icons/fa';
 import Post from '@/components/Post';
-import InviteMembersModal from '@/components/galleries/InviteMembersModal';
+import Walkthrough from '@/components/common/Walkthrough';
+import InviteMembersModal from '@/components/studios/InviteStudioMembersModal';
 import MagazineSubmissionBox from '@/components/MagazineSubmissionBox';
 import { getMagazinesByGallery, getMagazineIssues } from '@/services/magazineService';
 import { useStudioProjects } from '@/hooks/useProjects';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import ProjectCard from '@/components/ProjectCard';
-import { FaBriefcase } from 'react-icons/fa';
 import '@/styles/gallery-page.css';
+import { isDevBypassActive } from '@/core/utils/accessControl';
 
 const StudioPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin } = useAuth();
 
     // Use custom hook for studio data
-    const { gallery: studio, loading, error: studioError } = useGallery(id);
+    const { studio, items, loading, error: studioError, refetch } = useStudio(id);
 
     const [activeTab, setActiveTab] = useState('posts');
     const [posts, setPosts] = useState([]);
     const [collections, setCollections] = useState([]);
-    const [members, setMembers] = useState([]);
+    const [membersList, setMembersList] = useState([]);
     const [contentLoading, setContentLoading] = useState(false);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [magazine, setMagazine] = useState(null);
     const [nextIssue, setNextIssue] = useState(null);
     const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+    const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+    const walkthroughSteps = [
+        {
+            title: "Studios",
+            description: "Studios are shared collections. Invite people and everyone in the Studio can add posts. Great for teams, groups, or shared themes."
+        },
+        {
+            title: "Invite Members",
+            description: "Invite collaborators to join your Studio.",
+            targetSelector: "#studio-invite-btn"
+        },
+        {
+            title: "New Project",
+            description: "Create shared projects within your studio for organized teamwork.",
+            targetSelector: "#studio-new-project-btn"
+        }
+    ];
 
     // Fetch projects for this studio
     const { projects, loading: projectsLoading, refetch: refetchProjects } = useStudioProjects(id);
@@ -76,7 +94,7 @@ const StudioPage = () => {
         };
 
         loadMagazineData();
-    }, [gallery, id]);
+    }, [studio, id]);
 
     useEffect(() => {
         if (studio) {
@@ -88,114 +106,54 @@ const StudioPage = () => {
         setContentLoading(true);
         try {
             if (activeTab === 'posts') {
-                const galleryPosts = await getGalleryPosts(id);
-
-                // Extract post IDs and batch fetch
-                const postIds = galleryPosts.map(gp => gp.postId).filter(Boolean);
+                // Extract post IDs from items
+                const postIds = (items || []).map(item => item.postId).filter(Boolean);
 
                 if (postIds.length === 0) {
                     setPosts([]);
                 } else {
-                    // Firestore 'in' queries support max 30 items, so batch if needed
-                    const batchSize = 30;
-                    const batches = [];
-
-                    for (let i = 0; i < postIds.length; i += batchSize) {
-                        const batchIds = postIds.slice(i, i + batchSize);
-                        batches.push(batchIds);
-                    }
-
-                    // Execute batched queries in parallel
                     const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
-                    const allPosts = [];
-
-                    await Promise.all(batches.map(async (batchIds) => {
-                        const postsQuery = query(
-                            collection(db, 'posts'),
-                            where(documentId(), 'in', batchIds)
-                        );
-                        const snapshot = await getDocs(postsQuery);
-                        snapshot.docs.forEach(doc => {
-                            allPosts.push({ id: doc.id, ...doc.data() });
-                        });
-                    }));
-
-                    setPosts(allPosts);
-                }
-            } else if (activeTab === 'collections') {
-                const galleryCollections = await getGalleryCollections(id);
-
-                // Extract collection IDs and batch fetch
-                const collectionIds = galleryCollections.map(gc => gc.collectionId).filter(Boolean);
-
-                if (collectionIds.length === 0) {
-                    setCollections([]);
-                } else {
-                    // Batch collections queries
-                    const batchSize = 30;
-                    const batches = [];
-
-                    for (let i = 0; i < collectionIds.length; i += batchSize) {
-                        const batchIds = collectionIds.slice(i, i + batchSize);
-                        batches.push(batchIds);
-                    }
-
-                    const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
-                    const allCollections = [];
-
-                    await Promise.all(batches.map(async (batchIds) => {
-                        const collectionsQuery = query(
-                            collection(db, 'collections'),
-                            where(documentId(), 'in', batchIds)
-                        );
-                        const snapshot = await getDocs(collectionsQuery);
-                        snapshot.docs.forEach(doc => {
-                            allCollections.push({ id: doc.id, ...doc.data() });
-                        });
-                    }));
-
-                    setCollections(allCollections);
+                    const postsQuery = query(
+                        collection(db, 'posts'),
+                        where(documentId(), 'in', postIds.slice(0, 30))
+                    );
+                    const snapshot = await getDocs(postsQuery);
+                    setPosts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 }
             } else if (activeTab === 'members') {
-                if (gallery.members && gallery.members.length > 0) {
-                    // Batch members queries
-                    const memberIds = gallery.members.filter(Boolean);
+                const { StudioService } = await import('@/core/services/firestore/studios.service');
+                const memberList = await StudioService.getMembers(id);
 
-                    if (memberIds.length === 0) {
-                        setMembers([]);
-                    } else {
-                        const batchSize = 30;
-                        const batches = [];
-
-                        for (let i = 0; i < memberIds.length; i += batchSize) {
-                            const batchIds = memberIds.slice(i, i + batchSize);
-                            batches.push(batchIds);
-                        }
-
-                        const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
-                        const allMembers = [];
-
-                        await Promise.all(batches.map(async (batchIds) => {
-                            const membersQuery = query(
-                                collection(db, 'users'),
-                                where(documentId(), 'in', batchIds)
-                            );
-                            const snapshot = await getDocs(membersQuery);
-                            snapshot.docs.forEach(doc => {
-                                allMembers.push({ id: doc.id, ...doc.data() });
-                            });
-                        }));
-
-                        setMembers(allMembers);
-                    }
+                const uids = memberList.map(m => m.uid);
+                if (uids.length === 0) {
+                    setMembersList([]);
                 } else {
-                    setMembers([]);
+                    const { query, where, getDocs, collection, documentId } = await import('firebase/firestore');
+                    const usersQuery = query(
+                        collection(db, 'users'),
+                        where(documentId(), 'in', uids.slice(0, 30))
+                    );
+                    const snapshot = await getDocs(usersQuery);
+                    setMembersList(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                 }
             }
         } catch (error) {
-            console.error('Error loading content:', error);
+            logger.error('Error loading studio content:', error);
         } finally {
             setContentLoading(false);
+        }
+    };
+
+
+    const handleDeleteStudio = async () => {
+        if (window.confirm("Are you sure you want to delete this studio? This cannot be undone.")) {
+            try {
+                await StudioService.delete(id);
+                navigate('/');
+            } catch (error) {
+                console.error("Error deleting studio:", error);
+                alert("Failed to delete studio.");
+            }
         }
     };
 
@@ -224,9 +182,19 @@ const StudioPage = () => {
             )}
 
             <div className="gallery-header">
-                <button onClick={() => navigate(-1)} className="back-btn">
-                    <FaArrowLeft /> Back
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <button onClick={() => navigate(-1)} className="back-btn">
+                        <FaArrowLeft /> Back
+                    </button>
+
+                    <button
+                        className="help-icon-btn"
+                        onClick={() => setShowWalkthrough(true)}
+                        title="Show tutorial"
+                    >
+                        <FaQuestionCircle />
+                    </button>
+                </div>
 
                 <div className="gallery-info">
                     <div className="gallery-meta">
@@ -265,8 +233,24 @@ const StudioPage = () => {
                     )}
 
                     {isOwner && (
-                        <button className="invite-btn" onClick={() => setShowInviteModal(true)}>
+                        <button id="studio-invite-btn" className="invite-btn" onClick={() => setShowInviteModal(true)}>
                             <FaUserPlus /> Invite Members
+                        </button>
+                    )}
+                    {(isOwner || isAdmin || isDevBypassActive()) && (
+                        <button
+                            onClick={handleDeleteStudio}
+                            style={{
+                                marginTop: '0.5rem',
+                                background: 'rgba(255,0,0,0.2)',
+                                border: '1px solid rgba(255,0,0,0.3)',
+                                color: '#ff6b6b',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Delete Studio
                         </button>
                     )}
                 </div>
@@ -357,13 +341,13 @@ const StudioPage = () => {
 
                         {activeTab === 'members' && (
                             <div className="members-grid">
-                                {members.length === 0 ? (
+                                {membersList.length === 0 ? (
                                     <div className="empty-state">
                                         <FaUsers size={48} />
                                         <p>No members yet</p>
                                     </div>
                                 ) : (
-                                    members.map(member => {
+                                    membersList.map(member => {
                                         // Team Logic
                                         const teamId = studio.teamAssignments?.[member.id];
                                         const team = teamId ? studio.teams?.[teamId] : null;
@@ -445,6 +429,7 @@ const StudioPage = () => {
                                         justifyContent: 'flex-end'
                                     }}>
                                         <button
+                                            id="studio-new-project-btn"
                                             onClick={() => setShowCreateProjectModal(true)}
                                             style={{
                                                 padding: '0.75rem 1.5rem',
@@ -498,7 +483,7 @@ const StudioPage = () => {
                     onClose={(invitesSent) => {
                         setShowInviteModal(false);
                         if (invitesSent) {
-                            loadGallery();
+                            refetch();
                         }
                     }}
                 />
@@ -515,6 +500,13 @@ const StudioPage = () => {
                     }}
                 />
             )}
+
+            <Walkthrough
+                steps={walkthroughSteps}
+                onboardingKey="studios"
+                forceShow={showWalkthrough}
+                onClose={() => setShowWalkthrough(false)}
+            />
         </div>
     );
 };

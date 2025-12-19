@@ -7,7 +7,7 @@ import StarBackground from '@/components/StarBackground';
 const Login = () => {
     const emailRef = useRef();
     const passwordRef = useRef();
-    const { login, googleSignIn } = useAuth();
+    const { login, googleSignIn, signup } = useAuth();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();

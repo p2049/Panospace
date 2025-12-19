@@ -132,9 +132,9 @@ export const SEARCH_INDICES = {
         ]
     },
 
-    // Galleries index
-    GALLERIES: {
-        name: 'galleries',
+    // Studios index
+    STUDIOS: {
+        name: 'studios',
         searchableAttributes: [
             'name',
             'description',

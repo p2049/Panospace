@@ -101,24 +101,6 @@
             ]
         },
         {
-            "collectionGroup": "eventSubmissions",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "eventId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdBy",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "postId",
-                    "order": "ASCENDING"
-                }
-            ]
-        },
-        {
             "collectionGroup": "posts",
             "queryScope": "COLLECTION",
             "fields": [
@@ -137,11 +119,25 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "type",
+                    "fieldPath": "authorId",
                     "order": "ASCENDING"
                 },
                 {
                     "fieldPath": "createdAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "posts",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "authorId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "updatedAt",
                     "order": "DESCENDING"
                 }
             ]
@@ -165,22 +161,82 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "tags",
-                    "arrayConfig": "CONTAINS"
+                    "fieldPath": "parentType",
+                    "order": "ASCENDING"
                 },
                 {
-                    "fieldPath": "likeCount",
+                    "fieldPath": "parentId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
                     "order": "DESCENDING"
                 }
             ]
         },
         {
-            "collectionGroup": "posts",
+            "collectionGroup": "collections",
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "searchKeywords",
-                    "arrayConfig": "CONTAINS"
+                    "fieldPath": "visibility",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "updatedAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "studios",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "visibility",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "updatedAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "museums",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "visibility",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "updatedAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "magazines",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "visibility",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "updatedAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "shopItems",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "userId",
+                    "order": "ASCENDING"
                 },
                 {
                     "fieldPath": "createdAt",
@@ -193,25 +249,7 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "searchKeywords",
-                    "arrayConfig": "CONTAINS"
-                },
-                {
-                    "fieldPath": "likeCount",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "posts",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
                     "fieldPath": "type",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "postType",
                     "order": "ASCENDING"
                 },
                 {
@@ -263,166 +301,12 @@
             ]
         },
         {
-            "collectionGroup": "posts",
+            "collectionGroup": "spacecards",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "type",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "likeCount",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "posts",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "postType",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "likeCount",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "posts",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "type",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "postType",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "likeCount",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "posts",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "authorId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "orders",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "shopItems",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "shopItems",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "status",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "shopItems",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "status",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "searchKeywords",
-                    "arrayConfig": "CONTAINS"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "shopItems",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "status",
-                    "order": "ASCENDING"
-                },
                 {
                     "fieldPath": "tags",
                     "arrayConfig": "CONTAINS"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "badges",
-            "queryScope": "COLLECTION_GROUP",
-            "fields": [
-                {
-                    "fieldPath": "earnedAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "follows",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "followerId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "followingId",
-                    "order": "ASCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "transactions",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
                 },
                 {
                     "fieldPath": "createdAt",
@@ -431,29 +315,15 @@
             ]
         },
         {
-            "collectionGroup": "spaceCards",
+            "collectionGroup": "spacecards",
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "creatorUid",
-                    "order": "ASCENDING"
+                    "fieldPath": "searchKeywords",
+                    "arrayConfig": "CONTAINS"
                 },
                 {
                     "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
-            ]
-        },
-        {
-            "collectionGroup": "spaceCardOwnership",
-            "queryScope": "COLLECTION",
-            "fields": [
-                {
-                    "fieldPath": "ownerId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "acquiredAt",
                     "order": "DESCENDING"
                 }
             ]

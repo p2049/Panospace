@@ -1,36 +1,19 @@
-import { useState, useEffect } from 'react';
-import {
-    collection,
-    query,
-    where,
-    getDocs,
-    doc,
-    getDoc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    serverTimestamp,
-    orderBy,
-    arrayUnion,
-    arrayRemove,
-    limit
-} from 'firebase/firestore';
-import { db } from '@/firebase';
+import { useState, useEffect, useCallback } from 'react';
+import { CollectionService } from '@/core/services/firestore/collections.service';
 import { logger } from '@/core/utils/logger';
 
-const COLLECTIONS_CACHE = {}; // { userId: collections[] }
-const SINGLE_COLLECTION_CACHE = {}; // { collectionId: collectionData }
+const COLLECTIONS_CACHE = {};
+const SINGLE_COLLECTION_CACHE = {};
 
 /**
- * Hook for managing user collections
- * @param {string} userId - User ID to fetch collections for
+ * Hook for managing user collections list
  */
 export const useCollections = (userId) => {
     const [collections, setCollections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const refetch = async () => {
+    const refetch = useCallback(async () => {
         if (!userId) {
             setLoading(false);
             return;
@@ -38,203 +21,87 @@ export const useCollections = (userId) => {
 
         try {
             setLoading(true);
-            const collectionsQuery = query(
-                collection(db, 'collections'),
-                where('ownerId', '==', userId),
-                orderBy('createdAt', 'desc'),
-                limit(50) // 🚀 OPTIMIZATION: Prevent unbounded reads
-            );
-            const snapshot = await getDocs(collectionsQuery);
-            const fetchedCollections = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-
-            // Update Cache
+            const fetchedCollections = await CollectionService.listByOwner(userId);
             COLLECTIONS_CACHE[userId] = fetchedCollections;
-
             setCollections(fetchedCollections);
             setError(null);
         } catch (err) {
-            if (err.code === 'permission-denied') {
-                logger.warn('[useCollections] Permission denied. Returning empty list.');
-                setCollections([]);
-                setError(null); // Do not expose error to UI to avoid spam/retries
-            } else {
-                logger.error('Error fetching collections:', err);
-                setError(err.message);
-            }
+            logger.error('Error fetching collections:', err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
 
     useEffect(() => {
-        // Cache Check
         if (userId && COLLECTIONS_CACHE[userId]) {
             setCollections(COLLECTIONS_CACHE[userId]);
             setLoading(false);
-            return;
+        } else {
+            refetch();
         }
-        refetch();
-    }, [userId]);
+    }, [userId, refetch]);
 
     return { collections, loading, error, refetch };
 };
 
 /**
- * Hook for creating and managing collections
+ * Hook for creating and managing a single collection
  */
 export const useCreateCollection = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const createCollection = async (collectionData) => {
+    const createCollection = async (data, coverImage) => {
+        setLoading(true);
         try {
-            setLoading(true);
-            setError(null);
-
-            const newCollection = {
-                ...collectionData,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                items: collectionData.items || [],
-                postRefs: collectionData.postRefs || [],
-                visibility: collectionData.visibility || 'public',
-                // Preserve shopSettings as-is from collectionData
-                shopSettings: collectionData.shopSettings || {
-                    showInStore: false
-                },
-                // Preserve bundlePricing if provided
-                bundlePricing: collectionData.bundlePricing || null,
-                productTier: collectionData.productTier || 'economy'
-            };
-
-            const docRef = await addDoc(collection(db, 'collections'), newCollection);
-
-            // Invalidate/Update Cache if owner known?
-            // Since we don't easily know the ownerId here without parsing, simply letting cache stale is acceptable 
-            // typically user will see it appended locally or refetch
-            if (COLLECTIONS_CACHE[collectionData.ownerId]) {
-                delete COLLECTIONS_CACHE[collectionData.ownerId]; // Simple Invalidation
-            }
-
-            setLoading(false);
-            return { id: docRef.id, ...newCollection };
+            const result = await CollectionService.create(data, coverImage);
+            if (data.ownerId) delete COLLECTIONS_CACHE[data.ownerId];
+            return result;
         } catch (err) {
-            logger.error('Error creating collection:', err);
             setError(err.message);
-            setLoading(false);
             throw err;
+        } finally {
+            setLoading(false);
         }
     };
 
-    const updateCollection = async (collectionId, updates) => {
+    const updateCollection = async (id, updates) => {
+        setLoading(true);
         try {
-            setLoading(true);
-            setError(null);
-
-            const updateData = {
-                ...updates,
-                updatedAt: serverTimestamp()
-            };
-
-            await updateDoc(doc(db, 'collections', collectionId), updateData);
-
-            // Invalidate Single Cache
-            if (SINGLE_COLLECTION_CACHE[collectionId]) {
-                // Update or delete? Delete forces refetch which ensures freshness
-                delete SINGLE_COLLECTION_CACHE[collectionId];
-            }
-
-            setLoading(false);
-            return true;
+            await CollectionService.update(id, updates);
+            delete SINGLE_COLLECTION_CACHE[id];
         } catch (err) {
-            logger.error('Error updating collection:', err);
             setError(err.message);
-            setLoading(false);
             throw err;
+        } finally {
+            setLoading(false);
         }
     };
 
-    const deleteCollection = async (collectionId) => {
+    const deleteCollection = async (id) => {
+        setLoading(true);
         try {
-            setLoading(true);
-            setError(null);
-
-            await deleteDoc(doc(db, 'collections', collectionId));
-
-            // Invalidate Single Cache
-            delete SINGLE_COLLECTION_CACHE[collectionId];
-
-            setLoading(false);
-            return true;
+            await CollectionService.delete(id);
+            delete SINGLE_COLLECTION_CACHE[id];
         } catch (err) {
-            logger.error('Error deleting collection:', err);
             setError(err.message);
-            setLoading(false);
             throw err;
+        } finally {
+            setLoading(false);
         }
     };
 
     const addPostToCollection = async (collectionId, postId) => {
         try {
-            const collectionRef = doc(db, 'collections', collectionId);
-
-            await updateDoc(collectionRef, {
-                postRefs: arrayUnion(postId),
-                updatedAt: serverTimestamp()
+            await CollectionService.addItem(collectionId, {
+                postId,
+                addedBy: 'current_user', // This should be passed from caller or handle inside
+                orderIndex: Date.now()
             });
-
-            if (SINGLE_COLLECTION_CACHE[collectionId]) delete SINGLE_COLLECTION_CACHE[collectionId];
-
-            return true;
+            delete SINGLE_COLLECTION_CACHE[collectionId];
         } catch (err) {
             logger.error('Error adding post to collection:', err);
-            throw err;
-        }
-    };
-
-    const removePostFromCollection = async (collectionId, postId) => {
-        try {
-            const collectionRef = doc(db, 'collections', collectionId);
-
-            await updateDoc(collectionRef, {
-                postRefs: arrayRemove(postId),
-                updatedAt: serverTimestamp()
-            });
-
-            if (SINGLE_COLLECTION_CACHE[collectionId]) delete SINGLE_COLLECTION_CACHE[collectionId];
-
-            return true;
-        } catch (err) {
-            logger.error('Error removing post from collection:', err);
-            throw err;
-        }
-    };
-
-    const removeItemFromCollection = async (collectionId, itemIndex) => {
-        try {
-            const collectionRef = doc(db, 'collections', collectionId);
-            const collectionDoc = await getDoc(collectionRef);
-
-            if (!collectionDoc.exists()) {
-                throw new Error('Collection not found');
-            }
-
-            const currentItems = collectionDoc.data().items || [];
-            const updatedItems = currentItems.filter((_, index) => index !== itemIndex);
-
-            await updateDoc(collectionRef, {
-                items: updatedItems,
-                updatedAt: serverTimestamp()
-            });
-
-            if (SINGLE_COLLECTION_CACHE[collectionId]) delete SINGLE_COLLECTION_CACHE[collectionId];
-
-            return true;
-        } catch (err) {
-            logger.error('Error removing item from collection:', err);
             throw err;
         }
     };
@@ -244,57 +111,54 @@ export const useCreateCollection = () => {
         updateCollection,
         deleteCollection,
         addPostToCollection,
-        removePostFromCollection,
-        removeItemFromCollection,
         loading,
         error
     };
 };
 
 /**
- * Hook to fetch a single collection by ID
+ * Hook to fetch a single collection by ID including its items
  */
-export const useCollection = (collectionId) => {
+export const useCollection = (id) => {
     const [collection, setCollection] = useState(null);
+    const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const refetch = async () => {
-        if (!collectionId) {
+    const refetch = useCallback(async () => {
+        if (!id) {
             setLoading(false);
             return;
         }
 
         try {
             setLoading(true);
-            const collectionDoc = await getDoc(doc(db, 'collections', collectionId));
+            const data = await CollectionService.getById(id);
+            const fetchedItems = await CollectionService.getItems(id);
 
-            if (collectionDoc.exists()) {
-                const data = { id: collectionDoc.id, ...collectionDoc.data() };
-                setCollection(data);
+            const result = { ...data, items: fetchedItems }; // Merge for legacy compatibility in UI
+            setCollection(result);
+            setItems(fetchedItems);
 
-                // Update Cache
-                SINGLE_COLLECTION_CACHE[collectionId] = data;
-            } else {
-                setError('Collection not found');
-            }
+            SINGLE_COLLECTION_CACHE[id] = result;
+            setError(null);
         } catch (err) {
             logger.error('Error fetching collection:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
-        // Cache Check
-        if (collectionId && SINGLE_COLLECTION_CACHE[collectionId]) {
-            setCollection(SINGLE_COLLECTION_CACHE[collectionId]);
+        if (id && SINGLE_COLLECTION_CACHE[id]) {
+            setCollection(SINGLE_COLLECTION_CACHE[id]);
+            setItems(SINGLE_COLLECTION_CACHE[id].items || []);
             setLoading(false);
-            return;
+        } else {
+            refetch();
         }
-        refetch();
-    }, [collectionId]);
+    }, [id, refetch]);
 
-    return { collection, loading, error, refetch };
+    return { collection, items, loading, error, refetch };
 };

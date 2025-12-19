@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaCamera, FaImage, FaLayerGroup, FaTrophy, FaCalendar, FaUsers, FaIdCard, FaUniversity } from 'react-icons/fa';
+import { FaCamera, FaImage, FaLayerGroup, FaTrophy, FaCalendar, FaUsers, FaIdCard, FaUniversity, FaAlignLeft } from 'react-icons/fa';
 import ModernIcon from '@/components/ModernIcon';
 import PSButton from '@/components/PSButton';
 
@@ -32,14 +32,15 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile, children }) => 
             {children}
 
             {[
-                { key: 'posts', icon: FaCamera, label: 'Posts', enabled: true },
-                { key: 'galleries', icon: FaImage, label: 'Studios', enabled: isFeatureEnabled('GALLERIES') },
+                { key: 'posts', icon: FaCamera, label: 'Visuals', enabled: true },
+                { key: 'text', icon: FaAlignLeft, label: 'Pings', enabled: true },
+                { key: 'studios', icon: FaImage, label: 'Studios', enabled: isFeatureEnabled('GALLERIES') },
                 { key: 'collections', icon: FaLayerGroup, label: 'Collections', enabled: isFeatureEnabled('COLLECTIONS') },
                 { key: 'museums', icon: FaUniversity, label: 'Museums', enabled: isFeatureEnabled('MUSEUMS') },
                 { key: 'contests', icon: FaTrophy, label: 'Contests', enabled: isFeatureEnabled('CONTESTS') },
                 { key: 'events', icon: FaCalendar, label: 'Events', enabled: isFeatureEnabled('EVENTS') },
                 { key: 'users', icon: FaUsers, label: 'Users', enabled: true },
-                { key: 'spacecards', icon: FaIdCard, label: 'SpaceCards', enabled: isFeatureEnabled('SPACECARDS_CREATE') }
+                { key: 'spacecards', icon: FaIdCard, label: 'SpaceCards', enabled: true }
             ].filter(mode => mode.enabled).map(mode => (
                 <PSButton
                     key={mode.key}

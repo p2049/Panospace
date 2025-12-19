@@ -122,7 +122,7 @@ const ProjectPage = () => {
             }}>
                 <h2>Project not found</h2>
                 <button
-                    onClick={() => navigate(`/gallery/${studioId}`)}
+                    onClick={() => navigate(`/studio/${studioId}`)}
                     style={{
                         padding: '0.75rem 1.5rem',
                         background: '#7FFFD4',
@@ -166,7 +166,7 @@ const ProjectPage = () => {
                         gap: '0.5rem'
                     }}>
                         <span
-                            onClick={() => navigate(`/gallery/${studioId}`)}
+                            onClick={() => navigate(`/studio/${studioId}`)}
                             style={{ cursor: 'pointer', color: '#7FFFD4' }}
                         >
                             {studio?.title || 'Studio'}

@@ -10,7 +10,7 @@ import { PostPrefetchManager } from '@/core/prefetch/PostPrefetchManager';
  * Handles aggressive preloading of off-screen content.
  * Includes pull-to-refresh with rocket animation.
  */
-const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefresh }) => {
+const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefresh, onIndexChange }) => {
     const containerRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
 

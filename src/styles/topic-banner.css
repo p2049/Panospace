@@ -1,0 +1,119 @@
+/* Topic Context Banner Styles */
+.topic-banner-container {
+    width: 100%;
+    padding: 0 1.5rem;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.topic-banner {
+    background: rgba(127, 255, 212, 0.05);
+    /* Very subtle mint tint */
+    border: 1px solid rgba(127, 255, 212, 0.2);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.topic-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--ice-mint, #7FFFD4);
+    box-shadow: 0 0 10px rgba(127, 255, 212, 0.5);
+}
+
+.topic-banner-content {
+    flex: 1;
+    margin-right: 1.5rem;
+}
+
+.topic-title {
+    font-family: 'Orbitron', 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.topic-tags {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.topic-tag-pill {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #bbb;
+}
+
+.topic-action-btn {
+    background: rgba(127, 255, 212, 0.1);
+    border: 1px solid var(--ice-mint, #7FFFD4);
+    color: var(--ice-mint, #7FFFD4);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.topic-action-btn:hover {
+    background: rgba(127, 255, 212, 0.2);
+    box-shadow: 0 0 15px rgba(127, 255, 212, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .topic-banner-container {
+        padding: 0 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .topic-banner {
+        padding: 0.8rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+
+    .topic-banner-content {
+        margin-right: 0;
+        width: 100%;
+    }
+
+    .topic-action-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.6rem;
+    }
+}

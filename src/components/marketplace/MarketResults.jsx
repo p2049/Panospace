@@ -2,7 +2,7 @@ import React from 'react';
 import { FaRocket } from 'react-icons/fa';
 import StarBackground from '@/components/StarBackground';
 import UserCard from '@/components/UserCard';
-import GalleryCard from '@/components/ui/cards/GalleryCard';
+import StudioCard from '@/components/ui/cards/StudioCard';
 import CollectionCard from '@/components/CollectionCard';
 import ShopItemCard from '@/components/ui/cards/ShopItemCard';
 import ContestCard from '@/components/ContestCard';
@@ -49,8 +49,8 @@ const MarketResults = ({
                     {currentMode === 'users' && results.users.map(user => (
                         <UserCard key={user.id} user={user} />
                     ))}
-                    {currentMode === 'galleries' && results.galleries.map(gallery => (
-                        <GalleryCard key={gallery.id} studio={gallery} />
+                    {currentMode === 'studios' && results.studios.map(studio => (
+                        <StudioCard key={studio.id} studio={studio} />
                     ))}
                     {currentMode === 'collections' && results.collections.map(collection => (
                         <CollectionCard key={collection.id} collection={collection} />
@@ -73,7 +73,7 @@ const MarketResults = ({
                     const isEmpty =
                         currentMode === 'posts' ? results.posts?.length === 0 :
                             currentMode === 'users' ? results.users?.length === 0 :
-                                currentMode === 'galleries' ? results.galleries?.length === 0 :
+                                currentMode === 'studios' ? results.studios?.length === 0 :
                                     currentMode === 'collections' ? results.collections?.length === 0 :
                                         currentMode === 'contests' ? results.contests?.length === 0 :
                                             currentMode === 'events' ? results.events?.length === 0 :

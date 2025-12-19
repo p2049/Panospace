@@ -18,7 +18,8 @@ const ImageUploadPanel = ({
                 /* Magazine Mode - Image Upload Preview */
                 <div style={{
                     aspectRatio: '0.7727', // 8.5:11 magazine ratio
-                    background: images.length > 0 ? `url(${images[0].preview})` : '#111',
+                    backgroundColor: images.length > 0 ? 'transparent' : '#111',
+                    backgroundImage: images.length > 0 ? `url(${images[0].preview})` : 'none',
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
@@ -45,7 +46,8 @@ const ImageUploadPanel = ({
                 /* Museum Mode - Image Upload Preview */
                 <div style={{
                     aspectRatio: '3/2',
-                    background: images.length > 0 ? `url(${images[0].preview})` : '#111',
+                    backgroundColor: images.length > 0 ? 'transparent' : '#111',
+                    backgroundImage: images.length > 0 ? `url(${images[0].preview})` : 'none',
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',

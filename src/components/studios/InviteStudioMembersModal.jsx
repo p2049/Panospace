@@ -4,7 +4,7 @@ import { inviteMembers } from '@/core/services/firestore/studios.service';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { FaTimes, FaSearch, FaUserPlus } from 'react-icons/fa';
-import './InviteMembersModal.css';
+import './InviteStudioMembersModal.css';
 
 const InviteMembersModal = ({ galleryId, onClose, existingMembers = [], pendingInvites = [] }) => {
     const { currentUser } = useAuth();

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { db, functions } from '@/firebase';
 import { httpsCallable } from 'firebase/functions';
 import {
@@ -19,9 +19,25 @@ import { logger } from '@/core/utils/logger';
 export const SEARCH_CACHE = {};
 
 
-export const useSearch = () => {
+export const useSearch = (config = {}) => {
+    const {
+        initialMode = 'posts',
+        initialTags = [],
+        initialSort = 'recent',
+        autoSearch = false
+    } = config;
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [results, setResults] = useState({}); // Local state for results if used in TopicPage
+
+    // Logic: If autoSearch is true, we might need a useEffect here or let the consumer call performSearch
+    // However, the current useSearch seems to return search functions (searchUsers, etc.) rather than managing state itself heavily?
+    // Let's check further down.
+    // Ah, line 23 defines local loading/error state.
+    // It seems standard useSearch returns functions like `searchUsers`, `searchPosts`.
+    // We should probably just return those functions and let TopicPage use them, OR add state management here.
+    // Given the TopicPage usage `const { results, loading, error } = useSearch(...)`, we need this hook to behave like a state container if config is passed.
 
     /**
      * SEARCH USERS
@@ -187,48 +203,44 @@ export const useSearch = () => {
             // Note: 'trending' is handled client-side with sophisticated algorithm
 
             // 🔹 LOGGING START
-            logger.log(`[useSearch] Executing search for term: "${term}"`);
+
 
             // Parallel Query Strategy for Text Search
             // We search against 'searchKeywords' AND 'tags' to ensure coverage
             let mergedDocs = [];
+            let newLastDoc = null;
 
             if (term) {
                 // 1. Keyword Search
-                const keywordQuery = query(
+                let keywordQuery = query(
                     postsRef,
                     where('searchKeywords', 'array-contains', primaryWord),
                     orderBy(orderByField, orderDirection),
-                    limit(30)
+                    limit(40)
                 );
 
-                // 2. Tag Search (Treating search term as a potential tag)
-                const tagQuery = query(
+                // 2. Tag Search
+                let tagQuery = query(
                     postsRef,
                     where('tags', 'array-contains', primaryWord),
                     orderBy(orderByField, orderDirection),
-                    limit(30)
+                    limit(40)
                 );
 
-                // Execute in parallel
-                console.log(`[useSearch] Firestore Query: searchKeywords OR tags array-contains "${primaryWord}"`);
+                if (lastDoc) {
+                    keywordQuery = query(keywordQuery, startAfter(lastDoc));
+                    tagQuery = query(tagQuery, startAfter(lastDoc));
+                }
 
-                // 🛡️ SAFETY: Timeout for parallel search
                 const timeoutPromise = new Promise((_, reject) =>
                     setTimeout(() => reject(new Error('Search request timed out')), 15000)
                 );
 
                 const [keywordSnap, tagSnap] = await Promise.race([
-                    Promise.all([
-                        getDocs(keywordQuery),
-                        getDocs(tagQuery)
-                    ]),
+                    Promise.all([getDocs(keywordQuery), getDocs(tagQuery)]),
                     timeoutPromise
                 ]);
 
-                console.log(`[useSearch] Results: Keywords=${keywordSnap.size}, Tags=${tagSnap.size}`);
-
-                // Merge and Dedup
                 const keywordDocs = keywordSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 const tagDocs = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -238,96 +250,96 @@ export const useSearch = () => {
                     seen.add(doc.id);
                     return true;
                 });
+                // Note: Parallel queries break simple cursor pagination, 
+                // but we use the last doc from the keyword snap as a best effort
+                newLastDoc = keywordSnap.docs.length > 0 ? keywordSnap.docs[keywordSnap.docs.length - 1] : null;
 
             } else if (authorIds.length > 0) {
                 // Filter by specific authors (Following Only)
                 const safeAuthorIds = authorIds.slice(0, 10);
-                q = query(
+                let q = query(
                     postsRef,
                     where('authorId', 'in', safeAuthorIds),
                     orderBy(orderByField, orderDirection),
                     limit(50)
                 );
+                if (lastDoc) q = query(q, startAfter(lastDoc));
+
                 const snapshot = await getDocs(q);
                 mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
             } else if (tags.length > 0) {
                 // Primary tag search
                 const primaryTag = tags[0];
-                q = query(
+                let q = query(
                     postsRef,
                     where('tags', 'array-contains', primaryTag),
                     orderBy(orderByField, orderDirection),
-                    limit(30)
+                    limit(50)
                 );
+                if (lastDoc) q = query(q, startAfter(lastDoc));
+
                 const snapshot = await getDocs(q);
                 mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
-            } else if (filters.postType === 'text') {
-                // Specific Text Post Feed (Explore Text)
-                q = query(
-                    postsRef,
-                    where('postType', '==', 'text'),
-                    orderBy(orderByField, orderDirection), // Added ordering for consistency
-                    limit(50) // Reduced from 100 for cost efficiency
-                );
-                const snapshot = await Promise.race([
-                    getDocs(q),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Search timed out')), 15000))
-                ]);
-                mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             } else {
-                // Fallback (Recent/Sorted) - Standard Image Search
-                // PH3 OPTIMIZATION: Move common filters to backend when possible
-                const targetContentMode = type || 'art';
-
-                let constraints = [
-                    where('type', '==', targetContentMode),
-                    orderBy(orderByField, orderDirection),
-                    limit(50)
-                ];
-
-                // Add specific location/event filters if present (using indices added to firestore.indexes.json)
-                if (filters.parkId) {
-                    constraints.unshift(where('parkId', '==', filters.parkId));
-                } else if (filters.cityName) {
-                    constraints.unshift(where('city', '==', filters.cityName));
-                } else if (filters.eventId) {
-                    constraints.unshift(where('eventId', '==', filters.eventId));
+                // Standard Feed / Text Feed fallback
+                let constraints;
+                if (postType === 'text') {
+                    // Text Mode: Strictly search for postType 'text', ignoring 'type' (art/social) to ensure we catch all text posts
+                    constraints = [
+                        where('postType', '==', 'text'),
+                        orderBy(orderByField, orderDirection),
+                        limit(50)
+                    ];
+                } else {
+                    // Standard Feed (Art/Social)
+                    const targetContentMode = type || 'social';
+                    constraints = [
+                        where('type', '==', targetContentMode),
+                        orderBy(orderByField, orderDirection),
+                        limit(50)
+                    ];
                 }
 
-                q = query(postsRef, ...constraints);
+                if (filters.parkId) {
+                    constraints.unshift(where('parkId', '==', filters.parkId));
+                }
+
+                let q = query(postsRef, ...constraints);
+                if (lastDoc) q = query(q, startAfter(lastDoc));
 
                 try {
-                    const snapshot = await Promise.race([
-                        getDocs(q),
-                        new Promise((_, reject) => setTimeout(() => reject(new Error('Search timed out')), 15000))
-                    ]);
+                    const snapshot = await getDocs(q);
                     mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
                 } catch (err) {
-                    logger.error('Search: Fallback query failed, likely missing index', err);
-                    // Critical Fallback: if adding multiple filters failed because index isn't ready,
-                    // try the most basic query to at least show something.
-                    const basicQ = query(postsRef, where('type', '==', targetContentMode), orderBy(orderByField, orderDirection), limit(50));
-                    const basicSnapshot = await getDocs(basicQ);
-                    mergedDocs = basicSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    logger.warn('Search: Advanced query failed, likely missing index. Falling back...', err);
+
+                    // CRITICAL FALLBACK (One constraint at a time to ensure success)
+                    let fallbackQ;
+                    if (postType === 'text') {
+                        // If text mode index is missing, fallback to fetching recent posts (mixed) and filtering client-side
+                        // We increase limit to 100 to ensure we find some text posts
+                        fallbackQ = query(postsRef, orderBy(orderByField, orderDirection), limit(100));
+                    } else {
+                        // Otherwise fallback to the type filter (art/social)
+                        fallbackQ = query(postsRef, where('type', '==', targetContentMode), orderBy(orderByField, orderDirection), limit(50));
+                    }
+
+                    if (lastDoc) fallbackQ = query(fallbackQ, startAfter(lastDoc));
+
+                    const snapshot = await getDocs(fallbackQ);
+                    mergedDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
                 }
             }
 
-            // Apply pagination if needed (Note: Parallel queries break simple cursor pagination, 
-            // so we disable 'startAfter' for the text search combined mode effectively, 
-            // or we rely on client side handling for now. 
-            // For MVP/Bugfix where "Search returns no results", finding *something* is priority.)
-
-            // Note: If we didn't use the parallel block (i.e. no term), we might need to apply startAfter manually
-            // But strict pagination with merged results is complex.
-            // We will skip `startAfter` logic for the text search term case for now to ensure correctness of results first.
-
             const docs = mergedDocs;
-            const newLastDoc = null; // Pagination disabled for merged search temporarily
-
             // Log result count for debugging
-            logger.log(`[useSearch] searchPosts returned ${docs.length} posts (merged)`);
+
 
             // Client-side filtering
             let filtered = docs;
@@ -461,7 +473,7 @@ export const useSearch = () => {
                 filtered = filtered.filter(post => {
                     // Check actual postType property first, fall back to type
                     const pType = post.postType || post.type;
-                    console.log('[DEBUG] Filtering Post:', post.id, 'postType:', post.postType, 'type:', post.type, 'pType:', pType, 'Filter:', filters.postType);
+
 
                     if (filters.postType === 'text') {
                         return pType === 'text';
@@ -473,7 +485,7 @@ export const useSearch = () => {
                     // Fallback for direct match if needed in future
                     return pType === filters.postType;
                 });
-                logger.log(`[useSearch] postType filter (${filters.postType}): ${beforeCount} -> ${filtered.length} posts`);
+
             }
 
             // Apply client-side sorting to handle derived fields (EXIF date) and ensure correct order
@@ -484,7 +496,7 @@ export const useSearch = () => {
                     const trendingResult = sortPostsByTrending(filtered);
                     filtered = trendingResult.posts;
                     // Optionally log which time period was used
-                    logger.log(`Trending posts from: ${trendingResult.period}`);
+
                 } else {
                     filtered.sort((a, b) => {
                         if (sort === 'newest' || sort === 'oldest') {
@@ -511,7 +523,7 @@ export const useSearch = () => {
                 filtered = filtered.filter(post => allowedIds.has(post.authorId) || allowedIds.has(post.userId));
             }
 
-            logger.log(`[useSearch] searchPosts final result: ${filtered.length} posts returned`);
+
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
             console.error('Post search error:', err);
@@ -525,14 +537,14 @@ export const useSearch = () => {
     }, []);
 
     /**
-     * SEARCH GALLERIES
+     * SEARCH STUDIOS (formerly Galleries)
      * Strategy:
      *  - if searchTerm: query galleries where searchKeywords contains primary word
      *  - else: fallback to recent galleries
      *  - then client-side filter on tags, location, remaining words
      */
-    const searchGalleries = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
-        const { tags = [], location = '', galleryIds = [] } = filters;
+    const searchStudios = useCallback(async (searchTerm, filters = {}, lastDoc = null) => {
+        const { tags = [], location = '', studioIds = filters.galleryIds || [] } = filters;
         const term = (searchTerm || '').toLowerCase().trim();
         const words = term.split(/\s+/).filter(w => w.length > 0);
         const primaryWord = words[0] || term;
@@ -544,12 +556,12 @@ export const useSearch = () => {
             const galleriesRef = collection(db, 'galleries');
             let q;
 
-            if (galleryIds.length > 0) {
-                // Filter by specific gallery IDs
-                const safeGalleryIds = galleryIds.slice(0, 10);
+            if (studioIds.length > 0) {
+                // Filter by specific studio IDs
+                const safeStudioIds = studioIds.slice(0, 10);
                 q = query(
                     galleriesRef,
-                    where('__name__', 'in', safeGalleryIds),
+                    where('__name__', 'in', safeStudioIds),
                     limit(50)
                 );
             } else if (tags.length > 0) {
@@ -570,7 +582,7 @@ export const useSearch = () => {
                     limit(100)
                 );
             } else {
-                // Recent galleries fallback
+                // Recent studios fallback
                 q = query(
                     galleriesRef,
                     orderBy('createdAt', 'desc'),
@@ -578,11 +590,19 @@ export const useSearch = () => {
                 );
             }
 
-            if (lastDoc && galleryIds.length === 0) {
+            if (lastDoc && studioIds.length === 0) {
                 q = query(q, startAfter(lastDoc));
             }
 
-            const snapshot = await getDocs(q);
+            let snapshot;
+            try {
+                snapshot = await getDocs(q);
+            } catch (indexErr) {
+                logger.warn('Studios Search: Missing index, falling back to basic query', indexErr);
+                const fallbackQ = query(galleriesRef, orderBy('createdAt', 'desc'), limit(50));
+                snapshot = await getDocs(fallbackQ);
+            }
+
             const docs = snapshot.docs.map(d => ({
                 id: d.id,
                 ...d.data()
@@ -698,12 +718,20 @@ export const useSearch = () => {
                 q = query(q, startAfter(lastDoc));
             }
 
-            const snapshot = await getDocs(q);
+            let snapshot;
+            try {
+                snapshot = await getDocs(q);
+            } catch (indexErr) {
+                logger.warn('Collections Search: Missing index, falling back to basic query', indexErr);
+                // Fallback: Drop visibility filter or keywords and just get recent
+                const fallbackQ = query(collectionsRef, orderBy('createdAt', 'desc'), limit(50));
+                snapshot = await getDocs(fallbackQ);
+            }
             const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
             // Client-side filtering
-            let filtered = docs;
+            let filtered = docs.filter(c => c.visibility === 'public');
 
             if (tags.length > 0) {
                 filtered = filtered.filter(collection => {
@@ -791,7 +819,14 @@ export const useSearch = () => {
                 q = query(q, startAfter(lastDoc));
             }
 
-            const snapshot = await getDocs(q);
+            let snapshot;
+            try {
+                snapshot = await getDocs(q);
+            } catch (indexErr) {
+                logger.warn('Contests Search: Missing index, falling back to basic query', indexErr);
+                const fallbackQ = query(contestsRef, orderBy('deadline', 'asc'), limit(50));
+                snapshot = await getDocs(fallbackQ);
+            }
             const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
@@ -1094,16 +1129,58 @@ export const useSearch = () => {
         }
     }, []);
 
+    // === NEW: Unified Search Handler for Topic Page ===
+    const performSearch = useCallback(async (overrideFilters = {}) => {
+        setLoading(true);
+        setError(null);
+        let data = [];
+
+        try {
+            // Apply initialTags if present and not overridden
+            const effectiveTags = overrideFilters.tags || initialTags;
+            const effectiveSort = overrideFilters.sort || initialSort;
+
+            if (initialMode === 'posts') {
+                // Determine if strict tag search or keyword search
+                // Use searchPosts with tag filters
+                // Note: searchPosts supports `tags` array in filters
+                const res = await searchPosts('', {
+                    tags: effectiveTags,
+                    sort: effectiveSort
+                });
+                data = res.data;
+                setResults(prev => ({ ...prev, posts: data }));
+            }
+            // Add other modes if needed
+
+        } catch (err) {
+            console.error("Unified search failed:", err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [initialMode, initialTags, initialSort, searchPosts]);
+
+    // Auto-trigger
+    useEffect(() => {
+        if (autoSearch) {
+            performSearch();
+        }
+    }, [autoSearch, performSearch]);
+
+
     return {
+        loading,
+        error,
+        results,
+        performSearch,
         searchUsers,
-        searchPosts,
-        searchGalleries,
+        searchStudios,
         searchCollections,
         searchContests,
         searchEvents,
         searchSpaceCards,
-        searchShopItems, // Export new function
-        loading,
-        error
+        searchPosts,
+        searchShopItems
     };
 };

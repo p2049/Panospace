@@ -222,7 +222,7 @@ const SearchHeader = ({
                         }} />
                         <input
                             type="text"
-                            placeholder={isMobile ? "Search..." : `Search ${currentMode}...`}
+                            placeholder={isMobile ? "Search..." : `Search ${currentMode === 'galleries' ? 'studios' : currentMode}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
@@ -362,27 +362,29 @@ const SearchHeader = ({
                                 <option value="trending">Hot</option>
                             </select>
 
-                            {/* View Mode Toggle - Icons Only */}
-                            <button
-                                onClick={() => setViewMode(viewMode === 'grid' ? 'feed' : 'grid')}
-                                style={{
-                                    background: 'transparent',
-                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                    borderRadius: '8px',
-                                    width: '32px',
-                                    height: '32px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'var(--ice-mint)',
-                                    cursor: 'pointer',
-                                    flexShrink: 0,
-                                    fontSize: '18px'
-                                }}
-                                title={viewMode === 'grid' ? 'Grid View' : 'Orbit View'}
-                            >
-                                {viewMode === 'grid' ? '⊞' : '☰'}
-                            </button>
+                            {/* View Mode Toggle - Icons Only (Hide for Text Mode) */}
+                            {currentMode !== 'text' && (
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'grid' ? 'feed' : 'grid')}
+                                    style={{
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        borderRadius: '8px',
+                                        width: '32px',
+                                        height: '32px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--ice-mint)',
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                        fontSize: '18px'
+                                    }}
+                                    title={viewMode === 'grid' ? 'Grid View' : 'Orbit View'}
+                                >
+                                    {viewMode === 'grid' ? '⊞' : '☰'}
+                                </button>
+                            )}
                         </>
                     )}
 
@@ -448,6 +450,7 @@ const SearchHeader = ({
                                 setViewMode={setViewMode}
                                 isSortDropdownOpen={isSortDropdownOpen}
                                 setIsSortDropdownOpen={setIsSortDropdownOpen}
+                                allowViewToggle={currentMode !== 'text'}
                             />
                         </div>
                     )}

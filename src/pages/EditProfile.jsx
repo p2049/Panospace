@@ -259,7 +259,7 @@ const EditProfile = () => {
                     // We force .jpg because handleCropComplete converts everything to JPEG
                     const path = `profile_photos/${currentUser.uid}/profile_current.jpg`;
 
-                    console.log('[PROD_DEBUG] Starting Profile Photo Upload via Canonical Uploader to:', path);
+
                     const result = await uploadFile({
                         file: selectedFile,
                         path: path,
@@ -273,7 +273,7 @@ const EditProfile = () => {
                     });
 
                     newPhotoURL = result.downloadURL;
-                    console.log('[PROD_DEBUG] Profile Photo Upload Success. URL:', newPhotoURL);
+
                 } catch (uploadError) {
                     logger.error("[EditProfile] Image upload failed:", uploadError);
                     alert("Failed to upload image: " + (uploadError.message || "Unknown error"));
@@ -466,11 +466,11 @@ const EditProfile = () => {
             });
 
             try {
-                logger.log('[PROD_DEBUG] Saving User Profile:', currentUser.uid);
+
                 await setDoc(doc(db, 'users', currentUser.uid), userUpdate, { merge: true });
-                logger.log('[PROD_DEBUG] User Profile Saved.');
+
             } catch (profileErr) {
-                logger.error('[PROD_DEBUG] Profile Save FAILED:', profileErr);
+
                 throw profileErr;
             }
 

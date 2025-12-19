@@ -9,7 +9,8 @@ const SearchFilters = ({
     viewMode,
     setViewMode,
     isSortDropdownOpen,
-    setIsSortDropdownOpen
+    setIsSortDropdownOpen,
+    allowViewToggle = true
 }) => {
     const sortDropdownRef = useRef(null);
 
@@ -95,22 +96,26 @@ const SearchFilters = ({
 
 
 
-            <PSButton
-                variant="mint"
-                size="sm"
-                active={viewMode === 'grid'}
-                onClick={() => setViewMode('grid')}
-                icon={<FaTh />}
-                style={{ padding: '0.6rem', height: '32px' }}
-            />
-            <PSButton
-                variant="mint"
-                size="sm"
-                active={viewMode === 'feed'}
-                onClick={() => setViewMode('feed')}
-                icon={<FaList />}
-                style={{ padding: '0.6rem', height: '32px' }}
-            />
+            {allowViewToggle !== false && (
+                <>
+                    <PSButton
+                        variant="mint"
+                        size="sm"
+                        active={viewMode === 'grid'}
+                        onClick={() => setViewMode('grid')}
+                        icon={<FaTh />}
+                        style={{ padding: '0.6rem', height: '32px' }}
+                    />
+                    <PSButton
+                        variant="mint"
+                        size="sm"
+                        active={viewMode === 'feed'}
+                        onClick={() => setViewMode('feed')}
+                        icon={<FaList />}
+                        style={{ padding: '0.6rem', height: '32px' }}
+                    />
+                </>
+            )}
         </div>
     );
 };

@@ -5,7 +5,7 @@ const StudioCard = ({ studio }) => {
     const navigate = useNavigate();
     return (
         <div
-            onClick={() => navigate(`/gallery/${studio.id}`)}
+            onClick={() => navigate(`/studio/${studio.id}`)}
             style={{
                 background: 'rgba(255,255,255,0.03)',
                 borderRadius: '12px',

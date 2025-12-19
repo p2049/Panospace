@@ -185,8 +185,16 @@ export const getCommissions = async (userId: string, role = 'editor') => {
  */
 export const createMuseum = async (partnerId: string, museumData: any) => {
     try {
-        const tier = await getUserTier(partnerId);
-        if (tier !== USER_TIERS.PARTNER) throw new Error("Only partners can create museums");
+        // Fetch user data for permission check
+        const userRef = doc(db, 'users', partnerId);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.exists() ? userSnap.data() : { uid: partnerId };
+
+        const { canAccessFeature, ACCESS_FEATURES } = await import('@/core/utils/accessControl');
+
+        if (!canAccessFeature(userData, ACCESS_FEATURES.CREATE_MUSEUM)) {
+            throw new Error("Only partners can create museums");
+        }
 
         const data = {
             ...museumData,

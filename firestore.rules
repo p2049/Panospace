@@ -11,35 +11,24 @@ service cloud.firestore {
     // USERS COLLECTION
     // ============================================
     match /users/{userId} {
-      // Profile is public, but restrict sensitive fields in real app
-      // For now, allow read if true, but ideally:
-      // allow read: if true;
-      // allow get: if true;
-      // allow list: if true;
       allow read: if true;
-      
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
       
-      // Subcollections
       match /customFeeds/{feedId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
-      
       match /blockedUsers/{blockedUserId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
-
       match /purchases/{purchaseId} {
         allow read: if true;
-        allow write: if false; // Backend only
+        allow write: if false; 
       }
-
       match /badges/{badgeId} {
         allow read: if true;
-        allow write: if false; // Backend only
+        allow write: if false; 
       }
-
       match /settings/{docId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
@@ -88,7 +77,7 @@ service cloud.firestore {
 
     match /orders/{orderId} {
       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || resource.data.buyerUid == request.auth.uid || resource.data.sellerId == request.auth.uid);
-      allow write: if false; // Managed by backend
+      allow write: if false; 
     }
 
     match /commissions/{commissionId} {
@@ -98,29 +87,102 @@ service cloud.firestore {
     }
 
     // ============================================
-    // COLLECTIONS & GALLERIES
+    // COLLECTIONS
     // ============================================
     match /collections/{collectionId} {
       allow read: if resource.data.visibility == 'public' || 
-                    (request.auth != null && (resource.data.ownerId == request.auth.uid || resource.data.visibility == 'followers'));
+                    resource.data.visibility == 'unlisted' ||
+                    (request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin()));
       allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+
+      match /items/{itemId} {
+        allow read: if get(/databases/$(database)/documents/collections/$(collectionId)).data.visibility == 'public' ||
+                      get(/databases/$(database)/documents/collections/$(collectionId)).data.visibility == 'unlisted' ||
+                      (request.auth != null && (get(/databases/$(database)/documents/collections/$(collectionId)).data.ownerId == request.auth.uid || isAdmin()));
+        allow write: if request.auth != null && (get(/databases/$(database)/documents/collections/$(collectionId)).data.ownerId == request.auth.uid || isAdmin());
+      }
     }
 
-    match /galleries/{galleryId} {
-      allow read: if true;
+    // ============================================
+    // STUDIOS (Shared Spaces)
+    // ============================================
+    match /studios/{studioId} {
+      function isStudioMember() {
+        return request.auth != null && exists(/databases/$(database)/documents/studios/$(studioId)/members/$(request.auth.uid));
+      }
+      function isStudioAdmin() {
+        let role = get(/databases/$(database)/documents/studios/$(studioId)/members/$(request.auth.uid)).data.role;
+        return request.auth != null && (role == 'admin' || role == 'owner');
+      }
+
+      allow read: if resource.data.visibility == 'public' || 
+                    resource.data.visibility == 'unlisted' ||
+                    isStudioMember() || isAdmin();
+      allow create: if request.auth != null;
+      allow update, delete: if isStudioAdmin() || isAdmin();
+
+      match /members/{uid} {
+        allow read: if true;
+        allow write: if isStudioAdmin() || isAdmin();
+        allow delete: if request.auth != null && (request.auth.uid == uid || isStudioAdmin());
+      }
+
+      match /items/{itemId} {
+        allow read: if true; 
+        allow write: if isStudioMember() || isAdmin();
+      }
+    }
+
+    // ============================================
+    // MUSEUMS
+    // ============================================
+    match /museums/{museumId} {
+      allow read: if resource.data.visibility == 'public' || 
+                    resource.data.visibility == 'unlisted' ||
+                    (request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin()));
       allow create: if request.auth != null;
       allow update, delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
 
-      match /posts/{postId} {
+      match /sections/{sectionId} {
         allow read: if true;
-        allow create: if request.auth != null; // Should check membership in parent but for minimalism allow auth
-        allow delete: if request.auth != null;
+        allow write: if request.auth != null && (get(/databases/$(database)/documents/museums/$(museumId)).data.ownerId == request.auth.uid || isAdmin());
       }
-      match /collections/{colId} {
+    }
+
+    // ============================================
+    // MAGAZINES
+    // ============================================
+    match /magazines/{magazineId} {
+      function canWriteMagazine() {
+        let mag = resource.data;
+        return request.auth != null && (
+          (mag.ownerType == 'user' && mag.ownerId == request.auth.uid) ||
+          (mag.ownerType == 'studio' && exists(/databases/$(database)/documents/studios/$(mag.ownerId)/members/$(request.auth.uid)) )
+        );
+      }
+      
+      function canPublishMagazine() {
+        let mag = resource.data;
+        return request.auth != null && (
+          (mag.ownerType == 'user' && mag.ownerId == request.auth.uid) ||
+          (mag.ownerType == 'studio' && 
+            (get(/databases/$(database)/documents/studios/$(mag.ownerId)/members/$(request.auth.uid)).data.role in ['admin', 'owner'])
+          )
+        );
+      }
+
+      allow read: if resource.data.visibility == 'public' || 
+                    resource.data.visibility == 'unlisted' ||
+                    (request.auth != null && (resource.data.ownerId == request.auth.uid || canWriteMagazine()));
+      allow create: if request.auth != null;
+      allow update: if canPublishMagazine() || isAdmin();
+      allow delete: if canPublishMagazine() || isAdmin();
+
+      match /pages/{pageId} {
         allow read: if true;
-        allow create: if request.auth != null;
-        allow delete: if request.auth != null;
+        allow write: if canWriteMagazine() || isAdmin();
       }
     }
 
@@ -155,48 +217,6 @@ service cloud.firestore {
     }
 
     // ============================================
-    // MONEY & INTEGRITY (SENSITIVE)
-    // ============================================
-    match /transactions/{docId} {
-      // REQUIRED: Allow users to see their own transactions
-      // CRITICAL: Prevent unauthorized access to other users' money history
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      // Allow client-side creation for legacy WalletService compatibility (MINIMAL PATCH)
-      // In Phase 3, this should be Backend-Only.
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
-    }
-
-    match /wallet/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // Managed via users document or backend
-    }
-
-    match /userIntegrity/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false;
-    }
-
-    match /weeklyLikes/{docId} {
-      allow read, write: if request.auth != null && docId.matches(request.auth.uid + '_.*');
-    }
-
-    // ============================================
-    // NOTIFICATIONS & REPORTS
-    // ============================================
-    match /notifications/{notificationId} {
-      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      // Restrict create to avoid spam. Only allow if sending to self or if system (backend).
-      // Minimal patch: allow if auth'd but prioritize moving to backend.
-      allow create: if request.auth != null; 
-    }
-
-    match /reports/{reportId} {
-      allow create: if request.auth != null && request.resource.data.reportedBy == request.auth.uid;
-      allow read, write: if isAdmin();
-    }
-
-    // ============================================
     // SPACE CARDS
     // ============================================
     match /spaceCards/{cardId} {
@@ -216,22 +236,40 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
 
-    match /museums/{museumId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+    // ============================================
+    // MONEY & INTEGRITY (SENSITIVE)
+    // ============================================
+    match /transactions/{docId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
     }
 
-    match /magazines/{magId} {
-      allow read: if resource.data.visibility == 'public' || (request.auth != null && resource.data.ownerId == request.auth.uid);
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+    match /wallet/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; 
     }
 
-    match /magazineIssues/{issueId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (resource.data.ownerId == request.auth.uid || isAdmin());
+    match /userIntegrity/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /weeklyLikes/{docId} {
+      allow read, write: if request.auth != null && docId.matches(request.auth.uid + '_.*');
+    }
+
+    // ============================================
+    // NOTIFICATIONS & REPORTS
+    // ============================================
+    match /notifications/{notificationId} {
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null; 
+    }
+
+    match /reports/{reportId} {
+      allow create: if request.auth != null && request.resource.data.reportedBy == request.auth.uid;
+      allow read, write: if isAdmin();
     }
 
     // ============================================

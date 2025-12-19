@@ -18,7 +18,8 @@ const PostDetailsSidebar = ({
     currentSlide = 0
 }) => {
     const navigate = useNavigate();
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin, isGodMode } = useAuth();
+    const canManageContent = currentUser?.uid === (post.userId || post.authorId || post.uid) || isAdmin || isGodMode;
     const [shopLinkTarget, setShopLinkTarget] = useState(null);
     const [stats, setStats] = useState({ likeCount: 0, averageRating: 0, totalVotes: 0 });
     const [authorPhoto, setAuthorPhoto] = useState(
@@ -461,10 +462,10 @@ const PostDetailsSidebar = ({
                                     {/* Info */}
                                     <div style={{ flex: 1, overflow: 'hidden' }}>
                                         <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {lp.title || 'Untitled Post'}
+                                            {lp.title || 'Untitled'}
                                         </div>
                                         <div style={{ color: '#aaa', fontSize: '0.75rem' }}>
-                                            {lp.postType === 'text' ? 'Text Post' : 'Image Post'}
+                                            {lp.postType === 'text' ? 'Ping' : 'Visual'}
                                         </div>
                                     </div>
                                 </div>
@@ -539,15 +540,22 @@ const PostDetailsSidebar = ({
                         </button>
                     )}
 
-                    {currentUser?.uid === (post.userId || post.authorId || post.uid) ? (
+                    {canManageContent ? (
                         <>
-                            <button onClick={handleEditPost} style={{ padding: '0.8rem', background: '#333', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
-                                Edit Post
-                            </button>
+                            {currentUser?.uid === (post.userId || post.authorId || post.uid) && (
+                                <button onClick={handleEditPost} style={{ padding: '0.8rem', background: '#333', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                                    {post.postType === 'text' ? 'Edit Ping' : 'Edit Visual'}
+                                </button>
+                            )}
                             <button onClick={async () => {
-                                if (window.confirm("Delete this post?")) {
+                                const msg = isAdmin || isGodMode ?
+                                    (post.postType === 'text' ? "ADMIN: Delete this ping?" : "ADMIN: Delete this visual?") :
+                                    (post.postType === 'text' ? "Delete this ping?" : "Delete this visual?");
+                                if (window.confirm(msg)) {
                                     try {
                                         await deleteDoc(doc(db, "posts", post.id));
+                                        alert("Post deleted successfully");
+                                        onClose();
                                         navigate('/');
                                     } catch (error) {
                                         console.error("Error deleting post:", error);
@@ -555,13 +563,13 @@ const PostDetailsSidebar = ({
                                     }
                                 }
                             }} style={{ padding: '0.8rem', background: 'rgba(255,0,0,0.2)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left' }}>
-                                Delete Post
+                                {isAdmin || isGodMode ? 'Admin: Delete Content' : (post.postType === 'text' ? 'Delete Ping' : 'Delete Visual')}
                             </button>
                         </>
                     ) : (
                         <>
                             <button onClick={handleReportPost} style={{ padding: '0.8rem', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#ccc', cursor: 'pointer', textAlign: 'left' }}>
-                                Report Post
+                                Report
                             </button>
                             <button onClick={handleBlockUser} style={{ padding: '0.8rem', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#ccc', cursor: 'pointer', textAlign: 'left' }}>
                                 Block User

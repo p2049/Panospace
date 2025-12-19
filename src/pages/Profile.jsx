@@ -49,7 +49,7 @@ const Profile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentUser } = useAuth();
+    const { currentUser, isAdmin, isGodMode } = useAuth();
     const { blockUser } = useBlock();
     const { t } = useTranslation();
     const { showSuccess } = useToast();
@@ -143,6 +143,20 @@ const Profile = () => {
         };
         fetchOrders();
     }, [activeTab, targetId]);
+
+    const handleAdminDeleteAccount = async () => {
+        if (!user) return;
+        if (window.confirm(`GOD MODE: Delete account for ${user.username || 'this user'}? WARNING: This deletes their Firestore profile immediately.`)) {
+            try {
+                await deleteDoc(doc(db, 'users', targetId));
+                alert("User profile deleted from Firestore.");
+                navigate('/');
+            } catch (err) {
+                console.error("God Mode deletion failed:", err);
+                alert("Failed to delete user profile: " + err.message);
+            }
+        }
+    };
 
     const handleFollow = async () => {
         if (!currentUser || followLoading) return;
@@ -310,6 +324,7 @@ const Profile = () => {
                         enabled: user.profileTheme?.useStarsOverlay,
                         color: user.profileTheme?.starColor
                     }}
+                    overlays={user.profileTheme?.overlays || []}
                 />
 
                 {/* Gradient Polish Overlays (Noise + Vignette) - Only if gradient mode */}
@@ -688,6 +703,30 @@ const Profile = () => {
                                         </div>
 
                                         {/* Actions Section */}
+                                        {(isAdmin || isGodMode) && !isOwnProfile && (
+                                            <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,0,0,0.2)' }}>
+                                                <button
+                                                    onClick={handleAdminDeleteAccount}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.5rem',
+                                                        background: 'rgba(255,0,0,0.1)',
+                                                        border: '1px solid #ff6b6b',
+                                                        color: '#ff6b6b',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 'bold',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem'
+                                                    }}
+                                                >
+                                                    <FaBan /> God Mode: Delete Account
+                                                </button>
+                                            </div>
+                                        )}
 
                                     </div>
                                 </>
@@ -797,8 +836,8 @@ const Profile = () => {
                     // paddingRight removed
                 }}>
                     {[
-                        { id: 'posts', label: t('tab.posts'), icon: FaTh, enabled: true },
-                        { id: 'writings', label: 'Writings', icon: FaAlignLeft, enabled: true },
+                        { id: 'posts', label: 'Visuals', icon: FaTh, enabled: true },
+                        { id: 'writings', label: 'Pings', icon: FaAlignLeft, enabled: true },
                         { id: 'collections', label: 'Collections', icon: FaLayerGroup, enabled: isFeatureEnabled('COLLECTIONS') },
                         { id: 'shop', label: t('tab.shop'), icon: FaShoppingBag, enabled: true },
                         { id: 'gallery', label: t('tab.galleries'), icon: FaImage, enabled: isFeatureEnabled('GALLERIES') },
@@ -919,49 +958,61 @@ const Profile = () => {
                 {activeTab === 'posts' && (
                     <>
 
-                        <InfiniteGrid
-                            items={posts}
-                            columns={layout.gridColumns}
-                            gap={layout.gridGap}
-                            renderItem={(post, index) => (
-                                <div
-                                    onClick={() => navigate(`/post/${post.id}`, {
-                                        state: {
-                                            contextPosts: posts,
-                                            initialIndex: index
-                                        }
-                                    })}
-                                    style={{
-                                        aspectRatio: '1',
-                                        background: '#111',
-                                        borderRadius: '8px',
-                                        overflow: 'hidden',
-                                        cursor: 'pointer',
-                                        transition: 'transform 0.2s',
-                                    }}
-                                >
-                                    {(() => {
-                                        const displaySrc = post.thumbnailUrl || post.items?.[0]?.thumbnailUrl || post.items?.[0]?.url || post.imageUrl || post.image;
-                                        const previewSrc = post.previewUrl || post.items?.[0]?.previewUrl;
+                        {(!posts || posts.length === 0) ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '3rem 1rem',
+                                color: '#888'
+                            }}>
+                                <FaTh size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No visuals yet</p>
+                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Visuals will appear here</p>
+                            </div>
+                        ) : (
+                            <InfiniteGrid
+                                items={posts}
+                                columns={layout.gridColumns}
+                                gap={layout.gridGap}
+                                renderItem={(post, index) => (
+                                    <div
+                                        onClick={() => navigate(`/post/${post.id}`, {
+                                            state: {
+                                                contextPosts: posts,
+                                                initialIndex: index
+                                            }
+                                        })}
+                                        style={{
+                                            aspectRatio: '1',
+                                            background: '#111',
+                                            borderRadius: '8px',
+                                            overflow: 'hidden',
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s',
+                                        }}
+                                    >
+                                        {(() => {
+                                            const displaySrc = post.thumbnailUrl || post.items?.[0]?.thumbnailUrl || post.items?.[0]?.url || post.imageUrl || post.image;
+                                            const previewSrc = post.previewUrl || post.items?.[0]?.previewUrl;
 
-                                        return displaySrc ? (
-                                            <SmartImage
-                                                src={displaySrc}
-                                                previewSrc={previewSrc}
-                                                thumbnailSrc={previewSrc}
-                                                alt=""
-                                                eager={false}
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
-                                                No Image
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
-                            )}
-                        />
+                                            return displaySrc ? (
+                                                <SmartImage
+                                                    src={displaySrc}
+                                                    previewSrc={previewSrc}
+                                                    thumbnailSrc={previewSrc}
+                                                    alt=""
+                                                    eager={false}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+                                                    No Image
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
+                            />
+                        )}
                     </>
                 )}
 
@@ -976,8 +1027,8 @@ const Profile = () => {
                                 color: '#888'
                             }}>
                                 <FaAlignLeft size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No writings yet</p>
-                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Text posts will appear here</p>
+                                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No pings yet</p>
+                                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>Pings will appear here</p>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '4rem', width: '100%', maxWidth: '600px', margin: '0 auto' }}>

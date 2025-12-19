@@ -8,7 +8,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
 
     const getCategory = (id) => {
         if (id.startsWith('city') || id === 'panospace_beyond') return 'City';
-        if (id.startsWith('ocean') || id === 'underwaterY2K') return 'Ocean';
+        if (id.startsWith('ocean') || id === 'underwaterY2K' || id === 'deep_underwater') return 'Ocean';
         if (['stars', 'nebula', 'orbital', 'cosmic-earth', 'planet', 'ice-planet', 'northern-lights'].includes(id)) return 'Cosmic';
         return 'Abstract';
     };
@@ -122,6 +122,46 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                         backgroundSize: '10px 10px',
                                         transform: 'perspective(20px) rotateX(45deg)'
                                     }} />
+                                )}
+                                {type.id === 'ps2_2000' && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: '#080808', // Charcoal
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px',
+                                            transform: 'rotateX(30deg) translateZ(0)', transformStyle: 'preserve-3d'
+                                        }}>
+                                            {[1, 2, 3, 4, 5, 6].map(i => (
+                                                <div key={i} style={{
+                                                    width: '6px', height: '20px',
+                                                    background: 'linear-gradient(to bottom, #9BA9FF, #080808)',
+                                                    opacity: 0.6,
+                                                    borderRadius: '1px'
+                                                }} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {type.id === 'deep_underwater' && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: '#010408',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        overflow: 'hidden'
+                                    }}>
+                                        {[1, 2, 3, 4, 5, 6].map(i => (
+                                            <div key={i} style={{
+                                                width: '4px', height: '30px',
+                                                margin: '0 2px',
+                                                background: 'linear-gradient(to bottom, transparent, #0D2B36, transparent)',
+                                                opacity: 0.4,
+                                                filter: 'blur(1px)'
+                                            }} />
+                                        ))}
+                                    </div>
                                 )}
                                 {type.id === 'stars' && (
                                     <div style={{

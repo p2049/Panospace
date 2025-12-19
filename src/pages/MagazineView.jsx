@@ -1,16 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useMagazine } from '@/hooks/useMagazine';
-import { FaArrowLeft, FaBook, FaClock, FaCalendar, FaImage, FaUsers, FaEye } from 'react-icons/fa';
+import { FaArrowLeft, FaBook, FaClock, FaCalendar, FaImage, FaUsers, FaEye, FaQuestionCircle } from 'react-icons/fa';
 import SEO from '@/components/SEO';
 import StarBackground from '@/components/StarBackground';
 import { PageSkeleton } from '@/components/ui/Skeleton';
+import Walkthrough from '@/components/common/Walkthrough';
 
 const MagazineView = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
+    const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+    const walkthroughSteps = [
+        {
+            title: "Magazines",
+            description: "Magazines are digital issues you publish. Post as yourself, or attach a Magazine to a Studio so a group can publish together."
+        },
+        {
+            title: "Create Issue",
+            description: "Create a new issue to publish your content.",
+            targetSelector: "#magazine-create-issue-btn"
+        }
+    ];
 
     // Use custom hook for magazine data
     const { magazine, issues, loading, error } = useMagazine(id);
@@ -52,15 +66,25 @@ const MagazineView = () => {
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.3), #000)' }} />
                 </div>
 
-                <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 10 }}>
+                <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 10, display: 'flex', gap: '0.75rem' }}>
                     <button onClick={() => navigate(-1)} style={{ background: 'rgba(0,0,0,0.5)', border: 'none', color: '#fff', padding: '10px', borderRadius: '50%', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
                         <FaArrowLeft />
+                    </button>
+
+                    <button
+                        className="help-icon-btn"
+                        onClick={() => setShowWalkthrough(true)}
+                        style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', width: '40px', height: '40px' }}
+                        title="Show tutorial"
+                    >
+                        <FaQuestionCircle />
                     </button>
                 </div>
 
                 {isOwner && (
                     <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
                         <button
+                            id="magazine-create-issue-btn"
                             onClick={() => navigate(`/magazine/${id}/create-issue`)}
                             style={{
                                 background: '#7FFFD4',
@@ -119,6 +143,7 @@ const MagazineView = () => {
                         <p>No issues yet.</p>
                         {isOwner && (
                             <button
+                                id="magazine-create-issue-btn-empty"
                                 onClick={() => navigate(`/magazine/${id}/create-issue`)}
                                 style={{
                                     marginTop: '1rem',
@@ -206,6 +231,13 @@ const MagazineView = () => {
                     </div>
                 )}
             </div>
+
+            <Walkthrough
+                steps={walkthroughSteps}
+                onboardingKey="magazines"
+                forceShow={showWalkthrough}
+                onClose={() => setShowWalkthrough(false)}
+            />
         </div>
     );
 };

@@ -31,8 +31,9 @@ import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from '
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
-import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft, FaQuestionCircle } from 'react-icons/fa';
 import Post from '@/components/Post';
+import Walkthrough from '@/components/common/Walkthrough';
 import { extractDominantHue, fadeColor } from '@/core/utils/colorUtils';
 import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
 import { generateStackPreview } from '@/core/utils/stackUtils';
@@ -66,6 +67,44 @@ FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
     };
 });
 
+const createPostOnboardingSteps = [
+    {
+        title: "Post Types",
+        description: "Content can be pings (text only) or visuals (image-based). Use pings for thoughts, stories, or updates. Use visuals for photography, art, or creative work.",
+        targetSelector: "#create-post-type-selector"
+    },
+    {
+        title: "Art vs Social",
+        description: "Every post can be marked as Art or Social. Art posts are treated as creative work and surface differently across the platform. Social posts are for conversation, updates, and interaction.",
+        targetSelector: "#create-post-role-toggle, #create-post-role-toggle-mobile"
+    },
+    {
+        title: "Tags & Search",
+        description: "Tags power Panospace’s search system. Tags determine where your post appears, who finds it, and what it’s associated with. Using accurate tags helps your work reach the right people.",
+        targetSelector: "#create-post-tags"
+    },
+    {
+        title: "Custom Tags",
+        description: "You can create custom tags if an exact match doesn’t exist. Custom tags help define new styles, projects, or ideas.",
+        targetSelector: "#create-post-tags"
+    },
+    {
+        title: "Humor Option",
+        description: "The Humor option lets you mark posts that are jokes, satire, or playful. This helps set expectations and keeps feeds balanced.",
+        targetSelector: "#create-post-humor-toggle, #create-post-humor-toggle-mobile"
+    },
+    {
+        title: "Film & Style Options",
+        description: "Panospace supports multiple post UI styles, including film‑inspired layouts. Choose the style that best fits your work.",
+        targetSelector: "#create-post-film-options"
+    },
+    {
+        title: "Launch Content",
+        description: "There’s no single ‘right’ way to create. Explore, experiment, and refine your style over time.",
+        targetSelector: "#create-post-publish-btn, #create-post-publish-btn-mobile"
+    }
+];
+
 const StackThumbnail = ({ file }) => {
     const [src, setSrc] = useState(null);
     useEffect(() => {
@@ -80,7 +119,7 @@ const StackThumbnail = ({ file }) => {
 };
 
 const CreatePost = () => {
-    const { currentUser } = useAuth();
+    const { currentUser, customClaims } = useAuth();
     const navigate = useNavigate();
     const { createPost, loading, error, progress } = useCreatePost();
     const { collections } = useCollections(currentUser?.uid);
@@ -90,6 +129,7 @@ const CreatePost = () => {
     const fileInputRef = useRef(null);
     const submittingRef = useRef(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [showWalkthrough, setShowWalkthrough] = useState(false);
 
     // Generate stars once and memoize them
     const stars = useMemo(() => {
@@ -270,6 +310,7 @@ const CreatePost = () => {
     const [sellerStatus, setSellerStatus] = useState('none');
 
     // Check if user is premium on mount
+    // Check if user is premium on mount
     useEffect(() => {
         const checkPremiumStatus = async () => {
             if (!currentUser?.uid) return;
@@ -277,7 +318,15 @@ const CreatePost = () => {
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
                     const data = userDoc.data();
-                    setUserIsPremium(data.isUltra || false);
+                    // Merge Auth context claims if available (or assume accessControl handles bypass via isTester on doc if manual, or local env)
+                    // Since canAccessFeature mainly needs the data doc + environment check:
+                    const { canAccessFeature, ACCESS_FEATURES: AF } = await import('@/core/utils/accessControl');
+
+                    // We treat "userIsPremium" as general access to premium features in this page (Uploads, Themes)
+                    const customClaims = currentUser.customClaims; // Assuming customClaims are available on currentUser
+                    const hasAccess = canAccessFeature(data, AF.PREMIUM_THEMES, customClaims) || canAccessFeature(data, AF.HIGH_QUALITY_UPLOADS, customClaims);
+
+                    setUserIsPremium(hasAccess);
                     setSellerStatus(data.sellerStatus || 'none');
                 }
             } catch (e) {
@@ -285,7 +334,7 @@ const CreatePost = () => {
             }
         };
         checkPremiumStatus();
-    }, [currentUser?.uid]);
+    }, [currentUser?.uid, currentUser?.customClaims]);
 
     // Toggle Handlers
     const handleSprocketToggle = (val) => {
@@ -659,7 +708,7 @@ const CreatePost = () => {
 
         if (postType === 'image' && slides.length === 0) {
             submittingRef.current = false;
-            return alert("Add at least one image");
+            return alert("Add at least one visual");
         }
 
         // 🛡️ MODERATION CHECK
@@ -705,7 +754,7 @@ const CreatePost = () => {
 
         if (postType === 'text' && !textContent.trim()) {
             submittingRef.current = false;
-            return alert("Text post body cannot be empty");
+            return alert("Ping body cannot be empty");
         }
 
         // Rate Limiting Check
@@ -728,7 +777,7 @@ const CreatePost = () => {
 
                     if (timeDiff < oneMinute) {
                         const remainingSeconds = Math.ceil((oneMinute - timeDiff) / 1000);
-                        alert(`Please wait ${remainingSeconds} seconds before posting again.`);
+                        alert(`Please wait ${remainingSeconds} seconds before launching again.`);
                         submittingRef.current = false;
                         return;
                     }
@@ -740,13 +789,13 @@ const CreatePost = () => {
         }
 
         try {
-            logger.log('🚀 Starting post creation...');
+            logger.log('🚀 Starting launch...');
             // Get collection's postToFeed setting if a collection is selected
             const selectedCollection = selectedCollectionId
                 ? collections.find(c => c.id === selectedCollectionId)
                 : null;
 
-            logger.log('📝 Processing slides...', slides.length);
+            logger.log('📝 Processing visual...', slides.length);
             // Apply shared title logic
             const processedSlides = shareTitleAcrossImages
                 ? slides.map(slide => ({ ...slide, title: title }))
@@ -864,16 +913,17 @@ const CreatePost = () => {
         if (loading) return { text: "Publishing...", disabled: true };
         if (postType === 'image') {
             if (slides.length === 0) {
-                return { text: 'Add Images', disabled: true };
+                return { text: 'Add Visuals', disabled: true };
             }
         } else {
             // Text mode
             if (!textContent.trim()) {
                 return { text: 'Write Something', disabled: true };
             }
+            return { text: "Ping", action: handleSubmit, disabled: false };
         }
         // Title no longer required
-        return { text: "Publish", action: handleSubmit, disabled: false };
+        return { text: "Launch Visual", action: handleSubmit, disabled: false };
     };
 
     // --- Stack Handler ---
@@ -996,7 +1046,14 @@ const CreatePost = () => {
     return (
         <div className="create-post-container">
             <PageHeader
-                title="CREATE POST"
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        CREATE
+                        <button onClick={() => setShowWalkthrough(true)} style={{ background: 'none', border: 'none', color: '#7FFFD4', cursor: 'pointer', opacity: 0.7, padding: 0, display: 'flex' }} title="Help">
+                            <FaQuestionCircle size={16} />
+                        </button>
+                    </div>
+                }
                 leftAction={
                     <button onClick={() => navigate(-1)} className="header-btn">
                         <FaTimes /> <span className="cancel-text">Cancel</span>
@@ -1004,6 +1061,7 @@ const CreatePost = () => {
                 }
                 rightAction={
                     <button
+                        id="create-post-publish-btn"
                         onClick={() => {
                             const state = getPublishButtonState();
                             if (!state.disabled && state.action) state.action();
@@ -1036,6 +1094,7 @@ const CreatePost = () => {
                 }}
                 disabled={getPublishButtonState().disabled}
                 className="mobile-publish-btn"
+                id="create-post-publish-btn-mobile"
             >
                 {loading ? `Uploading ${Math.round(progress)}%` : getPublishButtonState().text}
             </button>
@@ -1043,7 +1102,7 @@ const CreatePost = () => {
 
 
             {/* Format Selector */}
-            <div style={{
+            <div id="create-post-type-selector" style={{
                 display: 'flex',
                 justifyContent: 'center',
                 padding: '1rem 0 0.5rem',
@@ -1066,7 +1125,7 @@ const CreatePost = () => {
                         transition: 'all 0.2s'
                     }}
                 >
-                    <FaImages /> IMAGE POST
+                    <FaImages /> VISUAL
                 </button>
                 <button
                     onClick={() => setPostType('text')}
@@ -1085,7 +1144,7 @@ const CreatePost = () => {
                         transition: 'all 0.2s'
                     }}
                 >
-                    <FaAlignLeft /> TEXT POST
+                    <FaAlignLeft /> PING
                 </button>
             </div>
 
@@ -1184,7 +1243,7 @@ const CreatePost = () => {
                             </div>
 
                             {/* Tags (Below Colors) */}
-                            <div style={{ marginTop: '0.5rem' }}>
+                            <div id="create-post-tags" style={{ marginTop: '0.5rem' }}>
                                 <TagCategoryPanel
                                     tags={tags}
                                     handleTagToggle={handleTagToggle}
@@ -1205,7 +1264,7 @@ const CreatePost = () => {
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <input
                                             type="text"
-                                            placeholder="Title your post"
+                                            placeholder="Title your visual"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                             className="form-input"
@@ -1251,7 +1310,7 @@ const CreatePost = () => {
                                 </div>
 
                                 {/* Mobile Post Type Toggle */}
-                                <div className="post-type-toggle" style={{ display: 'flex', alignItems: 'center' }}>
+                                <div id="create-post-role-toggle-mobile" className="post-type-toggle" style={{ display: 'flex', alignItems: 'center' }}>
                                     <button
                                         type="button"
                                         onClick={() => setPrimaryMode("art")}
@@ -1300,7 +1359,7 @@ const CreatePost = () => {
                                         Social
                                     </button>
                                     {/* Humor Checkbox (Mobile) */}
-                                    <label title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888' }}>
+                                    <label id="create-post-humor-toggle-mobile" title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888' }}>
                                         <input
                                             type="checkbox"
                                             checked={isHumor}
@@ -1536,7 +1595,7 @@ const CreatePost = () => {
                             {/* 2. Tags & Categories (Moved to Left) */}
                             {/* 2. Tags & Categories (Moved to Left) - Collapsible on Mobile */}
                             {/* 2. Tags & Categories */}
-                            <div style={{ marginTop: '1rem' }}>
+                            <div id="create-post-tags" style={{ marginTop: '1rem' }}>
                                 <TagCategoryPanel
                                     tags={tags}
                                     handleTagToggle={handleTagToggle}
@@ -1613,7 +1672,7 @@ const CreatePost = () => {
                         {/* Post Type Toggle */}
                         {/* Post Type Toggle */}
                         {postType !== 'text' && (
-                            <div className="post-type-toggle desktop-only-post-type" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                            <div id="create-post-role-toggle" className="post-type-toggle desktop-only-post-type" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
                                 <span style={{ marginRight: '0.75rem', fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa' }}>
                                     POST TYPE:
                                 </span>
@@ -1665,7 +1724,7 @@ const CreatePost = () => {
                                     Social
                                 </button>
                                 {/* Humor Checkbox (Desktop) */}
-                                <label title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                <label id="create-post-humor-toggle" title="Memes, jokes, or comedic content" style={{ display: 'flex', alignItems: 'center', marginLeft: 'auto', gap: '0.4rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600', color: isHumor ? '#7FFFD4' : '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     <input
                                         type="checkbox"
                                         checked={isHumor}
@@ -1991,24 +2050,26 @@ const CreatePost = () => {
 
                     {/* Film Options Panel (Image Mode Only) */}
                     {postType === 'image' && (
-                        <FilmOptionsPanel
-                            filmMetadata={filmMetadata}
-                            setFilmMetadata={setFilmMetadata}
-                            enableQuartzDate={enableQuartzDate}
-                            setEnableQuartzDate={setEnableQuartzDate}
-                            quartzDateString={quartzDateString}
-                            setQuartzDateString={setQuartzDateString}
-                            quartzColor={quartzColor}
-                            setQuartzColor={setQuartzColor}
-                            quartzDateFormat={quartzDateFormat}
-                            setQuartzDateFormat={setQuartzDateFormat}
-                            enableSprocketOverlay={enableSprocketOverlay}
-                            setEnableSprocketOverlay={handleSprocketToggle}
-                            enableInstantPhotoOverlay={enableInstantPhotoOverlay}
-                            setEnableInstantPhotoOverlay={handleInstantPhotoToggle}
-                            instantPhotoStyle={instantPhotoStyle}
-                            setInstantPhotoStyle={setInstantPhotoStyle}
-                        />
+                        <div id="create-post-film-options">
+                            <FilmOptionsPanel
+                                filmMetadata={filmMetadata}
+                                setFilmMetadata={setFilmMetadata}
+                                enableQuartzDate={enableQuartzDate}
+                                setEnableQuartzDate={setEnableQuartzDate}
+                                quartzDateString={quartzDateString}
+                                setQuartzDateString={setQuartzDateString}
+                                quartzColor={quartzColor}
+                                setQuartzColor={setQuartzColor}
+                                quartzDateFormat={quartzDateFormat}
+                                setQuartzDateFormat={setQuartzDateFormat}
+                                enableSprocketOverlay={enableSprocketOverlay}
+                                setEnableSprocketOverlay={handleSprocketToggle}
+                                enableInstantPhotoOverlay={enableInstantPhotoOverlay}
+                                setEnableInstantPhotoOverlay={handleInstantPhotoToggle}
+                                instantPhotoStyle={instantPhotoStyle}
+                                setInstantPhotoStyle={setInstantPhotoStyle}
+                            />
+                        </div>
                     )}
                     {/* Rating System Toggle */}
                     <RatingSystemSelector
@@ -2107,6 +2168,14 @@ const CreatePost = () => {
                     ))
                 }
             </div>
+
+            <Walkthrough
+                steps={createPostOnboardingSteps}
+                onboardingKey="createPostSeen"
+                forceShow={showWalkthrough}
+                onClose={() => setShowWalkthrough(false)}
+            />
+            {/* Removed internal style block for twinkle to avoid duplicates if declared elsewhere, but kept container */}
 
             {/* FEED PREVIEW OVERLAY */}
             {

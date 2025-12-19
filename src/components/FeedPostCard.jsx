@@ -199,7 +199,7 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
             {post.linkedPostIds && post.linkedPostIds.length > 0 && (
                 <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', opacity: 0.8, color: theme.text === '#ffffff' ? '#7FFFD4' : 'inherit', flexShrink: 0 }}>
                     <FaLink size={12} />
-                    <span>{post.linkedPostIds.length} Linked Post{post.linkedPostIds.length > 1 ? 's' : ''}</span>
+                    <span>{post.linkedPostIds.length} Linked Ping{post.linkedPostIds.length > 1 ? 's' : ''}</span>
                 </div>
             )}
         </div>
