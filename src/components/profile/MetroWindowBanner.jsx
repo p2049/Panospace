@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useState } from 'react';
 
 const BRAND = {
     deepOrbit: '#5A3FFF',
@@ -211,10 +211,46 @@ const MetroWindowBanner = ({ variant = 'metro_tunnel' }) => {
     const [time, setTime] = React.useState(0);
     const [worldX, setWorldX] = React.useState(0);
 
+    const containerRef = useRef(null);
+    const [isVisible, setIsVisible] = useState(false); // Default to false to avoid initial heavy load if low down
+    const isVisibleRef = useRef(false); // Ref for loop access
+
     useEffect(() => {
-        let frame; let lastTime = Date.now();
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting);
+                isVisibleRef.current = entry.isIntersecting;
+            },
+            { threshold: 0.1 } // Start when 10% visible
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        // Respect reduced motion
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) return;
+
+        let frame;
+        let lastTime = Date.now();
+
         const loop = () => {
-            const now = Date.now(); const dt = (now - lastTime) * 0.001; lastTime = now;
+            if (!isVisibleRef.current) {
+                // If not visible, check again in 500ms instead of 16ms to save battery (simple throttle)
+                // Actually, logic is cleaner if we just stop the loop and restart in useEffect when isVisible changes.
+                // But since we are here, let's just use the boolean state dependency to start/stop.
+                return;
+            }
+
+            const now = Date.now();
+            const dt = Math.min((now - lastTime) * 0.001, 0.1); // Cap dt to prevent huge jumps
+            lastTime = now;
+
             setTime(t => t + dt);
             setWorldX(prevX => {
                 const lx = prevX % WORLD_LENGTH;
@@ -226,9 +262,14 @@ const MetroWindowBanner = ({ variant = 'metro_tunnel' }) => {
             });
             frame = requestAnimationFrame(loop);
         };
-        loop();
+
+        if (isVisible) {
+            lastTime = Date.now(); // Reset time to avoid jump
+            loop();
+        }
+
         return () => cancelAnimationFrame(frame);
-    }, []);
+    }, [isVisible]); // Re-run when visibility changes
 
     const lx = worldX % WORLD_LENGTH;
     let cabinBloom = p.accent;
@@ -239,10 +280,11 @@ const MetroWindowBanner = ({ variant = 'metro_tunnel' }) => {
     const windowOffsets = [0, 8, 16, 24, 60, 68, 76, 84];
 
     return (
-        <div style={{
+        <div ref={containerRef} style={{
             position: 'absolute', inset: 0, background: '#050505',
             backgroundImage: `linear-gradient(to bottom, #111, #050505 50%, #111), radial-gradient(circle at 50% 130%, ${cabinBloom}, transparent 80%)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', gap: '4%'
+            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', gap: '4%',
+            willChange: 'contents'
         }}>
             <div style={{ position: 'absolute', top: '22%', left: 0, right: 0, height: '3px', background: 'linear-gradient(to bottom, #111, #444, #000)', opacity: 0.5, zIndex: 10 }} />
             <div style={{ display: 'flex', gap: '12px', height: '62%', width: '44%' }}>

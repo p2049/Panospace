@@ -270,14 +270,23 @@ const Profile = () => {
         return () => resetProfileAccent();
     }, [effectiveUsernameColor, setProfileAccent, resetProfileAccent, user, loading]);
 
-    if (loading) return <div className="ps-loading">Loading...</div>;
+    if (loading) return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+            <div className="ps-loading">Initializing Profile...</div>
+        </div>
+    );
 
-    if (!user) {
+    if (!user && !loading) {
         return (
-            <div className="ps-loading-column">
+            <div className="ps-loading-column" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', color: '#fff' }}>
                 <SEO title="User Not Found" />
-                <h2>User not found</h2>
-                <button onClick={() => navigate('/')} style={{ padding: '0.5rem 1rem', background: '#333', color: '#fff', border: 'none', borderRadius: '4px' }}>Go Home</button>
+                <StarBackground />
+                <h2 style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--ice-mint)' }}>Cosmic Signal Lost</h2>
+                <p style={{ opacity: 0.7, marginBottom: '2rem' }}>We couldn't locate this explorer in the Panospace database.</p>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button onClick={() => navigate('/')} style={{ padding: '0.75rem 1.5rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer' }}>Return to Orbit</button>
+                    <button onClick={() => window.location.reload()} style={{ padding: '0.75rem 1.5rem', background: 'var(--ice-mint)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Retry Signal</button>
+                </div>
             </div>
         );
     }
@@ -428,13 +437,13 @@ const Profile = () => {
                             color: (effectiveUsernameColor && !effectiveUsernameColor.includes('gradient'))
                                 ? effectiveUsernameColor
                                 : '#FFFFFF',
-                            textShadow: user.profileTheme?.textGlow
+                            textShadow: user?.profileTheme?.textGlow
                                 ? `0 0 12px ${solidPlanetColor}80, 0 0 24px ${solidPlanetColor}40`
                                 : '0 0 30px rgba(0,0,0,0.5)',
                             wordBreak: 'break-word',
                             textAlign: 'center' // Explicitly center text
                         }}>
-                            {renderCosmicUsername(user.username, user.profileTheme?.borderColor, user.profileTheme?.textGlow)}
+                            {renderCosmicUsername(user?.username || 'ANONYMOUS', user?.profileTheme?.borderColor, user?.profileTheme?.textGlow)}
                         </h1>
 
                     </div>
@@ -700,6 +709,31 @@ const Profile = () => {
                                         </div>
 
                                         {/* Actions Section */}
+                                        {!isOwnProfile && (
+                                            <div style={{ marginTop: '0.5rem', paddingTop: '0.8rem', borderTop: '1px solid rgba(127, 255, 212, 0.15)' }}>
+                                                <button
+                                                    onClick={() => { setShowCommissionModal(true); setShowProfilePopout(false); }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.6rem',
+                                                        background: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? `${user.profileTheme.usernameColor}22` : 'rgba(127, 255, 212, 0.1)',
+                                                        border: `1px solid ${user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)'}`,
+                                                        color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: '700',
+                                                        cursor: 'pointer',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.1em',
+                                                        fontFamily: 'var(--font-family-heading)',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    Commission
+                                                </button>
+                                            </div>
+                                        )}
+
                                         {(isAdmin || isGodMode) && !isOwnProfile && (
                                             <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,0,0,0.2)' }}>
                                                 <button

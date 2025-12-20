@@ -2,50 +2,50 @@ import React from 'react';
 
 
 
-import CityscapeBanner from './CityscapeBanner';
-import OceanBanner from './OceanBanner';
-import EarthBanner from './EarthBanner';
-import DreamworldBanner from './DreamworldBanner';
-import AbsoluteAbstractBanner from './AbsoluteAbstractBanner';
-import GenesisAbstractBanner from './GenesisAbstractBanner';
-import SingularityBanner from './SingularityBanner';
-import BlackMirrorBanner from './BlackMirrorBanner';
-import PinballBanner from './PinballBanner';
-import BlackHoleBanner from './BlackHoleBanner';
-import SingularityCityBanner from './SingularityCityBanner';
-import NebulaBanner from './NebulaBanner';
-import GalaxyBanner from './GalaxyBanner';
-import AetherGateBanner from './AetherGateBanner';
-import SeraphimBanner from './SeraphimBanner';
-import OmegasphereBanner from './OmegasphereBanner';
-import InfiniteBanner from './InfiniteBanner';
-import AscendantBanner from './AscendantBanner';
-import ApexBanner from './ApexBanner';
-import ParadoxBanner from './ParadoxBanner';
-import SpectrumBanner from './OpusBanner';
-import FluxBanner from './FluxBanner';
-import EtherBanner from './EtherBanner';
-import ResonanceBanner from './ResonanceBanner';
-import InterferenceBanner from './InterferenceBanner';
-import OmniscienceBanner from './OmniscienceBanner';
-import AbsoluteBanner from './AbsoluteBanner';
-import StaticSystemBanners from './SystemAbstractBanners';
-import BannerOverlayRenderer from './BannerOverlayRenderer';
-import TrainWindowBanner from './TrainWindowBanner';
-import ShuttleWindowBanner from './ShuttleWindowBanner';
-import PlaneWindowBanner from './PlaneWindowBanner';
-import MetroWindowBanner from './MetroWindowBanner';
-import PulseBanner from './PulseBanner';
-import OmegaBorealis from './OmegaBorealis';
-import ElysiumBanner from './ElysiumBanner';
-import AetherBanner from './AetherBanner';
-import GlobeBanner from './GlobeBanner';
-import IsoWaveBanner from './IsoWaveBanner';
-import MarmorisBanner from './MarmorisBanner';
-import WaveGridBanner from './WaveGridBanner';
-import AuroraBanner from './AuroraBanner';
-import NorthernLightsBanner from './NorthernLightsBanner';
-import TechnicolorTechBanner from './TechnicolorTechBanner';
+const CityscapeBanner = React.lazy(() => import('./CityscapeBanner'));
+const OceanBanner = React.lazy(() => import('./OceanBanner'));
+const EarthBanner = React.lazy(() => import('./EarthBanner'));
+const DreamworldBanner = React.lazy(() => import('./DreamworldBanner'));
+const AbsoluteAbstractBanner = React.lazy(() => import('./AbsoluteAbstractBanner'));
+const GenesisAbstractBanner = React.lazy(() => import('./GenesisAbstractBanner'));
+const SingularityBanner = React.lazy(() => import('./SingularityBanner'));
+const BlackMirrorBanner = React.lazy(() => import('./BlackMirrorBanner'));
+const PinballBanner = React.lazy(() => import('./PinballBanner'));
+const BlackHoleBanner = React.lazy(() => import('./BlackHoleBanner'));
+const SingularityCityBanner = React.lazy(() => import('./SingularityCityBanner'));
+const NebulaBanner = React.lazy(() => import('./NebulaBanner'));
+const GalaxyBanner = React.lazy(() => import('./GalaxyBanner'));
+const AetherGateBanner = React.lazy(() => import('./AetherGateBanner'));
+const SeraphimBanner = React.lazy(() => import('./SeraphimBanner'));
+const OmegasphereBanner = React.lazy(() => import('./OmegasphereBanner'));
+const InfiniteBanner = React.lazy(() => import('./InfiniteBanner'));
+const AscendantBanner = React.lazy(() => import('./AscendantBanner'));
+const ApexBanner = React.lazy(() => import('./ApexBanner'));
+const ParadoxBanner = React.lazy(() => import('./ParadoxBanner'));
+const SpectrumBanner = React.lazy(() => import('./OpusBanner'));
+const FluxBanner = React.lazy(() => import('./FluxBanner'));
+const EtherBanner = React.lazy(() => import('./EtherBanner'));
+const ResonanceBanner = React.lazy(() => import('./ResonanceBanner'));
+const InterferenceBanner = React.lazy(() => import('./InterferenceBanner'));
+const OmniscienceBanner = React.lazy(() => import('./OmniscienceBanner'));
+const AbsoluteBanner = React.lazy(() => import('./AbsoluteBanner'));
+const StaticSystemBanners = React.lazy(() => import('./SystemAbstractBanners'));
+const BannerOverlayRenderer = React.lazy(() => (import('./BannerOverlayRenderer')));
+const TrainWindowBanner = React.lazy(() => import('./TrainWindowBanner'));
+const ShuttleWindowBanner = React.lazy(() => import('./ShuttleWindowBanner'));
+const PlaneWindowBanner = React.lazy(() => import('./PlaneWindowBanner'));
+const MetroWindowBanner = React.lazy(() => import('./MetroWindowBanner'));
+const PulseBanner = React.lazy(() => import('./PulseBanner'));
+const OmegaBorealis = React.lazy(() => import('./OmegaBorealis'));
+const ElysiumBanner = React.lazy(() => import('./ElysiumBanner'));
+const AetherBanner = React.lazy(() => import('./AetherBanner'));
+const GlobeBanner = React.lazy(() => import('./GlobeBanner'));
+const IsoWaveBanner = React.lazy(() => import('./IsoWaveBanner'));
+const MarmorisBanner = React.lazy(() => import('./MarmorisBanner'));
+const WaveGridBanner = React.lazy(() => import('./WaveGridBanner'));
+const AuroraBanner = React.lazy(() => import('./AuroraBanner'));
+const NorthernLightsBanner = React.lazy(() => import('./NorthernLightsBanner'));
+const TechnicolorTechBanner = React.lazy(() => import('./TechnicolorTechBanner'));
 
 const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
     const overlayStyle = {
@@ -1308,9 +1308,14 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
     };
 
     return (
-        <BannerOverlayRenderer overlays={overlays}>
-            {renderContent()}
-        </BannerOverlayRenderer>
+        <React.Suspense fallback={<div style={{ width: '100%', height: '100%', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '40px', height: '40px', border: '2px solid rgba(127, 255, 212, 0.1)', borderTopColor: '#7FFFD4', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>}>
+            <BannerOverlayRenderer overlays={overlays}>
+                {renderContent()}
+            </BannerOverlayRenderer>
+        </React.Suspense>
     );
 };
 

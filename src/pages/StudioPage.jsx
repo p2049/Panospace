@@ -158,14 +158,22 @@ const StudioPage = () => {
     };
 
     if (loading) {
-        return <PageSkeleton />;
+        return (
+            <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <PageSkeleton />
+            </div>
+        );
     }
 
-    if (!studio) {
+    if (!studio && !loading) {
         return (
-            <div className="gallery-error">
-                <h2>Studio Not Found</h2>
-                <button onClick={() => navigate('/')}>Go Home</button>
+            <div className="gallery-error" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#000', color: '#fff' }}>
+                <h2 style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--ice-mint)' }}>Studio Not Found</h2>
+                <p style={{ opacity: 0.7, marginBottom: '2rem' }}>This creative hub seems to have vanished into a black hole.</p>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button onClick={() => navigate('/')} style={{ padding: '0.75rem 1.5rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer' }}>Return to Home</button>
+                    <button onClick={() => navigate('/search?mode=studios')} style={{ padding: '0.75rem 1.5rem', background: 'var(--ice-mint)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Browse Studios</button>
+                </div>
             </div>
         );
     }

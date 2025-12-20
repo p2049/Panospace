@@ -173,53 +173,97 @@ const Feed = () => {
             {visiblePosts.length === 0 && <StarBackground />}
 
             {/* Planet Logo - Top Left (avoiding Dynamic Island) */}
-            <div style={{
-                position: 'absolute',
-                top: 'max(0.75rem, env(safe-area-inset-top))',
-                left: '1rem',
-                zIndex: 50,
-                pointerEvents: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                height: '40px',
-            }}>
-                <svg
-                    width="40"
-                    height="40"
-                    viewBox="-5 -5 34 34"
-                    onClick={() => {
-                        const newMode = feedViewMode === 'image' ? 'list' : 'image';
-                        setFeedViewMode(newMode);
-                        showToast(`Switched to ${newMode === 'image' ? 'Visual Feed' : 'List View'}`);
-                    }}
-                    style={{
-                        flexShrink: 0,
-                        filter: `drop-shadow(0 0 8px ${glowColorStrong})`,
-                        cursor: 'pointer',
-                        overflow: 'visible',
-                        transition: 'filter 0.2s ease'
-                    }}
-                    title="Switch View"
-                >
-                    <defs>
-                        <radialGradient id="planetGradient" cx="40%" cy="40%">
-                            <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
-                            <stop offset="100%" style={{ stopColor: secondaryColor, stopOpacity: 1 }} />
-                        </radialGradient>
-                        <filter id="planetGlow" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                            <feMerge>
-                                <feMergeNode in="coloredBlur" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                    </defs>
-                    <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
-                    <circle cx="12" cy="12" r="7" fill="url(#planetGradient)" opacity="0.95" filter="url(#planetGlow)" />
-                    <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
-                    <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
-                </svg>
+            {/* Planet Logo / View Toggle - Top Left */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 'max(0.75rem, env(safe-area-inset-top))',
+                    left: '1rem',
+                    zIndex: 50,
+                    pointerEvents: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.8rem',
+                    height: '40px',
+                    cursor: 'pointer',
+                    // Background removed for cleaner look
+                    background: 'transparent',
+                    backdropFilter: 'none',
+                    padding: '4px 12px 4px 4px',
+                    borderRadius: '0',
+                    border: 'none',
+                    transition: 'all 0.3s ease'
+                }}
+                onClick={() => {
+                    const newMode = feedViewMode === 'image' ? 'list' : 'image';
+                    setFeedViewMode(newMode);
+                    showToast(`Switched to ${newMode === 'image' ? 'Visual Feed' : 'List View'}`);
+                }}
+                onMouseEnter={(e) => {
+                    // No background hover effect needed
+                }}
+                onMouseLeave={(e) => {
+                    // No background hover effect needed
+                }}
+            >
+                <div style={{ position: 'relative', width: '32px', height: '32px', top: '-6px' }}>
+                    <svg
+                        width="32"
+                        height="32"
+                        viewBox="-5 -5 34 34"
+                        style={{
+                            filter: `drop-shadow(0 0 8px ${glowColorStrong})`,
+                            overflow: 'visible',
+                            transition: 'filter 0.2s ease'
+                        }}
+                    >
+                        <defs>
+                            <radialGradient id="planetGradient" cx="40%" cy="40%">
+                                <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
+                                <stop offset="100%" style={{ stopColor: secondaryColor, stopOpacity: 1 }} />
+                            </radialGradient>
+                            <filter id="planetGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
+                        <circle cx="12" cy="12" r="7" fill="url(#planetGradient)" opacity="0.95" filter="url(#planetGlow)" />
+                        <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
+                        <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
+                    </svg>
+                </div>
+
+                <div style={{ position: 'absolute', top: '-10px', left: '0', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                    <span style={{
+                        fontSize: '0.55rem',
+                        color: accentColor,
+                        letterSpacing: '0.1em',
+                        fontWeight: '700',
+                        fontFamily: "'Orbitron', sans-serif",
+                        textShadow: `0 0 5px ${accentColor}`
+                    }}>
+                        PANOSPACE
+                    </span>
+                    <span style={{
+                        display: 'inline-block',
+                        fontSize: '0.55rem',
+                        background: 'repeating-linear-gradient(to bottom, rgba(127, 255, 212, 1) 0px, rgba(127, 255, 212, 1) 1px, rgba(127, 255, 212, 0.6) 1px, rgba(127, 255, 212, 0.6) 2px)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        color: 'transparent',
+                        filter: 'drop-shadow(0 0 2px rgba(127, 255, 212, 0.5))',
+                        letterSpacing: '0.1em',
+                        fontWeight: '700',
+                        fontFamily: "'Orbitron', sans-serif"
+                    }}>
+                        {feedViewMode === 'image' ? 'VISUAL' : 'LIST'}
+                    </span>
+                </div>
             </div>
 
             {

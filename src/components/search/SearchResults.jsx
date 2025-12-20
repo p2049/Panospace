@@ -33,7 +33,8 @@ const SearchResults = ({
     setSelectedOrientation,
     setSelectedAspectRatio,
     sortBy,
-    isMarketplaceMode // NEW
+    isMarketplaceMode, // NEW
+    fallbackResults
 }) => {
     // Calculate if current mode has no results
     const isEmpty = !isSearching && hasSearched && (
@@ -266,6 +267,44 @@ const SearchResults = ({
                             Explore PanoSpace
                         </PSButton>
                     </div>
+
+                    {/* Fallback / Trending Content */}
+                    {fallbackResults && fallbackResults.length > 0 && (
+                        <div style={{ width: '100%', marginTop: '3rem', position: 'relative', zIndex: 1 }}>
+                            <div style={{
+                                margin: '0 0 1rem 0',
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem'
+                            }}>
+                                <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, transparent, rgba(127, 255, 212, 0.3))' }} />
+                                <span style={{ color: '#7FFFD4', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                    Or check these out
+                                </span>
+                                <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to left, transparent, rgba(127, 255, 212, 0.3))' }} />
+                            </div>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: isMobile
+                                    ? 'repeat(auto-fill, minmax(140px, 1fr))'
+                                    : 'repeat(auto-fill, minmax(240px, 1fr))',
+                                gap: isMobile ? '0.75rem' : '1rem',
+                                width: '100%'
+                            }}>
+                                {fallbackResults.map(post => (
+                                    <GridPostCard
+                                        key={post.id}
+                                        post={post}
+                                        contextPosts={fallbackResults}
+                                        selectedOrientation={selectedOrientation}
+                                        selectedAspectRatio={selectedAspectRatio}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )
             }

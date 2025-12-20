@@ -36,8 +36,11 @@ import {
     FaUserFriends,
     FaPalette,
     FaGlobe,
-    FaShoppingBag
+    FaShoppingBag,
+    FaShoppingCart,
+    FaTimes
 } from 'react-icons/fa';
+import { useCart } from '@/context/CartContext';
 
 // Mobile Navigation / Hamburger Menu
 const MobileNavigation = () => {
@@ -75,6 +78,7 @@ const MobileNavigation = () => {
     const [showNotifications, setShowNotifications] = useState(false); // Notifications Popup State
     const [unreadNotifications, setUnreadNotifications] = useState(0); // Notification count
     const { feeds } = useCustomFeeds();
+    const { cartCount, toggleCart } = useCart();
     const inactivityTimerRef = useRef(null);
 
     // Mobile Vertical Detection
@@ -439,80 +443,80 @@ const MobileNavigation = () => {
                 </div>
             )}
 
+
+
             {/* Hamburger Button */}
             <div
                 className="mobile-nav-hamburger"
                 style={{
                     position: 'fixed',
                     top: 'max(0.75rem, env(safe-area-inset-top))',
-                    right: '1rem',
-                    zIndex: 1000000,
+                    right: '1.25rem',
+                    zIndex: 1000001,
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    // Glass Effect
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    width: '44px',
-                    height: '44px',
-                    minWidth: '44px',
-                    minHeight: '44px',
+                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                    // Removed rotation to keep square shape stable
+                    background: isOpen ? 'transparent' : 'rgba(0, 0, 0, 0.3)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: isOpen ? 'none' : '1px solid rgba(255, 255, 255, 0.1)',
+                    width: '36px', // Slightly larger for touch target on square
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: '12px',
+                    borderRadius: '12px', // Rounded Square
                     outline: 'none',
                     pointerEvents: 'auto',
                     touchAction: 'manipulation',
-                    WebkitTapHighlightColor: 'transparent',
-                    isolation: 'isolate',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                    boxShadow: isOpen
+                        ? 'none'
+                        : '0 4px 12px rgba(0, 0, 0, 0.2)'
                 }}
-                onClick={() => { setIsOpen(!isOpen); handleInteraction(); }}
-                role="button"
-                aria-label={isOpen ? "Close menu" : "Open menu"}
-                aria-expanded={isOpen}
-                tabIndex={0}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                    const dot = e.currentTarget.querySelector('.menu-dot');
-                    if (dot) {
-                        dot.style.boxShadow = '0 0 12px var(--ice-mint)';
-                        dot.style.opacity = '1';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                    const dot = e.currentTarget.querySelector('.menu-dot');
-                    if (dot) {
-                        dot.style.boxShadow = '0 0 6px var(--ice-mint)';
-                        dot.style.opacity = '0.9';
-                    }
-                }}
+                onClick={() => setIsOpen(!isOpen)}
             >
-                {isOpen ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.8 }}>
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                ) : (
-                    // System Control Dot
-                    <div
-                        className="menu-dot"
-                        style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: 'var(--ice-mint)',
-                            boxShadow: '0 0 6px var(--ice-mint)',
-                            opacity: 0.9,
-                            transition: 'all 0.3s ease'
-                        }}
-                    />
+                {/* Tiny Menu Label Above */}
+                {!isOpen && (
+                    <span style={{
+                        position: 'absolute',
+                        top: '-13px',
+                        display: 'inline-block',
+                        fontSize: '0.55rem',
+                        background: 'repeating-linear-gradient(to bottom, rgba(127, 255, 212, 1) 0px, rgba(127, 255, 212, 1) 1px, rgba(127, 255, 212, 0.6) 1px, rgba(127, 255, 212, 0.6) 2px)',
+                        WebkitBackgroundClip: 'text',
+                        backgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        color: 'transparent',
+                        filter: 'drop-shadow(0 0 2px rgba(127, 255, 212, 0.5))',
+                        letterSpacing: '0.1em',
+                        fontWeight: '700',
+                        fontFamily: "'Orbitron', sans-serif",
+                        pointerEvents: 'none'
+                    }}>
+                        MENU
+                    </span>
                 )}
+
+                {isOpen ? (
+                    <FaTimes size={20} color={accentColor} style={{ filter: `drop-shadow(0 0 8px ${accentColor})` }} />
+                ) : (
+                    <div style={{
+                        width: '8px',
+                        height: '8px',
+                        background: accentColor,
+                        borderRadius: '50%',
+                        boxShadow: `0 0 10px ${accentColor}`,
+                        animation: 'pulse-glow 2s infinite'
+                    }} />
+                )}
+
+                <style>{`
+                    @keyframes pulse-glow {
+                        0% { box-shadow: 0 0 4px ${accentColor}; opacity: 0.85; }
+                        50% { box-shadow: 0 0 8px ${accentColor}; opacity: 1; }
+                        100% { box-shadow: 0 0 4px ${accentColor}; opacity: 0.85; }
+                    }
+                `}</style>
             </div>
 
             {/* Menu Drawer */}
@@ -842,6 +846,94 @@ const MobileNavigation = () => {
                         pointerEvents: 'none'
                     }} />
 
+                    {/* Cart - High Priority at Station */}
+                    <button
+                        onClick={() => handleNavClick('/cart')}
+                        className="station-hologram-btn"
+                        style={{
+                            position: 'relative',
+                            padding: '0.75rem',
+                            borderRadius: '4px',
+                            border: `1px solid ${cartCount > 0 ? accentColor : 'rgba(127, 255, 212, 0.15)'}`,
+                            background: 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))',
+                            color: '#fff',
+                            textAlign: 'left',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: cartCount > 0 ? `inset 0 0 15px ${accentColor}20` : 'inset 0 0 20px rgba(0, 0, 0, 0.8)',
+                            overflow: 'hidden'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = accentColor;
+                            e.currentTarget.style.background = `linear-gradient(90deg, ${accentColor}10, rgba(10, 10, 10, 0.95))`;
+                            e.currentTarget.style.boxShadow = `inset 4px 0 0 ${accentColor}, 0 0 15px ${accentColor}20`;
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = cartCount > 0 ? accentColor : 'rgba(127, 255, 212, 0.15)';
+                            e.currentTarget.style.background = 'linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(10, 10, 10, 0.95))';
+                            e.currentTarget.style.boxShadow = cartCount > 0 ? `inset 0 0 15px ${accentColor}20` : 'inset 0 0 20px rgba(0, 0, 0, 0.8)';
+                        }}
+                    >
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '4px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${accentColor}40`,
+                            position: 'relative'
+                        }}>
+                            <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '4px', height: '4px', borderTop: `1px solid ${accentColor}`, borderLeft: `1px solid ${accentColor}` }}></div>
+                            <div style={{ position: 'absolute', bottom: '-1px', right: '-1px', width: '4px', height: '4px', borderBottom: `1px solid ${accentColor}`, borderRight: `1px solid ${accentColor}` }}></div>
+                            <FaShoppingCart size={14} color={accentColor} style={{ filter: `drop-shadow(0 0 4px ${accentColor})` }} />
+
+                            {cartCount > 0 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '-4px',
+                                    right: '-4px',
+                                    background: accentColor,
+                                    color: '#000',
+                                    fontSize: '0.6rem',
+                                    fontWeight: '900',
+                                    width: '14px',
+                                    height: '14px',
+                                    borderRadius: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: `0 0 8px ${accentColor}`,
+                                    fontFamily: "'Orbitron', sans-serif"
+                                }}>
+                                    {cartCount}
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <div style={{
+                                fontWeight: '700',
+                                fontFamily: "'Orbitron', sans-serif",
+                                letterSpacing: '0.05em',
+                                fontSize: '0.95rem',
+                                textTransform: 'uppercase',
+                                color: cartCount > 0 ? accentColor : '#fff'
+                            }}>Cart</div>
+                            <div style={{
+                                fontSize: '0.7rem',
+                                color: '#aaa',
+                                fontFamily: "'Rajdhani', sans-serif",
+                                letterSpacing: '0.02em',
+                                marginTop: '2px'
+                            }}>{cartCount > 0 ? `${cartCount} items ready` : 'Inventory empty'}</div>
+                        </div>
+                    </button>
+
                     {/* Market */}
                     <button
                         onClick={() => handleNavClick('/marketplace')}
@@ -1095,6 +1187,7 @@ const MobileNavigation = () => {
                             }}>Curated feeds & contests</div>
                         </div>
                     </button>
+
 
                     {/* Notifications */}
                     <button
@@ -1473,41 +1566,65 @@ const MobileNavigation = () => {
                     paddingTop: '0.5rem',
                     marginTop: '1.5rem' // Ensure clearance from header buttons
                 }}>
-                    <div onClick={() => handleNavClick('/')} style={{ ...navItemStyle, color: location.pathname === '/' ? '#7FFFD4' : '#fff' }}>
-                        <FaHome color="#7FFFD4" size={20} />
+                    <div onClick={() => handleNavClick('/')} style={{
+                        ...navItemStyle,
+                        color: location.pathname === '/' ? accentColor : '#fff',
+                        background: location.pathname === '/' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                        borderLeft: location.pathname === '/' ? `2px solid ${accentColor}` : '2px solid transparent'
+                    }}>
+                        {location.pathname === '/' && (
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, boxShadow: `0 0 8px ${accentColor}`, marginRight: '4px' }} />
+                        )}
+                        <FaHome color={location.pathname === '/' ? accentColor : '#aaa'} size={20} />
                         {t('nav.home')}
                     </div>
 
-                    <div onClick={() => handleNavClick('/search')} style={{ ...navItemStyle, color: location.pathname === '/search' ? '#7FFFD4' : '#fff' }}>
-                        <FaSearch color="#7FFFD4" size={20} />
+                    <div onClick={() => handleNavClick('/search')} style={{
+                        ...navItemStyle,
+                        color: location.pathname === '/search' ? accentColor : '#fff',
+                        background: location.pathname === '/search' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                        borderLeft: location.pathname === '/search' ? `2px solid ${accentColor}` : '2px solid transparent'
+                    }}>
+                        {location.pathname === '/search' && (
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, boxShadow: `0 0 8px ${accentColor}`, marginRight: '4px' }} />
+                        )}
+                        <FaSearch color={location.pathname === '/search' ? accentColor : '#aaa'} size={20} />
                         {t('nav.search')}
                     </div>
 
-                    <div onClick={() => handleNavClick('/profile/me')} style={{ ...navItemStyle, color: location.pathname.startsWith('/profile') ? '#7FFFD4' : '#fff' }}>
+                    <div onClick={() => handleNavClick('/profile/me')} style={{
+                        ...navItemStyle,
+                        color: location.pathname.startsWith('/profile') ? accentColor : '#fff',
+                        background: location.pathname.startsWith('/profile') ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                        borderLeft: location.pathname.startsWith('/profile') ? `2px solid ${accentColor}` : '2px solid transparent'
+                    }}>
+                        {location.pathname.startsWith('/profile') && (
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, boxShadow: `0 0 8px ${accentColor}`, marginRight: '4px' }} />
+                        )}
                         {currentUser?.photoURL ? (
                             <img
                                 src={currentUser.photoURL}
                                 alt="Profile"
                                 style={{
-                                    width: '28px',
-                                    height: '28px',
-                                    borderRadius: '8px',
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '6px',
                                     objectFit: 'cover',
-                                    border: `1px solid ${location.pathname.startsWith('/profile') ? '#7FFFD4' : 'rgba(255,255,255,0.2)'}`
+                                    border: `1px solid ${location.pathname.startsWith('/profile') ? accentColor : 'rgba(255,255,255,0.2)'}`
                                 }}
                             />
                         ) : (
                             <div style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '8px',
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '6px',
                                 background: 'rgba(0,0,0,0.3)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: `1px solid ${location.pathname.startsWith('/profile') ? '#7FFFD4' : 'rgba(255,255,255,0.2)'}`
+                                border: `1px solid ${location.pathname.startsWith('/profile') ? accentColor : 'rgba(255,255,255,0.2)'}`
                             }}>
-                                <PlanetUserIcon size={20} color="#7FFFD4" />
+                                <PlanetUserIcon size={16} color={location.pathname.startsWith('/profile') ? accentColor : '#aaa'} />
                             </div>
                         )}
                         <span style={{
@@ -1520,15 +1637,31 @@ const MobileNavigation = () => {
                         </span>
                     </div>
 
-                    <div onClick={() => handleNavClick('/create')} style={{ ...navItemStyle, color: location.pathname === '/create' ? '#7FFFD4' : '#fff' }}>
-                        <FaPlusSquare color="#7FFFD4" size={20} />
+                    <div onClick={() => handleNavClick('/create')} style={{
+                        ...navItemStyle,
+                        color: location.pathname === '/create' ? accentColor : '#fff',
+                        background: location.pathname === '/create' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                        borderLeft: location.pathname === '/create' ? `2px solid ${accentColor}` : '2px solid transparent'
+                    }}>
+                        {location.pathname === '/create' && (
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, boxShadow: `0 0 8px ${accentColor}`, marginRight: '4px' }} />
+                        )}
+                        <FaPlusSquare color={location.pathname === '/create' ? accentColor : '#aaa'} size={20} />
                         {t('nav.create')}
                     </div>
 
                     {/* Market and Calendar Removed from Main List (Moved to Hub) */}
 
-                    <div onClick={() => handleNavClick('/settings')} style={{ ...navItemStyle, color: location.pathname === '/settings' ? '#7FFFD4' : '#fff' }}>
-                        <FaCog color="#7FFFD4" size={20} />
+                    <div onClick={() => handleNavClick('/settings')} style={{
+                        ...navItemStyle,
+                        color: location.pathname === '/settings' ? accentColor : '#fff',
+                        background: location.pathname === '/settings' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                        borderLeft: location.pathname === '/settings' ? `2px solid ${accentColor}` : '2px solid transparent'
+                    }}>
+                        {location.pathname === '/settings' && (
+                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: accentColor, boxShadow: `0 0 8px ${accentColor}`, marginRight: '4px' }} />
+                        )}
+                        <FaCog color={location.pathname === '/settings' ? accentColor : '#aaa'} size={20} />
                         {t('settings.title')}
                     </div>
                 </div>

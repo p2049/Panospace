@@ -23,6 +23,7 @@ const Settings = () => {
     const { activePost } = useActivePost();
     const { blockUser } = useBlock();
     const [loading, setLoading] = useState(false);
+    const { showSuccess, showError } = useToast();
     const {
         currentFeed, switchToFeed, followingOnly, setFollowingOnly,
         feedDefault, profileDefault, createDefault, searchDefault,
@@ -252,10 +253,11 @@ const Settings = () => {
     };
 
     // Reusable Settings Row Component
-    const SettingsRow = ({ icon: Icon, label, onClick, isDestructive = false, showChevron = true }) => (
+    const SettingsRow = ({ icon: Icon, label, onClick, isDestructive = false, showChevron = true, disabled = false }) => (
         <button
-            onClick={onClick}
+            onClick={disabled ? null : onClick}
             type="button"
+            disabled={disabled}
             style={{
                 width: '100%',
                 height: '50px',
@@ -266,33 +268,35 @@ const Settings = () => {
                 background: 'transparent',
                 border: '1px solid rgba(110, 255, 216, 0.15)',
                 borderRadius: '8px',
-                color: isDestructive ? '#ff4444' : 'var(--text-primary, #d8fff1)',
-                cursor: 'pointer',
+                color: disabled ? '#444' : (isDestructive ? '#ff4444' : 'var(--text-primary, #d8fff1)'),
+                cursor: disabled ? 'default' : 'pointer',
                 transition: 'all 0.2s',
                 marginBottom: '8px',
-                // CRITICAL: Ensure clickability
                 pointerEvents: 'auto',
                 touchAction: 'manipulation',
                 WebkitTapHighlightColor: 'transparent',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                opacity: disabled ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
+                if (disabled) return;
                 e.currentTarget.style.background = isDestructive ? 'rgba(255, 68, 68, 0.05)' : 'rgba(110, 255, 216, 0.05)';
                 e.currentTarget.style.borderColor = isDestructive ? 'rgba(255, 68, 68, 0.3)' : 'var(--accent, #6effd8)';
                 e.currentTarget.style.boxShadow = isDestructive ? '0 0 15px rgba(255, 68, 68, 0.2)' : '0 0 15px var(--accent-glow, rgba(110,255,216,0.35))';
             }}
             onMouseLeave={(e) => {
+                if (disabled) return;
                 e.currentTarget.style.background = 'transparent';
                 e.currentTarget.style.borderColor = 'rgba(110, 255, 216, 0.15)';
                 e.currentTarget.style.boxShadow = 'none';
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'none' }}>
-                <Icon size={18} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} />
+                <Icon size={18} color={disabled ? '#444' : (isDestructive ? '#ff4444' : 'var(--accent, #6effd8)')} />
                 <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>{label}</span>
             </div>
-            {showChevron && <FaChevronRight size={14} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} style={{ pointerEvents: 'none' }} />}
+            {showChevron && !disabled && <FaChevronRight size={14} color={isDestructive ? '#ff4444' : 'var(--accent, #6effd8)'} style={{ pointerEvents: 'none' }} />}
         </button>
     );
 
@@ -362,8 +366,8 @@ const Settings = () => {
                     border: '1px solid rgba(110, 255, 216, 0.1)'
                 }}>
                     <SettingsRow icon={FaUserEdit} label={t('settings.editProfile')} onClick={() => navigate('/edit-profile')} />
-                    <SettingsRow icon={FaEnvelope} label={t('settings.changeEmail')} onClick={() => alert('Coming soon')} />
-                    <SettingsRow icon={FaLock} label={t('settings.changePassword')} onClick={() => alert('Coming soon')} />
+                    <SettingsRow icon={FaEnvelope} label={t('settings.changeEmail') + ' (Coming Soon)'} onClick={() => { }} disabled={true} />
+                    <SettingsRow icon={FaLock} label={t('settings.changePassword') + ' (Coming Soon)'} onClick={() => { }} disabled={true} />
                     <SettingsRow icon={FaTrash} label={t('settings.deleteAccount')} onClick={() => setShowDeleteConfirm(true)} isDestructive={true} />
                 </div>
 
@@ -488,10 +492,10 @@ const Settings = () => {
                 }}>
                     <SettingsRow
                         icon={FaStar}
-                        label={togglingStars ? "Updating..." : "Toggle Star Overlay"}
+                        label={togglingStars ? "Updating..." : "Star Overlay (Experimental)"}
                         onClick={toggleStarsOverlay}
                     />
-                    <SettingsRow icon={FaPalette} label={t('settings.theme')} onClick={() => alert('Theme selection coming soon')} />
+                    <SettingsRow icon={FaPalette} label={t('settings.theme') + ' (Coming Soon)'} onClick={() => { }} disabled={true} />
                 </div>
 
                 {/* Content Defaults Section */}

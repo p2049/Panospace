@@ -19,24 +19,49 @@ import { useFeedStore } from '@/core/store/useFeedStore';
 
 
 
+const mergeUnique = (existing = [], incoming = []) => {
+    const existingIds = new Set(existing.map(i => i.id));
+    return [...existing, ...incoming.filter(i => !existingIds.has(i.id))];
+};
+
 const searchReducer = (state, action) => {
     switch (action.type) {
         case 'SET_RESULTS':
+            // If NOT loading more (i.e., new search), replace results.
+            // If loading more, append and deduplicate.
+            const isLoadMore = action.isLoadMore;
+
             return {
                 ...state,
-                results: action.isLoadMore
-                    ? {
-                        posts: [...state.results.posts, ...action.payload.posts],
-                        users: [...state.results.users, ...action.payload.users],
-                        studios: [...state.results.studios, ...action.payload.studios],
-                        collections: [...state.results.collections, ...(action.payload.collections || [])],
-                        contests: [...state.results.contests, ...(action.payload.contests || [])],
-                        events: [...state.results.events, ...(action.payload.events || [])],
-                        spacecards: [...state.results.spacecards, ...(action.payload.spacecards || [])],
-                        museums: [...state.results.museums, ...(action.payload.museums || [])],
-                        text: [...state.results.text, ...(action.payload.text || [])]
-                    }
-                    : action.payload,
+                results: {
+                    posts: isLoadMore
+                        ? mergeUnique(state.results?.posts, action.payload.posts)
+                        : (action.payload.posts || []),
+                    users: isLoadMore
+                        ? mergeUnique(state.results?.users, action.payload.users)
+                        : (action.payload.users || []),
+                    studios: isLoadMore
+                        ? mergeUnique(state.results?.studios, action.payload.studios)
+                        : (action.payload.studios || []),
+                    collections: isLoadMore
+                        ? mergeUnique(state.results?.collections, action.payload.collections)
+                        : (action.payload.collections || []),
+                    contests: isLoadMore
+                        ? mergeUnique(state.results?.contests, action.payload.contests)
+                        : (action.payload.contests || []),
+                    events: isLoadMore
+                        ? mergeUnique(state.results?.events, action.payload.events)
+                        : (action.payload.events || []),
+                    spacecards: isLoadMore
+                        ? mergeUnique(state.results?.spacecards, action.payload.spacecards)
+                        : (action.payload.spacecards || []),
+                    museums: isLoadMore
+                        ? mergeUnique(state.results?.museums, action.payload.museums)
+                        : (action.payload.museums || []),
+                    text: isLoadMore
+                        ? mergeUnique(state.results?.text, action.payload.text)
+                        : (action.payload.text || [])
+                } || state.results,
                 lastPostDoc: action.lastPostDoc !== undefined ? action.lastPostDoc : state.lastPostDoc,
                 lastUserDoc: action.lastUserDoc !== undefined ? action.lastUserDoc : state.lastUserDoc,
                 lastStudioDoc: action.lastStudioDoc !== undefined ? action.lastStudioDoc : state.lastStudioDoc,
@@ -163,6 +188,7 @@ const Search = () => {
     const [recommendations, setRecommendations] = useState(null);
     const [isExploreMode, setIsExploreMode] = useState(true);
     const [error, setError] = useState(null);
+    const [fallbackResults, setFallbackResults] = useState([]);
 
     // Mode Switcher State
     const [currentMode, setCurrentMode] = useState(() => {
@@ -262,7 +288,7 @@ const Search = () => {
     useEffect(() => {
         dispatch({ type: 'RESET_RESULTS' });
         performSearch();
-    }, [currentMode, followingOnly, searchMode]);
+    }, [currentMode, followingOnly, searchMode, selectedMuseum, isMarketplaceMode]);
 
     // Auto-switch View Mode based on currentMode
     useEffect(() => {
@@ -628,6 +654,25 @@ const Search = () => {
 
             if (!isMountedRef.current || searchRequestId.current !== currentRequestId) return;
 
+            // FALLBACK LOGIC: If no results found for a user query (not load more), fetch generic trending/explore content
+            if (resultData.length === 0 && !isLoadMore && currentMode === 'posts') {
+                try {
+                    // Quick fetch for trending/recent (empty query, no tags)
+                    const { data: fallbackData } = await searchPosts('', {
+                        sort: 'trending',
+                        type: searchMode // Keep art/social context
+                    });
+                    // Filter blocked
+                    const cleanFallback = fallbackData.filter(p => !blockedUsers.has(p.authorId));
+                    setFallbackResults(cleanFallback.slice(0, 4)); // Keep it concise
+                } catch (e) {
+                    console.warn('Failed to load fallback content', e);
+                }
+            } else if (!isLoadMore) {
+                // Clear fallback if we found results or are loading more
+                setFallbackResults([]);
+            }
+
             // Build payload based on current mode
             const payload = {
                 posts: currentMode === 'posts' ? resultData : [],
@@ -675,9 +720,9 @@ const Search = () => {
             SEARCH_CACHE[cacheKey] = {
                 results: finalResults,
                 cursors: {
-                    lastPostDoc: currentMode === 'posts' ? newLastDoc : (isLoadMore ? lastPostDoc : null), // Logic needs to match reducer
+                    lastPostDoc: currentMode === 'posts' ? newLastDoc : (isLoadMore ? lastPostDoc : null),
                     lastUserDoc: currentMode === 'users' ? newLastDoc : (isLoadMore ? lastUserDoc : null),
-                    lastStudioDoc: currentMode === 'studios' ? newLastDoc : (isLoadMore ? lastStudioDoc : null),
+                    lastStudioDoc: (currentMode === 'studios' || currentMode === 'galleries') ? newLastDoc : (isLoadMore ? lastStudioDoc : null),
                     lastCollectionDoc: currentMode === 'collections' ? newLastDoc : (isLoadMore ? lastCollectionDoc : null),
                     lastContestDoc: currentMode === 'contests' ? newLastDoc : (isLoadMore ? lastContestDoc : null),
                     lastEventDoc: currentMode === 'events' ? newLastDoc : (isLoadMore ? lastEventDoc : null),
@@ -686,15 +731,15 @@ const Search = () => {
                     lastTextDoc: currentMode === 'text' ? newLastDoc : (isLoadMore ? lastTextDoc : null),
                 },
                 hasMoreFlags: {
-                    hasMorePosts: currentMode === 'posts' ? hasMore : (isLoadMore ? hasMorePosts : true),
-                    hasMoreUsers: currentMode === 'users' ? hasMore : (isLoadMore ? hasMoreUsers : true),
-                    hasMoreStudios: currentMode === 'studios' ? hasMore : (isLoadMore ? hasMoreStudios : true),
-                    hasMoreCollections: currentMode === 'collections' ? hasMore : (isLoadMore ? hasMoreCollections : true),
-                    hasMoreContests: currentMode === 'contests' ? hasMore : (isLoadMore ? hasMoreContests : true),
-                    hasMoreEvents: currentMode === 'events' ? hasMore : (isLoadMore ? hasMoreEvents : true),
-                    hasMoreSpaceCards: currentMode === 'spacecards' ? hasMore : (isLoadMore ? hasMoreSpaceCards : true),
-                    hasMoreMuseums: currentMode === 'museums' ? hasMore : (isLoadMore ? hasMoreMuseums : true),
-                    hasMoreText: currentMode === 'text' ? hasMore : (isLoadMore ? hasMoreText : true),
+                    hasMorePosts: currentMode === 'posts' ? hasMore : (isLoadMore ? (hasMorePosts ?? true) : true),
+                    hasMoreUsers: currentMode === 'users' ? hasMore : (isLoadMore ? (hasMoreUsers ?? true) : true),
+                    hasMoreStudios: (currentMode === 'studios' || currentMode === 'galleries') ? hasMore : (isLoadMore ? (hasMoreStudios ?? true) : true),
+                    hasMoreCollections: currentMode === 'collections' ? hasMore : (isLoadMore ? (hasMoreCollections ?? true) : true),
+                    hasMoreContests: currentMode === 'contests' ? hasMore : (isLoadMore ? (hasMoreContests ?? true) : true),
+                    hasMoreEvents: currentMode === 'events' ? hasMore : (isLoadMore ? (hasMoreEvents ?? true) : true),
+                    hasMoreSpaceCards: currentMode === 'spacecards' ? hasMore : (isLoadMore ? (hasMoreSpaceCards ?? true) : true),
+                    hasMoreMuseums: currentMode === 'museums' ? hasMore : (isLoadMore ? (hasMoreMuseums ?? true) : true),
+                    hasMoreText: currentMode === 'text' ? hasMore : (isLoadMore ? (hasMoreText ?? true) : true),
                 }
             };
 
@@ -781,15 +826,15 @@ const Search = () => {
                                                     currentMode === 'spacecards' ? hasMoreSpaceCards : false;
 
                 const currentResultsCount =
-                    currentMode === 'posts' ? results.posts.length :
-                        currentMode === 'text' ? results.text.length :
-                            currentMode === 'users' ? results.users.length :
-                                currentMode === 'studios' ? results.studios.length :
-                                    currentMode === 'collections' ? results.collections.length :
-                                        currentMode === 'museums' ? results.museums.length :
-                                            currentMode === 'contests' ? results.contests.length :
-                                                currentMode === 'events' ? results.events.length :
-                                                    currentMode === 'spacecards' ? results.spacecards.length : 0;
+                    currentMode === 'posts' ? (results?.posts?.length || 0) :
+                        currentMode === 'text' ? (results?.text?.length || 0) :
+                            currentMode === 'users' ? (results?.users?.length || 0) :
+                                (currentMode === 'studios' || currentMode === 'galleries') ? (results?.studios?.length || 0) :
+                                    currentMode === 'collections' ? (results?.collections?.length || 0) :
+                                        currentMode === 'museums' ? (results?.museums?.length || 0) :
+                                            currentMode === 'contests' ? (results?.contests?.length || 0) :
+                                                currentMode === 'events' ? (results?.events?.length || 0) :
+                                                    currentMode === 'spacecards' ? (results?.spacecards?.length || 0) : 0;
 
                 // Prefetch if near bottom, not already loading, and has more results
                 if (scrollPosition >= threshold && !loading && currentHasMore && currentResultsCount > 0) {
@@ -876,15 +921,15 @@ const Search = () => {
             onAspectRatioSelect={setSelectedAspectRatio}
             onClearAll={clearAllFilters}
             resultsCount={
-                currentMode === 'posts' ? results.posts.length :
-                    currentMode === 'users' ? results.users.length :
-                        currentMode === 'galleries' ? results.galleries.length :
-                            currentMode === 'collections' ? results.collections.length :
-                                currentMode === 'contests' ? results.contests.length :
-                                    currentMode === 'events' ? results.events.length :
-                                        currentMode === 'spacecards' ? results.spacecards.length :
-                                            currentMode === 'museums' ? results.museums.length :
-                                                currentMode === 'text' ? results.text.length : 0
+                currentMode === 'posts' ? (results?.posts?.length || 0) :
+                    currentMode === 'users' ? (results?.users?.length || 0) :
+                        (currentMode === 'studios' || currentMode === 'galleries') ? (results?.studios?.length || 0) :
+                            currentMode === 'collections' ? (results?.collections?.length || 0) :
+                                currentMode === 'contests' ? (results?.contests?.length || 0) :
+                                    currentMode === 'events' ? (results?.events?.length || 0) :
+                                        currentMode === 'spacecards' ? (results?.spacecards?.length || 0) :
+                                            currentMode === 'museums' ? (results?.museums?.length || 0) :
+                                                currentMode === 'text' ? (results?.text?.length || 0) : 0
             }
             currentMode={currentMode}
             isMobileFiltersOpen={isMobileFiltersOpen}
@@ -960,6 +1005,7 @@ const Search = () => {
                 viewMode={viewMode}
                 currentMode={currentMode}
                 results={results}
+                fallbackResults={fallbackResults}
                 isMarketplaceMode={isMarketplaceMode} // NEW
                 isMobile={isMobile}
                 selectedOrientation={selectedOrientation}

@@ -60,6 +60,7 @@ const FilmStrip35mm = ({
                                         src={image.url || image}
                                         alt={`Frame ${getFrameNumber(index)}`}
                                         className="frame-image"
+                                        loading="lazy"
                                     />
                                 </div>
                                 <div className="frame-number frame-number-right">{getFrameNumber(index)}</div>

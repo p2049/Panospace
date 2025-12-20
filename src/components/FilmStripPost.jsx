@@ -194,11 +194,15 @@ const FilmStripPost = ({ post, images = [], uiOverlays = null, priority = 'norma
 
     useEffect(() => {
         if (!images || images.length === 0) return;
-        const initialLoad = images.slice(0, 3);
-        import('@/core/image/preloadFilmSlide').then(({ preloadFilmSlide }) => {
-            preloadFilmSlide(initialLoad);
-        });
-    }, [images]);
+        // Only preload if this post is high priority (current or very near) or a preview
+        // 'normal' priority implies it's a neighbor or in a list but not the active slide
+        if (priority === 'high' || postId === 'preview') {
+            const initialLoad = images.slice(0, 3);
+            import('@/core/image/preloadFilmSlide').then(({ preloadFilmSlide }) => {
+                preloadFilmSlide(initialLoad);
+            });
+        }
+    }, [images, priority, postId]);
 
     return (
         <div className="post-ui--film35 cyber-film-strip-wrapper" style={{ position: 'relative' }}>
@@ -220,19 +224,29 @@ const FilmStripPost = ({ post, images = [], uiOverlays = null, priority = 'norma
             <div className="cyber-film-strip-scroll-container">
                 <div className="cyber-leader"></div>
 
-                {images.map((item, index) => (
-                    <FilmFrameUnit
-                        key={index}
-                        item={item}
-                        index={index}
-                        priority={index}
-                        getStockName={getStockName}
-                        getFrameNumber={getFrameNumber}
-                        getEdgeCode={getEdgeCode}
-                        uiOverlays={uiOverlays}
-                        postId={postId}
-                    />
-                ))}
+                {images.map((item, index) => {
+                    // Combine post priority + slide index
+                    // If post is 'normal' (off-screen), force all slides to 'normal' or 'low'
+                    // If post is 'high' (active), first slides are 'high'
+                    let effectivePriority = index;
+                    if (priority !== 'high' && postId !== 'preview') {
+                        effectivePriority = index + 10; // Bump simple index so Math.abs(p) <= 2 fails
+                    }
+
+                    return (
+                        <FilmFrameUnit
+                            key={index}
+                            item={item}
+                            index={index}
+                            priority={effectivePriority}
+                            getStockName={getStockName}
+                            getFrameNumber={getFrameNumber}
+                            getEdgeCode={getEdgeCode}
+                            uiOverlays={uiOverlays}
+                            postId={postId}
+                        />
+                    );
+                })}
 
                 <div className="cyber-leader trailer"></div>
             </div>

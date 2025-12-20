@@ -28,11 +28,15 @@ const StarBackground = ({ starColor = '#7FFFD4', multiColor = false, transparent
 
     // Create multiple layers of stars with different depths
     const starLayers = useMemo(() => {
-        // Generate stars for all devices
-        // if (isMobile) return { far: [], mid: [], near: [], hidden: [] };
+        // Reduced motion check
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) return { far: [], mid: [], near: [], hidden: [] };
+
+        // Mobile optimization: Drastically reduce particle count (Lite Mode)
+        const density = isMobile ? 0.2 : 1.0;
 
         return {
-            far: [...Array(30)].map((_, i) => ({
+            far: [...Array(Math.floor(30 * density))].map((_, i) => ({
                 id: `far-${i}`,
                 size: Math.random() * 1 + 0.5,
                 top: Math.random() * 100,
@@ -41,7 +45,7 @@ const StarBackground = ({ starColor = '#7FFFD4', multiColor = false, transparent
                 animationDelay: Math.random() * 5,
                 opacity: Math.random() * 0.3 + 0.2
             })),
-            mid: [...Array(25)].map((_, i) => ({
+            mid: [...Array(Math.floor(25 * density))].map((_, i) => ({
                 id: `mid-${i}`,
                 size: Math.random() * 1.5 + 0.8,
                 top: Math.random() * 100,
@@ -50,7 +54,7 @@ const StarBackground = ({ starColor = '#7FFFD4', multiColor = false, transparent
                 animationDelay: Math.random() * 4,
                 opacity: Math.random() * 0.4 + 0.3
             })),
-            near: [...Array(15)].map((_, i) => ({
+            near: [...Array(Math.floor(15 * density))].map((_, i) => ({
                 id: `near-${i}`,
                 size: Math.random() * 2 + 1,
                 top: Math.random() * 100,
@@ -59,7 +63,7 @@ const StarBackground = ({ starColor = '#7FFFD4', multiColor = false, transparent
                 animationDelay: Math.random() * 3,
                 opacity: Math.random() * 0.6 + 0.4
             })),
-            hidden: [...Array(20)].map((_, i) => ({ // New layer for emerging stars
+            hidden: [...Array(Math.floor(20 * density))].map((_, i) => ({ // New layer for emerging stars
                 id: `hidden-${i}`,
                 size: Math.random() * 1.5 + 0.5,
                 top: Math.random() * 100,
@@ -103,6 +107,7 @@ const StarBackground = ({ starColor = '#7FFFD4', multiColor = false, transparent
                             border-radius: 50%;
                             backface-visibility: hidden;
                             transform: translateZ(0);
+                            will-change: transform, opacity;
                         }
                     `}</style>
 

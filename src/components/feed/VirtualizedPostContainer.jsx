@@ -22,6 +22,9 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
     const PULL_THRESHOLD = 80;
 
     // Handle Scroll & Index Calculation
+    // Scroll Performance Optimization
+    const scrollTimeoutRef = useRef(null);
+
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -29,6 +32,7 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
         let ticking = false;
 
         const handleScroll = () => {
+            // 1. Index Calculation Update (Throttled via rAF)
             if (!ticking) {
                 window.requestAnimationFrame(() => {
                     if (container) {
@@ -45,6 +49,17 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
                 });
                 ticking = true;
             }
+
+            // 2. Interaction Lock (Debounced)
+            // Disable pointer events on children while scrolling to prevent heavy hover calcs
+            if (!container.classList.contains('is-scrolling-active')) {
+                container.classList.add('is-scrolling-active');
+            }
+
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+            scrollTimeoutRef.current = setTimeout(() => {
+                if (container) container.classList.remove('is-scrolling-active');
+            }, 150);
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
@@ -54,8 +69,13 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
             container.scrollTop = initialIndex * window.innerHeight;
         }
 
-        return () => container.removeEventListener('scroll', handleScroll);
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        };
     }, [currentIndex, initialIndex]);
+
+
 
     // Pull-to-refresh touch handlers
     const handleTouchStart = useCallback((e) => {
@@ -171,6 +191,11 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
         >
+            <style>{`
+                .is-scrolling-active * {
+                    pointer-events: none !important; 
+                }
+            `}</style>
             {/* Pull-to-Refresh Indicator - Rocket */}
             {(pullDistance > 0 || isRefreshing) && (
                 <div
