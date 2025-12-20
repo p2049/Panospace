@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- THE INFINITE (Strange Attractor Simulation) ---
 // Concept: A visual rendering of chaos theory mathematics (Peter de Jong Attractor).

@@ -12,6 +12,13 @@ export const BANNER_TYPES = [
         description: 'Deep space nebula clouds'
     },
     {
+        id: 'iso_wave',
+        label: 'ISO WAVE',
+        previewGradient: 'linear-gradient(to bottom, #000000, #5A3FFF)',
+        needsColor: true,
+        description: 'A topography of silence.'
+    },
+    {
         id: 'cosmic-earth',
         label: 'Earth',
         previewGradient: 'linear-gradient(110deg, #004a9f 0%, #000 60%)',
@@ -35,15 +42,6 @@ export const BANNER_TYPES = [
         description: 'Frozen world with aurora borealis'
     },
     {
-        id: 'northern-lights',
-        label: 'Northern Lights',
-        previewGradient: 'linear-gradient(to right, #00ff88, #5A3FFF)',
-        needsColor: false,
-        isCosmic: true,
-        isCosmic: true,
-        description: 'Intense magnetic storm'
-    },
-    {
         id: 'cosmic_dreamworld',
         label: 'Stardust Playground',
         previewGradient: 'linear-gradient(to top, #FFB7D5, #7FDBFF, #2A0E61)',
@@ -51,19 +49,20 @@ export const BANNER_TYPES = [
         isCosmic: true,
         description: 'Childlike wonderland of spacetime'
     },
-
     {
-        id: 'simple_gradient',
-        label: 'Simple Gradient',
-        previewGradient: 'linear-gradient(to right, #7FFFD4, #00CED1)',
+        id: 'technicolor_hardware',
+        label: 'Technicolor',
+        previewGradient: 'linear-gradient(135deg, #1B82FF, #FF5C8A, #7FFFD4)',
         needsColor: true,
-        description: 'Clean two-tone fade'
-    },
-    {
-        id: 'gradient',
-        label: 'Gradient',
-        previewGradient: 'linear-gradient(45deg, #FF00CC, #333399)',
-        description: 'Your unlocked gradients'
+        description: 'Y2K Translucent Hardware (Coded Materiality)',
+        customVariants: [
+            { id: 'brand_rainbow', name: 'Brand Rainbow', color: 'linear-gradient(135deg, #1B82FF, #FF5C8A, #7FFFD4)' },
+            { id: 'classic_mint', name: 'Classic Mint', color: '#7FFFD4' },
+            { id: 'solar_pink', name: 'Solar Pink', color: '#FF5C8A' },
+            { id: 'ion_blue', name: 'Ion Blue', color: '#1B82FF' },
+            { id: 'deep_orbit', name: 'Deep Orbit', color: '#5A3FFF' },
+            { id: 'stellar_orange', name: 'Stellar Orange', color: '#FF914D' }
+        ]
     },
     {
         id: 'cyberpunkLines',
@@ -86,9 +85,78 @@ export const BANNER_TYPES = [
         needsColor: true,
         description: 'Classic Mario atmospheric depth'
     },
+    {
+        id: 'marmoris',
+        label: 'Marmoris',
+        previewGradient: 'linear-gradient(to bottom, #4a7c94, #1e4d5c)',
+        needsColor: false,
+        description: 'The shimmering, marble-like surface of the ocean'
+    },
+    {
+        id: 'wave_grid',
+        label: 'Wave Grid',
+        previewGradient: 'linear-gradient(135deg, #5A3FFF, #1B82FF, #8CFFE9)',
+        needsColor: false,
+        description: 'Mesmerizing undulating grid of light'
+    },
 
+    // --- WINDOW BANNERS ---
+    {
+        id: 'window_train',
+        label: 'Train',
+        previewGradient: 'linear-gradient(to right, #1a1a1a 5%, #7FDBFF 50%, #1a1a1a 95%)',
+        needsColor: true,
+        description: 'View from a moving train',
+        customVariants: [
+            { id: 'train_space', name: 'Space City', color: 'linear-gradient(to bottom, #000000, #1B82FF)' },
+            { id: 'train_lunar', name: 'Lunar City', color: 'linear-gradient(to bottom, #000, #FFF)' },
+            { id: 'train_cyber', name: 'Cyberpunk', color: 'linear-gradient(to bottom, #2A0E61, #8CFFE9)' },
+            { id: 'train_mars', name: 'Mars Colony', color: 'linear-gradient(to bottom, #2b0a0a, #FF914D)' },
+            { id: 'train_neon', name: 'Neon City', color: 'linear-gradient(135deg, #FF5C8A, #1B82FF)' },
+            { id: 'train_realistic', name: 'Realistic', color: 'linear-gradient(to bottom, #000, #1b263b)' },
+            { id: 'train_color', name: 'Color City', color: 'linear-gradient(to bottom, #1B82FF, #dbeafe)' },
+            { id: 'train_neotokyo', name: 'NeoTokyo', color: 'linear-gradient(to bottom, #2b0a0a, #ff0055)' }, // Red/Cyber
+            { id: 'train_ultra', name: 'Panospace Ultra', color: 'linear-gradient(135deg, #7FDBFF, #FF5C8A, #5A3FFF, #1B82FF, #FF914D)' },
+            { id: 'train_omni', name: 'Omni City (Live)', color: 'linear-gradient(to right, #7FDBFF, #FF914D, #2A0E61)' }
+        ]
+    },
+    {
+        id: 'window_shuttle',
+        label: 'Shuttle Pod',
+        previewGradient: 'linear-gradient(to bottom, #000 0%, #1B82FF 100%)',
+        needsColor: true,
+        description: 'Vertical ascent into space',
+        customVariants: [
+            { id: 'shuttle_orbit', name: 'Orbit', color: 'linear-gradient(to bottom, #000, #7FDBFF)' },
+            { id: 'shuttle_deep', name: 'Deep Space', color: 'linear-gradient(to bottom, #000, #2A0E61)' },
+            { id: 'shuttle_warp', name: 'Hyperdrive', color: 'linear-gradient(to bottom, #FFF, #1B82FF)' }
+        ]
+    },
+    {
+        id: 'window_plane',
+        label: 'Plane',
+        previewGradient: 'linear-gradient(to bottom, #050510, #1B82FF 50%, #000)',
+        needsColor: true,
+        description: 'Cozy night flight over a distant city',
+        customVariants: [
+            { id: 'plane_night', name: 'Night Flight', color: 'linear-gradient(to bottom, #050510, #1B82FF)' },
+            { id: 'plane_sunset', name: 'Sunset Descent', color: 'linear-gradient(to bottom, #2A0E61, #FF914D)' },
+            { id: 'plane_storm', name: 'Electric Storm', color: 'linear-gradient(to bottom, #000, #5A3FFF)' }
+        ]
+    },
+    {
+        id: 'window_metro',
+        label: 'Metro',
+        previewGradient: 'linear-gradient(to right, #111, #444, #111)',
+        needsColor: true,
+        description: 'Rhythmic transit through underground tunnels',
+        customVariants: [
+            { id: 'metro_tunnel', name: 'Deep Tunnel', color: 'linear-gradient(to right, #1a1a1a, #333)' },
+            { id: 'metro_station', name: 'Neon Station', color: 'linear-gradient(to right, #1B82FF, #FF5C8A)' },
+            { id: 'metro_glitch', name: 'System Error', color: 'linear-gradient(to right, #000, #7FFFD4)' }
+        ]
+    },
 
-    // --- CITYSCAPE PACK ---
     // --- CITYSCAPE PACK ---
     {
         id: 'city_space',
@@ -104,7 +172,6 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'NASA Moon Base & Earthrise'
     },
-
     {
         id: 'city_cyberpunk',
         label: 'Cyberpunk Rain',
@@ -140,7 +207,6 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Chaotic digital corruption'
     },
-
 
     // --- CITY-3000 PACK ---
     {
@@ -222,7 +288,6 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Glowing neon water'
     },
-
     {
         id: 'ocean_tropical_emerald',
         label: 'Emerald Tropical',
@@ -237,13 +302,7 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Lava flows & smoke'
     },
-    {
-        id: 'ocean_volcano',
-        label: 'Volcano Island',
-        previewGradient: 'linear-gradient(to bottom, #000, #ff3333)',
-        needsColor: false,
-        description: 'Lava flows & smoke'
-    },
+
     {
         id: 'abstract_genesis_core',
         label: 'Genesis Core (Abstract)',
@@ -302,6 +361,26 @@ export const BANNER_TYPES = [
         description: 'The end of all things'
     },
     {
+        id: 'northern-lights',
+        label: 'Northern Lights',
+        previewGradient: 'linear-gradient(to bottom, #000, #00ff88)',
+        needsColor: false,
+        needsVariant: true,
+        hasAuroraVariants: true,
+        isCosmic: true,
+        description: 'Atmospheric ionization'
+    },
+    {
+        id: 'aurora',
+        label: 'Aurora',
+        previewGradient: 'linear-gradient(to right, #2A0E61, #5A3FFF, #8CFFE9)',
+        needsColor: false,
+        needsVariant: true,
+        hasAtmosVariants: true,
+        isCosmic: true,
+        description: 'The definitive Pano signature. Signal in the void.'
+    },
+    {
         id: 'cosmic_singularity_city',
         label: 'Cyber-Horizon',
         previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #000)',
@@ -332,14 +411,6 @@ export const BANNER_TYPES = [
         needsColor: false,
         isCosmic: true,
         description: 'Orbital energy citadel'
-    },
-    {
-        id: 'cosmic_seraphim',
-        label: 'Digital Seraphim',
-        previewGradient: 'radial-gradient(circle, #FF5C8A, #000)',
-        needsColor: false,
-        isCosmic: true,
-        description: 'BE NOT AFRAID'
     },
     {
         id: 'cosmic_omegasphere',
@@ -406,30 +477,6 @@ export const BANNER_TYPES = [
         description: 'Next-Gen Glass OS'
     },
     {
-        id: 'cosmic_resonance',
-        label: 'The Resonance',
-        previewGradient: 'radial-gradient(circle, #5A3FFF, #000)',
-        needsColor: false,
-        isCosmic: true,
-        description: 'Divine Frequency 963Hz'
-    },
-    {
-        id: 'cosmic_interference',
-        label: 'The Interference',
-        previewGradient: 'linear-gradient(90deg, #F00, #0F0, #00F)',
-        needsColor: false,
-        isCosmic: true,
-        description: 'VISUAL HAZARD'
-    },
-    {
-        id: 'cosmic_omniscience',
-        label: 'The Omniscience',
-        previewGradient: 'radial-gradient(circle, #FFF, #ff0055, #000)',
-        needsColor: false,
-        isCosmic: true,
-        description: 'ALL SEEING'
-    },
-    {
         id: 'cosmic_absolute',
         label: 'The Absolute',
         previewGradient: 'radial-gradient(circle, #FFF, #5A3FFF)',
@@ -437,12 +484,67 @@ export const BANNER_TYPES = [
         isCosmic: true,
         description: 'Infinite Complexity'
     },
-    // --- SYSTEM & LIMINAL ---
     {
         id: 'system_memory',
         label: 'Memory Field',
         previewGradient: 'radial-gradient(#1B82FF 10%, #000 90%)',
         needsColor: false,
         description: 'Data dreaming in the dark'
-    }
+    },
+    {
+        id: 'cosmic_omega_borealis',
+        label: 'Omega Borealis',
+        previewGradient: 'radial-gradient(circle, #5A3FFF, #8CFFE9)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'The Convergence of Light and Void'
+    },
+    {
+        id: 'elysium',
+        label: 'Elysium',
+        previewGradient: 'linear-gradient(to bottom, #E0C3FC, #8EC5FC)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Pure visual healing. Soft light.'
+    },
+    {
+        id: 'atmos_pulse',
+        label: 'Luminous Pulse',
+        previewGradient: 'radial-gradient(circle, #FF5C8A, #5A3FFF)',
+        needsColor: false,
+        needsVariant: true,
+        hasAtmosVariants: true,
+        isCosmic: true,
+        description: 'Breathing spheres of soft light.'
+    },
+    {
+        id: 'atmos_flux',
+        label: 'Digital Silk',
+        previewGradient: 'linear-gradient(to right, #8CFFE9, #5A3FFF)',
+        needsColor: false,
+        needsVariant: true,
+        hasAtmosVariants: true,
+        isCosmic: true,
+        description: 'Horizontal ribbons of data drift.'
+    },
+    {
+        id: 'atmos_aether',
+        label: 'Aether Drift',
+        previewGradient: 'linear-gradient(135deg, #A7B6FF, #7FDBFF)',
+        needsColor: false,
+        needsVariant: true,
+        hasAtmosVariants: true,
+        isCosmic: true,
+        description: 'Sweeping arcs of luminous wind.'
+    },
+    {
+        id: 'atmos_globe',
+        label: 'Data Sphere',
+        previewGradient: 'radial-gradient(circle, #8CFFE9, #1B82FF, #000)',
+        needsColor: false,
+        needsVariant: true,
+        hasAtmosVariants: true,
+        isCosmic: true,
+        description: 'Rotating 3D illusion of a data-rich world.'
+    },
 ];

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- SINGULARITY CITY (The "Ultra" Banner) ---
 // Concept: The "Northern Lights" CSS implementation as the skybox.

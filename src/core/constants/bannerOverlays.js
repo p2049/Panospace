@@ -116,6 +116,13 @@ export const BANNER_OVERLAYS = [
         label: 'Vignette',
         description: 'Subtle peripheral light falloff.',
         compatibleWith: ['standard_digital', 'soft_optics', 'warm_light', 'cool_light'],
+    },
+    {
+        id: 'healing_silk',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Healing Silk',
+        description: 'Ultra-soft light diffusion and chromatic warmth.',
+        compatibleWith: ['bloom_optical', 'warm_light', 'soft_optics'],
     }
 ];
 

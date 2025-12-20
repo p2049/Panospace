@@ -57,9 +57,8 @@ export const useSearch = (config = {}) => {
         const { userIds = [] } = filters;
         const term = (searchTerm || '').toLowerCase().trim();
 
-        // Return all users if no term/filter (as requested)
-        if (!term && userIds.length === 0) {
-            // Allow fall-through
+        if (userIds.includes('NONE')) {
+            return { data: [], lastDoc: null };
         }
 
         setLoading(true);
@@ -67,64 +66,66 @@ export const useSearch = (config = {}) => {
 
         try {
             const usersRef = collection(db, 'users');
-            let q;
+            let docs = [];
+            let newLastDoc = null;
 
             if (userIds.length > 0) {
-                // Filter by specific user IDs (e.g. Museum Members)
-                // 'in' query is limited to 10 (or 30). Slice for safety.
-                // For MVP, we'll slice to 10.
-                const safeUserIds = userIds.slice(0, 10);
+                // If specific IDs are requested (Added/Following or Museum members)
+                // We fetch them in chunks of 30 (Firestore IN limit)
+                const chunks = [];
+                for (let i = 0; i < userIds.length; i += 30) {
+                    chunks.push(userIds.slice(i, i + 30));
+                }
 
-                // If term exists, we might want to filter client-side after fetching by IDs
-                // because we can't combine 'in' with 'array-contains' easily if not on same field
-                q = query(
-                    usersRef,
-                    where('__name__', 'in', safeUserIds), // __name__ is document ID
-                    limit(50)
+                // For performance and safety, limit to first 90 IDs (3 chunks) for now
+                const limitedChunks = chunks.slice(0, 3);
+                const results = await Promise.all(
+                    limitedChunks.map(chunk =>
+                        getDocs(query(usersRef, where('__name__', 'in', chunk)))
+                    )
                 );
+
+                docs = results.flatMap(snap => snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                // Note: No real pagination for specific ID lists in this MVP
             } else if (term) {
                 // Standard search with term
                 const words = term.split(/\s+/).filter(w => w.length > 1);
                 const primaryWord = words[0] || term;
 
-                q = query(
+                let q = query(
                     usersRef,
                     where('searchKeywords', 'array-contains', primaryWord),
                     orderBy('displayName'),
                     limit(50)
                 );
+
+                if (lastDoc) {
+                    q = query(q, startAfter(lastDoc));
+                }
+
+                const snapshot = await getDocs(q);
+                docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
             } else {
                 // No term, list all users
-                q = query(
+                let q = query(
                     usersRef,
                     orderBy('displayName'),
                     limit(50)
                 );
+
+                if (lastDoc) {
+                    q = query(q, startAfter(lastDoc));
+                }
+
+                const snapshot = await getDocs(q);
+                docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
             }
-
-            if (lastDoc && userIds.length === 0) {
-                // Only apply pagination for standard search for now
-                const words = term.split(/\s+/).filter(w => w.length > 1);
-                const primaryWord = words[0] || term;
-
-                q = query(
-                    usersRef,
-                    where('searchKeywords', 'array-contains', primaryWord),
-                    orderBy('displayName'),
-                    startAfter(lastDoc),
-                    limit(50)
-                );
-            }
-
-            const snapshot = await getDocs(q);
-            const docs = snapshot.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
 
             let filtered = docs;
 
-            // Client-side filtering for search term
+            // Client-side filtering for search term (always applies)
             if (term) {
                 const words = term.split(/\s+/).filter(w => w.length > 1);
                 filtered = filtered.filter(user => {
@@ -144,11 +145,6 @@ export const useSearch = (config = {}) => {
                         : words.every(w => searchableText.includes(w));
                 });
             }
-
-            const newLastDoc =
-                snapshot.docs.length > 0
-                    ? snapshot.docs[snapshot.docs.length - 1]
-                    : null;
 
             return { data: filtered, lastDoc: newLastDoc };
         } catch (err) {
@@ -1184,3 +1180,5 @@ export const useSearch = (config = {}) => {
         searchShopItems
     };
 };
+
+export default useSearch;

@@ -18,8 +18,7 @@ export const COLORS = {
     iceMint: '#7FFFD4', // Signature color
     iceMintHover: '#5FDDBB', // Secondary accent
     iceMintDark: '#1B75D1', // Darker variation for gradients
-    gold: '#FFD700',
-    goldDark: '#FFA500',
+
 
     // Status
     success: '#7FFFD4',

@@ -31,6 +31,21 @@ import OmniscienceBanner from './OmniscienceBanner';
 import AbsoluteBanner from './AbsoluteBanner';
 import StaticSystemBanners from './SystemAbstractBanners';
 import BannerOverlayRenderer from './BannerOverlayRenderer';
+import TrainWindowBanner from './TrainWindowBanner';
+import ShuttleWindowBanner from './ShuttleWindowBanner';
+import PlaneWindowBanner from './PlaneWindowBanner';
+import MetroWindowBanner from './MetroWindowBanner';
+import PulseBanner from './PulseBanner';
+import OmegaBorealis from './OmegaBorealis';
+import ElysiumBanner from './ElysiumBanner';
+import AetherBanner from './AetherBanner';
+import GlobeBanner from './GlobeBanner';
+import IsoWaveBanner from './IsoWaveBanner';
+import MarmorisBanner from './MarmorisBanner';
+import WaveGridBanner from './WaveGridBanner';
+import AuroraBanner from './AuroraBanner';
+import NorthernLightsBanner from './NorthernLightsBanner';
+import TechnicolorTechBanner from './TechnicolorTechBanner';
 
 const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
     const overlayStyle = {
@@ -42,14 +57,34 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
     };
 
     const renderContent = () => {
+        // --- NEW TECHNICOLOR TECH BANNER ---
+        if (mode === 'technicolor_hardware') {
+            return <TechnicolorTechBanner variant={color} />;
+        }
+
+        // --- NEW WINDOW BANNERS ---
+        if (mode === 'window_train') {
+            return <TrainWindowBanner starSettings={starSettings} variant={color || 'night'} />;
+        }
+        if (mode === 'window_shuttle') {
+            return <ShuttleWindowBanner starSettings={starSettings} variant={color || 'shuttle_orbit'} />;
+        }
+        if (mode === 'window_plane') {
+            return <PlaneWindowBanner variant={color || 'plane_night'} />;
+        }
+        if (mode === 'window_metro') {
+            return <MetroWindowBanner variant={color || 'metro_tunnel'} />;
+        }
         // 5. CITYSCAPE PACK
         if (mode.startsWith('city') || mode === 'panospace_beyond') {
             return <CityscapeBanner themeId={mode} starSettings={starSettings} />;
         }
 
         // 6. OCEAN PACK
-        if (mode.startsWith('ocean') && mode !== 'ocean_depths') {
-            return <OceanBanner themeId={mode} starSettings={starSettings} />;
+        // 6. OCEAN PACK
+        if ((mode.startsWith('ocean') && mode !== 'ocean_depths') || mode === 'deep_underwater') {
+            const themeToUse = mode === 'deep_underwater' ? 'ocean_night_bio' : mode;
+            return <OceanBanner themeId={themeToUse} starSettings={starSettings} />;
         }
 
         // 6.5 ABSTRACT PACK
@@ -126,6 +161,49 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         }
         if (mode === 'cosmic_absolute') {
             return <AbsoluteBanner />;
+        }
+
+        // --- NEW COSMIC BANNERS (Flux, Ether, etc) ---
+        if (mode === 'iso_wave') {
+            return <IsoWaveBanner color={color} starSettings={starSettings} />;
+        }
+        if (mode === 'marmoris') {
+            return <MarmorisBanner variant={color || 'main'} starSettings={starSettings} />;
+        }
+        if (mode === 'wave_grid') {
+            return <WaveGridBanner color={color} starSettings={starSettings} />;
+        }
+        if (mode === 'cosmic_opus') {
+            return <SpectrumBanner />;
+        }
+        if (mode === 'cosmic_flux') {
+            return <FluxBanner variant="main" />;
+        }
+        if (mode === 'cosmic_ether') {
+            return <EtherBanner />;
+        }
+        if (mode === 'cosmic_resonance') {
+            return <ResonanceBanner />;
+        }
+        if (mode === 'cosmic_omega_borealis') {
+            return <OmegaBorealis />;
+        }
+        if (mode === 'elysium') {
+            return <ElysiumBanner starSettings={starSettings} />;
+        }
+
+        // --- ATMOS BANNERS ---
+        if (mode === 'atmos_pulse') {
+            return <PulseBanner starSettings={starSettings} variant={color} />;
+        }
+        if (mode === 'atmos_flux') {
+            return <FluxBanner variant={color || 'main'} starSettings={starSettings} />;
+        }
+        if (mode === 'atmos_aether') {
+            return <AetherBanner starSettings={starSettings} variant={color} />;
+        }
+        if (mode === 'atmos_globe') {
+            return <GlobeBanner starSettings={starSettings} variant={color} />;
         }
 
         if (mode === 'cosmic_dreamworld') {
@@ -417,9 +495,26 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         }
 
 
-        // 10. NORTHERN LIGHTS - Standalone Intense Aurora (NO PLANET - REALISTIC CURTAINS)
+        // 10. NORTHERN LIGHTS & AURORA
         if (mode === 'northern-lights') {
-            const starColor = '#E0FFFF';
+            const AURORA_PALETTES = {
+                aurora_borealis: { main: '127, 255, 212', secondary: '127, 255, 212', spike: '255, 255, 255', star: '#E0FFFF' },
+                aurora_australis: { main: '255, 92, 138', secondary: '90, 63, 255', spike: '255, 183, 213', star: '#FFB7D5' },
+                aurora_polar: { main: '127, 255, 212', secondary: '255, 255, 255', spike: '127, 255, 212', star: '#FFFFFF' },
+                aurora_deep: { main: '90, 63, 255', secondary: '27, 130, 255', spike: '167, 182, 255', star: '#7FDBFF' },
+                aurora_plasma: { main: '255, 92, 138', secondary: '90, 63, 255', spike: '127, 255, 212', star: '#FFD700' },
+                aurora_synth: { main: '127, 255, 212', secondary: '90, 63, 255', spike: '255, 92, 138', star: '#A7B6FF' },
+                aurora_rose: { main: '255, 92, 138', secondary: '255, 183, 213', spike: '255, 92, 138', star: '#FFB7D5' },
+                aurora_mint: { main: '127, 255, 212', secondary: '140, 255, 233', spike: '255, 255, 255', star: '#E0FFFF' },
+                aurora_spirit: { main: '167, 182, 255', secondary: '255, 255, 255', spike: '167, 182, 255', star: '#FFFFFF' },
+                aurora_azure: { main: '27, 130, 255', secondary: '127, 219, 255', spike: '27, 130, 255', star: '#7FDBFF' },
+                aurora_void: { main: '42, 14, 97', secondary: '90, 63, 255', spike: '167, 182, 255', star: '#5A3FFF' },
+                aurora_prism: { main: '0, 255, 136', secondary: '255, 92, 138', spike: '27, 130, 255', star: '#FFFFFF' },
+                // Fallbacks
+                aurora_solar: { main: '255, 68, 68', secondary: '255, 160, 122', spike: '255, 215, 0', star: '#FFD700' },
+                main: { main: '140, 255, 233', secondary: '90, 63, 255', spike: '255, 42, 109', star: '#E0FFFF' }
+            };
+            const p = AURORA_PALETTES[color] || AURORA_PALETTES.aurora_borealis;
 
             return (
                 <div style={overlayStyle}>
@@ -436,17 +531,17 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
                                         position: 'absolute',
                                         width: Math.random() * 2 + 1 + 'px',
                                         height: Math.random() * 2 + 1 + 'px',
-                                        background: starColor,
+                                        background: p.star,
                                         borderRadius: '50%',
                                         top: Math.random() * 100 + '%',
                                         left: Math.random() * 100 + '%',
                                         opacity: Math.random() * 0.7 + 0.3,
-                                        boxShadow: `0 0 ${Math.random() * 3 + 1}px ${starColor}`,
+                                        boxShadow: `0 0 ${Math.random() * 3 + 1}px ${p.star}`,
                                         animation: `twinkle ${Math.random() * 4 + 3}s ease-in-out infinite`,
                                         animationDelay: `${Math.random() * 5}s`
                                     }}
                                 />
-                            )), [])}
+                            )), [p.star])}
                         </div>
                     )}
 
@@ -473,13 +568,12 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
                             filter: 'blur(30px)', opacity: 0.8
                         }} />
 
-                        {/* Layer 2: Main Green Ribbon (Wavy Curtains) */}
+                        {/* Layer 2: Main Ribbon (Wavy Curtains) */}
                         <div style={{
                             position: 'absolute', top: '-20%', left: '-20%', right: '-20%', bottom: '-20%',
                             transform: 'perspective(500px) rotateX(10deg) skewY(-5deg)',
                             filter: 'url(#aurora-curtains) brightness(1.4)',
-                            // Vertical Stripes = Curtains
-                            background: 'repeating-linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1) 5%, rgba(0, 255, 136, 0.8) 15%, rgba(127, 255, 212, 0.5) 25%, transparent 35%, transparent 60%)',
+                            background: `repeating-linear-gradient(90deg, transparent, rgba(${p.main}, 0.1) 5%, rgba(${p.main}, 0.8) 15%, rgba(${p.secondary}, 0.5) 25%, transparent 35%, transparent 60%)`,
                             opacity: 0.9,
                             mixBlendMode: 'normal'
                         }} />
@@ -489,16 +583,16 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
                             position: 'absolute', top: '20%', left: '-20%', right: '-20%', bottom: '-20%',
                             transform: 'perspective(500px) rotateX(20deg) skewY(2deg)',
                             filter: 'url(#aurora-curtains) hue-rotate(30deg)',
-                            background: 'repeating-linear-gradient(90deg, transparent, transparent 30%, rgba(0, 255, 136, 0.5) 45%, transparent 60%)',
+                            background: `repeating-linear-gradient(90deg, transparent, transparent 30%, rgba(${p.main}, 0.5) 45%, transparent 60%)`,
                             opacity: 0.7, mixBlendMode: 'screen'
                         }} />
 
-                        {/* Layer 4: Pink Ionization Spikes */}
+                        {/* Layer 4: Ionization Spikes */}
                         <div style={{
                             position: 'absolute', top: '-10%', left: '-10%', right: '-10%', bottom: '0',
                             transform: 'perspective(500px) rotateX(15deg) skewY(-2deg)',
                             filter: 'url(#aurora-curtains) blur(2px)',
-                            background: 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(255, 42, 109, 0.7) 42%, transparent 45%, transparent 80%, rgba(255, 42, 109, 0.6) 82%, transparent 85%)',
+                            background: `repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(${p.spike}, 0.7) 42%, transparent 45%, transparent 80%, rgba(${p.spike}, 0.6) 82%, transparent 85%)`,
                             opacity: 1, mixBlendMode: 'screen'
                         }} />
 
@@ -506,12 +600,15 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
                         <div style={{
                             position: 'absolute', bottom: '10%', left: '-20%', right: '-20%', height: '30%',
                             filter: 'blur(15px)',
-                            background: 'radial-gradient(ellipse at 50% 100%, rgba(127, 255, 212, 0.4) 0%, transparent 60%)',
+                            background: `radial-gradient(ellipse at 50% 100%, rgba(${p.secondary}, 0.4) 0%, transparent 60%)`,
                             opacity: 0.6, mixBlendMode: 'overlay'
                         }} />
                     </div>
                 </div>
             );
+        }
+        if (mode === 'aurora') {
+            return <AuroraBanner variant={color} starSettings={starSettings} />;
         }
 
 

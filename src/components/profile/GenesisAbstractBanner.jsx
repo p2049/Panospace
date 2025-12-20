@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- GENESIS CORE V3: "THE LIVING AURA" (Optimized & Brand Compliant) ---
 // Concept: Fluid light energy using strictly PanoSpace brand colors.

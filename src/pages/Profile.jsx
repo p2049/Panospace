@@ -518,7 +518,7 @@ const Profile = () => {
                                 width: layout.profile.avatarSize,
                                 height: layout.profile.avatarSize,
                                 borderRadius: '20px', // Slightly sharper rounding
-                                background: '#000',
+                                background: user.photoURL ? '#000' : 'transparent',
                                 zIndex: 10,
                                 cursor: 'pointer'
                             }}>
@@ -545,7 +545,9 @@ const Profile = () => {
                                     : `2px solid ${user.profileTheme?.borderColor || 'rgba(127, 255, 212, 0.3)'}`,
                                 position: 'relative',
                                 zIndex: 1,
-                                background: '#111',
+                                background: user.photoURL ? '#111' : 'linear-gradient(145deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
+                                backdropFilter: user.photoURL ? 'none' : 'blur(7px)',
+                                WebkitBackdropFilter: user.photoURL ? 'none' : 'blur(7px)',
                                 boxShadow: user.profileTheme?.textGlow
                                     ? `0 0 15px ${user.profileTheme?.borderColor || solidPlanetColor}66, 0 8px 32px rgba(0,0,0,0.5)`
                                     : '0 8px 32px rgba(0,0,0,0.5)'
@@ -693,12 +695,7 @@ const Profile = () => {
                                                     <FaIdBadge size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
                                                     <span style={{ fontSize: '0.9rem' }}>{t('profile.businessCard')}</span>
                                                 </div>
-                                                {isOwnProfile && (
-                                                    <div onClick={() => { setShowAddFunds(true); setShowProfilePopout(false); }} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <FaWallet size={14} color={(user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient')) ? user.profileTheme.usernameColor : '#fff'} />
-                                                        <span style={{ fontSize: '0.9rem' }}>{t('profile.wallet')}</span>
-                                                    </div>
-                                                )}
+
                                             </div>
                                         </div>
 
@@ -1073,49 +1070,62 @@ const Profile = () => {
                                     </button>
                                 </div>
                             )}
-                            <InfiniteGrid
-                                items={collections}
-                                columns={layout.gridColumns}
-                                gap={layout.gridGap}
-                                renderItem={(collection) => (
-                                    <div
-                                        onClick={() => navigate(`/collection/${collection.id}`)}
-                                        style={{
-                                            aspectRatio: '1',
-                                            background: '#111',
-                                            borderRadius: '8px',
-                                            overflow: 'hidden',
-                                            cursor: 'pointer',
-                                            position: 'relative'
-                                        }}
-                                    >
-                                        {collection.coverImage ? (
-                                            <SmartImage
-                                                src={collection.coverImage}
-                                                alt={collection.title}
-                                                eager={false}
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '2rem' }}>
-                                                <FaLayerGroup />
+
+                            {collections.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
+                                    <FaLayerGroup size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
+                                    <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                                        {isOwnProfile ? 'No collections yet' : 'No collections yet'}
+                                    </p>
+                                    <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+                                        {isOwnProfile ? 'Create your first collection to group your work' : 'Collections will appear here'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <InfiniteGrid
+                                    items={collections}
+                                    columns={layout.gridColumns}
+                                    gap={layout.gridGap}
+                                    renderItem={(collection) => (
+                                        <div
+                                            onClick={() => navigate(`/collection/${collection.id}`)}
+                                            style={{
+                                                aspectRatio: '1',
+                                                background: '#111',
+                                                borderRadius: '8px',
+                                                overflow: 'hidden',
+                                                cursor: 'pointer',
+                                                position: 'relative'
+                                            }}
+                                        >
+                                            {collection.coverImage ? (
+                                                <SmartImage
+                                                    src={collection.coverImage}
+                                                    alt={collection.title}
+                                                    eager={false}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '2rem' }}>
+                                                    <FaLayerGroup />
+                                                </div>
+                                            )}
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: 0,
+                                                left: 0,
+                                                right: 0,
+                                                background: 'rgba(0,0,0,0.8)',
+                                                padding: '0.5rem',
+                                                color: '#fff'
+                                            }}>
+                                                <div style={{ fontWeight: 'bold', marginBottom: '0.25rem', fontSize: '0.9rem' }}>{collection.title}</div>
+                                                <div style={{ color: '#888', fontSize: '0.75rem' }}>{collection.postRefs?.length || 0} posts</div>
                                             </div>
-                                        )}
-                                        <div style={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            background: 'rgba(0,0,0,0.8)',
-                                            padding: '0.5rem',
-                                            color: '#fff'
-                                        }}>
-                                            <div style={{ fontWeight: 'bold', marginBottom: '0.25rem', fontSize: '0.9rem' }}>{collection.title}</div>
-                                            <div style={{ color: '#888', fontSize: '0.75rem' }}>{collection.postRefs?.length || 0} posts</div>
                                         </div>
-                                    </div>
-                                )}
-                            />
+                                    )}
+                                />
+                            )}
                         </>
                     )
                 }
@@ -1940,13 +1950,6 @@ const Profile = () => {
                                 )}
                             </div>
                         </>
-                    )
-                }
-                {
-                    activeTab === 'collections' && collections.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-                            {isOwnProfile ? 'No collections yet. Create your first collection!' : 'No collections yet.'}
-                        </div>
                     )
                 }
                 {

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- THE PARADOX (Hyper-Manifold) ---
 // Concept: A visual representation of a Calabi-Yau dimensional fold.

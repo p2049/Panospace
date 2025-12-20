@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- HYPERSPACE CADET: MAX IMPACT ---
 // Concept: The "XP League" vibe turned up to 11. 

@@ -558,7 +558,7 @@ const OceanBanner = ({ themeId, starSettings }) => {
 };
 
 // Import StarBackground for brand color support
-import StarBackground from '@/components/StarBackground';
+import StarBackground from '../StarBackground';
 
 export default OceanBanner;
 

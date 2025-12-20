@@ -217,7 +217,7 @@ const Search = () => {
     const { results, lastPostDoc, lastUserDoc, lastStudioDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, lastTextDoc, hasMorePosts, hasMoreUsers, hasMoreStudios, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, hasMoreText } = searchState;
 
     const { searchUsers, searchPosts, searchShopItems, searchStudios, searchCollections, searchContests, searchEvents, searchSpaceCards, loading } = useSearch();
-    const { followingList, fetchFollowing } = useFollowing(currentUser?.uid);
+    const { followingList } = useFollowing(currentUser?.uid);
     const { blockedUsers } = useBlock();
 
     const isMountedRef = useRef(true);
@@ -386,36 +386,68 @@ const Search = () => {
                         hasMore = data.length > 0;
                     } else {
                         // STANDARD POSTS MODE
-                        let searchAuthorIds = followingOnly ? followingList : [];
+                        if (followingOnly && followingList.length === 0) {
+                            resultData = [];
+                            newLastDoc = null;
+                            hasMore = false;
+                        } else {
+                            let searchAuthorIds = followingOnly ? followingList : [];
 
-                        if (selectedMuseum) {
-                            const museumMemberIds = selectedMuseum.members || [];
-                            if (followingOnly) {
-                                // Intersection
-                                searchAuthorIds = searchAuthorIds.filter(id => museumMemberIds.includes(id));
-                            } else {
-                                searchAuthorIds = museumMemberIds;
+                            if (selectedMuseum) {
+                                const museumMemberIds = selectedMuseum.members || [];
+                                if (followingOnly) {
+                                    // Intersection
+                                    searchAuthorIds = searchAuthorIds.filter(id => museumMemberIds.includes(id));
+                                } else {
+                                    searchAuthorIds = museumMemberIds;
+                                }
                             }
+
+                            const { data, lastDoc } = await searchPosts(
+                                term,
+                                {
+                                    tags: hasFilters ? tags : exploreTags,
+                                    parkId: parkId,
+                                    selectedDate: date,
+                                    camera: currentSelectedCameraRef.current,
+                                    film: currentSelectedFilmRef.current,
+                                    orientation: currentSelectedOrientationRef.current,
+                                    aspectRatio: currentSelectedAspectRatioRef.current,
+                                    sort: hasFilters ? currentSortByRef.current : exploreSort,
+                                    authorIds: searchAuthorIds,
+                                    postType: 'image', // Handle text mode
+                                    type: searchMode // Link search state to backend type filter
+                                },
+                                isLoadMore ? (currentMode === 'text' ? lastTextDoc : lastPostDoc) : null
+                            );
+                            // Filter blocked users
+                            resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
+                            newLastDoc = lastDoc;
+                            hasMore = data.length > 0;
                         }
+                    }
+                    break;
+                }
+
+                case 'text': {
+                    if (followingOnly && followingList.length === 0) {
+                        resultData = [];
+                        newLastDoc = null;
+                        hasMore = false;
+                    } else {
+                        let searchAuthorIds = followingOnly ? followingList : [];
 
                         const { data, lastDoc } = await searchPosts(
                             term,
                             {
                                 tags: hasFilters ? tags : exploreTags,
-                                parkId: parkId,
-                                selectedDate: date,
-                                camera: currentSelectedCameraRef.current,
-                                film: currentSelectedFilmRef.current,
-                                orientation: currentSelectedOrientationRef.current,
-                                aspectRatio: currentSelectedAspectRatioRef.current,
                                 sort: hasFilters ? currentSortByRef.current : exploreSort,
                                 authorIds: searchAuthorIds,
-                                postType: 'image', // Handle text mode
-                                type: searchMode // Link search state to backend type filter
+                                postType: 'text',
+                                type: 'social' // Text posts are always social type
                             },
-                            isLoadMore ? (currentMode === 'text' ? lastTextDoc : lastPostDoc) : null
+                            isLoadMore ? lastTextDoc : null
                         );
-                        // Filter blocked users
                         resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
                         newLastDoc = lastDoc;
                         hasMore = data.length > 0;
@@ -423,34 +455,29 @@ const Search = () => {
                     break;
                 }
 
-                case 'text': {
-                    let searchAuthorIds = followingOnly ? followingList : [];
-
-                    const { data, lastDoc } = await searchPosts(
-                        term,
-                        {
-                            tags: hasFilters ? tags : exploreTags,
-                            sort: hasFilters ? currentSortByRef.current : exploreSort,
-                            authorIds: searchAuthorIds,
-                            postType: 'text',
-                            type: 'social' // Text posts are always social type
-                        },
-                        isLoadMore ? lastTextDoc : null
-                    );
-                    resultData = data.filter(post => !blockedUsers.has(post.authorId) && !blockedUsers.has(post.userId));
-                    newLastDoc = lastDoc;
-                    hasMore = data.length > 0;
-                    break;
-                }
-
                 case 'users': {
+                    let searchUserIds = [];
+                    if (selectedMuseum) {
+                        const museumMemberIds = selectedMuseum.members || [];
+                        if (followingOnly) {
+                            // Intersection
+                            searchUserIds = followingList.filter(id => museumMemberIds.includes(id));
+                            if (searchUserIds.length === 0) searchUserIds = ['NONE']; // Ensure no results if intersection is empty
+                        } else {
+                            searchUserIds = museumMemberIds;
+                        }
+                    } else if (followingOnly) {
+                        searchUserIds = followingList.length > 0 ? followingList : ['NONE'];
+                    }
+
                     const { data, lastDoc } = await searchUsers(
                         term,
-                        { userIds: selectedMuseum ? (selectedMuseum.members || []) : [] },
+                        { userIds: searchUserIds },
                         isLoadMore ? lastUserDoc : null
                     );
                     // Filter blocked users
                     resultData = data.filter(user => !blockedUsers.has(user.id));
+
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
                     break;
@@ -470,9 +497,13 @@ const Search = () => {
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
 
-                    // Apply Following filter
-                    if (followingOnly && followingList.length > 0) {
-                        resultData = resultData.filter(studio => followingList.includes(studio.ownerId));
+                    // Apply Following filter (Added)
+                    if (followingOnly) {
+                        if (followingList.length > 0) {
+                            resultData = resultData.filter(studio => followingList.includes(studio.ownerId));
+                        } else {
+                            resultData = [];
+                        }
                     }
                     break;
                 }
@@ -488,8 +519,13 @@ const Search = () => {
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
 
-                    if (followingOnly && followingList.length > 0) {
-                        resultData = resultData.filter(collection => followingList.includes(collection.ownerId));
+                    // Apply Following filter (Added)
+                    if (followingOnly) {
+                        if (followingList.length > 0) {
+                            resultData = resultData.filter(collection => followingList.includes(collection.ownerId));
+                        } else {
+                            resultData = [];
+                        }
                     }
                     break;
                 }
@@ -506,8 +542,13 @@ const Search = () => {
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
 
-                    if (followingOnly && followingList.length > 0) {
-                        resultData = resultData.filter(item => followingList.includes(item.ownerId));
+                    // Apply Following filter (Added)
+                    if (followingOnly) {
+                        if (followingList.length > 0) {
+                            resultData = resultData.filter(item => followingList.includes(item.ownerId));
+                        } else {
+                            resultData = [];
+                        }
                     }
                     break;
                 }
@@ -520,6 +561,16 @@ const Search = () => {
                     );
                     // Filter blocked users (assuming hostId or ownerId exists)
                     resultData = data.filter(contest => !blockedUsers.has(contest.hostId) && !blockedUsers.has(contest.ownerId));
+
+                    // Apply Following filter (Added)
+                    if (followingOnly) {
+                        if (followingList.length > 0) {
+                            resultData = resultData.filter(contest => followingList.includes(contest.hostId) || followingList.includes(contest.ownerId));
+                        } else {
+                            resultData = [];
+                        }
+                    }
+
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
                     break;
@@ -533,6 +584,16 @@ const Search = () => {
                     );
                     // Filter blocked users
                     resultData = data.filter(event => !blockedUsers.has(event.hostId) && !blockedUsers.has(event.ownerId));
+
+                    // Apply Following filter (Added)
+                    if (followingOnly) {
+                        if (followingList.length > 0) {
+                            resultData = resultData.filter(event => followingList.includes(event.hostId) || followingList.includes(event.ownerId));
+                        } else {
+                            resultData = [];
+                        }
+                    }
+
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
                     break;
@@ -546,6 +607,16 @@ const Search = () => {
                     );
                     // Filter blocked users
                     resultData = data.filter(card => !blockedUsers.has(card.ownerId));
+
+                    // Apply Following filter (Added)
+                    if (followingOnly) {
+                        if (followingList.length > 0) {
+                            resultData = resultData.filter(card => followingList.includes(card.ownerId));
+                        } else {
+                            resultData = [];
+                        }
+                    }
+
                     newLastDoc = lastDoc;
                     hasMore = data.length > 0;
                     break;

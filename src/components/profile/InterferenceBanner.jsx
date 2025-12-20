@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- THE INTERFERENCE (Visual Hazard) ---
 // Concept: "System Stability: 0%". A GPU meltdown in banner form.

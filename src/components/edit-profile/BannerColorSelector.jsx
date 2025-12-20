@@ -1,14 +1,14 @@
 import React from 'react';
 import { ALL_COLORS } from '@/core/constants/colorPacks';
 
-const BannerColorSelector = ({ selectedColor, onSelect }) => {
+const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
 
     // Filter out black if needed? The UI shows black as valid. 
     // Usually neon/accent colors should not be black.
     // prompt says "Only use the existing PanoSpace theme colors... NO additional colors."
     // ALL_COLORS includes 'event-horizon-black' which might be invisible on black bg.
     // I will filter out black.
-    const displayColors = ALL_COLORS.filter(c => c.color !== '#000000');
+    const displayColors = customVariants || ALL_COLORS.filter(c => c.color !== '#000000');
 
     return (
         <div className="banner-color-scroll" style={{
@@ -26,19 +26,21 @@ const BannerColorSelector = ({ selectedColor, onSelect }) => {
             `}</style>
 
             {displayColors.map((opt) => {
-                const isSelected = selectedColor === opt.color;
+                const isCustom = !!customVariants;
+                const valueToSelect = isCustom ? opt.id : opt.color;
+                const isSelected = selectedColor === valueToSelect;
 
                 // Special handling for 'brand' multi-color option
-                const isBrandColors = opt.color === 'brand';
+                const isBrandColors = !isCustom && opt.color === 'brand';
                 const brandGradient = 'linear-gradient(135deg, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D, #FFB7D5)';
                 const displayBackground = isBrandColors ? brandGradient : opt.color;
-                const glowColor = isBrandColors ? '#7FFFD4' : opt.color;
+                const glowColor = isBrandColors ? '#7FFFD4' : (isCustom ? '#fff' : opt.color);
 
                 return (
                     <button
                         key={opt.id}
-                        type="button" // Prevent form submission
-                        onClick={() => onSelect(opt.color)}
+                        type="button"
+                        onClick={() => onSelect(valueToSelect)}
                         style={{
                             flex: '0 0 auto',
                             display: 'flex',
@@ -52,18 +54,17 @@ const BannerColorSelector = ({ selectedColor, onSelect }) => {
                         }}
                         title={opt.name}
                     >
-                        {/* Circle - with animated stars for Brand Colors */}
+                        {/* Circle/Square - with animated stars for Brand Colors */}
                         <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
+                            width: isCustom ? '80px' : '36px',
+                            height: isCustom ? '45px' : '36px',
+                            borderRadius: isCustom ? '8px' : '50%',
                             background: displayBackground,
                             border: isSelected ? `2px solid #fff` : '2px solid rgba(255,255,255,0.1)',
                             boxShadow: isSelected ? `0 0 10px ${glowColor}` : 'none',
                             transition: 'all 0.2s',
                             position: 'relative',
                             overflow: 'hidden',
-                            // Handle gradients if present in ALL_COLORS
                             backgroundImage: (!isBrandColors && opt.color.includes('gradient')) ? displayBackground : 'none'
                         }}>
                             {/* Animated star dots for Brand Colors */}
@@ -81,6 +82,19 @@ const BannerColorSelector = ({ selectedColor, onSelect }) => {
                                 </>
                             )}
                         </div>
+                        {isCustom && (
+                            <span style={{
+                                color: isSelected ? '#fff' : '#888',
+                                fontSize: '0.65rem',
+                                fontWeight: isSelected ? 600 : 400,
+                                textAlign: 'center',
+                                marginTop: '4px',
+                                maxWidth: '80px',
+                                lineHeight: '1.1'
+                            }}>
+                                {opt.name}
+                            </span>
+                        )}
                     </button>
                 );
             })}

@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- THE ETHER (Hyper-Minimalist Glass) ---
 // Concept: The "OS of the Gods". Better than Apple/Microsoft.

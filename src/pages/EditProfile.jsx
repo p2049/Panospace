@@ -240,6 +240,40 @@ const EditProfile = () => {
         return 'rgba(255, 255, 255, 0.7)';
     };
 
+    // --- Banner Theme Logic ---
+    const NORTHERN_LIGHTS_STAR_DEFAULTS = {
+        aurora_borealis: '#E0FFFF',
+        aurora_australis: '#FFFFFF',
+        aurora_polar: '#FFFFFF',
+        aurora_deep: '#7FFFD4',
+        aurora_plasma: '#FFFFFF',
+        aurora_neon: '#7FFFD4',
+        aurora_synth: '#7FFFD4',
+        aurora_rose: '#FF5C8A',
+        aurora_mint: '#7FFFD4',
+        aurora_azure: '#7FDBFF',
+        aurora_void: '#A7B6FF',
+        aurora_prism: '#FFFFFF'
+    };
+
+    const handleBannerModeChange = (mode) => {
+        setBannerMode(mode);
+        // If switching to Northern Lights, ensure stars are ON and default color is set (Borealis default)
+        if (mode === 'northern_lights') {
+            setUseStarsOverlay(true);
+            setStarColor(NORTHERN_LIGHTS_STAR_DEFAULTS['aurora_borealis']); // Default to first variant
+        }
+    };
+
+    const handleBannerColorChange = (colorId) => {
+        setBannerColor(colorId);
+        // If in Northern Lights mode, snap star color to the variant's design default
+        if (bannerMode === 'northern_lights' && NORTHERN_LIGHTS_STAR_DEFAULTS[colorId]) {
+            setStarColor(NORTHERN_LIGHTS_STAR_DEFAULTS[colorId]);
+            setUseStarsOverlay(true);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Starting profile save...
@@ -1042,10 +1076,10 @@ const EditProfile = () => {
                             <div style={{ marginBottom: '1rem' }}>
                                 <BannerTypeSelector
                                     selectedType={bannerMode}
-                                    onSelect={setBannerMode}
+                                    onSelect={handleBannerModeChange}
                                     highlightColor={profileBorderColor}
                                     bannerColor={bannerColor}
-                                    onColorSelect={setBannerColor}
+                                    onColorSelect={handleBannerColorChange}
                                 />
                             </div>
 
@@ -1066,8 +1100,8 @@ const EditProfile = () => {
                             Let's keep it but styling might need tweak. 
                             Actually, 'stars' IS a mode now.
                         */}
-                            {/* Stars Overlay & Color - Expanded to Cities & Oceans */}
-                            {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode === 'cosmic-earth' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
+                            {/* Stars Overlay & Color - Expanded to Cities, Oceans, & Cosmic */}
+                            {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode === 'cosmic-earth' || bannerMode === 'northern_lights' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
                                 <div style={{ marginBottom: '1rem' }}>
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <input

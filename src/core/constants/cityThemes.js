@@ -237,6 +237,13 @@ export const CITY_THEMES = {
         foreground: {
             type: 'festival_terrain'
         }
+    },
+    'city_time_aware': {
+        name: 'Omni City (Default)',
+        sky: [BRAND_COLORS.ionBlue, BRAND_COLORS.auroraBlue, BRAND_COLORS.iceWhite],
+        buildings: { color: '#64748b', windowColor: ['#e2e8f0'], density: 1.0, glow: false },
+        atmosphere: { clouds: true },
+        celestial: { type: 'sun', color: '#fffdf0', x: 0.5, y: 0.2 }
     }
 };
 
@@ -254,10 +261,10 @@ export const getTimeAwareCityTheme = (date = new Date()) => {
     let state = 'day';
     if (hour >= 0 && hour < 5) state = 'late_night';
     else if (hour >= 5 && hour < 8) state = 'dawn';
-    else if (hour >= 8 && hour < 16) state = 'day';
-    else if (hour >= 16 && hour < 19) state = 'golden_hour';
-    else if (hour >= 19 && hour < 22) state = 'night';
-    else state = 'midnight';
+    else if (hour >= 8 && hour < 17) state = 'day';        // Extended: 8 AM - 5 PM
+    else if (hour >= 17 && hour < 20) state = 'golden_hour'; // Extended: 5 PM - 8 PM
+    else if (hour >= 20 && hour < 23) state = 'night';       // Extended: 8 PM - 11 PM
+    else state = 'midnight';                                 // 11 PM - Midnight
 
     // 2. Base Configuration Generation
     const config = {
@@ -294,8 +301,8 @@ export const getTimeAwareCityTheme = (date = new Date()) => {
         case 'day':
             config.sky = [BRAND_COLORS.ionBlue, BRAND_COLORS.auroraBlue, BRAND_COLORS.iceWhite];
             config.buildings = {
-                color: '#1e293b',
-                windowColor: ['#ffffff', '#f8fafc'],
+                color: '#64748b',
+                windowColor: ['#e2e8f0', '#f1f5f9'],
                 density: 1.2,
                 glow: false
             };

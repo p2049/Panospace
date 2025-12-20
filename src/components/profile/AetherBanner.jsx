@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 
 /**
- * FluxBanner
- * "Digital Silk" - Horizontal, flowing ribbons of light.
- * Glacial movement, Brand Colors, Starfield support.
- * Enhanced with sine-wave verticality and shimmering highlights.
+ * AetherBanner
+ * "Solar Flare" - Sweeping, organic arcs of luminous data.
+ * Glacial, ethereal, Sleepy vibe. Brand colors.
+ * Enhanced with better color blending and multi-layered arcs.
  */
-const FluxBanner = ({ starSettings, variant = 'main' }) => {
+const AetherBanner = ({ starSettings, variant = 'main' }) => {
     const canvasRef = useRef(null);
     const animationRef = useRef(null);
 
@@ -15,8 +15,9 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
         deepOrbit: '#5A3FFF',
         auroraMint: '#8CFFE9',
         ionBlue: '#1B82FF',
-        solarPink: '#FF5C8A',
+        auroraBlue: '#7FDBFF',
         cosmicPeriwinkle: '#A7B6FF',
+        solarPink: '#FF5C8A',
         white: '#FFFFFF'
     };
 
@@ -24,9 +25,9 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
     const starColorProp = (starSettings?.color && !isBrand) ? starSettings.color : BRAND.white;
 
     const VARIANTS = {
-        main: { bg: '#020008', colors: [BRAND.auroraMint, BRAND.deepOrbit, BRAND.cosmicPeriwinkle] },
-        sunset: { bg: '#080101', colors: [BRAND.solarPink, BRAND.voidPurple, BRAND.deepOrbit] },
-        neon: { bg: '#000508', colors: [BRAND.ionBlue, BRAND.cosmicPeriwinkle, BRAND.auroraMint] }
+        main: { bg: '#03000a', colors: [BRAND.cosmicPeriwinkle, BRAND.auroraBlue, BRAND.solarPink] },
+        mint: { bg: '#000806', colors: [BRAND.auroraMint, BRAND.white, BRAND.ionBlue] },
+        deep: { bg: '#010108', colors: [BRAND.ionBlue, BRAND.deepOrbit, BRAND.voidPurple] }
     };
 
     const palette = VARIANTS[variant] || VARIANTS.main;
@@ -46,15 +47,18 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         };
 
-        // Ribbon generation logic
-        const ribbons = Array.from({ length: 15 }, (_, i) => ({
-            y: (i / 15) * 200, // Based on standard height
-            h: Math.random() * 40 + 20,
+        const curves = Array.from({ length: 12 }, (_, i) => ({
+            cp1x: Math.random(),
+            cp1y: Math.random(),
+            cp2x: Math.random(),
+            cp2y: Math.random(),
+            endX: Math.random(),
+            endY: Math.random(),
             color: palette.colors[i % palette.colors.length],
-            speed: 0.0001 + Math.random() * 0.0002,
-            offset: Math.random() * Math.PI * 2,
-            waviness: Math.random() * 20 + 10,
-            waveFreq: 0.002 + Math.random() * 0.003
+            thickness: Math.random() * 60 + 30,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.0001 + Math.random() * 0.0001,
+            yOffset: (Math.random() - 0.5) * 50
         }));
 
         function renderFrame() {
@@ -66,41 +70,32 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
 
             ctx.globalCompositeOperation = 'screen';
 
-            ribbons.forEach((r, i) => {
-                const shift = Math.sin(time * r.speed + r.offset);
-                const alpha = (Math.sin(time * 0.0002 + r.offset) * 0.15 + 0.25);
+            curves.forEach((c, i) => {
+                const shift = Math.sin(time * c.speed + c.phase) * 50;
+                const alpha = (Math.sin(time * 0.0001 + c.phase) * 0.1 + 0.2);
 
-                // Draw ribbon with wave
                 ctx.beginPath();
-                ctx.moveTo(0, r.y + Math.sin(time * r.waveFreq + r.offset) * r.waviness);
+                ctx.moveTo(-100, height * 0.5 + shift + c.yOffset);
+                ctx.bezierCurveTo(
+                    c.cp1x * width + shift, c.cp1y * height,
+                    c.cp2x * width, c.cp2y * height + shift,
+                    width + 100, height * 0.5 - shift + c.yOffset
+                );
 
-                for (let x = 0; x <= width; x += 10) {
-                    const y = r.y + Math.sin(x * 0.005 + time * r.speed * 10 + r.offset) * r.waviness;
-                    ctx.lineTo(x, y);
-                }
-
-                ctx.lineTo(width, height);
-                ctx.lineTo(0, height);
-                ctx.closePath();
-
-                const grad = ctx.createLinearGradient(0, r.y - r.h, 0, r.y + r.h);
+                const grad = ctx.createLinearGradient(0, 0, width, 0);
                 grad.addColorStop(0, 'rgba(0,0,0,0)');
-                grad.addColorStop(0.5, hexToRgba(r.color, alpha));
+                grad.addColorStop(0.5, hexToRgba(c.color, alpha));
                 grad.addColorStop(1, 'rgba(0,0,0,0)');
 
-                ctx.fillStyle = grad;
-                ctx.fill();
+                ctx.lineWidth = c.thickness;
+                ctx.strokeStyle = grad;
+                ctx.lineCap = 'round';
+                ctx.stroke();
 
-                // Shimmer edge
+                // Inner glow highlight
                 if (!isLowPower) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, r.y + Math.sin(time * r.waveFreq + r.offset) * r.waviness);
-                    for (let x = 0; x <= width; x += 20) {
-                        const y = r.y + Math.sin(x * 0.005 + time * r.speed * 10 + r.offset) * r.waviness;
-                        ctx.lineTo(x, y);
-                    }
-                    ctx.strokeStyle = hexToRgba(r.color, alpha * 0.5);
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = c.thickness * 0.2;
+                    ctx.strokeStyle = hexToRgba(c.color, alpha * 0.5);
                     ctx.stroke();
                 }
             });
@@ -108,7 +103,7 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
             // Readability Darkening
             ctx.globalCompositeOperation = 'multiply';
             const topGrad = ctx.createLinearGradient(0, 0, 0, height * 0.45);
-            topGrad.addColorStop(0, '#000000');
+            topGrad.addColorStop(0, '#0a0a0a');
             topGrad.addColorStop(1, '#FFFFFF');
             ctx.fillStyle = topGrad;
             ctx.fillRect(0, 0, width, height * 0.45);
@@ -140,7 +135,7 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
                 <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
                     {React.useMemo(() => {
                         const brandColors = [BRAND.auroraMint, BRAND.solarPink, BRAND.deepOrbit, BRAND.ionBlue, BRAND.white];
-                        return [...Array(40)].map((_, i) => (
+                        return [...Array(35)].map((_, i) => (
                             <div
                                 key={i}
                                 style={{
@@ -152,7 +147,7 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
                                     top: Math.random() * 100 + '%',
                                     left: Math.random() * 100 + '%',
                                     opacity: Math.random() * 0.4 + 0.2,
-                                    animation: `fluxTwink ${Math.random() * 10 + 8}s ease-in-out infinite`,
+                                    animation: `aetherTwink ${Math.random() * 9 + 7}s ease-in-out infinite`,
                                 }}
                             />
                         ));
@@ -165,16 +160,16 @@ const FluxBanner = ({ starSettings, variant = 'main' }) => {
                 display: 'block',
                 position: 'relative',
                 zIndex: 1,
-                filter: 'blur(30px) saturate(1.8) contrast(1.1)'
+                filter: 'blur(45px) saturate(2.0) brightness(1.1)'
             }} />
             <style>{`
-                @keyframes fluxTwink {
-                    0%, 100% { opacity: 0.2; transform: translateY(0); }
-                    50% { opacity: 0.5; transform: translateY(-5px); }
+                @keyframes aetherTwink {
+                    0%, 100% { opacity: 0.1; filter: blur(1px); }
+                    50% { opacity: 0.6; filter: blur(0px); }
                 }
             `}</style>
         </div>
     );
 };
 
-export default FluxBanner;
+export default AetherBanner;

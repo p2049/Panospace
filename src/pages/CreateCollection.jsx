@@ -43,7 +43,6 @@ const CreateCollection = () => {
     const containerStyle = {
         maxWidth: layout.containerWidth === '100%' ? '100%' : layout.containerWidth,
         margin: '0 auto',
-        paddingTop: layout.paddingY,
         paddingLeft: layout.paddingX,
         paddingRight: layout.paddingX,
         paddingBottom: '6rem', // Always ensure space for bottom bar/scrolling

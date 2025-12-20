@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- THE NEURAL SPHERE (Formerly Ascendant) ---
 // Concept: A "Ball of Energy" formed by thousands of flowing neural strands.

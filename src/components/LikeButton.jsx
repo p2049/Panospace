@@ -245,7 +245,6 @@ const LikeButton = ({ postId, initialLiked, initialCount, enableRatings = true, 
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                transition: 'all 0.2s ease',
                                 opacity: isProcessing ? 0.6 : 1
                             }}
                         >

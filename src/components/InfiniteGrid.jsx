@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import * as ReactWindowNamespace from 'react-window';
-
-const ReactWindow = ReactWindowNamespace.default || ReactWindowNamespace;
-const Grid = ReactWindow.FixedSizeGrid || ReactWindowNamespace.FixedSizeGrid;
+import { Grid } from 'react-window';
 
 const InfiniteGrid = ({
     items = [],
@@ -16,233 +13,92 @@ const InfiniteGrid = ({
     hasMore = false,
     loading = false
 }) => {
-    const [visibleCount, setVisibleCount] = useState(batchSize);
-    const [containerWidth, setContainerWidth] = useState(0);
-    const [windowHeight, setWindowHeight] = useState(window.innerHeight);
-    const containerRef = useRef(null);
-    const sentinelRef = useRef(null);
-
-    // Calculate responsive column count based on window width
-    const columnCount = useMemo(() => {
-        // Handle if columns is a direct number (from layoutEngine)
+    const [columnCount, setColumnCount] = useState(() => {
         if (typeof columns === 'number') return columns;
+        return columns.desktop || 3;
+    });
+    const containerRef = useRef(null);
+    const [containerWidth, setContainerWidth] = useState(0);
 
-        if (typeof window === 'undefined') return columns.mobile || 1;
-        const width = window.innerWidth;
-        if (width >= 1024) return columns.desktop || 3;
-        if (width >= 640) return columns.tablet || 2;
-        return columns.mobile || 1;
-    }, [columns]);
-
-    // Parse gap value (convert rem/px to pixels)
-    const gapPixels = useMemo(() => {
-        const gapStr = gap.toString();
-        if (gapStr.includes('rem')) {
-            const remValue = parseFloat(gapStr);
-            const fontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-            return remValue * fontSize;
-        }
-        return parseFloat(gapStr) || 24;
-    }, [gap]);
-
-    // Calculate item dimensions
-    const columnWidth = useMemo(() => {
-        if (!containerWidth) return 0;
-        const totalGap = gapPixels * (columnCount - 1);
-        return (containerWidth - totalGap) / columnCount;
-    }, [containerWidth, columnCount, gapPixels]);
-
-    const rowHeight = useMemo(() => {
-        if (!columnWidth) return 0;
-        // Parse aspect ratio (e.g., "1/1", "16/9")
-        const ratio = itemAspectRatio.toString();
-        if (ratio.includes('/')) {
-            const [w, h] = ratio.split('/').map(Number);
-            return (columnWidth * h) / w;
-        }
-        return columnWidth; // Default to square
-    }, [columnWidth, itemAspectRatio]);
-
-    // Reset visible count when items array changes
+    // Calculate columns based on width
     useEffect(() => {
-        if (!onLoadMore) {
-            setVisibleCount(batchSize);
+        if (typeof columns === 'number') {
+            setColumnCount(columns);
+            return;
         }
-    }, [items, batchSize, onLoadMore]);
 
-    // Measure container width
-    useEffect(() => {
-        const updateDimensions = () => {
+        const updateWidth = () => {
             if (containerRef.current) {
-                setContainerWidth(containerRef.current.offsetWidth);
+                const width = containerRef.current.offsetWidth;
+                setContainerWidth(width);
+                if (width < 640) setColumnCount(columns.mobile || 1);
+                else if (width < 1024) setColumnCount(columns.tablet || 2);
+                else setColumnCount(columns.desktop || 3);
             }
-            setWindowHeight(window.innerHeight);
         };
 
-        updateDimensions();
-        window.addEventListener('resize', updateDimensions);
-        return () => window.removeEventListener('resize', updateDimensions);
-    }, []);
+        updateWidth();
+        window.addEventListener('resize', updateWidth);
+        return () => window.removeEventListener('resize', updateWidth);
+    }, [columns.mobile, columns.tablet, columns.desktop]);
 
-    // Intersection Observer for infinite scroll
-    useEffect(() => {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                if (onLoadMore) {
-                    if (hasMore && !loading) {
-                        onLoadMore();
-                    }
-                } else if (visibleCount < items.length) {
-                    setVisibleCount(prev => Math.min(prev + batchSize, items.length));
-                }
-            }
-        }, {
-            rootMargin: '400px',
-            threshold: 0.1
-        });
+    const rowCount = Math.ceil(items.length / columnCount);
+    const itemWidth = containerWidth ? (containerWidth - (columnCount - 1) * 24) / columnCount : 0;
 
-        if (sentinelRef.current) {
-            observer.observe(sentinelRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, [visibleCount, items.length, batchSize, onLoadMore, hasMore, loading]);
-
-    const visibleItems = useMemo(() => {
-        if (onLoadMore) return items;
-        return items.slice(0, visibleCount);
-    }, [items, visibleCount, onLoadMore]);
-
-    const rowCount = Math.ceil(visibleItems.length / columnCount);
+    // Parse aspect ratio
+    const [ratioW, ratioH] = itemAspectRatio.split('/').map(Number);
+    const itemHeight = itemWidth * (ratioH / ratioW);
 
     // Cell renderer for react-window
     const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
         const index = rowIndex * columnCount + columnIndex;
-        if (index >= visibleItems.length) return null;
+        if (index >= items.length) return null;
 
-        const item = visibleItems[index];
+        const item = items[index];
 
-        // Adjust style to include gap
+        // Add gap to style
         const adjustedStyle = {
             ...style,
-            left: style.left + (columnIndex * gapPixels),
-            top: style.top + (rowIndex * gapPixels),
-            width: columnWidth,
-            height: rowHeight
+            left: Number(style.left) + columnIndex * 0, // Injected by Grid
+            top: Number(style.top) + rowIndex * 0,
+            padding: `0 ${columnIndex === columnCount - 1 ? 0 : 24}px ${24}px 0`,
+            boxSizing: 'border-box'
         };
 
         return (
-            <div key={item.id || index} style={adjustedStyle}>
+            <div style={adjustedStyle}>
                 {renderItem(item, index)}
             </div>
         );
-    }, [visibleItems, columnCount, columnWidth, rowHeight, gapPixels, renderItem]);
+    }, [items, columnCount, renderItem]);
 
-    // Calculate total height for virtualized grid
-    const gridHeight = useMemo(() => {
-        const totalRowHeight = rowCount * rowHeight;
-        const totalGapHeight = Math.max(0, rowCount - 1) * gapPixels;
-        return totalRowHeight + totalGapHeight;
-    }, [rowCount, rowHeight, gapPixels]);
-
-    // Use window height or calculated height, whichever is smaller
-    const displayHeight = Math.min(windowHeight - 200, gridHeight);
-
-    if (!containerWidth || !columnWidth || !rowHeight) {
-        return (
-            <div ref={containerRef} className={`infinite-grid-container ${className}`}>
-                <div style={{ height: '400px' }} />
-            </div>
-        );
-    }
-
-    // Fallback to CSS Grid if react-window failed to load
-    if (!Grid) {
-        return (
-            <div ref={containerRef} className={`infinite-grid-container ${className}`}>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-                    gap: gap,
-                    width: '100%'
-                }}>
-                    {visibleItems.map((item, index) => (
-                        <div key={item.id || index}>
-                            {renderItem(item, index)}
-                        </div>
-                    ))}
-                </div>
-                <div ref={sentinelRef} style={{ height: '20px', width: '100%' }} />
-                {(loading || (onLoadMore ? hasMore : visibleCount < items.length)) && (
-                    <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
-                        <div className="loading-spinner" />
-                    </div>
-                )}
-                <style>{`
-                    .loading-spinner {
-                        width: 30px;
-                        height: 30px;
-                        border: 3px solid rgba(127, 255, 212, 0.1);
-                        border-top: 3px solid var(--ice-mint);
-                        border-radius: 50%;
-                        animation: spin 1s linear infinite;
-                        margin: 0 auto;
-                    }
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                `}</style>
-            </div>
-        );
-    }
+    if (!containerWidth) return <div ref={containerRef} className="w-full h-full" />;
 
     return (
-        <div ref={containerRef} className={`infinite-grid-container ${className}`}>
+        <div ref={containerRef} className={`w-full ${className}`}>
             <Grid
                 columnCount={columnCount}
-                columnWidth={columnWidth + gapPixels}
-                height={displayHeight}
+                columnWidth={itemWidth + (columnCount > 1 ? 24 / (columnCount - 1) : 0)} // Approximation
+                height={window.innerHeight} // Use virtualized height or fixed
                 rowCount={rowCount}
-                rowHeight={rowHeight + gapPixels}
+                rowHeight={itemHeight + 24}
                 width={containerWidth}
-                overscanRowCount={2}
-                style={{
-                    overflowX: 'hidden',
-                    overflowY: 'auto'
+                onScroll={({ verticalScrollDirection, scrollOffset, scrollUpdateWasRequested }) => {
+                    if (!scrollUpdateWasRequested &&
+                        verticalScrollDirection === 'backward' &&
+                        hasMore && !loading) {
+                        // Check if near bottom
+                        const totalHeight = rowCount * (itemHeight + 24);
+                        if (scrollOffset + window.innerHeight > totalHeight - 500) {
+                            onLoadMore?.();
+                        }
+                    }
                 }}
             >
                 {Cell}
             </Grid>
-
-            {/* Sentinel for Intersection Observer */}
-            <div ref={sentinelRef} style={{ height: '20px', width: '100%' }} />
-
-            {/* Loading Spinner */}
-            {(loading || (onLoadMore ? hasMore : visibleCount < items.length)) && (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
-                    <div className="loading-spinner" />
-                </div>
-            )}
-
-            <style>{`
-                .loading-spinner {
-                    width: 30px;
-                    height: 30px;
-                    border: 3px solid rgba(127, 255, 212, 0.1);
-                    border-top: 3px solid var(--ice-mint);
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                    margin: 0 auto;
-                }
-
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     );
 };
 
-export default React.memo(InfiniteGrid);
+export default InfiniteGrid;

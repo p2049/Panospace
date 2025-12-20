@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 // --- THE BLACK MIRROR (Vantablack Zen) ---
 // Concept: Pure reflection. A glossy, liquid black surface with a single, perfect neon circle.

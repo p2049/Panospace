@@ -1,5 +1,5 @@
 import React from 'react';
-import { BANNER_OVERLAYS } from '@/core/constants/bannerOverlays';
+import { BANNER_OVERLAYS } from '../../core/constants/bannerOverlays';
 
 /**
  * BannerOverlayRenderer
@@ -191,6 +191,17 @@ const OverlayLayer = ({ overlay, index }) => {
                     ...fullCoverStyle,
                     background: 'radial-gradient(circle, transparent 50%, rgba(0,0,0,0.5) 150%)',
                     mixBlendMode: 'multiply'
+                }} />
+            );
+
+        case 'healing_silk':
+            return (
+                <div style={{
+                    ...fullCoverStyle,
+                    backdropFilter: 'blur(12px) saturate(1.1)',
+                    background: 'radial-gradient(circle at center, rgba(255,200,200,0.05), rgba(200,200,255,0.05))',
+                    mixBlendMode: 'soft-light',
+                    opacity: 0.8
                 }} />
             );
 

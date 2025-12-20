@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { BRAND_COLORS as COLORS, CITY_THEMES } from '@/core/constants/cityThemes';
+import { BRAND_COLORS as COLORS, CITY_THEMES, getTimeAwareCityTheme } from '../../core/constants/cityThemes';
+import StarBackground from '../StarBackground';
 
 // --- PANOSPACE BRAND PALETTE ---
 // Imported from @/core/constants/cityThemes
@@ -300,7 +301,13 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
     const timeKey = themeId === 'city_time_aware' ? `_h${new Date().getHours()}` : '';
     const cacheKey = (themeId || 'city_realistic') + starKey + timeKey;
 
-    if (CITY_RENDER_CACHE.has(cacheKey)) {
+    // DEBUG: Log time for time-aware
+    if (themeId === 'city_time_aware') {
+        console.log(`[Cityscape] Rendering at Hour: ${new Date().getHours()}. Theme State: ${themeOverride?.name || 'Unknown'}`);
+    }
+
+    // Skip cache for time-aware to ensure fresh config application during dev
+    if (themeId !== 'city_time_aware' && CITY_RENDER_CACHE.has(cacheKey)) {
         return CITY_RENDER_CACHE.get(cacheKey);
     }
 
@@ -343,23 +350,18 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
         return `rgb(${r},${g},${b})`;
     };
 
-    // 1. DRAW SKY (Skip if using brand stars - let them show through)
+    // 1. DRAW SKY
+    // We always draw the sky. If brand stars are behind, they will be hidden by opaque skies (Day), which is intended.
     const useBrandStars = starSettings?.color === 'brand' && starSettings?.enabled;
 
-    if (!useBrandStars) {
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-        // Ensure sky is defined
-        const skyColors = theme.sky || [COLORS.black, COLORS.darkNebula];
-        skyColors.forEach((color, idx) => {
-            skyGrad.addColorStop(idx / (skyColors.length - 1), color);
-        });
-        ctx.fillStyle = skyGrad;
-        ctx.fillRect(0, 0, width, height);
-    } else {
-        // Fill with transparent so stars can show through, but keep a dark base
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-        ctx.clearRect(0, 0, width, height);
-    }
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+    // Ensure sky is defined
+    const skyColors = theme.sky || [COLORS.black, COLORS.darkNebula];
+    skyColors.forEach((color, idx) => {
+        skyGrad.addColorStop(idx / (skyColors.length - 1), color);
+    });
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, width, height);
 
     // 2. STARS (Back layer) - Skip if brand stars (rendered by React component)
     // Logic: If user explicit choice (starSettings) exists, use it. Else use theme default.
@@ -1249,9 +1251,7 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
     return dataURL;
 }
 
-// Import StarBackground for brand color support
-import StarBackground from '@/components/StarBackground';
-import { getTimeAwareCityTheme } from '@/core/constants/cityThemes';
+
 
 const CityscapeBanner = ({ themeId, starSettings }) => {
     const canvasRef = useRef(null);
@@ -1261,15 +1261,30 @@ const CityscapeBanner = ({ themeId, starSettings }) => {
     const useBrandStars = starSettings?.enabled && starSettings?.color === 'brand';
 
     useEffect(() => {
-        // Calculate dynamic theme if needed
-        const themeOverride = themeId === 'city_time_aware' ? getTimeAwareCityTheme() : null;
+        const updateCity = () => {
+            // Calculate dynamic theme if needed
+            // Force new date to ensure accuracy
+            const themeOverride = themeId === 'city_time_aware' ? getTimeAwareCityTheme(new Date()) : null;
 
-        // If using brand stars, skip canvas stars rendering for that setting
-        const modifiedSettings = useBrandStars
-            ? { ...starSettings, skipCanvasStars: true }
-            : starSettings;
-        const bg = renderCityToCanvas(canvasRef.current, themeId, modifiedSettings, themeOverride);
-        setBgImage(bg);
+            // If using brand stars, skip canvas stars rendering for that setting
+            const modifiedSettings = useBrandStars
+                ? { ...starSettings, skipCanvasStars: true }
+                : starSettings;
+            const bg = renderCityToCanvas(canvasRef.current, themeId, modifiedSettings, themeOverride);
+            setBgImage(bg);
+        };
+
+        updateCity(); // Initial run
+
+        // If time-aware, check every minute for hour crossover
+        let interval;
+        if (themeId === 'city_time_aware') {
+            interval = setInterval(updateCity, 60000);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [themeId, starSettings, useBrandStars]);
 
     return (

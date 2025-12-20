@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import MainLayout from '@/layouts/MainLayout';
 import TopicHeader from '@/components/topic/TopicHeader';
 import ListViewContainer from '@/components/feed/ListViewContainer';
 import useSearch from '@/hooks/useSearch'; // Reusing the search hook for the feed
+import SEO from '@/components/SEO';
 
 const TopicPage = () => {
     const { slug } = useParams();
@@ -22,9 +22,6 @@ const TopicPage = () => {
     }, [tags]);
 
     // Reuse Search Hook to fetch posts matching these tags
-    // We force "Combined" mode essentially by querying posts with these tags
-    // The search hook might typically search by text, but we want TAG filtering.
-    // We will leverage the `performSearch` or initial load of `useSearch` by passing tags.
     const {
         results,
         loading: searchLoading,
@@ -36,25 +33,25 @@ const TopicPage = () => {
         autoSearch: true  // Trigger search immediately
     });
 
-    // Note: useSearch typically returns results.posts, results.users, etc.
     const posts = results?.posts || [];
 
     return (
-        <MainLayout>
-            <div style={{ minHeight: '100vh', background: '#000' }}>
+        <div style={{ minHeight: '100vh', background: '#000', color: '#fff' }}>
+            <SEO title={`Topic: ${tags.join(', ')}`} description={`Explore posts tagged with ${tags.join(' and ')} on Panospace.`} />
 
+            <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* Header */}
                 <TopicHeader tags={tags} canonicalSlug={canonicalSlug} />
 
                 {/* Content Feed */}
                 <div style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '4rem' }}>
 
-                    {/* Feed Controls (Simple for now: Just "Latest") */}
+                    {/* Feed Controls */}
                     <div style={{
                         padding: '1rem 2rem',
                         borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        color: 'var(--ice-mint)',
-                        fontFamily: 'var(--font-family-mono)',
+                        color: '#7FFFD4',
+                        fontFamily: 'monospace',
                         fontSize: '0.8rem',
                         textTransform: 'uppercase',
                         letterSpacing: '0.1em',
@@ -63,7 +60,6 @@ const TopicPage = () => {
                         alignItems: 'center'
                     }}>
                         <span>LATEST POSTS</span>
-                        {/* Could add Sort Dropdown here later */}
                     </div>
 
                     {/* Feed List */}
@@ -78,8 +74,8 @@ const TopicPage = () => {
                                 onClick={() => navigate('/create-post', { state: { tags: tags } })}
                                 style={{
                                     background: 'transparent',
-                                    border: '1px solid var(--ice-mint)',
-                                    color: 'var(--ice-mint)',
+                                    border: '1px solid #7FFFD4',
+                                    color: '#7FFFD4',
                                     padding: '0.5rem 1rem',
                                     borderRadius: '4px',
                                     cursor: 'pointer'
@@ -93,7 +89,7 @@ const TopicPage = () => {
                     )}
                 </div>
             </div>
-        </MainLayout>
+        </div>
     );
 };
 
