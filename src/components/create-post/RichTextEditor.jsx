@@ -64,17 +64,17 @@ export const EditorToolbar = ({ editor }) => {
     };
 
     const btnStyle = (isActive) => ({
-        background: isActive ? 'rgba(127, 255, 212, 0.2)' : 'transparent',
+        background: isActive ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
         border: 'none',
         borderRadius: '4px',
         color: isActive ? '#7FFFD4' : '#aaa',
-        width: '32px',
-        height: '32px',
+        width: '28px',
+        height: '28px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        fontSize: '0.9rem',
+        fontSize: '0.8rem',
         padding: 0,
         transition: 'all 0.1s'
     });
@@ -82,18 +82,19 @@ export const EditorToolbar = ({ editor }) => {
     return (
         <div className="editor-toolbar" style={{
             display: 'flex',
-            gap: '0.25rem',
-            padding: '0.75rem 0.75rem',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(20, 20, 20, 0.95)',
-            position: 'sticky',
-            top: 0,
+            gap: '0.1rem',
+            padding: '0.2rem 1.5rem',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(20, 20, 20, 0.98)',
+            position: 'relative', /* Changed from sticky to relative per user request */
             zIndex: 10,
-            backdropFilter: 'blur(10px)',
+            backdropFilter: 'blur(15px)',
             borderTopLeftRadius: '12px',
             borderTopRightRadius: '12px',
             alignItems: 'center',
-            marginBottom: '0'
+            marginBottom: '0',
+            width: '100%',
+            boxSizing: 'border-box'
         }}
             onMouseDown={preventFocusLoss}
         >
@@ -104,7 +105,7 @@ export const EditorToolbar = ({ editor }) => {
                 title="Bold (Cmd+B)"
                 type="button"
             >
-                <FaBold size={13} />
+                <FaBold size={11} />
             </button>
             <button
                 onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -113,10 +114,10 @@ export const EditorToolbar = ({ editor }) => {
                 title="Italic (Cmd+I)"
                 type="button"
             >
-                <FaItalic size={13} />
+                <FaItalic size={11} />
             </button>
 
-            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }}></div>
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }}></div>
 
             <button
                 onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
@@ -124,7 +125,7 @@ export const EditorToolbar = ({ editor }) => {
                 title="Heading 2"
                 type="button"
             >
-                <span style={{ fontWeight: 700, fontSize: '13px' }}>H2</span>
+                <span style={{ fontWeight: 700, fontSize: '12px' }}>H2</span>
             </button>
             <button
                 onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
@@ -132,7 +133,7 @@ export const EditorToolbar = ({ editor }) => {
                 title="Heading 3"
                 type="button"
             >
-                <span style={{ fontWeight: 600, fontSize: '12px' }}>H3</span>
+                <span style={{ fontWeight: 600, fontSize: '11px' }}>H3</span>
             </button>
             <button
                 onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -140,10 +141,10 @@ export const EditorToolbar = ({ editor }) => {
                 title="Quote"
                 type="button"
             >
-                <FaQuoteRight size={13} />
+                <FaQuoteRight size={11} />
             </button>
 
-            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)', margin: '0 0.5rem' }}></div>
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.1)', margin: '0 0.4rem' }}></div>
 
             <button
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -151,7 +152,7 @@ export const EditorToolbar = ({ editor }) => {
                 title="Bullet List"
                 type="button"
             >
-                <FaListUl size={13} />
+                <FaListUl size={11} />
             </button>
             <button
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -159,7 +160,7 @@ export const EditorToolbar = ({ editor }) => {
                 title="Ordered List"
                 type="button"
             >
-                <FaListOl size={13} />
+                <FaListOl size={11} />
             </button>
         </div>
     );

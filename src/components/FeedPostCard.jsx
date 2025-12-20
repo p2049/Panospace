@@ -5,6 +5,7 @@ import { fadeColor } from '@/core/utils/colorUtils';
 import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
 import { RichTextRenderer } from '@/components/RichTextRenderer';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
+import PingDetailModal from '@/components/PingDetailModal';
 
 const BASE_WRITER_THEMES = {
     default: { id: 'default', name: 'Obsidian', bg: 'rgba(20, 20, 20, 0.6)', text: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' },
@@ -24,10 +25,11 @@ FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
     };
 });
 
-const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts, onResize }) => {
+const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts, onResize, onRefresh }) => {
     const textBodyRef = React.useRef(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isOverflowing, setIsOverflowing] = useState(false);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     // Date formatter helper (duplicated for now to avoid props drilling complexity or external dep)
     const formatDate = (date) => {
@@ -74,139 +76,148 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
     }, [isExpanded, onResize]);
 
     return (
-        <div
-            ref={cardRef}
-            onClick={(e) => {
-                if (isOverflowing) {
-                    setIsExpanded(!isExpanded);
-                } else if (onClick) {
-                    onClick();
-                }
-            }}
-            style={{
-                background: theme.bg,
-                border: theme.border,
-                borderRadius: '12px',
-                padding: '1.5rem',
-                cursor: isOverflowing ? 'pointer' : 'default',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-                color: textColor,
-                position: 'relative',
-                overflow: 'hidden',
-                width: '100%',
-                boxSizing: 'border-box',
-                // Strict height control: 100% matches the Grid Cell (Span 2) when collapsed
-                height: isExpanded ? 'auto' : (onResize ? '100%' : 'auto'),
-                maxHeight: isExpanded ? 'none' : (onResize ? 'none' : '320px'),
-                minHeight: onResize ? '100%' : '160px',
-                justifyContent: 'space-between',
-                zIndex: isExpanded ? 10 : 1
-            }}
-            onMouseEnter={e => { if (isOverflowing || onClick) e.currentTarget.style.transform = 'translateY(-4px)'; }}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-            {/* Header: Author & Date */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', flexShrink: 0 }}>
-                <span>{renderCosmicUsername(post.authorName || post.username || 'Writer', textColor)}</span>
-                <span>{formatDate(post.createdAt)}</span>
-            </div>
+        <>
+            <PingDetailModal
+                isVisible={showDetailModal}
+                onClose={() => setShowDetailModal(false)}
+                post={post}
+                onDelete={onRefresh}
+            />
+            <div
+                ref={cardRef}
+                onClick={(e) => {
+                    if (isOverflowing) {
+                        setIsExpanded(!isExpanded);
+                    } else {
+                        // Open the ping detail modal instead of switching to visual feed
+                        setShowDetailModal(true);
+                    }
+                }}
+                style={{
+                    background: theme.bg,
+                    border: theme.border,
+                    borderRadius: '12px',
+                    padding: '1.5rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    color: textColor,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    // Strict height control: 100% matches the Grid Cell (Span 2) when collapsed
+                    height: isExpanded ? 'auto' : (onResize ? '100%' : 'auto'),
+                    maxHeight: isExpanded ? 'none' : (onResize ? 'none' : '320px'),
+                    minHeight: onResize ? '100%' : '160px',
+                    justifyContent: 'space-between',
+                    zIndex: isExpanded ? 10 : 1
+                }}
+                onMouseEnter={e => { if (isOverflowing || onClick) e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+                {/* Header: Author & Date */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', flexShrink: 0 }}>
+                    <span>{renderCosmicUsername(post.authorName || post.username || 'Writer', textColor)}</span>
+                    <span>{formatDate(post.createdAt)}</span>
+                </div>
 
-            {/* Content Container - Flex grow to fill space */}
-            <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                {post.title && (
-                    <h3 style={{
-                        margin: '0 0 0.8rem 0',
-                        fontSize: '1.4rem',
-                        fontFamily: '"Rajdhani", sans-serif',
-                        fontWeight: '700',
-                        lineHeight: 1.2,
-                        textTransform: 'uppercase',
-                        overflowWrap: 'break-word',
-                        wordBreak: 'break-word',
-                        flexShrink: 0 // Title doesn't shrink
-                    }}>
-                        {post.title}
-                    </h3>
-                )}
-                <div
-                    ref={textBodyRef}
-                    style={{
-                        position: 'relative',
-                        // If collapsed, use flex to fill available space (and cut off). If expanded, allow auto height.
-                        flex: isExpanded ? 'none' : '1 1 auto',
-                        height: isExpanded ? 'auto' : undefined,
-                        overflow: 'hidden',
-                        minHeight: 0, // Critical for flex child scrolling/clipping
-                        maskImage: (!isExpanded && isOverflowing) ? 'linear-gradient(to bottom, black 50%, transparent 100%)' : 'none',
-                        WebkitMaskImage: (!isExpanded && isOverflowing) ? 'linear-gradient(to bottom, black 50%, transparent 100%)' : 'none',
-                        transition: 'all 0.3s ease',
-                        width: '100%'
-                    }}
-                >
-                    {post.bodyRichText ? (
-                        <div style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                            <RichTextRenderer content={post.bodyRichText} fontStyle={post.fontStyle} />
-                        </div>
-                    ) : (
-                        <div style={{
-                            color: textColor,
-                            fontSize: '1rem',
-                            lineHeight: '1.6',
-                            fontFamily: 'var(--font-family-body)',
-                            whiteSpace: 'pre-line',
-                            opacity: 0.9,
+                {/* Content Container - Flex grow to fill space */}
+                <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    {post.title && (
+                        <h3 style={{
+                            margin: '0 0 0.8rem 0',
+                            fontSize: '1.4rem',
+                            fontFamily: '"Rajdhani", sans-serif',
+                            fontWeight: '700',
+                            lineHeight: 1.2,
+                            textTransform: 'uppercase',
                             overflowWrap: 'break-word',
-                            wordBreak: 'break-word'
+                            wordBreak: 'break-word',
+                            flexShrink: 0 // Title doesn't shrink
                         }}>
-                            {plainTextContent}
+                            {post.title}
+                        </h3>
+                    )}
+                    <div
+                        ref={textBodyRef}
+                        style={{
+                            position: 'relative',
+                            // If collapsed, use flex to fill available space (and cut off). If expanded, allow auto height.
+                            flex: isExpanded ? 'none' : '1 1 auto',
+                            height: isExpanded ? 'auto' : undefined,
+                            overflow: 'hidden',
+                            minHeight: 0, // Critical for flex child scrolling/clipping
+                            maskImage: (!isExpanded && isOverflowing) ? 'linear-gradient(to bottom, black 50%, transparent 100%)' : 'none',
+                            WebkitMaskImage: (!isExpanded && isOverflowing) ? 'linear-gradient(to bottom, black 50%, transparent 100%)' : 'none',
+                            transition: 'all 0.3s ease',
+                            width: '100%'
+                        }}
+                    >
+                        {post.bodyRichText ? (
+                            <div style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                                <RichTextRenderer content={post.bodyRichText} fontStyle={post.fontStyle} />
+                            </div>
+                        ) : (
+                            <div style={{
+                                color: textColor,
+                                fontSize: '1rem',
+                                lineHeight: '1.6',
+                                fontFamily: 'var(--font-family-body)',
+                                whiteSpace: 'pre-line',
+                                opacity: 0.9,
+                                overflowWrap: 'break-word',
+                                wordBreak: 'break-word'
+                            }}>
+                                {plainTextContent}
+                            </div>
+                        )}
+                    </div>
+
+                    {!isExpanded && isOverflowing && (
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '1.5rem',
+                            left: 0,
+                            width: '100%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            pointerEvents: 'none'
+                        }}>
+                            <span
+                                style={{
+                                    background: 'rgba(0,0,0,0.6)',
+                                    backdropFilter: 'blur(4px)',
+                                    border: '1px solid rgba(255,255,255,0.2)',
+                                    color: '#fff',
+                                    padding: '0.4rem 1rem',
+                                    borderRadius: '20px',
+                                    fontSize: '0.8rem',
+                                    display: 'inline-block',
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                                }}
+                            >
+                                Read More
+                            </span>
                         </div>
                     )}
                 </div>
 
-                {!isExpanded && isOverflowing && (
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '1.5rem',
-                        left: 0,
-                        width: '100%',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        pointerEvents: 'none'
-                    }}>
-                        <span
-                            style={{
-                                background: 'rgba(0,0,0,0.6)',
-                                backdropFilter: 'blur(4px)',
-                                border: '1px solid rgba(255,255,255,0.2)',
-                                color: '#fff',
-                                padding: '0.4rem 1rem',
-                                borderRadius: '20px',
-                                fontSize: '0.8rem',
-                                display: 'inline-block',
-                                boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
-                            }}
-                        >
-                            Read More
-                        </span>
+                {/* Linked Post Indicator (Footer) */}
+                {post.linkedPostIds && post.linkedPostIds.length > 0 && (
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', opacity: 0.8, color: theme.text === '#ffffff' ? '#7FFFD4' : 'inherit', flexShrink: 0 }}>
+                        <FaLink size={12} />
+                        <span>{post.linkedPostIds.length} Linked Ping{post.linkedPostIds.length > 1 ? 's' : ''}</span>
                     </div>
                 )}
             </div>
-
-            {/* Linked Post Indicator (Footer) */}
-            {post.linkedPostIds && post.linkedPostIds.length > 0 && (
-                <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', opacity: 0.8, color: theme.text === '#ffffff' ? '#7FFFD4' : 'inherit', flexShrink: 0 }}>
-                    <FaLink size={12} />
-                    <span>{post.linkedPostIds.length} Linked Ping{post.linkedPostIds.length > 1 ? 's' : ''}</span>
-                </div>
-            )}
-        </div>
+        </>
     );
 };
 
-const FeedPostCard = ({ post, contextPosts, onClick, onResize }) => {
+const FeedPostCard = ({ post, contextPosts, onClick, onResize, onRefresh }) => {
     const navigate = useNavigate();
 
     // Format date
@@ -240,6 +251,7 @@ const FeedPostCard = ({ post, contextPosts, onClick, onResize }) => {
                 navigate={navigate}
                 contextPosts={contextPosts}
                 onResize={onResize}
+                onRefresh={onRefresh}
             />
         );
     }

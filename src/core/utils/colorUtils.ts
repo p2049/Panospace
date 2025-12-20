@@ -161,3 +161,55 @@ export const fadeColor = (hex: string, opacity: number): string => {
     }
     return hex;
 }
+
+/**
+ * Checks if a color is perceived as dark
+ */
+export const isColorDark = (hex: string): boolean => {
+    if (!hex || hex === 'brand' || hex.startsWith('linear-gradient')) return true;
+
+    // Simple RGB luminance check
+    let hexClean = hex.replace('#', '');
+    if (hexClean.length === 3) {
+        const r_char = hexClean[0] || '0';
+        const g_char = hexClean[1] || '0';
+        const b_char = hexClean[2] || '0';
+        hexClean = r_char + r_char + g_char + g_char + b_char + b_char;
+    }
+    const r = parseInt(hexClean.substring(0, 2), 16);
+    const g = parseInt(hexClean.substring(2, 4), 16);
+    const b = parseInt(hexClean.substring(4, 6), 16);
+
+    // Perceived luminance formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.5;
+};
+
+/**
+ * Lightens a color by a percentage
+ */
+export const lightenColor = (hex: string, percent: number): string => {
+    if (!hex || hex === 'brand' || hex.startsWith('linear-gradient')) return hex;
+
+    let hexClean = hex.replace('#', '');
+    if (hexClean.length === 3) {
+        const r_char = hexClean[0] || '0';
+        const g_char = hexClean[1] || '0';
+        const b_char = hexClean[2] || '0';
+        hexClean = r_char + r_char + g_char + g_char + b_char + b_char;
+    }
+    let r = parseInt(hexClean.substring(0, 2), 16);
+    let g = parseInt(hexClean.substring(2, 4), 16);
+    let b = parseInt(hexClean.substring(4, 6), 16);
+
+    r = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)));
+    g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)));
+    b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)));
+
+    const toHex = (x: number) => {
+        const h = x.toString(16);
+        return h.length === 1 ? '0' + h : h;
+    };
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};

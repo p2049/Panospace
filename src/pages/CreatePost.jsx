@@ -8,8 +8,8 @@
  *
  * Do not modify layout containers without understanding this contract.
  */
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useCreatePost } from '@/hooks/useCreatePost';
 import { useCollections } from '@/hooks/useCollections';
@@ -31,10 +31,10 @@ import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from '
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
 import PageHeader from '@/components/PageHeader';
-import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft, FaQuestionCircle } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft, FaQuestionCircle, FaMountain, FaTree, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import Post from '@/components/Post';
 import Walkthrough from '@/components/common/Walkthrough';
-import { extractDominantHue, fadeColor } from '@/core/utils/colorUtils';
+import { extractDominantHue, fadeColor, isColorDark, lightenColor } from '@/core/utils/colorUtils';
 import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
 import { generateStackPreview } from '@/core/utils/stackUtils';
 import { useTextEditor, EditorToolbar, EditorCanvas } from '@/components/create-post/RichTextEditor';
@@ -43,6 +43,7 @@ import { validateImageSize, getMaxImageSizeMB, formatFileSizeMB, getMaxImageSize
 import { scaleImageToFit } from '@/core/utils/imageScaler';
 import { checkContent } from '@/core/utils/moderation/moderator';
 import { LEGAL_TEXT } from '@/core/constants/legalText';
+import { PARKS_DATA } from '@/core/constants/parksData';
 
 
 
@@ -56,13 +57,15 @@ const BASE_WRITER_THEMES = {
 const WRITER_THEMES = { ...BASE_WRITER_THEMES };
 
 // Hydrate from Color Packs
-FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
+FREE_COLOR_PACK.forEach(colorOption => {
+    // Skip 'brand-colors' if it doesn't have a valid hex/gradient, or use a brand default
+    const isBrand = colorOption.id === 'brand-colors';
     WRITER_THEMES[colorOption.id] = {
         id: colorOption.id,
         name: colorOption.name,
-        bg: colorOption.isGradient ? colorOption.color : fadeColor(colorOption.color, 0.20),
-        text: colorOption.color,
-        border: colorOption.isGradient ? 'none' : `1px solid ${fadeColor(colorOption.color, 0.4)}`,
+        bg: isBrand ? 'rgba(127, 255, 212, 0.15)' : (colorOption.isGradient ? colorOption.color : fadeColor(colorOption.color, 0.20)),
+        text: (colorOption.id === 'event-horizon-black' || colorOption.id === 'ice-white') ? '#ffffff' : (colorOption.id === 'deep-orbit-purple' ? '#A7B6FF' : (isBrand ? '#7FFFD4' : colorOption.color)),
+        border: isBrand ? '1px solid rgba(127, 255, 212, 0.3)' : (colorOption.isGradient ? 'none' : `1px solid ${fadeColor(colorOption.color, 0.4)}`),
         isGradient: colorOption.isGradient || false
     };
 });
@@ -121,6 +124,9 @@ const StackThumbnail = ({ file }) => {
 const CreatePost = () => {
     const { currentUser, customClaims } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const initialState = location.state || {};
+
     const { createPost, loading, error, progress } = useCreatePost();
     const { collections } = useCollections(currentUser?.uid);
     const { saveDraft, loadDraft, clearDraft, hasDraft } = useDraftSaving();
@@ -147,18 +153,21 @@ const CreatePost = () => {
     }, []);
 
     // Global Post State
-    const [title, setTitle] = useState('');
-    const [tags, setTags] = useState([]);
-    const [location, setLocation] = useState({ city: '', state: '', country: '' });
+    const [title, setTitle] = useState(initialState.initialTitle || '');
+    const [tags, setTags] = useState(initialState.initialPostType === 'text' ? ['ping'] : []);
+    const [selectedPark, setSelectedPark] = useState(null);
+    const [parkType, setParkType] = useState('national'); // 'national' or 'state'
+    const [isParksExpanded, setIsParksExpanded] = useState(false);
+    const [locationData, setLocationData] = useState({ city: '', state: '', country: '' });
     const [primaryMode, setPrimaryMode] = useState(createDefault || 'social'); // Was postType (social/art)
-    const [postType, setPostType] = useState('image');
-    const [textContent, setTextContent] = useState('');
+    const [postType, setPostType] = useState(initialState.initialPostType || 'image');
+    const [textContent, setTextContent] = useState(initialState.initialBody || '');
     const [bodyRichText, setBodyRichText] = useState(null);
     const [fontStyle, setFontStyle] = useState('modern');
 
     // Initialize Rich Text Editor (Always active to persist state switch)
     const editor = useTextEditor({
-        content: null, // Initial only
+        content: initialState.initialBody || null, // Initial only
         placeholder: "Write your story...",
         limit: 3000,
         onChange: (json, text) => {
@@ -166,12 +175,104 @@ const CreatePost = () => {
             setTextContent(text);
         }
     });
-    const [writerTheme, setWriterTheme] = useState('default'); // 'default' | 'paper' | 'night' | 'mono' | 'aurora'
-    const [writerTextColor, setWriterTextColor] = useState(null); // Custom text color override
+    const [writerTheme, setWriterTheme] = useState(initialState.initialTheme || 'default'); // 'default' | 'paper' | 'night' | 'mono' | 'aurora'
+    const [writerTextColor, setWriterTextColor] = useState(initialState.initialTextColor || null); // Custom text color override
     const [linkedPostIds, setLinkedPostIds] = useState([]);
     const [showLinkSelector, setShowLinkSelector] = useState(false);
     const [userPosts, setUserPosts] = useState([]); // For link selector
     const [isHumor, setIsHumor] = useState(false); // Humor Flag
+
+    // Safe Theme Lookup
+    const currentWriterTheme = useMemo(() => {
+        return WRITER_THEMES[writerTheme] || WRITER_THEMES.default;
+    }, [writerTheme]);
+
+    const getAvailableTextColors = useCallback((themeId) => {
+        const theme = WRITER_THEMES[themeId] || WRITER_THEMES.default;
+        // Map theme ID back to pack color for logic
+        const bgColor = theme.id === 'default' ? '#141414' : (FREE_COLOR_PACK.find(c => c.id === theme.id)?.color || '#000000');
+
+        const options = [];
+        const bgHex = bgColor.toLowerCase();
+        const isDark = isColorDark(bgHex);
+        const bgId = theme.id;
+
+        // 0. Theme Identity (Match Border) - Use Periwinkle for purple
+        // Ensure the theme's own color is always an option for colored themes
+        if (bgId !== 'event-horizon-black' && bgId !== 'ice-white' && bgId !== 'default') {
+            const themeColor = bgId === 'deep-orbit-purple' ? '#A7B6FF' : bgColor;
+            options.push({ id: 'self', name: bgId === 'deep-orbit-purple' ? 'Periwinkle' : 'Theme Match', color: themeColor });
+        }
+
+        // 1. Black & White
+        // Always push White
+        options.push({ id: 'white', name: 'White', color: '#ffffff' });
+        // User Rule: Black text is ONLY allowed on White background.
+        if (bgId === 'ice-white' || bgHex === '#ffffff' || bgHex === '#f2f7fa') options.push({ id: 'black', name: 'Black', color: '#000000' });
+
+        // 2. Lighter shade if dark
+        // Exclude classic-mint/ion-blue/deep-orbit-purple (purple uses periwinkle instead)
+        if (isDark && bgId !== 'event-horizon-black' && bgId !== 'default' && bgId !== 'classic-mint' && bgId !== 'ion-blue' && bgId !== 'deep-orbit-purple') {
+            options.push({ id: 'light-self', name: 'Light Tone', color: lightenColor(bgColor, 40) });
+        }
+
+        // 3. Pink & Blue pair (Updated to Aurora Blue)
+        if (bgId.includes('pink')) {
+            options.push({ id: 'pair-aurora', name: 'Aurora Blue', color: '#7FDBFF' });
+            options.push({ id: 'pair-green', name: 'Mint', color: '#7FFFD4' });
+            options.push({ id: 'pair-light-pink', name: 'Light Pink', color: '#FFB7D5' });
+        }
+        if (bgId.includes('blue')) options.push({ id: 'pair-pink', name: 'Pink', color: '#FF5C8A' });
+        if (bgId === 'ion-blue') options.push({ id: 'pair-aurora', name: 'Aurora Blue', color: '#7FDBFF' });
+
+        // 4. Orange with Periwinkle & Aurora Blue
+        if (bgId === 'stellar-orange') {
+            options.push({ id: 'pair-periwinkle', name: 'Periwinkle', color: '#A7B6FF' });
+            options.push({ id: 'pair-aurora', name: 'Aurora Blue', color: '#7FDBFF' });
+        }
+
+        // 5. Purple with Orange, Green
+        if (bgId === 'deep-orbit-purple') {
+            options.push({ id: 'pair-orange', name: 'Orange', color: '#FF914D' });
+            options.push({ id: 'pair-green', name: 'Mint', color: '#7FFFD4' });
+        }
+
+        // 6. Green with Aurora Blue & Pink
+        if (bgId === 'classic-mint') {
+            options.push({ id: 'pair-aurora', name: 'Aurora Blue', color: '#7FDBFF' });
+            options.push({ id: 'pair-pink', name: 'Pink', color: '#FF5C8A' });
+        }
+
+        // 7. Black/White backgrounds use ANY color
+        if (bgId === 'event-horizon-black' || bgId === 'ice-white') {
+            FREE_COLOR_PACK.forEach(c => {
+                if (c.id !== 'brand-colors' && c.id !== bgId && c.id !== 'ice-white') {
+                    options.push({ id: 'any-' + c.id, name: c.name, color: c.color });
+                }
+            });
+        }
+
+        const unique = [];
+        const seen = new Set();
+        options.forEach(opt => {
+            const low = opt.color.toLowerCase();
+            if (!seen.has(low)) {
+                seen.add(low);
+                unique.push(opt);
+            }
+        });
+        return unique;
+    }, []);
+
+    useEffect(() => {
+        if (postType === 'text') {
+            // Fix glitch: Always reset to first available text color when theme changes
+            const availableColors = getAvailableTextColors(writerTheme);
+            if (availableColors.length > 0) {
+                setWriterTextColor(availableColors[0].color);
+            }
+        }
+    }, [writerTheme, postType, getAvailableTextColors]);
 
     // Emoji Picker
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -699,7 +800,7 @@ const CreatePost = () => {
             return;
         }
 
-        if (!termsAccepted) {
+        if (createSpaceCard && !termsAccepted) {
             alert("You must verify ownership of your content to post.");
             return;
         }
@@ -804,12 +905,13 @@ const CreatePost = () => {
             logger.log('📤 Calling createPost...');
             await createPost({
                 title,
-                tags,
+                tags: selectedPark ? [...tags, selectedPark] : tags,
+                parkId: selectedPark || null,
                 type: primaryMode, // Legacy compatibility (Art/Social)
                 postType: postType, // 'image' or 'text'
                 primaryMode: primaryMode, // 'social' or 'art'
                 isHumor: isHumor,
-                location,
+                location: locationData,
                 // Image specific
                 filmMetadata: (postType === 'image' && filmMetadata.isFilm) ? filmMetadata : null,
                 enableRatings: enableRatings,
@@ -1101,52 +1203,7 @@ const CreatePost = () => {
 
 
 
-            {/* Format Selector */}
-            <div id="create-post-type-selector" style={{
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '1rem 0 0.5rem',
-                gap: '1rem'
-            }}>
-                <button
-                    onClick={() => setPostType('image')}
-                    style={{
-                        padding: '0.6rem 1.2rem',
-                        borderRadius: '20px',
-                        border: postType === 'image' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                        background: postType === 'image' ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
-                        color: postType === 'image' ? '#7FFFD4' : '#888',
-                        fontSize: '0.9rem',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    <FaImages /> VISUAL
-                </button>
-                <button
-                    onClick={() => setPostType('text')}
-                    style={{
-                        padding: '0.6rem 1.2rem',
-                        borderRadius: '20px',
-                        border: postType === 'text' ? '1px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                        background: postType === 'text' ? 'rgba(127, 255, 212, 0.1)' : 'transparent',
-                        color: postType === 'text' ? '#7FFFD4' : '#888',
-                        fontSize: '0.9rem',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    <FaAlignLeft /> PING
-                </button>
-            </div>
+            {/* Format Selector Removed - Pings moved to Quick Ping */}
 
             <div className="create-post-layout">
                 {/* LEFT COLUMN: Content (Image Previews OR Text Editor) */}
@@ -1155,7 +1212,7 @@ const CreatePost = () => {
                     {/* TEXT COMPOSER */}
                     {postType === 'text' && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
-                            {/* Color & Theme Editor (Organized) */}
+                            {/* Color & Theme Editor (Streamlined) */}
                             <div style={{
                                 padding: '1.5rem',
                                 border: '1px solid rgba(127, 255, 212, 0.1)',
@@ -1165,79 +1222,100 @@ const CreatePost = () => {
                                 flexDirection: 'column',
                                 gap: '2rem'
                             }}>
-                                {/* Font selection removed per user request */}
-
                                 {/* Theme Section */}
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#e0e0e0', letterSpacing: '0.5px' }}>CARD THEME</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#e0e0e0', letterSpacing: '0.5px' }}>CARD BACKGROUND</span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.8rem' }}>
-                                        {Object.entries(WRITER_THEMES)
-                                            .filter(([key]) => key !== 'default')
-                                            .map(([key, theme]) => (
-                                                <button
-                                                    key={key}
-                                                    onClick={() => setWriterTheme(key)}
-                                                    style={{
-                                                        width: '100%',
-                                                        aspectRatio: '3/4',
-                                                        borderRadius: '8px',
-                                                        background: theme.bg,
-                                                        border: writerTheme === key ? '2px solid #7FFFD4' : '1px solid rgba(255,255,255,0.1)',
-                                                        cursor: 'pointer',
-                                                        boxShadow: writerTheme === key ? '0 0 12px rgba(127, 255, 212, 0.3)' : 'none',
-                                                        transition: 'all 0.2s',
-                                                        position: 'relative'
-                                                    }}
-                                                    title={theme.name}
-                                                >
-                                                    {writerTheme === key && (
-                                                        <div style={{
-                                                            position: 'absolute', inset: 0,
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            background: 'rgba(0,0,0,0.4)', borderRadius: '6px'
-                                                        }}>
-                                                            <FaCheckCircle size={16} color="#7FFFD4" />
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ))}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.8rem' }}>
+                                        {FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').map(color => (
+                                            <button
+                                                key={color.id}
+                                                type="button"
+                                                onClick={() => setWriterTheme(color.id)}
+                                                style={{
+                                                    width: '100%',
+                                                    aspectRatio: '1',
+                                                    borderRadius: '50%',
+                                                    background: writerTheme === color.id
+                                                        ? (color.color.includes('gradient') ? 'rgba(255,255,255,0.1)' : fadeColor(color.color, 0.15))
+                                                        : 'transparent',
+                                                    backdropFilter: writerTheme === color.id ? 'blur(2px)' : 'none',
+                                                    border: writerTheme === color.id
+                                                        ? `2px solid ${(color.color.includes('gradient')) ? '#fff' : color.color}`
+                                                        : '1px solid rgba(255,255,255,0.2)',
+                                                    boxShadow: writerTheme === color.id
+                                                        ? `0 0 10px ${(color.color.includes('gradient')) ? 'rgba(255,255,255,0.5)' : (color.color === '#000000' ? '#7FFFD4' : color.color)}`
+                                                        : 'none',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: 0
+                                                }}
+                                                title={color.name}
+                                            >
+                                                <div style={{
+                                                    width: writerTheme === color.id ? '50%' : '100%',
+                                                    height: writerTheme === color.id ? '50%' : '100%',
+                                                    borderRadius: '50%',
+                                                    background: color.color,
+                                                    boxShadow: color.color === '#000000' ? '0 0 4px rgba(127, 255, 212, 0.5)' : 'none',
+                                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                                }} />
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 
                                 {/* Text Color Section */}
                                 <div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#e0e0e0', letterSpacing: '0.5px' }}>TEXT COLOR</span>
-                                        {writerTextColor && (
-                                            <button
-                                                onClick={() => setWriterTextColor(null)}
-                                                style={{ fontSize: '0.75rem', color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-                                            >
-                                                Reset Default
-                                            </button>
-                                        )}
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#e0e0e0', letterSpacing: '0.5px' }}>TEXT ACCENT</span>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.8rem', justifyItems: 'center' }}>
-                                        {FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').map(option => (
-                                            <button
-                                                key={option.id}
-                                                onClick={() => setWriterTextColor(option.color)}
-                                                style={{
-                                                    width: '40px',
-                                                    height: '40px',
-                                                    borderRadius: '50%',
-                                                    background: option.color,
-                                                    border: (writerTextColor === option.color) ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
-                                                    cursor: 'pointer',
-                                                    transform: (writerTextColor === option.color) ? 'scale(1.1)' : 'scale(1)',
-                                                    boxShadow: (writerTextColor === option.color) ? '0 0 10px rgba(255,255,255,0.3)' : 'none',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                title={option.name}
-                                            />
-                                        ))}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.8rem' }}>
+                                        {getAvailableTextColors(writerTheme).map(color => {
+                                            const isActive = (writerTextColor || currentWriterTheme.text).toLowerCase() === color.color.toLowerCase();
+                                            return (
+                                                <button
+                                                    key={color.id}
+                                                    type="button"
+                                                    onClick={() => setWriterTextColor(color.color)}
+                                                    style={{
+                                                        width: '100%',
+                                                        aspectRatio: '1',
+                                                        borderRadius: '50%',
+                                                        background: isActive
+                                                            ? (color.color.includes('gradient') ? 'rgba(255,255,255,0.1)' : fadeColor(color.color, 0.15))
+                                                            : 'transparent',
+                                                        backdropFilter: isActive ? 'blur(2px)' : 'none',
+                                                        border: isActive
+                                                            ? `2px solid ${(color.color.includes('gradient')) ? '#fff' : color.color}`
+                                                            : '1px solid rgba(255,255,255,0.2)',
+                                                        boxShadow: isActive
+                                                            ? `0 0 10px ${(color.color.includes('gradient')) ? 'rgba(255,255,255,0.5)' : (color.color === '#000000' ? '#7FFFD4' : color.color)}`
+                                                            : 'none',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        padding: 0
+                                                    }}
+                                                    title={color.name}
+                                                >
+                                                    <div style={{
+                                                        width: isActive ? '50%' : '100%',
+                                                        height: isActive ? '50%' : '100%',
+                                                        borderRadius: '50%',
+                                                        background: color.color,
+                                                        boxShadow: color.color === '#000000' ? '0 0 4px rgba(127, 255, 212, 0.5)' : 'none',
+                                                        transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                                    }} />
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -1614,8 +1692,8 @@ const CreatePost = () => {
                     {postType === 'text' && (
                         <div style={{ marginBottom: '1rem' }}>
                             <div style={{
-                                background: WRITER_THEMES[writerTheme].bg,
-                                border: WRITER_THEMES[writerTheme].border,
+                                background: currentWriterTheme.bg,
+                                border: currentWriterTheme.border,
                                 borderRadius: '12px',
                                 padding: '0', // Removed padding here, will be applied to inner divs
                                 transition: 'background 0.3s ease, border 0.3s ease',
@@ -1627,11 +1705,6 @@ const CreatePost = () => {
                                 {editor && <EditorToolbar editor={editor} />}
 
                                 {/* Meta Header Sim - Padded to not overlap toolbar? No, Toolbar is sticky/block above */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', marginBottom: '0.8rem', color: writerTextColor || WRITER_THEMES[writerTheme].text, padding: '0 1.5rem' }}>
-                                    <span>{currentUser?.displayName || 'Writer'}</span>
-                                    <span>Just Now</span>
-                                </div>
-
                                 <div style={{ padding: '0 1.5rem 1.5rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                                     <input
                                         type="text"
@@ -1646,12 +1719,18 @@ const CreatePost = () => {
                                             fontFamily: '"Rajdhani", sans-serif',
                                             lineHeight: 1.2,
                                             textTransform: 'uppercase',
-                                            color: writerTextColor || WRITER_THEMES[writerTheme].text,
+                                            color: writerTextColor || currentWriterTheme.text,
                                             width: '100%',
                                             outline: 'none',
-                                            marginBottom: '0.8rem'
+                                            marginBottom: '0.4rem',
+                                            marginTop: '1.5rem' /* Added top margin to separate from sticky toolbar visually */
                                         }}
                                     />
+                                    {/* Author Info (Moved Below Title) */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', marginBottom: '1.5rem', color: writerTextColor || currentWriterTheme.text }}>
+                                        <span>{currentUser?.displayName || 'Writer'}</span>
+                                        <span>Just Now</span>
+                                    </div>
                                     <EditorCanvas editor={editor} fontStyle={fontStyle} />
                                 </div>
                             </div>
@@ -1920,8 +1999,8 @@ const CreatePost = () => {
                                         <input
                                             type="text"
                                             placeholder="City"
-                                            value={location.city}
-                                            onChange={(e) => setLocation({ ...location, city: e.target.value })}
+                                            value={locationData.city}
+                                            onChange={(e) => setLocationData({ ...locationData, city: e.target.value })}
                                             className="form-input location-input"
                                         />
                                     </div>
@@ -1929,8 +2008,8 @@ const CreatePost = () => {
                                         <input
                                             type="text"
                                             placeholder="State"
-                                            value={location.state}
-                                            onChange={(e) => setLocation({ ...location, state: e.target.value })}
+                                            value={locationData.state}
+                                            onChange={(e) => setLocationData({ ...locationData, state: e.target.value })}
                                             className="form-input location-input"
                                         />
                                     </div>
@@ -1938,8 +2017,8 @@ const CreatePost = () => {
                                         <input
                                             type="text"
                                             placeholder="Country"
-                                            value={location.country}
-                                            onChange={(e) => setLocation({ ...location, country: e.target.value })}
+                                            value={locationData.country}
+                                            onChange={(e) => setLocationData({ ...locationData, country: e.target.value })}
                                             className="form-input location-input"
                                         />
                                     </div>
@@ -2122,18 +2201,20 @@ const CreatePost = () => {
                         </div>
                     )}
 
-                    {/* LEGAL CHECKBOX */}
-                    <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', marginTop: '1.5rem', marginBottom: '4rem' }}>
-                        <label style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start', cursor: 'pointer', color: '#ccc', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                            <input
-                                type="checkbox"
-                                checked={termsAccepted}
-                                onChange={(e) => setTermsAccepted(e.target.checked)}
-                                style={{ transform: 'scale(1.2)', marginTop: '2px', accentColor: '#7FFFD4', cursor: 'pointer' }}
-                            />
-                            <span>{LEGAL_TEXT.OWNERSHIP_AFFIRMATION}</span>
-                        </label>
-                    </div>
+                    {/* LEGAL CHECKBOX (Shop Posts Only) */}
+                    {createSpaceCard && (
+                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', marginTop: '1.5rem', marginBottom: '4rem' }}>
+                            <label style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start', cursor: 'pointer', color: '#ccc', fontSize: '0.85rem', lineHeight: '1.4' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    style={{ transform: 'scale(1.2)', marginTop: '2px', accentColor: '#7FFFD4', cursor: 'pointer' }}
+                                />
+                                <span>{LEGAL_TEXT.OWNERSHIP_AFFIRMATION}</span>
+                            </label>
+                        </div>
+                    )}
                 </div>
             </div >
 

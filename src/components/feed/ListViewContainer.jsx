@@ -2,8 +2,9 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { FaRocket } from 'react-icons/fa';
 import Post from '@/components/Post';
 import { motion, AnimatePresence } from 'framer-motion';
+import QuickPing from '@/components/feed/QuickPing';
 
-const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost, onRefresh, style, className }) => {
+const ListViewContainer = ({ posts, listFilter, contentFilter, initialIndex = 0, onIndexChange, renderPost, onRefresh, style, className }) => {
     const containerRef = useRef(null);
     const itemRefs = useRef({});
     const [scrolledToInitial, setScrolledToInitial] = useState(false);
@@ -154,8 +155,8 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                 height: '100vh',
                 overflowY: 'auto',
                 background: '#000',
-                paddingTop: '60px',
-                paddingBottom: '100px',
+                paddingTop: '80px',
+                paddingBottom: '120px',
                 boxSizing: 'border-box',
                 ...style // Allow override
             }}
@@ -257,6 +258,25 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                 initial={false} // Disable initial mounting animation for performance
             >
                 <AnimatePresence initial={false}>
+                    {/* Inject QuickPing only when: 1) filtering for Pings, 2) NOT in Art-only mode (pings are social) */}
+                    {listFilter === 'text' && contentFilter !== 'art' && (
+                        <motion.div
+                            layout
+                            key="quick-ping-box"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            style={{
+                                width: '100%',
+                                gridRow: 'span 1',
+                                height: '100%',
+                                zIndex: 10
+                            }}
+                        >
+                            <QuickPing onPostSuccess={onRefresh} />
+                        </motion.div>
+                    )}
+
                     {posts.map((post, index) => {
                         const hasImages = (
                             post.thumbnailUrls?.length > 0 ||
@@ -304,22 +324,12 @@ const ListViewContainer = ({ posts, initialIndex = 0, onIndexChange, renderPost,
                         // We override onResize to intercept it
                         const extendedRender = (p, i, curr) => {
                             if (renderPost) {
-                                // Clone element or just render it? 
-                                // renderPost returns a Component/Element. 
-                                // We need to inject onResize into it.
-                                // Since renderPost is calling <Post .../>, we can't easily inject props into the *result* unless we cloneElement.
-                                // BUT Post component accepts onResize now.
-                                // Let's simplify: pass onResize to renderPost function if it accepts it? No.
-                                // Standard pattern is renderPost(post, index, isCurrent).
-                                // But we control ListViewContainer.
-                                // We can just invoke Post directly if renderPost is generic?
-                                // Or use React.cloneElement(renderPost(...), { onResize: ... })
                                 const element = renderPost(p, i, curr);
                                 return React.cloneElement(element, {
                                     onResize: (h) => handleResize(p.id, h)
                                 });
                             }
-                            return <Post post={p} priority="normal" viewMode="list" onResize={(h) => handleResize(p.id, h)} />;
+                            return <Post post={p} priority="normal" viewMode="list" onResize={(h) => handleResize(p.id, h)} onRefresh={onRefresh} />;
                         };
 
                         return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ALL_COLORS } from '@/core/constants/colorPacks';
+import { fadeColor } from '@/core/utils/colorUtils';
 
 const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
 
@@ -34,7 +35,7 @@ const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
                 const isBrandColors = !isCustom && opt.color === 'brand';
                 const brandGradient = 'linear-gradient(135deg, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D, #FFB7D5)';
                 const displayBackground = isBrandColors ? brandGradient : opt.color;
-                const glowColor = isBrandColors ? '#7FFFD4' : (isCustom ? '#fff' : opt.color);
+                const glowColor = isBrandColors ? '#7FFFD4' : (isCustom ? '#fff' : (opt.color === '#000000' ? '#7FFFD4' : opt.color));
 
                 return (
                     <button
@@ -59,14 +60,28 @@ const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
                             width: isCustom ? '80px' : '36px',
                             height: isCustom ? '45px' : '36px',
                             borderRadius: isCustom ? '8px' : '50%',
-                            background: displayBackground,
-                            border: isSelected ? `2px solid #fff` : '2px solid rgba(255,255,255,0.1)',
+                            background: isSelected
+                                ? ((isBrandColors || opt.color.includes('gradient')) ? 'rgba(255,255,255,0.1)' : fadeColor(opt.color, 0.15))
+                                : 'transparent',
+                            backdropFilter: isSelected ? 'blur(2px)' : 'none',
+                            border: isSelected ? `2px solid ${(isBrandColors || opt.color.includes('gradient')) ? '#fff' : opt.color}` : '2px solid rgba(255,255,255,0.1)',
                             boxShadow: isSelected ? `0 0 10px ${glowColor}` : 'none',
                             transition: 'all 0.2s',
                             position: 'relative',
                             overflow: 'hidden',
-                            backgroundImage: (!isBrandColors && opt.color.includes('gradient')) ? displayBackground : 'none'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                         }}>
+                            {/* Inner Swatch */}
+                            <div style={{
+                                width: isSelected ? '50%' : '100%',
+                                height: isSelected ? '50%' : '100%',
+                                borderRadius: isCustom ? '4px' : '50%',
+                                background: displayBackground,
+                                boxShadow: (!isCustom && opt.color === '#000000') ? '0 0 4px rgba(127, 255, 212, 0.5)' : 'none',
+                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                            }} />
                             {/* Animated star dots for Brand Colors */}
                             {isBrandColors && (
                                 <>

@@ -11,22 +11,38 @@ const TOOLTIP_KEY = 'panospace_feed_swipe_tooltip_shown';
 export const useFeedStore = create(
     persist(
         (set, get) => ({
-            // Current feed type - default to art
+            // Feed Content Type ('art' | 'social' | 'all')
+            feedContentType: 'all',
+
+            // Feed Scope ('following' | 'global' | 'all')
+            feedScope: 'global',
+
+            // Current feed type - DEPRECATED (kept for compat) - maps to feedContentType
             currentFeed: 'art',
 
-            // Following only mode
+            // Following only mode - DEPRECATED (kept for compat) - maps to feedScope
             followingOnly: false,
 
-            // Switch to specific feed
-            switchToFeed: (feedType) => {
-                set({ currentFeed: feedType });
+            // Switch content type
+            setFeedContentType: (type) => {
+                set({ feedContentType: type, currentFeed: type === 'all' ? 'art' : type });
             },
 
-            // Toggle between feeds
+            // Switch scope
+            setFeedScope: (scope) => {
+                set({ feedScope: scope, followingOnly: scope === 'following' });
+            },
+
+            // Legacy Switch method
+            switchToFeed: (feedType) => {
+                set({ feedContentType: feedType, currentFeed: feedType });
+            },
+
+            // Toggle between feeds (Art/Social) - rotates Art -> Social -> All
             toggleFeed: () => {
-                const current = get().currentFeed;
-                const next = current === 'art' ? 'social' : 'art';
-                set({ currentFeed: next });
+                const current = get().feedContentType;
+                const next = current === 'art' ? 'social' : (current === 'social' ? 'all' : 'art');
+                set({ feedContentType: next });
             },
 
             // Toggle following only
@@ -41,10 +57,10 @@ export const useFeedStore = create(
             },
 
             // Page Defaults (Default to Social as requested)
-            feedDefault: 'social',
-            profileDefault: 'social',
-            createDefault: 'social',
-            searchDefault: 'social',
+            feedDefault: 'all',
+            profileDefault: 'all',
+            createDefault: 'all',
+            searchDefault: 'all',
             ratingSystemDefault: 'smiley', // 'smiley' or 'stars'
 
             setFeedDefault: (page, value) => {
@@ -73,7 +89,7 @@ export const useFeedStore = create(
 
             // Set following only
             setFollowingOnly: (value) => {
-                set({ followingOnly: value });
+                set({ followingOnly: value, feedScope: value ? 'following' : 'global' });
             },
 
             // Custom Feed State
@@ -111,12 +127,18 @@ export const useFeedStore = create(
 
             // View Mode (Session Only - 'image' | 'list')
             feedViewMode: 'image',
-            setFeedViewMode: (mode) => set({ feedViewMode: mode })
+            setFeedViewMode: (mode) => set({ feedViewMode: mode }),
+
+            // List View Filter (Session Only - 'all' | 'visual' | 'text')
+            listFilter: 'all',
+            setListFilter: (filter) => set({ listFilter: filter })
         }),
         {
             name: 'panospace-feed-storage',
             partialize: (state) => ({
                 currentFeed: state.currentFeed,
+                feedContentType: state.feedContentType,
+                feedScope: state.feedScope,
                 hasSeenSwipeTooltip: state.hasSeenSwipeTooltip,
                 followingOnly: state.followingOnly,
                 customFeedEnabled: state.customFeedEnabled,
@@ -126,7 +148,8 @@ export const useFeedStore = create(
                 profileDefault: state.profileDefault,
                 createDefault: state.createDefault,
                 searchDefault: state.searchDefault,
-                ratingSystemDefault: state.ratingSystemDefault
+                ratingSystemDefault: state.ratingSystemDefault,
+                listFilter: state.listFilter
             })
         }
     )

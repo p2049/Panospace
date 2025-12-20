@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
+import { fadeColor } from '@/core/utils/colorUtils';
 
 import BannerColorSelector from './BannerColorSelector';
 
@@ -273,12 +274,19 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                 >
                                     <div style={{
                                         width: '40px', height: '40px', borderRadius: '50%',
-                                        background: `linear-gradient(135deg, ${variant.colors.join(', ')})`,
+                                        background: isSelected ? fadeColor(variant.colors[0], 0.15) : 'transparent',
+                                        backdropFilter: isSelected ? 'blur(2px)' : 'none',
                                         border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
-                                        boxShadow: isSelected ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
-                                        transform: isSelected ? 'scale(1.1)' : 'scale(1)',
-                                        transition: 'all 0.2s'
-                                    }} />
+                                        boxShadow: isSelected ? `0 0 10px ${variant.colors[0]}` : 'none',
+                                        transition: 'all 0.2s',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <div style={{
+                                            width: isSelected ? '50%' : '100%', height: isSelected ? '50%' : '100%', borderRadius: '50%',
+                                            background: `linear-gradient(135deg, ${variant.colors.join(', ')})`,
+                                            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                        }} />
+                                    </div>
                                     <span style={{ fontSize: '0.7rem', color: isSelected ? '#fff' : '#888', fontWeight: isSelected ? '600' : '400' }}>
                                         {variant.label}
                                     </span>
@@ -312,12 +320,19 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                 >
                                     <div style={{
                                         width: '40px', height: '40px', borderRadius: '50%',
-                                        background: `linear-gradient(135deg, ${variant.colors.join(', ')})`,
+                                        background: isSelected ? fadeColor(variant.colors[0], 0.15) : 'transparent',
+                                        backdropFilter: isSelected ? 'blur(2px)' : 'none',
                                         border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
-                                        boxShadow: isSelected ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
-                                        transform: isSelected ? 'scale(1.1)' : 'scale(1)',
-                                        transition: 'all 0.2s'
-                                    }} />
+                                        boxShadow: isSelected ? `0 0 10px ${variant.colors[0]}` : 'none',
+                                        transition: 'all 0.2s',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <div style={{
+                                            width: isSelected ? '50%' : '100%', height: isSelected ? '50%' : '100%', borderRadius: '50%',
+                                            background: `linear-gradient(135deg, ${variant.colors.join(', ')})`,
+                                            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                        }} />
+                                    </div>
                                     <span style={{ fontSize: '0.7rem', color: isSelected ? '#fff' : '#888', fontWeight: isSelected ? '600' : '400' }}>
                                         {variant.label}
                                     </span>
@@ -381,12 +396,19 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                     >
                                         <div style={{
                                             width: '40px', height: '40px', borderRadius: '50%',
-                                            background: `linear-gradient(135deg, ${variant.colors.join(', ')})`,
+                                            background: isSelected ? fadeColor(variant.colors[0], 0.15) : 'transparent',
+                                            backdropFilter: isSelected ? 'blur(2px)' : 'none',
                                             border: isSelected ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
-                                            boxShadow: isSelected ? '0 0 10px rgba(255,255,255,0.5)' : 'none',
-                                            transform: isSelected ? 'scale(1.1)' : 'scale(1)',
-                                            transition: 'all 0.2s'
-                                        }} />
+                                            boxShadow: isSelected ? `0 0 10px ${variant.colors[0]}` : 'none',
+                                            transition: 'all 0.2s',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <div style={{
+                                                width: isSelected ? '50%' : '100%', height: isSelected ? '50%' : '100%', borderRadius: '50%',
+                                                background: `linear-gradient(135deg, ${variant.colors.join(', ')})`,
+                                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                            }} />
+                                        </div>
                                         <span style={{ fontSize: '0.7rem', color: isSelected ? '#fff' : '#888', fontWeight: isSelected ? '600' : '400' }}>
                                             {variant.label}
                                         </span>

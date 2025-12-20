@@ -1405,92 +1405,11 @@ const MobileNavigation = () => {
                     {/* Standard Feed Toggles - Grid Layout for alignment */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gridTemplateColumns: '1fr', // Single column for stacked full-width buttons
                         gap: '0.4rem',
                         width: '100%'
                     }}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setCustomFeedEnabled(false);
-                                toggleFollowingOnly();
-                                handleInteraction();
-                            }}
-                            style={{
-                                padding: '0.35rem 0.5rem',
-                                borderRadius: '8px',
-                                border: `1px solid ${followingOnly ? '#A7B6FF' : '#7FDBFF'}`,
-                                background: followingOnly ? '#A7B6FF' : '#7FDBFF',
-                                color: '#000',
-                                fontSize: '0.7rem',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap',
-                                height: '32px',
-                                backdropFilter: 'blur(10px)',
-                                opacity: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: followingOnly ? '0 0 10px rgba(167, 182, 255, 0.4)' : '0 0 10px rgba(127, 219, 255, 0.4)'
-                            }}
-                        >
-                            {followingOnly ? (
-                                <>
-                                    <FaUserFriends size={12} style={{ marginRight: '6px' }} />
-                                    ADDED
-                                </>
-                            ) : (
-                                <>
-                                    <FaGlobeAmericas size={12} style={{ marginRight: '6px' }} />
-                                    GLOBAL
-                                </>
-                            )}
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setCustomFeedEnabled(false);
-                                toggleFeed();
-                                handleInteraction();
-                            }}
-                            style={{
-                                padding: '0.35rem 0.5rem',
-                                borderRadius: '8px',
-                                border: `1px solid ${currentFeed === 'art' ? '#FF5C8A' : '#7FFFD4'}`,
-                                background: currentFeed === 'art' ? '#FF5C8A' : '#7FFFD4',
-                                color: '#000',
-                                fontSize: '0.7rem',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap',
-                                height: '32px',
-                                backdropFilter: 'blur(10px)',
-                                opacity: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: currentFeed === 'art' ? '0 0 10px rgba(255, 92, 138, 0.4)' : '0 0 10px rgba(127, 255, 212, 0.4)'
-                            }}
-                        >
-                            {currentFeed === 'art' ? (
-                                <>
-                                    <FaPalette size={12} style={{ marginRight: '6px' }} />
-                                    ART
-                                </>
-                            ) : (
-                                <>
-                                    <FaGlobe size={12} style={{ marginRight: '6px' }} />
-                                    SOCIAL
-                                </>
-                            )}
-                        </button>
+
 
                         {/* Custom Feeds Button */}
                         <button
@@ -1499,27 +1418,28 @@ const MobileNavigation = () => {
                                 toggleCustomFeedsPanel();
                             }}
                             style={{
-                                padding: '0.35rem 0.2rem', // Minimal padding
+                                padding: '0.6rem 0.5rem',
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
                                 background: showCustomSelector ? accentColor : 'rgba(0,0,0,0.6)',
                                 color: showCustomSelector ? '#000' : accentColor,
-                                fontSize: '0.7rem', // Slightly smaller font
+                                fontSize: '0.8rem',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                                 whiteSpace: 'nowrap',
-                                height: '32px',
+                                height: 'auto',
+                                minHeight: '32px',
                                 backdropFilter: 'blur(10px)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.2rem'
+                                gap: '0.5rem'
                             }}
                         >
-                            <FaFilter size={10} /> CUSTOM
+                            <FaFilter size={12} /> CUSTOM ORBITS
                         </button>
 
                         {/* Station Button (Full Width) */}
@@ -1529,30 +1449,30 @@ const MobileNavigation = () => {
                                 toggleHubPanel();
                             }}
                             style={{
-                                gridColumn: '1 / -1', // Full Width
-                                padding: '0.35rem 0.5rem',
+                                padding: '0.6rem 0.5rem',
                                 borderRadius: '8px',
                                 border: `1px solid ${accentColor}`,
                                 background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
                                 color: showHubPanel ? '#000' : accentColor,
-                                fontSize: '0.75rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 'bold',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                                 whiteSpace: 'nowrap',
-                                height: '32px',
+                                height: 'auto',
+                                minHeight: '32px',
                                 backdropFilter: 'blur(10px)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.4rem',
-                                opacity: 0.9 // Reduce visual dominance
+                                gap: '0.5rem',
+                                opacity: 0.9
                             }}
                         >
-                            <span style={{ display: 'inline-block', transform: 'rotate(-30deg)', marginRight: '4px' }}>
-                                <FaSatellite size={12} />
+                            <span style={{ display: 'inline-block', transform: 'rotate(-30deg)' }}>
+                                <FaSatellite size={14} />
                             </span> STATION
                         </button>
 

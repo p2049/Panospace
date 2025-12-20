@@ -24,7 +24,7 @@ import { logger } from '@/core/utils/logger';
  * 3. Event Handling (Deleting, Reporting - propagated or handled via Context)
  * 4. Renderer Selection (Film vs Instant vs Standard)
  */
-const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick, onResize }) => {
+const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick, onResize, onRefresh }) => {
     // Contexts
     const { currentUser } = useAuth();
     const { setActivePost } = useActivePost();
@@ -37,7 +37,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
 
     // --- 0. VIEW MODE CHECK ---
     if (viewMode === 'list') {
-        return <FeedPostCard post={post} contextPosts={contextPosts} onClick={onClick} onResize={onResize} />;
+        return <FeedPostCard post={post} contextPosts={contextPosts} onClick={onClick} onResize={onResize} onRefresh={onRefresh} />;
     }
 
     // --- 1. DATA PREP ---

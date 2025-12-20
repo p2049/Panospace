@@ -16,6 +16,7 @@ import VirtualizedPostContainer from '@/components/feed/VirtualizedPostContainer
 import ListViewContainer from '@/components/feed/ListViewContainer';
 import FeedViewMenu from '@/components/feed/FeedViewMenu';
 import PlanetUserIcon from '@/components/PlanetUserIcon';
+import FeedControlBar from '@/components/feed/FeedControlBar';
 
 // Feed component - Main home feed view
 const Feed = () => {
@@ -27,20 +28,18 @@ const Feed = () => {
 
     // Feed State
     const {
-        currentFeed,
-        followingOnly,
+        feedScope,
+        feedContentType,
+        listFilter,
         customFeedEnabled,
         activeCustomFeedId,
         activeCustomFeedName,
         feedDefault,
         switchToFeed,
-        setFollowingOnly,
         setCustomFeedEnabled,
         feedViewMode,
         setFeedViewMode
     } = useFeedStore();
-
-    const showSocialPosts = currentFeed === 'social';
 
     const [activeIndex, setActiveIndex] = useState(0);
     const [menuConfig, setMenuConfig] = useState(null);
@@ -53,14 +52,21 @@ const Feed = () => {
         }
     }, []); // Run once on mount
 
-    const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed(
-        'HOME',
-        {},
-        showSocialPosts,
-        followingOnly,
+    const { posts, loading, error, hasMore, loadMore, refresh } = usePersonalizedFeed({
+        feedType: 'HOME',
+        options: {},
+        feedFilters: {
+            scope: feedScope,
+            content: feedContentType,
+            // STABILITY FIX: In Visual Mode (image), always request visuals. 
+            // In List Mode, respect the user's listFilter toggle.
+            postType: feedViewMode === 'image' ? 'visual' : (listFilter === 'all' ? 'both' : listFilter)
+        },
         customFeedEnabled,
-        activeCustomFeedId
-    );
+        activeCustomFeedId,
+        // Prioritize following on the 'regular' Visual Feed as requested
+        prioritizeFollowing: feedViewMode === 'image'
+    });
 
 
     const currentTheme = getCurrentTheme();
@@ -173,20 +179,19 @@ const Feed = () => {
             {visiblePosts.length === 0 && <StarBackground />}
 
             {/* Planet Logo - Top Left (avoiding Dynamic Island) */}
-            {/* Planet Logo / View Toggle - Top Left */}
+            {/* Planet Logo / View Toggle - Visible in both modes */}
             <div
                 style={{
                     position: 'absolute',
                     top: 'max(0.75rem, env(safe-area-inset-top))',
                     left: '1rem',
-                    zIndex: 50,
+                    zIndex: 1100, // Above FeedControlBar
                     pointerEvents: 'auto',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.8rem',
                     height: '40px',
                     cursor: 'pointer',
-                    // Background removed for cleaner look
                     background: 'transparent',
                     backdropFilter: 'none',
                     padding: '4px 12px 4px 4px',
@@ -198,12 +203,6 @@ const Feed = () => {
                     const newMode = feedViewMode === 'image' ? 'list' : 'image';
                     setFeedViewMode(newMode);
                     showToast(`Switched to ${newMode === 'image' ? 'Visual Feed' : 'List View'}`);
-                }}
-                onMouseEnter={(e) => {
-                    // No background hover effect needed
-                }}
-                onMouseLeave={(e) => {
-                    // No background hover effect needed
                 }}
             >
                 <div style={{ position: 'relative', width: '32px', height: '32px', top: '-6px' }}>
@@ -265,6 +264,9 @@ const Feed = () => {
                     </span>
                 </div>
             </div>
+
+            {/* List View Controls */}
+            {feedViewMode === 'list' && <FeedControlBar />}
 
             {
                 loading && posts.length === 0 && (
@@ -458,6 +460,8 @@ const Feed = () => {
                     ) : (
                         <ListViewContainer
                             posts={visiblePosts}
+                            listFilter={listFilter}
+                            contentFilter={feedContentType}
                             initialIndex={activeIndex}
                             onIndexChange={setActiveIndex}
                             onRefresh={refresh}

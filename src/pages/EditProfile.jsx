@@ -12,6 +12,7 @@ import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlo
 import { ALL_COLORS } from '@/core/constants/colorPacks';
 import DisciplineSelector from '@/components/DisciplineSelector';
 import { generateUserSearchKeywords } from '@/core/utils/searchKeywords';
+import { fadeColor } from '@/core/utils/colorUtils';
 import { sanitizeDisplayName, sanitizeBio } from '@/core/utils/sanitize';
 import ImageCropper from '@/components/ImageCropper';
 import CosmicGuideModal from '@/components/CosmicGuideModal';
@@ -743,7 +744,8 @@ const EditProfile = () => {
                                                 width: '44px', // Slightly larger touch target
                                                 height: '44px',
                                                 cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
-                                                background: 'transparent',
+                                                background: profileBorderColor === option.color ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                backdropFilter: profileBorderColor === option.color ? 'blur(2px)' : 'none',
                                                 position: 'relative',
                                                 boxShadow: profileBorderColor === option.color
                                                     ? `0 0 15px ${(option.color.includes('gradient')) ? '#fff' : option.color}`
@@ -758,8 +760,8 @@ const EditProfile = () => {
                                         >
                                             {/* Inner Swatch */}
                                             <div style={{
-                                                width: profileBorderColor === option.color ? '22px' : '36px',
-                                                height: profileBorderColor === option.color ? '22px' : '36px',
+                                                width: profileBorderColor === option.color ? '22px' : '100%',
+                                                height: profileBorderColor === option.color ? '22px' : '100%',
                                                 borderRadius: '50%',
                                                 background: option.color,
                                                 transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'

@@ -43,6 +43,18 @@ service firebase.storage {
       allow write: if isOwner(uid);
     }
 
+    // Posts Display (High-res images)
+    match /posts_display/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid);
+    }
+
+    // Post Thumbnails
+    match /posts_thumbnails/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(uid);
+    }
+
     // Profiles
     match /profile_photos/{uid}/{allPaths=**} {
       allow read: if true;
