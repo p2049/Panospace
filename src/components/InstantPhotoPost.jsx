@@ -105,6 +105,7 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                                             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
                                                 <SmartImage
                                                     src={url}
+                                                    thumbnailSrc={item.thumbnailUrl || item.thumbUrl || item.previewUrl}
                                                     alt={`Slide ${index + 1}`}
                                                     priority={index === 0 ? priority : 'low'}
                                                     objectFit="cover"

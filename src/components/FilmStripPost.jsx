@@ -111,12 +111,11 @@ const FilmFrameUnit = React.memo(({ item, index, priority, getStockName, getFram
                                 <div style={{ width: '100%', height: '100%', position: 'relative' }}>
                                     <SmartImage
                                         src={itemUrl}
+                                        thumbnailSrc={item.thumbnailUrl || item.thumbUrl || item.previewUrl}
                                         alt={`Frame ${index + 1}`}
-                                        context="feedThumbnail"
                                         className="cyber-image"
                                         priority={Math.abs(priority) <= 2 ? 'high' : 'normal'}
                                         objectFit="cover"
-                                        fillContainer={true}
                                         style={{ width: '100%', height: '100%' }}
                                     />
                                     {uiOverlays?.quartzDate && (
