@@ -53,12 +53,12 @@ const FeedControlBar = () => {
     };
 
     const buttonStyle = (isActive) => ({
-        padding: isMobile ? '5px 8px' : '6px 12px',
+        padding: isMobile ? '6px 10px' : '7px 14px',
         borderRadius: '8px',
         border: '1px solid transparent',
         background: 'transparent',
         color: 'rgba(255,255,255,0.6)',
-        fontSize: isMobile ? '0.6rem' : '0.75rem',
+        fontSize: isMobile ? '0.65rem' : '0.8rem',
         fontWeight: '600',
         letterSpacing: '0.05em',
         cursor: 'pointer',
@@ -93,8 +93,8 @@ const FeedControlBar = () => {
     };
 
     const bothButtonStyle = (isActive) => ({
-        fontSize: isMobile ? '0.5rem' : '0.6rem',
-        padding: isMobile ? '2px 6px' : '2px 10px',
+        fontSize: isMobile ? '0.55rem' : '0.65rem',
+        padding: isMobile ? '3px 8px' : '3px 12px',
         background: isActive ? `rgba(${hexToRgb(COLORS.mint)}, 0.1)` : 'transparent',
         border: 'none',
         borderRadius: '4px',
@@ -131,8 +131,8 @@ const FeedControlBar = () => {
             background: active ? `rgba(${hexToRgb(activeColor)}, 0.15)` : 'transparent',
             color: color,
             boxShadow: isSelected ? `0 0 12px ${activeColor}30` : 'none',
-            fontSize: isMobile ? '0.55rem' : '0.65rem',
-            padding: isMobile ? '4px 6px' : '6px 12px',
+            fontSize: isMobile ? '0.6rem' : '0.7rem',
+            padding: isMobile ? '5px 8px' : '7px 14px',
             minWidth: isMobile ? 'auto' : '85px'
         };
     };
@@ -143,7 +143,7 @@ const FeedControlBar = () => {
             top: '0',
             left: '0',
             width: '100%',
-            height: isMobile ? '55px' : '65px',
+            height: isMobile ? '61px' : '65px',
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',

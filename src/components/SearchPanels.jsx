@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import StarBackground from './StarBackground';
 import TagFilterPanel from './TagFilterPanel';
 import ModernIcon from './ModernIcon';
@@ -622,10 +623,7 @@ const SearchPanels = ({
                         onOpenTopic={(tags) => {
                             // Canonicalize tags: sort alphabetically, join with '+'
                             const canonicalSlug = [...tags].sort().join('+');
-                            // Use window.location or navigate if available (passed from parent or hook)
-                            // Since SearchPanels doesn't have navigate prop, we'll dispatch a custom event or use window
-                            // Better: Inject useNavigate in this component since it's inside Router context
-                            window.location.hash = `/start/topic/${canonicalSlug}`;
+                            window.location.href = `/start/topic/${canonicalSlug}`;
                         }}
                     />
                 )}

@@ -156,7 +156,7 @@ const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
             className="post-ui--fullscreen-text"
             onClick={handleBackgroundClick}
             style={{
-                height: '100vh',
+                height: '100dvh',
                 width: '100vw',
                 scrollSnapAlign: 'start',
                 position: 'relative',

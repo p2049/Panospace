@@ -159,7 +159,7 @@ const Feed = () => {
     return (
         <div
             style={{
-                height: '100vh',
+                height: '100dvh', // Use dynamic viewport height for perfect centering on mobile
                 width: '100vw',
                 background: '#000',
                 overflow: 'hidden',
@@ -188,13 +188,13 @@ const Feed = () => {
                     zIndex: 1100, // Above FeedControlBar
                     pointerEvents: 'auto',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.8rem',
-                    height: '40px',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '2px', // Tight vertical gap
                     cursor: 'pointer',
                     background: 'transparent',
                     backdropFilter: 'none',
-                    padding: '4px 12px 4px 4px',
+                    padding: '4px',
                     borderRadius: '0',
                     border: 'none',
                     transition: 'all 0.3s ease'
@@ -205,48 +205,58 @@ const Feed = () => {
                     showToast(`Switched to ${newMode === 'image' ? 'Visual Feed' : 'List View'}`);
                 }}
             >
-                <div style={{ position: 'relative', width: '32px', height: '32px', top: '-6px' }}>
-                    <svg
-                        width="32"
-                        height="32"
-                        viewBox="-5 -5 34 34"
-                        style={{
-                            filter: `drop-shadow(0 0 8px ${glowColorStrong})`,
-                            overflow: 'visible',
-                            transition: 'filter 0.2s ease'
-                        }}
-                    >
-                        <defs>
-                            <radialGradient id="planetGradient" cx="40%" cy="40%">
-                                <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
-                                <stop offset="100%" style={{ stopColor: secondaryColor, stopOpacity: 1 }} />
-                            </radialGradient>
-                            <filter id="planetGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur" />
-                                    <feMergeNode in="SourceGraphic" />
-                                </feMerge>
-                            </filter>
-                        </defs>
-                        <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
-                        <circle cx="12" cy="12" r="7" fill="url(#planetGradient)" opacity="0.95" filter="url(#planetGlow)" />
-                        <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
-                        <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
-                    </svg>
-                </div>
+                {/* Row 1: PANOSPACE Label */}
+                <span style={{
+                    fontSize: '0.55rem',
+                    color: accentColor,
+                    letterSpacing: '0.1em',
+                    fontWeight: '700',
+                    fontFamily: "'Orbitron', sans-serif",
+                    textShadow: `0 0 5px ${accentColor}`,
+                    marginLeft: '2px', // Subtle adjustment to align with planet ring curve
+                    marginTop: '3px' // Move down 3px
+                }}>
+                    PANOSPACE
+                </span>
 
-                <div style={{ position: 'absolute', top: '-10px', left: '0', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                    <span style={{
-                        fontSize: '0.55rem',
-                        color: accentColor,
-                        letterSpacing: '0.1em',
-                        fontWeight: '700',
-                        fontFamily: "'Orbitron', sans-serif",
-                        textShadow: `0 0 5px ${accentColor}`
-                    }}>
-                        PANOSPACE
-                    </span>
+                {/* Row 2: Planet Icon + Mode Label */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    marginTop: '-8px' // Move up another 3px (total 8px)
+                }}>
+                    <div style={{ position: 'relative', width: '32px', height: '32px' }}>
+                        <svg
+                            width="32"
+                            height="32"
+                            viewBox="-5 -5 34 34"
+                            style={{
+                                filter: `drop-shadow(0 0 8px ${glowColorStrong})`,
+                                overflow: 'visible',
+                                transition: 'filter 0.2s ease'
+                            }}
+                        >
+                            <defs>
+                                <radialGradient id="planetGradient" cx="40%" cy="40%">
+                                    <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
+                                    <stop offset="100%" style={{ stopColor: secondaryColor, stopOpacity: 1 }} />
+                                </radialGradient>
+                                <filter id="planetGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
+                            <circle cx="12" cy="12" r="7" fill="url(#planetGradient)" opacity="0.95" filter="url(#planetGlow)" />
+                            <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
+                            <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
+                        </svg>
+                    </div>
+
                     <span style={{
                         display: 'inline-block',
                         fontSize: '0.55rem',
@@ -258,7 +268,8 @@ const Feed = () => {
                         filter: 'drop-shadow(0 0 2px rgba(127, 255, 212, 0.5))',
                         letterSpacing: '0.1em',
                         fontWeight: '700',
-                        fontFamily: "'Orbitron', sans-serif"
+                        fontFamily: "'Orbitron', sans-serif",
+                        marginLeft: '-3px' // Move left 3px
                     }}>
                         {feedViewMode === 'image' ? 'VISUAL' : 'LIST'}
                     </span>
@@ -270,7 +281,7 @@ const Feed = () => {
 
             {
                 loading && posts.length === 0 && (
-                    <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', zIndex: 10, position: 'relative' }}>
+                    <div style={{ height: '100dvh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', zIndex: 10, position: 'relative' }}>
                         Loading...
                     </div>
                 )
@@ -278,7 +289,7 @@ const Feed = () => {
 
             {
                 !loading && error && (
-                    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff', gap: '1rem', textAlign: 'center', padding: '2rem', zIndex: 10, position: 'relative' }}>
+                    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff', gap: '1rem', textAlign: 'center', padding: '2rem', zIndex: 10, position: 'relative' }}>
                         <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Unable to load feed</h2>
                         <p style={{ color: '#aaa', maxWidth: '400px', marginBottom: '1.5rem' }}>{error}</p>
                         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -294,7 +305,7 @@ const Feed = () => {
 
             {!loading && visiblePosts.length === 0 && (
                 <div style={{
-                    minHeight: '100vh',
+                    minHeight: '100dvh',
                     width: '100%',
                     display: 'flex',
                     flexDirection: 'column',

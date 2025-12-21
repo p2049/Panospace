@@ -173,7 +173,7 @@ const StandardPost = ({
         <div
             className="post-ui--standard"
             style={{
-                height: '100vh',
+                height: '100dvh',
                 width: '100vw',
                 scrollSnapAlign: 'start',
                 position: 'relative',

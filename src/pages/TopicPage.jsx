@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TopicHeader from '@/components/topic/TopicHeader';
 import ListViewContainer from '@/components/feed/ListViewContainer';
@@ -8,6 +8,11 @@ import SEO from '@/components/SEO';
 const TopicPage = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
+
+    // Scroll to top on mount
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [slug]);
 
     // Parse Slug -> Tags
     // Slug format: "tag1+tag2"

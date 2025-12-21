@@ -37,7 +37,7 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
                 window.requestAnimationFrame(() => {
                     if (container) {
                         const scrollTop = container.scrollTop;
-                        const height = window.innerHeight;
+                        const height = container.clientHeight; // Use actual container height for precision
                         const index = Math.round(scrollTop / height);
 
                         if (index !== currentIndex) {
@@ -66,7 +66,7 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
 
         // Restore initial scroll position
         if (initialIndex > 0 && container.scrollTop === 0) {
-            container.scrollTop = initialIndex * window.innerHeight;
+            container.scrollTop = initialIndex * container.clientHeight;
         }
 
         return () => {
@@ -151,7 +151,7 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
     }, [currentIndex, posts]);
 
     // Calculate total scroll height
-    const totalHeight = `${posts.length * 100}vh`;
+    const totalHeight = `${posts.length * 100}dvh`;
 
     // Determine render window
     // We render [current - 1, current, current + 1]
@@ -178,7 +178,7 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
             ref={containerRef}
             className="no-scrollbar"
             style={{
-                height: '100vh',
+                height: '100dvh',
                 width: '100vw',
                 overflowY: 'scroll',
                 scrollSnapType: pullDistance > 0 ? 'none' : 'y mandatory',
@@ -279,9 +279,9 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
                             top: 0,
                             left: 0,
                             width: '100%',
-                            height: '100vh',
+                            height: '100dvh',
                             // GPU Acceleration:
-                            transform: `translate3d(0, ${index * 100}vh, 0)`,
+                            transform: `translate3d(0, ${index * 100}dvh, 0)`,
                             willChange: 'transform',
                             // Snap formatting to ensure native snap catches this absolute box
                             scrollSnapAlign: 'start',

@@ -475,11 +475,13 @@ const MobileNavigation = () => {
                 }}
                 onClick={() => setIsOpen(!isOpen)}
             >
-                {/* Tiny Menu Label Above */}
+                {/* Tiny Menu Label Below */}
                 {!isOpen && (
                     <span style={{
                         position: 'absolute',
-                        top: '-13px',
+                        top: '32px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
                         display: 'inline-block',
                         fontSize: '0.55rem',
                         background: 'repeating-linear-gradient(to bottom, rgba(127, 255, 212, 1) 0px, rgba(127, 255, 212, 1) 1px, rgba(127, 255, 212, 0.6) 1px, rgba(127, 255, 212, 0.6) 2px)',
