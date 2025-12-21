@@ -178,3 +178,34 @@ export const StudioService = {
 
 // Legacy compatibility (if needed by other parts of the app)
 export const createStudioService = () => StudioService;
+
+// Legacy alias for backward compatibility
+export const createGallery = StudioService.create;
+
+// Alias for inviting multiple members at once
+export const inviteMembers = async (studioId: string, userIds: string[], invitedBy: string): Promise<void> => {
+    for (const uid of userIds) {
+        await StudioService.inviteMember(studioId, uid, invitedBy);
+    }
+};
+
+// ShopService stub - placeholder for shop functionality
+export const ShopService = {
+    async getDrafts(userId: string): Promise<any[]> {
+        logger.warn('ShopService.getDrafts is a stub - implement actual shop service');
+        return [];
+    },
+    async publishDraft(draftId: string, userId: string, confirm: boolean): Promise<void> {
+        logger.warn('ShopService.publishDraft is a stub - implement actual shop service');
+    },
+    async deleteDraft(draftId: string, userId: string): Promise<void> {
+        logger.warn('ShopService.deleteDraft is a stub - implement actual shop service');
+    },
+    async completeShopSetup(userId: string, data: any): Promise<void> {
+        logger.warn('ShopService.completeShopSetup is a stub - implement actual shop service');
+    },
+    async checkShopSetup(userId: string): Promise<{ isComplete: boolean; canBypass: boolean }> {
+        logger.warn('ShopService.checkShopSetup is a stub - implement actual shop service');
+        return { isComplete: true, canBypass: true };
+    }
+};
