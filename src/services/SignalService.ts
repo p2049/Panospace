@@ -16,7 +16,7 @@ export const SignalService = {
     /**
      * Generates a unique Signal Tag: #Signal[Count]-[Username]
      */
-    async generateSignatureTag(userId, username) {
+    async generateSignatureTag(userId: string, username: string) {
         if (!userId || !username) throw new Error("User required for signature tag");
 
         // Clean username
@@ -47,7 +47,7 @@ export const SignalService = {
      * @param {File} file 
      * @param {Object} requirements { filmOnly: boolean, camera: string, etc }
      */
-    async validateSubmission(file, requirements) {
+    async validateSubmission(file: File, requirements: any) {
         if (!requirements || Object.keys(requirements).length === 0) return { valid: true };
 
         try {
