@@ -41,6 +41,7 @@ import SmartImage from '@/components/SmartImage';
 import ListViewContainer from '@/components/feed/ListViewContainer';
 import Post from '@/components/Post';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
+import { BRAND_RAINBOW } from '@/core/constants/colorPacks';
 
 
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
@@ -317,8 +318,8 @@ const Profile = () => {
                 {/* Animated Stars Background - Only if enabled (Delegate to BannerRenderer for City/Ocean) */}
                 {(bannerMode === 'stars' || (user.profileTheme?.useStarsOverlay && !bannerMode.startsWith('city') && !bannerMode.startsWith('ocean'))) && (
                     <StarBackground
-                        starColor={user.profileTheme?.starColor === 'brand' ? '#7FFFD4' : (user.profileTheme?.starColor || COLORS.iceMint)}
-                        multiColor={user.profileTheme?.starColor === 'brand'}
+                        starColor={(user.profileTheme?.starColor === 'brand' || user.profileTheme?.starColor === BRAND_RAINBOW) ? '#7FFFD4' : (user.profileTheme?.starColor || COLORS.iceMint)}
+                        multiColor={user.profileTheme?.starColor === 'brand' || user.profileTheme?.starColor === BRAND_RAINBOW}
                         transparent={isGradientMode || bannerMode === 'neonGrid'}
                         maskTop={bannerMode === 'neonGrid'}
                     />
@@ -443,7 +444,11 @@ const Profile = () => {
                             wordBreak: 'break-word',
                             textAlign: 'center' // Explicitly center text
                         }}>
-                            {renderCosmicUsername(user?.username || 'ANONYMOUS', user?.profileTheme?.borderColor, user?.profileTheme?.textGlow)}
+                            {renderCosmicUsername(
+                                user?.username || 'ANONYMOUS',
+                                user?.profileTheme?.borderColor,
+                                user?.profileTheme?.textGlow
+                            )}
                         </h1>
 
                     </div>
@@ -527,19 +532,23 @@ const Profile = () => {
                                 width: layout.profile.avatarSize,
                                 height: layout.profile.avatarSize,
                                 borderRadius: '20px', // Slightly sharper rounding
-                                background: user.photoURL ? '#000' : 'transparent',
+                                background: 'transparent', // Always transparent to allow glass to show
                                 zIndex: 10,
                                 cursor: 'pointer'
                             }}>
                             {/* Iridescent/Gradient Border Effect */}
-                            {user.profileTheme?.borderColor && user.profileTheme.borderColor.includes('gradient') && (
+                            {/* Iridescent/Gradient/Glass Border Effect */}
+                            {(user.profileTheme?.borderColor === 'brand' || (user.profileTheme?.borderColor && user.profileTheme.borderColor.includes('gradient'))) && (
                                 <div style={{
                                     position: 'absolute',
                                     inset: '-3px',
                                     borderRadius: '23px',
-                                    background: user.profileTheme.borderColor,
-                                    backgroundSize: '200% 200%',
-                                    animation: 'iridescent-border 3s linear infinite',
+                                    padding: '3px',
+                                    background: (user.profileTheme.borderColor === 'brand' ? BRAND_RAINBOW : user.profileTheme.borderColor),
+                                    // Masking to punch out center
+                                    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                    WebkitMaskComposite: 'xor',
+                                    maskComposite: 'exclude',
                                     zIndex: 0
                                 }} />
                             )}
@@ -549,23 +558,41 @@ const Profile = () => {
                                 height: '100%',
                                 borderRadius: '20px',
                                 overflow: 'hidden',
-                                border: (user.profileTheme?.borderColor && user.profileTheme.borderColor.includes('gradient'))
+                                border: (user.profileTheme?.borderColor === 'brand' || (user.profileTheme?.borderColor && user.profileTheme.borderColor.includes('gradient')))
                                     ? 'none'
-                                    : `2px solid ${user.profileTheme?.borderColor || 'rgba(127, 255, 212, 0.3)'}`,
+                                    : `2.5px solid ${user.profileTheme?.borderColor || 'rgba(127, 255, 212, 0.3)'}`, // Matches EditProfile
                                 position: 'relative',
                                 zIndex: 1,
-                                background: user.photoURL ? '#111' : 'linear-gradient(145deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)',
-                                backdropFilter: user.photoURL ? 'none' : 'blur(7px)',
-                                WebkitBackdropFilter: user.photoURL ? 'none' : 'blur(7px)',
-                                boxShadow: user.profileTheme?.textGlow
-                                    ? `0 0 15px ${user.profileTheme?.borderColor || solidPlanetColor}66, 0 8px 32px rgba(0,0,0,0.5)`
+                                background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
+                                boxShadow: (user.profileTheme?.pixelGlow || user.profileTheme?.textGlow)
+                                    ? `0 0 15px ${(user.profileTheme?.borderColor || solidPlanetColor)}44, 0 8px 32px rgba(0,0,0,0.5)`
                                     : '0 8px 32px rgba(0,0,0,0.5)'
                             }}>
                                 {user.photoURL ? (
-                                    <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img
+                                        src={user.photoURL}
+                                        alt={user.displayName}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            // Only use pixelated for non-SVGs (legacy photos). 
+                                            // SVGs handle their own sharpness and filters.
+                                            imageRendering: user.photoURL?.includes('.svg') || user.photoURL?.includes('image/svg+xml') ? 'auto' : 'pixelated',
+                                            msImageRendering: user.photoURL?.includes('.svg') || user.photoURL?.includes('image/svg+xml') ? 'auto' : 'pixelated',
+                                            WebkitFontSmoothing: 'none'
+                                        }}
+                                    />
                                 ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <PlanetUserIcon size={parseInt(layout.profile.avatarSize, 10) * 0.7} color={user.profileTheme?.usernameColor || '#7FFFD4'} />
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
+                                        <PlanetUserIcon
+                                            size={parseInt(layout.profile.avatarSize, 10) * 0.7}
+                                            color={user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : '#7FFFD4'}
+                                            icon={user.defaultIconId || 'planet-head'}
+                                            glow={user.profileTheme?.textGlow}
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -973,9 +1000,9 @@ const Profile = () => {
                                             opacity: isSelected ? 1 : 0.5,
                                             transition: 'transform 0.2s',
                                         }}
-                                        title={`Switch to ${feedType === 'art' ? 'Social' : 'Art'} Orbit`}
+                                        title={`Current: ${feedType.charAt(0).toUpperCase() + feedType.slice(1)} Orbit. Click to switch.`}
                                     >
-                                        {feedType === 'art' ? <FaPalette size={14} /> : <FaUserPlus size={14} />}
+                                        {feedType === 'art' ? <FaPalette size={14} /> : (feedType === 'social' ? <FaUserPlus size={14} /> : <FaTh size={14} />)}
                                     </div>
                                 )}
                             </button>

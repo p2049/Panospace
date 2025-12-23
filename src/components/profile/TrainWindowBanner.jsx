@@ -200,6 +200,7 @@ const TrainWindowBanner = ({ starSettings, variant = 'night' }) => {
                 return 'neon';
 
             case 'brand':   // Rainbow
+            case BRAND_RAINBOW.toLowerCase():
                 return 'panospace_ultra';
 
             case '#0a1a3a': // Dark Nebula Blue

@@ -24,7 +24,7 @@ import FilmOptionsPanel from '@/components/create-post/FilmOptionsPanel';
 import ManualExifEditor from '@/components/create-post/ManualExifEditor';
 import CollectionSelector from '@/components/create-post/CollectionSelector';
 import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
-import ShopOptionsPanel from '@/components/create-post/ShopOptionsPanel';
+
 import SearchEmojiPicker from '@/components/SearchEmojiPicker';
 import ImageSizeWarningModal from '@/components/ImageSizeWarningModal';
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
@@ -408,7 +408,7 @@ const CreatePost = () => {
         pendingFiles: [],  // Queue of files to process after current
     });
     const [userIsPremium, setUserIsPremium] = useState(false);
-    const [sellerStatus, setSellerStatus] = useState('none');
+
 
     // Check if user is premium on mount
     // Check if user is premium on mount
@@ -428,7 +428,7 @@ const CreatePost = () => {
                     const hasAccess = canAccessFeature(data, AF.PREMIUM_THEMES, customClaims) || canAccessFeature(data, AF.HIGH_QUALITY_UPLOADS, customClaims);
 
                     setUserIsPremium(hasAccess);
-                    setSellerStatus(data.sellerStatus || 'none');
+
                 }
             } catch (e) {
                 logger.warn('Could not check premium status:', e);
@@ -2156,15 +2156,7 @@ const CreatePost = () => {
                         setEnableRatings={setEnableRatings}
                     />
 
-                    {/* Shop Options (Phase 6) */}
-                    {activeSlide && activeSlide.type === 'image' && (
-                        <ShopOptionsPanel
-                            activeSlide={activeSlide}
-                            updateSlide={(updates) => updateSlide(activeSlideIndex, updates)}
-                            sellerStatus={sellerStatus}
-                            isPremium={userIsPremium}
-                        />
-                    )}
+
 
 
                     {/* Active Image Settings (Contextual) */}

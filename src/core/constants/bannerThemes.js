@@ -13,10 +13,18 @@ export const BANNER_TYPES = [
     },
     {
         id: 'iso_wave',
-        label: 'ISO WAVE',
+        label: 'Live Wave',
         previewGradient: 'linear-gradient(to bottom, #000000, #5A3FFF)',
         needsColor: true,
-        description: 'A topography of silence.'
+        description: 'A topography of silence.',
+        customVariants: [
+            { id: 'classic_mint', name: 'Classic Mint', color: '#7FFFD4' },
+            { id: 'solar_pink', name: 'Solar Pink', color: '#FF5C8A' },
+            { id: 'ion_blue', name: 'Ion Blue', color: '#1B82FF' },
+            { id: 'deep_orbit', name: 'Deep Orbit', color: '#5A3FFF' },
+            { id: 'stellar_orange', name: 'Stellar Orange', color: '#FF914D' },
+            { id: 'ice_white', name: 'Ice White', color: '#FFFFFF' }
+        ]
     },
     {
         id: 'cosmic-earth',

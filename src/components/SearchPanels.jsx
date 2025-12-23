@@ -150,7 +150,7 @@ const SearchPanels = ({
                             }
                         }}
                         style={{
-                            fontSize: '1.2rem',
+                            fontSize: '0.8rem',
                             fontWeight: '800',
                             margin: 0,
                             fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', monospace",

@@ -27,6 +27,7 @@ export interface UserProfile {
     displayName: string;
     username?: string;
     photoURL?: string;
+    defaultIconId?: string;
     bio?: string;
     accountType: AccountType; // NEW: Support dual account types
     linkedArtistId?: string; // NEW: Link standard users to artist profiles

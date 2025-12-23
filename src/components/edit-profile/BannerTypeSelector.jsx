@@ -24,7 +24,8 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
 
     // Color Helpers
     const isGradient = highlightColor && highlightColor.includes('gradient');
-    const safeColor = isGradient ? '#7FFFD4' : highlightColor;
+    const isTransparent = highlightColor === 'transparent' || highlightColor === 'transparent-border' || !highlightColor;
+    const safeColor = isGradient ? '#7FFFD4' : (isTransparent ? '#fff' : highlightColor);
 
     // Helper for RGBA background (10% opacity)
     const getBackgroundWithOpacity = (color, opacity = 0.1) => {
@@ -42,7 +43,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* Category Pills */}
-            <div className="custom-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                 {categories.map(cat => (
                     <button
                         key={cat}
@@ -69,7 +70,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
 
             {/* Scrollable List */}
             <div
-                className="custom-scrollbar"
+                className="custom-gradient-scrollbar"
                 style={{
                     display: 'flex',
                     gap: '12px',
@@ -242,7 +243,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
             {/* Embedded Color Selector for Supported Themes */}
             {selectedThemeDef?.hasAuroraVariants && (
                 <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="custom-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                         {[
                             // 4 REALISTIC
                             { id: 'aurora_borealis', label: 'Borealis', colors: ['#7FFFD4', '#7FFFD4'] },
@@ -298,7 +299,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
             )}
             {selectedThemeDef?.id === 'aurora' && (
                 <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="custom-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                         {[
                             { id: 'main', label: 'Main', colors: ['#8CFFE9', '#5A3FFF'] },
                             { id: 'arctic', label: 'Arctic', colors: ['#7FDBFF', '#FFFFFF'] },
@@ -346,7 +347,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
             {/* Other Atmospheric Variants */}
             {selectedThemeDef?.hasAtmosVariants && selectedThemeDef?.id !== 'aurora' && (
                 <div style={{ marginTop: '4px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="custom-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                         {(() => {
                             let variants = [];
                             if (selectedThemeDef.id === 'atmos_pulse') {

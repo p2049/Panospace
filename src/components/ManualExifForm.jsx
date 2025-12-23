@@ -403,13 +403,20 @@ const ManualExifForm = ({ existingExif, onSave, onCancel, hideCameraLens = false
 
          /* Navigation Arrows */
          .react-datepicker__navigation {
-             top: 13px !important; /* Vertically align with text */
-             height: 24px !important; /* Increase hit area */
+             position: absolute !important;
+             top: 13px !important; 
+             height: 24px !important;
              width: 24px !important;
              overflow: visible !important;
+             z-index: 20 !important;
          }
-         .react-datepicker__navigation--previous { left: 10px !important; }
-         .react-datepicker__navigation--next { right: 10px !important; }
+         .react-datepicker__navigation--previous { 
+             left: 10px !important; 
+         }
+         .react-datepicker__navigation--next { 
+             left: 246px !important; /* Explicitly set left to avoid flex-start overlap */
+             right: auto !important;
+         }
          
          .react-datepicker__navigation-icon::before {
              border-color: #7FFFD4 !important;

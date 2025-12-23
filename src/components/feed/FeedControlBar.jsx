@@ -89,7 +89,7 @@ const FeedControlBar = () => {
         justifyContent: 'flex-end',
         height: '100%',
         position: 'relative',
-        paddingTop: isMobile ? '14px' : '18px'
+        paddingTop: isMobile ? '20px' : '24px' // Increased from 14/18 to create more separation from ALL button
     };
 
     const bothButtonStyle = (isActive) => ({
@@ -119,7 +119,8 @@ const FeedControlBar = () => {
         background: 'rgba(255,255,255,0.05)',
         borderRadius: '8px',
         padding: '2px',
-        boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)'
+        boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)',
+        transition: 'transform 0.2s ease'
     };
 
     const getPillStyle = (isSelected, isBothMode, activeColor = COLORS.accent) => {
@@ -143,14 +144,14 @@ const FeedControlBar = () => {
             top: '0',
             left: '0',
             width: '100%',
-            height: isMobile ? '61px' : '65px',
+            height: isMobile ? '68px' : '74px', // Increased from 61/65 to allow more vertical breathing room
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
             gap: isMobile ? '6px' : '12px',
             zIndex: 1000,
             paddingTop: 'max(8px, env(safe-area-inset-top))',
-            paddingBottom: isMobile ? '6px' : '8px',
+            paddingBottom: isMobile ? '8px' : '10px',
             paddingLeft: 'max(8px, env(safe-area-inset-left))',
             paddingRight: 'max(8px, env(safe-area-inset-right))',
             background: 'rgba(0,0,0,0.85)',
@@ -160,7 +161,10 @@ const FeedControlBar = () => {
         }}>
 
             {/* Scope Group */}
-            <div style={groupContainerStyle}>
+            <div style={{
+                ...groupContainerStyle,
+                paddingTop: isMobile ? '28px' : '34px' // Substantially increased gap
+            }}>
                 <button
                     onClick={() => setFeedScope(feedScope === 'all' ? 'global' : 'all')}
                     style={bothButtonStyle(feedScope === 'all')}
@@ -186,7 +190,10 @@ const FeedControlBar = () => {
             <div style={{ width: '1px', height: isMobile ? '14px' : '18px', background: 'rgba(255,255,255,0.1)', marginBottom: isMobile ? '6px' : '8px' }} />
 
             {/* Content Group */}
-            <div style={groupContainerStyle}>
+            <div style={{
+                ...groupContainerStyle,
+                paddingTop: isMobile ? '28px' : '34px'
+            }}>
                 <button
                     onClick={() => {
                         // If user is viewing pings-only and activating ALL, switch list filter to show mixed feed
@@ -224,7 +231,10 @@ const FeedControlBar = () => {
             <div style={{ width: '1px', height: isMobile ? '14px' : '18px', background: 'rgba(255,255,255,0.1)', marginBottom: isMobile ? '6px' : '8px' }} />
 
             {/* List Group */}
-            <div style={groupContainerStyle}>
+            <div style={{
+                ...groupContainerStyle,
+                paddingTop: isMobile ? '28px' : '34px'
+            }}>
                 <button
                     onClick={() => setListFilter(listFilter === 'all' ? 'visual' : 'all')}
                     style={bothButtonStyle(listFilter === 'all')}

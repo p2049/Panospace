@@ -19,7 +19,7 @@ const PostDetailsSidebar = ({
 }) => {
     const navigate = useNavigate();
     const { currentUser, isAdmin, isGodMode } = useAuth();
-    const canManageContent = currentUser?.uid === (post.userId || post.authorId || post.uid) || isAdmin || isGodMode;
+    const canManageContent = currentUser?.uid === (post.userId || post.authorId || post.uid);
     const [shopLinkTarget, setShopLinkTarget] = useState(null);
     const [stats, setStats] = useState({ likeCount: 0, averageRating: 0, totalVotes: 0 });
     const [authorPhoto, setAuthorPhoto] = useState(
@@ -548,9 +548,7 @@ const PostDetailsSidebar = ({
                                 </button>
                             )}
                             <button onClick={async () => {
-                                const msg = isAdmin || isGodMode ?
-                                    (post.postType === 'text' ? "ADMIN: Delete this ping?" : "ADMIN: Delete this visual?") :
-                                    (post.postType === 'text' ? "Delete this ping?" : "Delete this visual?");
+                                const msg = post.postType === 'text' ? "Delete this ping?" : "Delete this visual?";
                                 if (window.confirm(msg)) {
                                     try {
                                         await deleteDoc(doc(db, "posts", post.id));
@@ -563,7 +561,7 @@ const PostDetailsSidebar = ({
                                     }
                                 }
                             }} style={{ padding: '0.8rem', background: 'rgba(255,0,0,0.2)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left' }}>
-                                {isAdmin || isGodMode ? 'Admin: Delete Content' : (post.postType === 'text' ? 'Delete Ping' : 'Delete Visual')}
+                                {post.postType === 'text' ? 'Delete Ping' : 'Delete Visual'}
                             </button>
                         </>
                     ) : (

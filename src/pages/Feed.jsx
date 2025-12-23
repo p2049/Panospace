@@ -473,7 +473,7 @@ const Feed = () => {
                             posts={visiblePosts}
                             listFilter={listFilter}
                             contentFilter={feedContentType}
-                            initialIndex={activeIndex}
+                            initialIndex={0}
                             onIndexChange={setActiveIndex}
                             onRefresh={refresh}
                             renderPost={(post, index, isCurrent) => (

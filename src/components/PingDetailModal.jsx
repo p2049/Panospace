@@ -18,7 +18,7 @@ const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
     // Get post owner ID - check all possible field names for backwards compatibility
     const postOwnerId = post?.userId || post?.authorId || post?.uid || post?.creatorId || post?.owner || post?.ownerId;
     const isOwnPost = currentUser?.uid && postOwnerId && currentUser.uid === postOwnerId;
-    const canManageContent = isOwnPost || isAdmin || isGodMode;
+    const canManageContent = isOwnPost;
 
     // Debug log for ownership
     if (post) {
@@ -445,7 +445,7 @@ const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
                                     }}
                                 >
                                     <FaTrash size={14} />
-                                    {deleteConfirm ? 'TAP AGAIN TO DELETE' : (isAdmin || isGodMode ? 'Admin: Delete' : 'Delete Ping')}
+                                    {deleteConfirm ? 'TAP AGAIN TO DELETE' : 'Delete Ping'}
                                 </button>
                             </>
                         ) : (

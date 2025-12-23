@@ -55,7 +55,8 @@ const SearchModeTabs = ({ currentMode, setCurrentMode, isMobile, children }) => 
                         flexShrink: 0,
                         justifyContent: 'center',
                         minWidth: isMobile ? '32px' : undefined,
-                        borderRadius: '8px' // Enforce rounded square (Group E)
+                        borderRadius: '8px', // Enforce rounded square (Group E)
+                        fontSize: '0.8rem'
                     }}
                     icon={<mode.icon size={16} />} // Raw icon, no ModernIcon wrapper (Group E)
                 >

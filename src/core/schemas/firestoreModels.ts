@@ -29,6 +29,7 @@ export const normalizeUserProfile = (doc: DocumentSnapshot): UserProfile => {
         displayName: data.displayName || 'Anonymous',
         username: data.username || undefined,
         photoURL: data.photoURL || undefined,
+        defaultIconId: data.defaultIconId || 'planet-head',
         bio: data.bio || '',
         accountType,
         linkedArtistId: data.linkedArtistId || undefined,

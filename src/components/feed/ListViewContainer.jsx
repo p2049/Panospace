@@ -18,9 +18,18 @@ const ListViewContainer = ({ posts, listFilter, contentFilter, initialIndex = 0,
 
     // Initial Scroll
     useEffect(() => {
-        if (!scrolledToInitial && posts.length > 0 && itemRefs.current[initialIndex]) {
-            itemRefs.current[initialIndex].scrollIntoView({ block: 'start' });
-            setScrolledToInitial(true);
+        if (!scrolledToInitial && posts.length > 0) {
+            if (initialIndex === 0) {
+                // For index 0, always jump to absolute top to respect padding/header
+                if (containerRef.current) {
+                    containerRef.current.scrollTop = 0;
+                }
+                setScrolledToInitial(true);
+            } else if (itemRefs.current[initialIndex]) {
+                // For other indexes, align to start
+                itemRefs.current[initialIndex].scrollIntoView({ block: 'start' });
+                setScrolledToInitial(true);
+            }
         }
     }, [initialIndex, posts, scrolledToInitial]);
 
@@ -155,7 +164,7 @@ const ListViewContainer = ({ posts, listFilter, contentFilter, initialIndex = 0,
                 height: '100vh',
                 overflowY: 'auto',
                 background: '#000',
-                paddingTop: '80px',
+                paddingTop: '95px',
                 paddingBottom: '120px',
                 boxSizing: 'border-box',
                 ...style // Allow override

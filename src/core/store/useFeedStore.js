@@ -38,11 +38,16 @@ export const useFeedStore = create(
                 set({ feedContentType: feedType, currentFeed: feedType });
             },
 
-            // Toggle between feeds (Art/Social) - rotates Art -> Social -> All
+            // Toggle between feeds (Art/Social) - rotates Art -> Social
+            // Toggle between feeds (Art/Social) - rotates Art -> Social
             toggleFeed: () => {
                 const current = get().feedContentType;
-                const next = current === 'art' ? 'social' : (current === 'social' ? 'all' : 'art');
-                set({ feedContentType: next });
+                // If social, go to art. Otherwise (art or all), go to social.
+                const next = current === 'social' ? 'art' : 'social';
+                set({
+                    feedContentType: next,
+                    currentFeed: next
+                });
             },
 
             // Toggle following only

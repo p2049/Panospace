@@ -53,6 +53,8 @@ const StandardPost = ({
     items = [],
     priority = 'normal',
     authorPhoto,
+    authorDefaultIconId,
+    authorProfileTheme,
     handleAuthorClick,
     containerRef,
     currentSlide,
@@ -505,12 +507,22 @@ const StandardPost = ({
                             />
                         ) : (
                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <PlanetUserIcon size={28} color="#7FFFD4" />
+                                <PlanetUserIcon
+                                    size={28}
+                                    color={authorProfileTheme?.usernameColor && !authorProfileTheme.usernameColor.includes('gradient') ? authorProfileTheme.usernameColor : '#7FFFD4'}
+                                    icon={authorDefaultIconId || 'planet-head'}
+                                    glow={authorProfileTheme?.textGlow}
+                                />
                             </div>
                         )}
                         {/* Fallback */}
                         <div style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                            <PlanetUserIcon size={28} color="#7FFFD4" />
+                            <PlanetUserIcon
+                                size={28}
+                                color={authorProfileTheme?.usernameColor && !authorProfileTheme.usernameColor.includes('gradient') ? authorProfileTheme.usernameColor : '#7FFFD4'}
+                                icon={authorDefaultIconId || 'planet-head'}
+                                glow={authorProfileTheme?.textGlow}
+                            />
                         </div>
                     </div>
 

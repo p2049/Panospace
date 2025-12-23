@@ -7,7 +7,7 @@
   "author": "Panospace Team",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "vite",
     "dev:vite": "vite",
     "dev:vercel": "vercel dev",
     "build": "tsc && vite build",

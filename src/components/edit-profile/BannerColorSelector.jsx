@@ -12,19 +12,13 @@ const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
     const displayColors = customVariants || ALL_COLORS.filter(c => c.color !== '#000000');
 
     return (
-        <div className="banner-color-scroll" style={{
+        <div className="custom-gradient-scrollbar" style={{
             display: 'flex',
             gap: '12px',
             overflowX: 'auto',
             padding: '12px 4px', // Added vertical padding to prevent glow clipping
             WebkitOverflowScrolling: 'touch'
         }}>
-            <style>{`
-                .banner-color-scroll::-webkit-scrollbar { height: 6px; }
-                .banner-color-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 3px; }
-                .banner-color-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
-                .banner-color-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
-            `}</style>
 
             {displayColors.map((opt) => {
                 const isCustom = !!customVariants;

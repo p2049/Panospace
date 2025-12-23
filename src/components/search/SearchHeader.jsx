@@ -144,7 +144,7 @@ const SearchHeader = ({
                             <circle cx="12" cy="12" r="7" fill="none" stroke="#7FFFD4" strokeWidth="0.5" opacity="0.3" />
                         </svg>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', whiteSpace: 'nowrap' }}>
                             <h1 style={{
                                 color: '#fff',
                                 fontSize: '1.1rem',
@@ -164,7 +164,7 @@ const SearchHeader = ({
                             </h1>
                             <span
                                 style={{
-                                    fontSize: '0.95rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: '800',
                                     fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', monospace",
                                     letterSpacing: '0.1em',
@@ -269,7 +269,7 @@ const SearchHeader = ({
                                     border: `1px solid ${accentColor}`,
                                     background: searchMode === 'art' ? accentColor : 'transparent',
                                     color: searchMode === 'art' ? '#000' : accentColor,
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.8rem',
                                     fontWeight: 'bold',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em',

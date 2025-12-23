@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND_RAINBOW } from '../../core/constants/colorPacks';
 
 
 
@@ -217,7 +218,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
 
         // 8. PLANET - Apple-style abstract cosmic border (Over-Designed Premium)
         if (mode === 'planet') {
-            const isBrand = starSettings?.color === 'brand';
+            const isBrand = starSettings?.color === 'brand' || starSettings?.color === BRAND_RAINBOW;
             const starColor = (starSettings?.color && !isBrand) ? starSettings.color : color;
 
             return (
@@ -722,7 +723,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         // 2. NEON GRID - Retrowave / TRON
         if (mode === 'neonGrid') {
             const isBrand = color === 'brand';
-            const brandRainbow = 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D)';
+            const brandRainbow = 'linear-gradient(to right, #FF914D, #FF5C8A, #FFB7D5, #5A3FFF, #A7B6FF, #1B82FF, #7FDBFF, #7FFFD4)';
 
             return (
                 <div style={overlayStyle}>
@@ -886,7 +887,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
 
         if (mode === 'simple_gradient') {
             const isBrand = color === 'brand';
-            const brandRainbow = 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #FF914D)';
+            const brandRainbow = 'linear-gradient(to right, #FF914D, #FF5C8A, #FFB7D5, #5A3FFF, #1B82FF, #7FDBFF, #7FFFD4)';
 
             return (
                 <div style={{

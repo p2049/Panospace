@@ -24,6 +24,10 @@ export const CHAR_MAP: Record<string, string> = {
 
 // 2. Pattern Mapping (Order matters: longer patterns first if overlapping)
 export const PATTERNS = [
+    { pattern: '(0)', replacement: '🛸' },
+    { pattern: '(8)', replacement: '👽' },
+    { pattern: '(@)', replacement: '🌌' },
+    { pattern: '(:)', replacement: '🎵' },
     { pattern: '<()', replacement: '☀️' },
     { pattern: '-()', replacement: '🌸' },
     { pattern: '[]', replacement: '📷' },
@@ -31,10 +35,6 @@ export const PATTERNS = [
     { pattern: '{}', replacement: '🎨' },
     { pattern: ':)', replacement: '🙂' },
     { pattern: '<3', replacement: '❤️' },
-    { pattern: '(0)', replacement: '🛸' },
-    { pattern: '(8)', replacement: '👽' },
-    { pattern: '(@)', replacement: '🌌' },
-    { pattern: '(:)', replacement: '🎵' },
     { pattern: '<', replacement: ' ' }
 ];
 
@@ -78,6 +78,8 @@ export function renderCosmicString(rawUsername: string) {
  * @param {string} rawUsername 
  * @returns {React.ReactNode} rendered JSX
  */
+import { BRAND_RAINBOW } from '../core/constants/colorPacks';
+
 /**
  * Renders a raw username into a React Fragment with styled emojis.
  * Use this for UI display.
@@ -93,7 +95,7 @@ export function renderCosmicUsername(rawUsername: string, color?: string, glow?:
     const parts = cosmicString.split(EMOJI_REGEX);
 
     // Brand Palette
-    const brandColors = ['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D'];
+    const brandColors = ['#FF914D', '#FF5C8A', '#FFB7D5', '#5A3FFF', '#A7B6FF', '#1B82FF', '#7FDBFF', '#7FFFD4'];
     let symbolCounter = 0;
 
     return (
@@ -101,8 +103,8 @@ export function renderCosmicUsername(rawUsername: string, color?: string, glow?:
             {parts.map((part, index) => {
                 if (ALL_EMOJIS.has(part)) {
                     // Decide which color to use
-                    const isBrand = color === 'brand';
-                    const activeColor = isBrand ? brandColors[symbolCounter % brandColors.length] : (color || 'inherit');
+                    const isBrand = color === 'brand' || color === BRAND_RAINBOW;
+                    const activeColor = isBrand ? brandColors[symbolCounter % brandColors.length] : (color || 'currentColor');
 
                     if (isBrand) symbolCounter++;
 

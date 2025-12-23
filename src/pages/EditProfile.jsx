@@ -6,10 +6,10 @@ import { db } from '@/firebase';
 // storage imports removed as they are handled by storageUploader
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
-import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock } from 'react-icons/fa';
+import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { ART_DISCIPLINES } from '@/core/constants/artDisciplines';
 import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '@/core/constants/gradients';
-import { ALL_COLORS } from '@/core/constants/colorPacks';
+import { ALL_COLORS, BRAND_RAINBOW } from '@/core/constants/colorPacks';
 import DisciplineSelector from '@/components/DisciplineSelector';
 import { generateUserSearchKeywords } from '@/core/utils/searchKeywords';
 import { fadeColor } from '@/core/utils/colorUtils';
@@ -20,13 +20,21 @@ import { getRenderedUsernameLength, renderCosmicUsername, CHAR_MAP, PATTERNS } f
 import BannerTypeSelector from '@/components/edit-profile/BannerTypeSelector';
 import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
 import BannerOverlaySelector from '@/components/edit-profile/BannerOverlaySelector';
+import PixelAvatarCreator from '@/components/pixel-avatar/PixelAvatarCreator';
+import { FaTh } from 'react-icons/fa';
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
+import PlanetUserIcon from '@/components/PlanetUserIcon';
 import { logger } from '@/core/utils/logger';
 import StarBackground from '@/components/StarBackground';
 import { uploadFile } from '@/services/storageUploader'; // Static import
 import { checkContent } from '@/core/utils/moderation/moderator';
+
+const DEFAULT_ICONS = [
+    'planet-head', 'planet', 'star', 'sparkles', 'sun',
+    'lightning', 'rocket', 'smile', 'heart', 'music'
+];
 
 const EditProfile = () => {
     const { currentUser } = useAuth();
@@ -62,6 +70,7 @@ const EditProfile = () => {
     const [useStarsOverlay, setUseStarsOverlay] = useState(false);
     const [textGlow, setTextGlow] = useState(false);
     const [selectedOverlays, setSelectedOverlays] = useState([]);
+    const [defaultIconId, setDefaultIconId] = useState('planet-head'); // New state for default icon
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -71,6 +80,9 @@ const EditProfile = () => {
                     const data = userDoc.data();
                     setBio(data.bio || '');
                     setProfileBgColor(data.profileBgColor || '#000000');
+                    // Improve initialization to ensure valid icon
+                    const savedIcon = data.defaultIconId || 'planet-head';
+                    setDefaultIconId(DEFAULT_ICONS.includes(savedIcon) ? savedIcon : 'planet-head');
                     // Fetch username
                     const fetchedUsername = data.username || currentUser.displayName || '';
                     setUsername(fetchedUsername);
@@ -93,7 +105,10 @@ const EditProfile = () => {
                         setBannerColor(data.profileTheme.bannerColor || data.profileTheme.borderColor || '#7FFFD4'); // Fallback for legacy
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
                         setTextGlow(data.profileTheme.textGlow || false);
+                        setPixelGlow(data.profileTheme.pixelGlow || false);
+                        setPixelGrid(data.profileTheme.pixelGrid !== false); // Default to true if undefined
                         setSelectedOverlays(data.profileTheme.overlays || []);
+                        setPixelAvatarData(data.pixel_avatar_data || null); // Load raw pixel data if exists
                     }
                 }
             }
@@ -103,6 +118,18 @@ const EditProfile = () => {
 
     const [showCropper, setShowCropper] = useState(false);
     const [tempImageSrc, setTempImageSrc] = useState(null);
+    const [showPixelCreator, setShowPixelCreator] = useState(false);
+    const [pixelGlow, setPixelGlow] = useState(false); // Track pixel glow status
+    const [pixelGrid, setPixelGrid] = useState(true); // Track grid/gap status
+    const [pixelAvatarData, setPixelAvatarData] = useState(null); // The raw pixel array (256 length)
+
+    const cycleDefaultIcon = (direction) => {
+        const currentIndex = DEFAULT_ICONS.indexOf(defaultIconId);
+        let nextIndex = currentIndex + direction;
+        if (nextIndex < 0) nextIndex = DEFAULT_ICONS.length - 1;
+        if (nextIndex >= DEFAULT_ICONS.length) nextIndex = 0;
+        setDefaultIconId(DEFAULT_ICONS[nextIndex]);
+    };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -186,6 +213,35 @@ const EditProfile = () => {
             input.focus();
             input.setSelectionRange(start + symbolCode.length, start + symbolCode.length);
         }, 0);
+    };
+
+    const handleUsernameKeyDown = (e) => {
+        if (e.key === 'Backspace') {
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+
+            // Only handle if it's a single cursor (no selection range)
+            if (start === end && start > 0) {
+                // Check against multi-char patterns from usernameRenderer
+                // We only care about patterns with length > 1
+                const multiCharPatterns = PATTERNS.filter(p => p.pattern.length > 1);
+
+                for (const { pattern } of multiCharPatterns) {
+                    const beforeCursor = username.substring(start - pattern.length, start);
+                    if (beforeCursor === pattern) {
+                        e.preventDefault();
+                        const newValue = username.substring(0, start - pattern.length) + username.substring(start);
+                        setUsername(newValue);
+
+                        // Restore cursor position
+                        setTimeout(() => {
+                            e.target.setSelectionRange(start - pattern.length, start - pattern.length);
+                        }, 0);
+                        return;
+                    }
+                }
+            }
+        }
     };
 
     const [selectedFile, setSelectedFile] = useState(null);
@@ -275,6 +331,76 @@ const EditProfile = () => {
         }
     };
 
+    const handleSavePixelAvatar = async (payload) => {
+        try {
+            // 1. Setup SVG Constants
+            const MASTER_SIZE = 1024;
+            const MARGIN = 0; // Removed margin so pixels fill the box
+            const DRAW_SIZE = MASTER_SIZE;
+            const GRID_SIZE = 16;
+            const BLOCK_SIZE = 1024 / 16; // Exactly 64px per block
+
+            const isGridActive = payload.showGrid !== false;
+            const GAP = isGridActive ? 4 : 0; // Increased gap (8px total) for visibility
+            const RADIUS = isGridActive ? 16 : 0; // Slightly more rounding for the coded look
+
+            // 2. Generate SVG String
+            let svgContent = `<svg width="${MASTER_SIZE}" height="${MASTER_SIZE}" viewBox="0 0 ${MASTER_SIZE} ${MASTER_SIZE}" xmlns="http://www.w3.org/2000/svg" style="background:transparent;">`;
+
+            // Add High-End Neon Filter
+            if (payload.showGlow) {
+                svgContent += `
+                <defs>
+                    <filter id="neon-glow" x="-200%" y="-200%" width="500%" height="500%">
+                        {/* Layered Drop Shadows create a dense, localized bloom without washing out the center */}
+                        <feDropShadow dx="0" dy="0" stdDeviation="15" flood-color="currentColor" flood-opacity="1" />
+                        <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="currentColor" flood-opacity="1" />
+                        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#fff" flood-opacity="0.4" />
+                    </filter>
+                </defs>`;
+            }
+
+            // Render Pixels
+            payload.data.forEach((color, i) => {
+                if (color) {
+                    const row = Math.floor(i / GRID_SIZE);
+                    const col = i % GRID_SIZE;
+
+                    const x = MARGIN + (col * BLOCK_SIZE) + GAP;
+                    const y = MARGIN + (row * BLOCK_SIZE) + GAP;
+                    const w = BLOCK_SIZE - (GAP * 2);
+                    const h = BLOCK_SIZE - (GAP * 2);
+
+                    // Use 'style="color: ${color}"' so the filter's currentColor matches the pixel
+                    const filterAttr = payload.showGlow ? `filter="url(#neon-glow)" style="color: ${color};"` : '';
+                    svgContent += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${RADIUS}" fill="${color}" ${filterAttr} />`;
+                }
+            });
+
+            svgContent += `</svg>`;
+
+            // 3. Convert Target to Data URL for Preview
+            const encoded = encodeURIComponent(svgContent);
+            const dataUrl = `data:image/svg+xml;charset=utf-8,${encoded}`;
+            setPreview(dataUrl);
+
+            // Save the states for persistence
+            setPixelAvatarData(payload.data);
+            if (payload.showGlow !== undefined) setPixelGlow(payload.showGlow);
+            if (payload.showGrid !== undefined) setPixelGrid(payload.showGrid);
+
+            // 4. Create File for Upload
+            const blob = new Blob([svgContent], { type: "image/svg+xml" });
+            const file = new File([blob], "pixel_avatar.svg", { type: "image/svg+xml" });
+            setSelectedFile(file);
+
+            setShowPixelCreator(false);
+        } catch (err) {
+            console.error("[SVG_GEN] Error:", err);
+            showToast("Failed to create SVG avatar", 'error');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Starting profile save...
@@ -292,18 +418,16 @@ const EditProfile = () => {
             // 1. Handle Image Upload
             if (selectedFile) {
                 try {
-                    // CRITICAL: Path must match storage.rules structure: profile_photos/{userId}/{filename}
-                    // Fixed filename 'profile_current' ensures only one file exists per user (overwrites old)
-                    // CRITICAL: Path must match storage.rules + include file extension for proper Content-Type detection
-                    // We force .jpg because handleCropComplete converts everything to JPEG
-                    const path = `profile_photos/${currentUser.uid}/profile_current.jpg`;
-
+                    // Extract info from selectedFile to be dynamic
+                    const fileExt = selectedFile.name.split('.').pop() || 'png';
+                    const mimeType = selectedFile.type || 'image/png';
+                    const path = `profile_photos/${currentUser.uid}/profile_current.${fileExt}`;
 
                     const result = await uploadFile({
                         file: selectedFile,
                         path: path,
                         metadata: {
-                            contentType: 'image/jpeg', // Explicitly set content type to match extension
+                            contentType: mimeType,
                             customMetadata: {
                                 originalName: selectedFile.name,
                                 uploadedVia: 'EditProfile_Canonical'
@@ -319,6 +443,9 @@ const EditProfile = () => {
                     setLoading(false);
                     return; // Don't save profile if upload failed
                 }
+            } else if (!preview) {
+                // User removed the photo
+                newPhotoURL = "";
             }
 
             // 2. Sanitation Checks
@@ -406,7 +533,7 @@ const EditProfile = () => {
                             // We need to parse strictly based on "Entities".
                             // Let's defer to a smarter logic.
                         }
-                        // This simple loop is too naive for multi-char patterns like "()".
+                        // lastWasSymbol = isSymbol;
                     }
                     // lastWasSymbol = isSymbol;
                 }
@@ -459,7 +586,7 @@ const EditProfile = () => {
             // So we set displayName to username.
             await updateProfile(currentUser, {
                 displayName: sanitizedUsername,
-                photoURL: newPhotoURL
+                photoURL: newPhotoURL // This can now be null
             });
 
             // 4. Firestore Update
@@ -489,12 +616,16 @@ const EditProfile = () => {
                     borderColor: profileBorderColor || '#7FFFD4',
                     usernameColor: usernameColor || '#FFFFFF',
                     bioColor: autoBioColor,
-                    bannerMode: bannerMode,
-                    bannerColor: bannerColor,
-                    useStarsOverlay: useStarsOverlay,
-                    textGlow: textGlow,
-                    overlays: selectedOverlays
-                }
+                    bannerMode: bannerMode || 'stars',
+                    bannerColor: bannerColor || '#7FFFD4',
+                    useStarsOverlay: useStarsOverlay || false,
+                    textGlow: textGlow || false,
+                    pixelGlow: pixelGlow || false, // Persist pixel glow
+                    pixelGrid: pixelGrid, // Persist grid preference
+                    overlays: selectedOverlays || []
+                },
+                pixel_avatar_data: pixelAvatarData, // Save raw pixels for re-editing
+                defaultIconId: defaultIconId // Save the selected default icon
             };
 
             // Add search keywords
@@ -678,72 +809,243 @@ const EditProfile = () => {
 
                         {/* Photo Section */}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{
-                                width: '100px',
-                                height: '100px',
-                                borderRadius: '16px',
-                                overflow: 'hidden',
-                                border: `3px solid ${profileBorderColor}`,
-                                background: '#111',
-                                boxShadow: `0 0 20px ${profileBorderColor}40`
-                            }}>
-                                {preview ? (
-                                    <img src={preview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>No Photo</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                {/* Left Arrow - Outside */}
+                                {!preview && (
+                                    <button
+                                        type="button"
+                                        onClick={() => cycleDefaultIcon(-1)}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: 'none',
+                                            color: 'white',
+                                            borderRadius: '50%',
+                                            width: '32px',
+                                            height: '32px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            backdropFilter: 'blur(4px)'
+                                        }}
+                                    >
+                                        <FaChevronLeft size={16} />
+                                    </button>
+                                )}
+
+                                <div style={{
+                                    position: 'relative',
+                                    width: '120px',
+                                    height: '120px'
+                                }}>
+                                    {/* Rainbow Border Gradient (Behind) */}
+                                    {(profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient'))) && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: '-3px',
+                                            borderRadius: '19px',
+                                            padding: '3px',
+                                            background: profileBorderColor === 'brand' ? BRAND_RAINBOW : profileBorderColor,
+                                            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                                            WebkitMaskComposite: 'xor',
+                                            maskComposite: 'exclude',
+                                            zIndex: 0 // Behind the inner box
+                                        }} />
+                                    )}
+
+                                    <div style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        borderRadius: '24px',
+                                        overflow: 'hidden',
+                                        border: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
+                                            ? '1px solid rgba(255,255,255,0.2)'
+                                            : `2.5px solid ${profileBorderColor}`,
+                                        background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                                        backdropFilter: 'blur(16px)',
+                                        WebkitBackdropFilter: 'blur(16px)',
+                                        position: 'relative',
+                                        zIndex: 1,
+                                        boxShadow: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
+                                            ? '0 0 15px rgba(0,0,0,0.5)'
+                                            : `0 0 15px ${profileBorderColor}40`
+                                    }}>
+                                        {preview ? (
+                                            <img
+                                                src={preview}
+                                                alt="Profile"
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    imageRendering: 'pixelated' // Keeps pixel art crisp
+                                                }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
+                                                <PlanetUserIcon
+                                                    size={64}
+                                                    color={usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4'}
+                                                    icon={defaultIconId}
+                                                    glow={textGlow}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Right Arrow - Outside */}
+                                {!preview && (
+                                    <button
+                                        type="button"
+                                        onClick={() => cycleDefaultIcon(1)}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: 'none',
+                                            color: 'white',
+                                            borderRadius: '50%',
+                                            width: '32px',
+                                            height: '32px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            backdropFilter: 'blur(4px)'
+                                        }}
+                                    >
+                                        <FaChevronRight size={16} />
+                                    </button>
                                 )}
                             </div>
-                            <label style={{
-                                cursor: 'pointer',
-                                color: (usernameColor === '#FFFFFF' || usernameColor === '#fff') ? '#000' : '#000',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.85rem',
-                                padding: '0.6rem 1.2rem',
-                                background: usernameColor,
-                                borderRadius: '20px',
-                                fontWeight: '600',
-                                transition: 'all 0.2s',
-                                border: 'none',
-                                boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
-                            }}>
-                                <FaCamera /> Change Photo
-                                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-                            </label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <label style={{
+                                    cursor: 'pointer',
+                                    color: '#000',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    fontSize: '0.85rem',
+                                    padding: '0.6rem 1.2rem',
+                                    background: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4',
+                                    borderRadius: '20px',
+                                    fontWeight: '600',
+                                    transition: 'all 0.2s',
+                                    border: 'none',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                }}>
+                                    <FaCamera /> {preview ? 'Change Photo' : 'Upload Photo'}
+                                    <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPixelCreator(true)}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: '0.85rem',
+                                        padding: '0.6rem 1.2rem',
+                                        background: 'rgba(255,255,255,0.1)', // Glassy look
+                                        backdropFilter: 'blur(10px)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '20px',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                    }}
+                                >
+                                    <FaTh /> Pixel Art
+                                </button>
+                                {preview && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPreview(null);
+                                            setSelectedFile(null); // Explicitly clear selected file
+                                            // Clear file selection if any
+                                            const fileInput = document.querySelector('input[type="file"]');
+                                            if (fileInput) fileInput.value = '';
+                                        }}
+                                        style={{
+                                            cursor: 'pointer',
+                                            color: '#fff',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            fontSize: '0.85rem',
+                                            padding: '0.6rem 1.2rem',
+                                            background: 'rgba(255, 50, 50, 0.2)',
+                                            border: '1px solid rgba(255, 50, 50, 0.5)',
+                                            borderRadius: '20px',
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s',
+                                        }}>
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Profile Picture Border Color Customization (Scrollable) */}
                         <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                            <label style={{ display: 'block', color: (profileBorderColor && !profileBorderColor.includes('gradient')) ? profileBorderColor : '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center' }}>Profile Border</label>
+                            <label style={{
+                                display: 'block',
+                                background: (profileBorderColor && profileBorderColor.includes('gradient')) ? profileBorderColor : undefined,
+                                WebkitBackgroundClip: (profileBorderColor && profileBorderColor.includes('gradient')) ? 'text' : undefined,
+                                WebkitTextFillColor: (profileBorderColor && profileBorderColor.includes('gradient')) ? 'transparent' : ((profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : (profileBorderColor || '#7FFFD4')),
+                                color: (profileBorderColor && !profileBorderColor.includes('gradient')) ? ((profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor) : 'transparent',
+                                marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center',
+                                filter: textGlow ? `drop-shadow(0 0 5px ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : (profileBorderColor || '#7FFFD4')}80)` : 'none'
+                            }}>Profile Border</label>
 
-                            <div className="custom-scrollbar" style={{
+                            <div className="custom-gradient-scrollbar" style={{
                                 display: 'flex',
                                 gap: '1rem',
                                 overflowX: 'auto',
                                 padding: '0.5rem',
                                 scrollBehavior: 'smooth',
                                 justifyContent: 'flex-start',
-                                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
+                                paddingBottom: '12px'
                             }}>
+                                <style>{`
+                                    .custom-gradient-scrollbar::-webkit-scrollbar {
+                                        height: 4px;
+                                    }
+                                    .custom-gradient-scrollbar::-webkit-scrollbar-track {
+                                        background: rgba(255, 255, 255, 0.05);
+                                        border-radius: 4px;
+                                    }
+                                    .custom-gradient-scrollbar::-webkit-scrollbar-thumb {
+                                        background: ${profileBorderColor === 'brand'
+                                        ? 'linear-gradient(90deg, #FF914D, #FF5C8A, #FFB7D5, #5A3FFF, #7FFFD4)'
+                                        : (profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border'
+                                            ? '#fff'
+                                            : profileBorderColor || '#7FFFD4')
+                                    };
+                                        border-radius: 4px;
+                                    }
+                                `}</style>
                                 {ALL_COLORS.map(option => {
-                                    const isPremiumLocked = option.isPremium && !isPremiumUser;
-
                                     return (
                                         <button
                                             key={option.id}
                                             type="button"
-                                            onClick={() => !isPremiumLocked && setProfileBorderColor(option.color)}
+                                            onClick={() => setProfileBorderColor(option.color)}
                                             style={{
                                                 flex: '0 0 auto',
                                                 padding: '0',
                                                 border: profileBorderColor === option.color
-                                                    ? `2px solid ${(option.color.includes('gradient')) ? '#fff' : option.color}`
+                                                    ? `2px solid ${(option.color.includes('gradient')) ? '#fff' : (option.id === 'transparent-border' ? '#7FFFD4' : option.color)}`
                                                     : '2px solid #333',
                                                 borderRadius: '50%',
                                                 width: '44px', // Slightly larger touch target
                                                 height: '44px',
-                                                cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
+                                                cursor: 'pointer',
                                                 background: profileBorderColor === option.color ? 'rgba(255,255,255,0.1)' : 'transparent',
                                                 backdropFilter: profileBorderColor === option.color ? 'blur(2px)' : 'none',
                                                 position: 'relative',
@@ -753,7 +1055,7 @@ const EditProfile = () => {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                opacity: isPremiumLocked ? 0.6 : 1,
+                                                opacity: 1,
                                                 transition: 'all 0.2s'
                                             }}
                                             title={option.name}
@@ -763,26 +1065,35 @@ const EditProfile = () => {
                                                 width: profileBorderColor === option.color ? '22px' : '100%',
                                                 height: profileBorderColor === option.color ? '22px' : '100%',
                                                 borderRadius: '50%',
-                                                background: option.color,
+                                                background: option.id === 'glass'
+                                                    ? 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05))'
+                                                    : (option.id === 'transparent-border' ? 'rgba(255, 255, 255, 0.1)' : (option.id === 'brand-colors' ? BRAND_RAINBOW : option.color)),
+                                                border: option.id === 'glass' || option.id === 'transparent-border' ? '1px solid rgba(255,255,255,0.3)' : 'none',
+                                                backdropFilter: option.id === 'glass' ? 'blur(4px)' : 'none',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', // Center content
                                                 transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                                            }} />
-
-                                            {/* Lock Overlay */}
-                                            {isPremiumLocked && (
-                                                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <FaLock size={12} color="#fff" />
-                                                </div>
-                                            )}
+                                            }}>
+                                                {option.id === 'transparent-border' && (
+                                                    <div style={{ width: '60%', height: '2px', background: '#ff4444', transform: 'rotate(-45deg)', borderRadius: '1px' }} />
+                                                )}
+                                            </div>
                                         </button>
                                     )
                                 })}
                             </div>
                         </div>
 
-                        {/* Basic Info */}
+                        {/* Unified Username Input/Preview */}
                         <div className="form-group">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{ display: 'block', color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Username</label>
+                                <label style={{
+                                    display: 'block',
+                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
+                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
+                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#7FFFD4'),
+                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
+                                    fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase'
+                                }}>Username</label>
 
                                 {/* Live Character Count */}
                                 <span style={{ fontSize: '0.7rem', color: '#666' }}>
@@ -790,123 +1101,166 @@ const EditProfile = () => {
                                 </span>
                             </div>
 
-                            {/* LIVE VISUAL PREVIEW */}
-                            <div style={{
-                                padding: '1rem',
-                                background: '#1a1a1a',
-                                border: `2px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : profileBorderColor}`,
-                                borderRadius: '12px',
-                                marginBottom: '1rem',
-                                textAlign: 'center',
-                                minHeight: '60px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: (profileBorderColor && profileBorderColor.includes('gradient'))
-                                    ? '0 0 15px rgba(255,255,255,0.1)'
-                                    : `0 0 15px ${profileBorderColor}40`
-                            }}>
-                                <span style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '800',
-                                    fontFamily: 'var(--font-family-heading)',
-                                    color: usernameColor,
-                                    textShadow: textGlow ? `0 0 10px ${usernameColor}80` : 'none'
+                            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                                {/* Iridescent Border Effect */}
+                                {(profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient'))) && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        inset: '-2px',
+                                        borderRadius: '14px',
+                                        padding: '2px', // Size of the border
+                                        background: profileBorderColor === 'brand' ? BRAND_RAINBOW : profileBorderColor,
+                                    }} />
+                                )}
+
+
+
+                                <div style={{
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                                    backdropFilter: 'blur(7px)',
+                                    WebkitBackdropFilter: 'blur(7px)',
+                                    border: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
+                                        ? 'none'
+                                        : `2px solid ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor}`,
+                                    borderRadius: '12px',
+                                    minHeight: '80px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
+                                        ? '0 0 20px rgba(0,0,0,0.5)'
+                                        : `0 0 15px ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor}40, 0 8px 32px rgba(0,0,0,0.5)`,
+                                    transition: 'all 0.3s'
                                 }}>
-                                    {renderCosmicUsername(username, profileBorderColor, textGlow)}
-                                </span>
-                            </div>
+                                    {/* The "Visual Layer" - rendered emojis and text */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        pointerEvents: 'none',
+                                        fontSize: '1.5rem',
+                                        fontWeight: '800',
+                                        fontFamily: 'var(--font-family-heading)',
+                                        padding: '0 1rem',
+                                        // Gradient Handling
+                                        ...(usernameColor && usernameColor.includes('gradient') ? {
+                                            backgroundImage: usernameColor,
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            color: 'transparent'
+                                        } : { color: usernameColor || '#7FFFD4' }),
+                                        textShadow: textGlow ? `0 0 10px ${(usernameColor && usernameColor.includes('gradient')) ? '#fff' : (usernameColor || '#7FFFD4')}80` : 'none'
+                                    }}>
+                                        {renderCosmicUsername(username, usernameColor, textGlow)}
+                                    </div>
 
-                            {/* EMOJI SCROLLBAR */}
-                            <div className="custom-scrollbar" style={{
-                                display: 'flex',
-                                gap: '0.75rem',
-                                overflowX: 'auto',
-                                padding: '0.5rem 0',
-                                marginBottom: '0.75rem',
-                                maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
-                                WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
-                            }}>
-                                {/* Render PATTERNS first (multi-char) */}
-                                {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
-                                    <button
-                                        key={`pat-${i}`}
-                                        type="button"
-                                        onClick={() => handleInsertSymbol(p.pattern)}
+                                    {/* The "Interactive Layer" - transparent input */}
+                                    <input
+                                        ref={usernameInputRef}
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                                        onKeyDown={handleUsernameKeyDown}
+                                        placeholder="@yourname"
                                         style={{
-                                            flex: '0 0 auto',
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(127, 255, 212, 0.2)',
-                                            background: 'rgba(127, 255, 212, 0.05)',
-                                            fontSize: '1.2rem',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#fff'
+                                            width: '100%',
+                                            height: '100%',
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            background: 'transparent',
+                                            border: 'none',
+                                            outline: 'none',
+                                            textAlign: 'center',
+                                            fontSize: '1.5rem',
+                                            fontWeight: '800',
+                                            fontFamily: 'var(--font-family-heading)',
+                                            color: 'transparent', // Text is rendered by the layer below
+                                            caretColor: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', // Show the caret though!
+                                            padding: '0 1rem',
+                                            zIndex: 2,
+                                            textTransform: 'lowercase'
                                         }}
-                                    >
-                                        {p.replacement}
-                                    </button>
-                                ))}
-                                {/* Render CHAR_MAP symbols */}
-                                {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
-                                    <button
-                                        key={`char-${i}`}
-                                        type="button"
-                                        onClick={() => handleInsertSymbol(char)}
-                                        style={{
-                                            flex: '0 0 auto',
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(127, 255, 212, 0.2)',
-                                            background: 'rgba(127, 255, 212, 0.05)',
-                                            fontSize: '1.2rem',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#fff'
-                                        }}
-                                    >
-                                        {emoji}
-                                    </button>
-                                ))}
+                                    />
+                                </div>
                             </div>
-
-                            {/* Hidden Inputs (Logic) */}
-                            <input
-                                ref={usernameInputRef}
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem',
-                                    background: 'rgba(127, 255, 212, 0.05)',
-                                    border: '1px solid rgba(127, 255, 212, 0.2)',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s',
-                                }}
-                                onFocus={(e) => {
-                                    e.target.style.borderColor = '#7FFFD4';
-                                    e.target.style.background = 'rgba(127, 255, 212, 0.1)';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
-                                    e.target.style.background = 'rgba(127, 255, 212, 0.05)';
-                                }}
-                                placeholder="@username"
-                            />
                         </div>
 
+                        {/* EMOJI SCROLLBAR */}
+                        <div className="custom-scrollbar" style={{
+                            display: 'flex',
+                            gap: '0.75rem',
+                            overflowX: 'auto',
+                            padding: '0.5rem 0',
+                            marginBottom: '0.75rem',
+                            maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
+                            WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
+                        }}>
+                            {/* Render PATTERNS first (multi-char) */}
+                            {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
+                                <button
+                                    key={`pat-${i}`}
+                                    type="button"
+                                    onClick={() => handleInsertSymbol(p.pattern)}
+                                    style={{
+                                        flex: '0 0 auto',
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(127, 255, 212, 0.2)',
+                                        background: 'rgba(127, 255, 212, 0.05)',
+                                        fontSize: '1.2rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    {p.replacement}
+                                </button>
+                            ))}
+                            {/* Render CHAR_MAP symbols */}
+                            {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
+                                <button
+                                    key={`char-${i}`}
+                                    type="button"
+                                    onClick={() => handleInsertSymbol(char)}
+                                    style={{
+                                        flex: '0 0 auto',
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '8px',
+                                        border: '1px solid rgba(127, 255, 212, 0.2)',
+                                        background: 'rgba(127, 255, 212, 0.05)',
+                                        fontSize: '1.2rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff'
+                                    }}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
+
+
                         <div className="form-group">
-                            <label style={{ display: 'block', color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Bio</label>
+                            <label style={{
+                                display: 'block',
+                                background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
+                                WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
+                                WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#7FFFD4'),
+                                color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
+                                marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase'
+                            }}>Bio</label>
                             <textarea
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
@@ -948,40 +1302,84 @@ const EditProfile = () => {
                         {/* Profile Theme (Username Color) - Slider Box */}
                         <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{ color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Theme</label>
+                                <label style={{
+                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
+                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
+                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#fff'),
+                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
+                                    fontSize: '1rem', fontWeight: '600',
+                                    filter: textGlow ? `drop-shadow(0 0 5px ${usernameColor || '#7FFFD4'}80)` : 'none'
+                                }}>Profile Theme</label>
                             </div>
                             <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
                                 Choose a color for your username.
                             </p>
 
-                            {/* Text Glow Toggle */}
-                            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <input
-                                    type="checkbox"
-                                    id="textGlow"
-                                    checked={textGlow}
-                                    onChange={(e) => setTextGlow(e.target.checked)}
-                                    style={{ width: '16px', height: '16px', accentColor: (profileBorderColor && profileBorderColor.includes('gradient')) ? '#7FFFD4' : profileBorderColor, cursor: 'pointer' }}
-                                />
-                                <label htmlFor="textGlow" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
-                                    Enable neon glow effect
+                            {/* Activate Glow Toggle - Neon Design */}
+                            <div
+                                onClick={() => setTextGlow(!textGlow)}
+                                style={{
+                                    marginBottom: '1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem 1rem', // Added horizontal padding to prevent glow cutoff
+                                    width: 'fit-content'
+                                }}
+                            >
+                                <div style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '6px',
+                                    border: `2px solid ${(usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4'}`,
+                                    background: textGlow ? ((usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4') : 'transparent',
+                                    boxShadow: textGlow ? `0 0 8px ${(usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4'}` : 'none', // Reduced glow from 15px to 8px
+                                    transition: 'all 0.3s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    {textGlow && <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.2)' }} />}
+                                </div>
+                                <label style={{
+                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    <span style={{ textShadow: textGlow ? `0 0 5px ${(usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4')}80` : 'none', transition: 'text-shadow 0.3s' }}>ACTIVATE</span> <span style={{ textShadow: `0 0 5px ${(usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4')}80` }}>GLOW</span>
                                 </label>
                             </div>
 
-                            <div className="custom-scrollbar" style={{
+                            <div className="custom-gradient-scrollbar" style={{
                                 display: 'flex',
                                 gap: '1rem',
                                 overflowX: 'auto',
-                                padding: '0.5rem',
+                                padding: '1rem 0.5rem', /* Increased padding for glow space */
                                 scrollBehavior: 'smooth',
                                 justifyContent: 'flex-start',
-                                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
+                                maskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
                             }}>
-                                {ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand').map(option => {
+                                {ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand' && c.id !== 'transparent-border').map(option => {
                                     const isPremiumLocked = option.isPremium && !isPremiumUser;
-                                    const backgroundStyle = option.color.includes('gradient')
-                                        ? { background: option.color }
-                                        : { backgroundColor: option.color };
+
+                                    // Text style for solid vs gradient
+                                    const textStyle = option.color.includes('gradient') ? {
+                                        background: option.color,
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                        color: 'transparent'
+                                    } : {
+                                        color: option.color
+                                    };
+
+                                    // Glow style
+                                    const glowStyle = textGlow ? {
+                                        filter: `drop-shadow(0 0 1px ${option.color.includes('gradient') ? '#fff' : option.color})`
+                                    } : {};
 
                                     return (
                                         <button
@@ -990,48 +1388,42 @@ const EditProfile = () => {
                                             onClick={() => !isPremiumLocked && setUsernameColor(option.color)}
                                             style={{
                                                 flex: '0 0 auto',
-                                                width: '80px',
-                                                padding: '0',
-                                                border: usernameColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : profileBorderColor}` : '2px solid #333',
-                                                borderRadius: '12px',
+                                                width: '90px',
+                                                height: '90px',
+                                                padding: '0.5rem',
+                                                border: usernameColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : (profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border' ? '#7FFFD4' : profileBorderColor)}` : '2px solid #333',
+                                                borderRadius: '16px',
                                                 overflow: 'hidden',
                                                 cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
-                                                background: 'transparent',
-                                                position: 'relative',
-                                                opacity: isPremiumLocked ? 0.6 : 1
-                                            }}
-                                        >
-                                            <div style={{
-                                                height: '40px',
                                                 background: '#000',
+                                                position: 'relative',
+                                                opacity: isPremiumLocked ? 0.6 : 1,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                position: 'relative',
-                                                overflow: 'hidden'
-                                            }}>
-                                                {isPremiumLocked && (
-                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <FaLock size={16} color="#888" />
-                                                    </div>
-                                                )}
-                                                <span style={{
-                                                    fontSize: '1rem',
-                                                    fontWeight: '800',
-                                                    ...backgroundStyle,
-                                                    WebkitBackgroundClip: option.color.includes('gradient') ? 'text' : 'border-box',
-                                                    WebkitTextFillColor: option.color.includes('gradient') ? 'transparent' : option.color,
-                                                    color: option.color.includes('gradient') ? 'transparent' : option.color
-                                                }}>Aa</span>
-                                            </div>
-                                            <div style={{
-                                                padding: '0.4rem',
-                                                background: '#111',
+                                                transition: 'all 0.2s',
+                                                boxShadow: usernameColor === option.color && textGlow
+                                                    ? `0 0 20px ${(option.color.includes('gradient') ? '#fff' : option.color)}40`
+                                                    : '0 4px 12px rgba(0,0,0,0.3)'
+                                            }}
+                                        >
+                                            {isPremiumLocked && (
+                                                <div style={{ position: 'absolute', top: '6px', right: '6px', zIndex: 10 }}>
+                                                    <FaLock size={10} color="#333" />
+                                                </div>
+                                            )}
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                lineHeight: '1.2',
+                                                fontWeight: '800',
                                                 textAlign: 'center',
-                                                fontSize: '0.75rem',
-                                                color: usernameColor === option.color ? '#fff' : '#888',
-                                                fontWeight: usernameColor === option.color ? '600' : '400'
-                                            }}>{option.name}</div>
+                                                wordBreak: 'normal',
+                                                overflowWrap: 'break-word',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.02em',
+                                                ...textStyle,
+                                                ...glowStyle
+                                            }}>{option.name}</span>
                                         </button>
                                     )
                                 })}
@@ -1041,7 +1433,13 @@ const EditProfile = () => {
                         {/* Profile Banner Theme - Slider Box */}
                         <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{ color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Theme</label>
+                                <label style={{
+                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
+                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
+                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#fff'),
+                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
+                                    fontSize: '1rem', fontWeight: '600'
+                                }}>Profile Banner Theme</label>
                                 <FaInfoCircle size={14} color="#888" title="Unlock more gradients through achievements" />
                             </div>
                             <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
@@ -1124,7 +1522,7 @@ const EditProfile = () => {
 
                             {/* Legacy Gradient Selector - Shown only when 'gradient' mode is active */}
                             {bannerMode === 'gradient' && (
-                                <div className="custom-scrollbar" style={{
+                                <div className="custom-gradient-scrollbar" style={{
                                     display: 'flex',
                                     gap: '1rem',
                                     overflowX: 'auto',
@@ -1215,13 +1613,19 @@ const EditProfile = () => {
                         {/* Star Color Customization - Slider Box */}
                         <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{ color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff', fontSize: '1rem', fontWeight: '600' }}>Profile Banner Star Color</label>
+                                <label style={{
+                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
+                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
+                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#fff'),
+                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
+                                    fontSize: '1rem', fontWeight: '600'
+                                }}>Profile Banner Star Color</label>
                             </div>
                             <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
                                 Customize the color of the animated stars on your profile banner.
                             </p>
 
-                            <div className="custom-scrollbar" style={{
+                            <div className="custom-gradient-scrollbar" style={{
                                 display: 'flex',
                                 gap: '1rem',
                                 overflowX: 'auto',
@@ -1230,7 +1634,7 @@ const EditProfile = () => {
                                 justifyContent: 'flex-start',
                                 maskImage: 'linear-gradient(to right, black 85%, transparent 100%)'
                             }}>
-                                {ALL_COLORS.map(option => {
+                                {ALL_COLORS.filter(o => o.color !== 'transparent').map(option => {
                                     const isPremiumLocked = option.isPremium && !isPremiumUser;
 
                                     return (
@@ -1242,7 +1646,7 @@ const EditProfile = () => {
                                                 flex: '0 0 auto',
                                                 width: '80px',
                                                 padding: '0',
-                                                border: starColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : profileBorderColor}` : '2px solid #333',
+                                                border: starColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : (profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border' ? '#7FFFD4' : profileBorderColor)}` : '2px solid #333',
                                                 borderRadius: '12px',
                                                 overflow: 'hidden',
                                                 cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
@@ -1361,18 +1765,68 @@ const EditProfile = () => {
                     </form>
                 </div>
 
-                {showCropper && tempImageSrc && (
-                    <ImageCropper
-                        imageSrc={tempImageSrc}
-                        onCrop={handleCropComplete}
-                        onCancel={() => {
-                            setShowCropper(false);
-                            setTempImageSrc(null);
-                        }}
-                    />
-                )}
+                {
+                    showCropper && tempImageSrc && (
+                        <ImageCropper
+                            imageSrc={tempImageSrc}
+                            onCrop={handleCropComplete}
+                            onCancel={() => {
+                                setShowCropper(false);
+                                setTempImageSrc(null);
+                            }}
+                        />
+                    )
+                }
 
-            </div>{/* End wrapper */}
+            </div > {/* End wrapper */}
+            {/* Pixel Avatar Modal */}
+            {showPixelCreator && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 2000,
+                    background: 'rgba(0,0,0,0.9)',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    padding: '5vh 2rem 2rem 2rem',
+                    overflowY: 'auto'
+                }}>
+                    {/* Back Arrow - Outside the box */}
+                    <button
+                        onClick={() => setShowPixelCreator(false)}
+                        style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '50%',
+                            width: '48px',
+                            height: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            marginBottom: '16px',
+                            color: '#fff',
+                            fontSize: '1.5rem',
+                            transition: 'all 0.2s'
+                        }}
+                        title="Close Pixel Lab"
+                    >
+                        ←
+                    </button>
+                    <div>
+                        <PixelAvatarCreator
+                            initialData={pixelAvatarData}
+                            initialGlow={pixelGlow}
+                            initialGrid={pixelGrid}
+                            onSave={handleSavePixelAvatar}
+                            onClose={() => setShowPixelCreator(false)}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

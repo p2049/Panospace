@@ -70,11 +70,16 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
     const [authorPhoto, setAuthorPhoto] = useState(
         post.authorPhotoUrl || post.userPhotoUrl || post.userAvatar || post.profileImage || null
     );
+    const [authorDefaultIconId, setAuthorDefaultIconId] = useState(post.authorDefaultIconId || 'planet-head');
+    const [authorProfileTheme, setAuthorProfileTheme] = useState(post.authorProfileTheme || null);
 
     useEffect(() => {
-        const fetchAuthorPhoto = async () => {
-            // If we already have a valid http photo URL, don't fetch.
-            if (authorPhoto && authorPhoto.startsWith('http')) return;
+        const fetchAuthorData = async () => {
+            // If we already have photo, we might still need the icon/theme if photo fails or is null.
+            // But optimizing: if we have a photo URL, we trust it? 
+            // No, the user might have removed their photo and switched to an icon.
+            // We should fetch if we don't have EVERYTHING or if we want latest.
+            // For now, let's fetch if we are missing key data or if the photo is missing.
 
             const authorId = post.userId || post.authorId || post.uid;
             if (!authorId) return;
@@ -83,16 +88,18 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
                 const userDoc = await getDoc(doc(db, 'users', authorId));
                 if (userDoc.exists()) {
                     const data = userDoc.data();
-                    if (data.photoURL) {
-                        setAuthorPhoto(data.photoURL);
-                    }
+                    if (data.photoURL) setAuthorPhoto(data.photoURL);
+                    else setAuthorPhoto(null); // Explicitly null if they removed it
+
+                    if (data.defaultIconId) setAuthorDefaultIconId(data.defaultIconId);
+                    if (data.profileTheme) setAuthorProfileTheme(data.profileTheme);
                 }
             } catch (err) {
-                logger.warn("Failed to fetch author photo fallback", err);
+                logger.warn("Failed to fetch author data", err);
             }
         };
-        fetchAuthorPhoto();
-    }, [post.userId, post.authorId, post.uid, authorPhoto]);
+        fetchAuthorData();
+    }, [post.userId, post.authorId, post.uid]);
 
     // --- 2. INTERACTION LOGIC ---
     // Intersection Observer for Active State
@@ -197,6 +204,8 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
                 items={items}
                 priority={priority}
                 authorPhoto={authorPhoto}
+                authorDefaultIconId={authorDefaultIconId}
+                authorProfileTheme={authorProfileTheme}
                 handleAuthorClick={handleAuthorClick}
                 // We pass containerRef mainly for Quartz Date resizing if needed inside, 
                 // though StandardPost creates its own layout. 
