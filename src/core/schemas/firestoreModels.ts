@@ -73,6 +73,7 @@ export const normalizeUserProfile = (doc: DocumentSnapshot): UserProfile => {
         partnerType: data.partnerType,
         subscriptionStatus: data.subscriptionStatus,
         subscriptionUpdatedAt: data.subscriptionUpdatedAt instanceof Timestamp ? data.subscriptionUpdatedAt : undefined,
+        promptCount: typeof data.promptCount === 'number' ? data.promptCount : 0,
     };
 };
 

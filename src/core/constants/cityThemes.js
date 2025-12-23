@@ -216,28 +216,7 @@ export const CITY_THEMES = {
             y: 0.22
         }
     },
-    'city3000_festival': {
-        name: 'Neon Festival',
-        sky: [BRAND_COLORS.black, BRAND_COLORS.deepOrbitPurple, '#000'],
-        buildings: {
-            color: '#050308',
-            windowColor: [BRAND_COLORS.classicMint, BRAND_COLORS.solarPink, BRAND_COLORS.ionBlue, BRAND_COLORS.auroraMint],
-            density: 0.7,
-            centerGap: 0.4,
-            glow: true
-        },
-        atmosphere: {
-            stars: true
-        },
-        celestial: {
-            type: 'moon',
-            color: BRAND_COLORS.iceWhite,
-            x: 0.8, y: 0.2
-        },
-        foreground: {
-            type: 'festival_terrain'
-        }
-    },
+
     'city_time_aware': {
         name: 'Omni City (Default)',
         sky: [BRAND_COLORS.ionBlue, BRAND_COLORS.auroraBlue, BRAND_COLORS.iceWhite],

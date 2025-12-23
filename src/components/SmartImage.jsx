@@ -8,6 +8,19 @@ const safeRequestIdleCallback =
         return setTimeout(() => cb({ timeRemaining: () => 1 }), 1);
     };
 
+// --- Mobile Detection ---
+const isMobileDevice = () => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+};
+
+// --- Connection Quality Detection ---
+const isSlowConnection = () => {
+    if (typeof navigator === 'undefined' || !navigator.connection) return false;
+    const { effectiveType, saveData } = navigator.connection;
+    return saveData || effectiveType === 'slow-2g' || effectiveType === '2g';
+};
+
 // --- Global Scroll State Management ---
 // We track scrolling globally to pause L2 loading during active scrolls
 let isScrolling = false;
@@ -20,6 +33,9 @@ const updateScrollState = (scrolling) => {
 };
 
 if (typeof window !== 'undefined') {
+    // Adaptive debounce: shorter on desktop, longer on mobile for battery
+    const scrollDebounce = isMobileDevice() ? 200 : 150;
+
     window.addEventListener('scroll', () => {
         if (!isScrolling) updateScrollState(true);
 
@@ -27,7 +43,7 @@ if (typeof window !== 'undefined') {
 
         scrollTimeout = setTimeout(() => {
             updateScrollState(false);
-        }, 150); // 150ms debounce for scroll end
+        }, scrollDebounce);
     }, { passive: true });
 }
 
@@ -103,6 +119,9 @@ const SmartImage = ({
     useEffect(() => {
         if (!containerRef.current || effectiveEager) return; // Skip observers if eager or data URI
 
+        // Adaptive rootMargin: smaller on mobile for better perf, larger on desktop for prefetch
+        const rootMargin = isMobileDevice() ? '50% 0px 50% 0px' : '100% 0px 100% 0px';
+
         const virtualizerObserver = new IntersectionObserver(
             (entries) => {
                 entries.forEach(entry => {
@@ -115,7 +134,7 @@ const SmartImage = ({
                     }
                 });
             },
-            { rootMargin: '100% 0px 100% 0px' }
+            { rootMargin }
         );
 
         const visibilityObserver = new IntersectionObserver(

@@ -30,6 +30,7 @@ import ImageSizeWarningModal from '@/components/ImageSizeWarningModal';
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
+import { SignalService } from '@/services/SignalService';
 import PageHeader from '@/components/PageHeader';
 import { FaTimes, FaPlus, FaTrash, FaMapMarkerAlt, FaRocket, FaImages, FaPen, FaCheckCircle, FaPalette, FaChevronLeft, FaChevronRight, FaArrowsAltV, FaArrowsAltH, FaThLarge, FaEye, FaArrowLeft, FaSmile, FaGlobe, FaAlignLeft, FaQuestionCircle, FaMountain, FaTree, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import Post from '@/components/Post';
@@ -161,6 +162,7 @@ const CreatePost = () => {
     const [locationData, setLocationData] = useState({ city: '', state: '', country: '' });
     const [primaryMode, setPrimaryMode] = useState(createDefault || 'social'); // Was postType (social/art)
     const [postType, setPostType] = useState(initialState.initialPostType || 'image');
+    const [parentSignalTag, setParentSignalTag] = useState(initialState.parentSignalTag || null);
     const [textContent, setTextContent] = useState(initialState.initialBody || '');
     const [bodyRichText, setBodyRichText] = useState(null);
     const [fontStyle, setFontStyle] = useState('modern');
@@ -181,6 +183,13 @@ const CreatePost = () => {
     const [showLinkSelector, setShowLinkSelector] = useState(false);
     const [userPosts, setUserPosts] = useState([]); // For link selector
     const [isHumor, setIsHumor] = useState(false); // Humor Flag
+
+    // Signal System State
+    const [isSignal, setIsSignal] = useState(initialState.isSignal || false);
+    const [isContest, setIsContest] = useState(false);
+    const [isEvent, setIsEvent] = useState(false);
+    const [contestRequirements, setContestRequirements] = useState({ camera: '', filmOnly: false, deadline: '' });
+    const [eventSignalData, setEventSignalData] = useState({ location: '', time: '' });
 
     // Safe Theme Lookup
     const currentWriterTheme = useMemo(() => {
@@ -939,6 +948,14 @@ const CreatePost = () => {
                 writerTheme: postType === 'text' ? writerTheme : null,
                 writerTextColor: postType === 'text' && writerTextColor ? writerTextColor : null,
                 linkedPostIds: postType === 'text' ? linkedPostIds : null,
+
+                // SIGNAL SYSTEM
+                isSignal: isSignal,
+                isContest: isContest,
+                isEvent: isEvent,
+                parentSignalTag: parentSignalTag,
+                contestRequirements: isContest ? contestRequirements : null,
+                eventSignalData: isEvent ? eventSignalData : null
             }, postType === 'image' ? processedSlides : []);
 
             // Create SpaceCard if requested
@@ -1749,7 +1766,133 @@ const CreatePost = () => {
                         `}</style>
 
                         {/* Post Type Toggle */}
-                        {/* Post Type Toggle */}
+                        {postType === 'text' && (
+                            <div style={{ marginBottom: '1rem' }}>
+                                {/* Signal Toggle */}
+                                <label style={{
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                    cursor: 'pointer', fontSize: '0.9rem', fontWeight: '700',
+                                    color: isSignal ? '#7FFFD4' : '#888',
+                                    textTransform: 'uppercase', marginBottom: '0.5rem'
+                                }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={isSignal}
+                                        onChange={(e) => {
+                                            setIsSignal(e.target.checked);
+                                            if (!e.target.checked) {
+                                                setIsContest(false);
+                                                setIsEvent(false);
+                                            }
+                                        }}
+                                        style={{ accentColor: '#7FFFD4', transform: 'scale(1.2)' }}
+                                    />
+                                    📡 BROADCAST SIGNAL
+                                </label>
+
+                                {isSignal && (
+                                    <div style={{
+                                        padding: '1rem',
+                                        background: 'rgba(127, 255, 212, 0.05)',
+                                        border: '1px solid rgba(127, 255, 212, 0.2)',
+                                        borderRadius: '8px',
+                                        marginTop: '0.5rem'
+                                    }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '8px' }}>
+                                            <button type="button"
+                                                onClick={() => { setIsContest(false); setIsEvent(false); }}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '0.5rem',
+                                                    borderRadius: '6px',
+                                                    background: (!isContest && !isEvent) ? '#7FFFD4' : 'transparent',
+                                                    color: (!isContest && !isEvent) ? '#000' : '#888',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                📡 Signal
+                                            </button>
+                                            <button type="button"
+                                                onClick={() => { setIsContest(true); setIsEvent(false); }}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '0.5rem',
+                                                    borderRadius: '6px',
+                                                    background: isContest ? '#FFD700' : 'transparent',
+                                                    color: isContest ? '#000' : '#888',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                🏆 Contest
+                                            </button>
+                                            <button type="button"
+                                                onClick={() => { setIsEvent(true); setIsContest(false); }}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '0.5rem',
+                                                    borderRadius: '6px',
+                                                    background: isEvent ? '#FF5C8A' : 'transparent',
+                                                    color: isEvent ? '#fff' : '#888',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '800',
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                📅 Event
+                                            </button>
+                                        </div>
+
+                                        {isContest && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', animation: 'fadeIn 0.3s' }}>
+                                                <div style={{ fontSize: '0.8rem', color: '#FFD700', fontWeight: 'bold' }}>CONTEST REQUIREMENTS</div>
+                                                <input type="text" placeholder="Required Camera (e.g. Leica M6)"
+                                                    value={contestRequirements.camera}
+                                                    onChange={e => setContestRequirements({ ...contestRequirements, camera: e.target.value })}
+                                                    style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid #333', color: '#fff', borderRadius: '4px' }}
+                                                />
+                                                <input type="datetime-local" placeholder="Deadline"
+                                                    value={contestRequirements.deadline}
+                                                    onChange={e => setContestRequirements({ ...contestRequirements, deadline: e.target.value })}
+                                                    style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid #333', color: '#fff', borderRadius: '4px' }}
+                                                />
+                                                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.8rem', color: '#ccc' }}>
+                                                    <input type="checkbox" checked={contestRequirements.filmOnly} onChange={e => setContestRequirements({ ...contestRequirements, filmOnly: e.target.checked })} />
+                                                    Film Only
+                                                </label>
+                                            </div>
+                                        )}
+
+                                        {isEvent && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', animation: 'fadeIn 0.3s' }}>
+                                                <div style={{ fontSize: '0.8rem', color: '#FF5C8A', fontWeight: 'bold' }}>EVENT DETAILS</div>
+                                                <input type="text" placeholder="Location Name"
+                                                    value={eventSignalData.location}
+                                                    onChange={e => setEventSignalData({ ...eventSignalData, location: e.target.value })}
+                                                    style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid #333', color: '#fff', borderRadius: '4px' }}
+                                                />
+                                                <input type="datetime-local"
+                                                    value={eventSignalData.time}
+                                                    onChange={e => setEventSignalData({ ...eventSignalData, time: e.target.value })}
+                                                    style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.3)', border: '1px solid #333', color: '#fff', borderRadius: '4px' }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Visual Post Type Toggle */}
                         {postType !== 'text' && (
                             <div id="create-post-role-toggle" className="post-type-toggle desktop-only-post-type" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
                                 <span style={{ marginRight: '0.75rem', fontSize: '0.8rem', opacity: 0.8, fontWeight: 600, color: '#aaa' }}>

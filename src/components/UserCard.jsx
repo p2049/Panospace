@@ -37,6 +37,7 @@ const UserCard = ({ user }) => {
                         src={user.photoURL}
                         alt={user.displayName}
                         loading="lazy"
+                        decoding="async"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                 ) : (
@@ -50,4 +51,4 @@ const UserCard = ({ user }) => {
     );
 };
 
-export default UserCard;
+export default React.memo(UserCard);

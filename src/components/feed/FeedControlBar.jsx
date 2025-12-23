@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFeedStore } from '@/core/store/useFeedStore';
 import { useThemeColors } from '@/core/store/useThemeStore';
+import { useCustomFeeds } from '@/hooks/useCustomFeeds';
 import {
     FiUsers,
     FiGlobe,
@@ -8,7 +10,9 @@ import {
     FiImage,
     FiMessageSquare,
     FiEye,
-    FiHash
+    FiHash,
+    FiFilter,
+    FiPlus
 } from 'react-icons/fi';
 
 const FeedControlBar = () => {
@@ -19,16 +23,32 @@ const FeedControlBar = () => {
         setFeedScope,
         activeCustomFeedId,
         listFilter,
-        setListFilter
+        setListFilter,
+        customFeedEnabled,
+        setCustomFeedEnabled,
+        feedViewMode,
+        setFeedViewMode,
+        setActiveCustomFeed
     } = useFeedStore();
 
-    const { accentColor } = useThemeColors();
+    const navigate = useNavigate();
 
-    // Mobile detection
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+    const { accentColor } = useThemeColors();
+    const { feeds } = useCustomFeeds();
+
+    // Enhanced mobile/horizontal detection
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 600);
+        const handleResize = () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            // Treat as mobile if narrow OR if it's horizontal mobile (wide but short)
+            const isNarrow = width < 600;
+            const isHorizontal = width > height && height < 500;
+            setIsMobile(isNarrow || isHorizontal);
+        };
+        handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -39,6 +59,14 @@ const FeedControlBar = () => {
             setFeedContentType('social');
         }
     }, [listFilter, feedContentType, setFeedContentType]);
+
+    // AUTO-SWITCH: If PINGS is selected while on visual mode, switch to list view
+    // This must run BEFORE any other filter logic
+    useEffect(() => {
+        if (listFilter === 'text' && feedViewMode === 'image') {
+            setFeedViewMode('list');
+        }
+    }, [listFilter, feedViewMode, setFeedViewMode]);
 
     // PANO BRAND COLORS
     const COLORS = {
@@ -140,23 +168,15 @@ const FeedControlBar = () => {
 
     return (
         <div style={{
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: isMobile ? '68px' : '74px', // Increased from 61/65 to allow more vertical breathing room
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'center',
-            gap: isMobile ? '6px' : '12px',
-            zIndex: 1000,
-            paddingTop: 'max(8px, env(safe-area-inset-top))',
-            paddingBottom: isMobile ? '8px' : '10px',
-            paddingLeft: 'max(8px, env(safe-area-inset-left))',
-            paddingRight: 'max(8px, env(safe-area-inset-right))',
-            background: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(12px)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            gap: isMobile ? '8px' : '16px',
+            width: 'auto',
+            margin: '0 auto',
+            height: 'auto',
+            padding: '2px 0 8px 0',
+            background: 'transparent',
             boxSizing: 'border-box'
         }}>
 

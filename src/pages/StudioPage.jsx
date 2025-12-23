@@ -25,12 +25,11 @@ import { useStudioProjects } from '@/hooks/useProjects';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import ProjectCard from '@/components/ProjectCard';
 import '@/styles/gallery-page.css';
-import { isDevBypassActive } from '@/core/utils/accessControl';
 
 const StudioPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { currentUser, isAdmin } = useAuth();
+    const { currentUser } = useAuth();
 
     // Use custom hook for studio data
     const { studio, items, loading, error: studioError, refetch } = useStudio(id);
@@ -245,7 +244,7 @@ const StudioPage = () => {
                             <FaUserPlus /> Invite Members
                         </button>
                     )}
-                    {(isOwner || isAdmin || isDevBypassActive()) && (
+                    {isOwner && (
                         <button
                             onClick={handleDeleteStudio}
                             style={{

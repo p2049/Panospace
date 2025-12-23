@@ -8,17 +8,26 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 //          The "City" Silhouette grounding the scale.
 // "Literal Mix" of the best technologies.
 
+// "Literal Mix" of the best technologies.
+
+const RENDER_CACHE = new Map();
+
 const SingularityCityBanner = () => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
+        if (RENDER_CACHE.has('singularity_city')) {
+            setBgImage(RENDER_CACHE.get('singularity_city'));
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const w = 3840;
-        const h = 2160;
+        const w = 1920;
+        const h = 1080;
         canvas.width = w;
         canvas.height = h;
 
@@ -38,7 +47,8 @@ const SingularityCityBanner = () => {
             const rStart = 350;
             const rEnd = 1100;
 
-            for (let i = 0; i < 500; i++) {
+            // Optimized: 500 -> 200
+            for (let i = 0; i < 200; i++) {
                 const rad = rStart + Math.random() * (rEnd - rStart);
                 const angle = Math.random() * Math.PI * 2;
 
@@ -153,7 +163,9 @@ const SingularityCityBanner = () => {
         ctx.fillStyle = vig;
         ctx.fillRect(0, 0, w, h);
 
-        setBgImage(canvas.toDataURL('image/webp', 0.95));
+        const result = canvas.toDataURL('image/webp', 0.95);
+        RENDER_CACHE.set('singularity_city', result);
+        setBgImage(result);
 
     }, []);
 

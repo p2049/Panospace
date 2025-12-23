@@ -27,13 +27,24 @@ const TopicPage = () => {
     }, [tags]);
 
     // Reuse Search Hook to fetch posts matching these tags
+    const [activeTab, setActiveTab] = useState('feed'); // 'feed' | 'prompts'
+
+    // Reuse Search Hook to fetch posts matching these tags
+    // For Prompts tab, we add '#Prompt' to the search tags
+    const searchTags = useMemo(() => {
+        if (activeTab === 'prompts') {
+            return [...tags, '#Prompt'];
+        }
+        return tags;
+    }, [tags, activeTab]);
+
     const {
         results,
         loading: searchLoading,
         error
     } = useSearch({
         initialMode: 'posts',
-        initialTags: tags, // Start with these tags selected
+        initialTags: searchTags, // Use computed tags including #Prompt if tab active
         initialSort: 'recent',
         autoSearch: true  // Trigger search immediately
     });
@@ -42,7 +53,7 @@ const TopicPage = () => {
 
     return (
         <div style={{ minHeight: '100vh', background: '#000', color: '#fff' }}>
-            <SEO title={`Topic: ${tags.join(', ')}`} description={`Explore posts tagged with ${tags.join(' and ')} on Panospace.`} />
+            <SEO title={`${activeTab === 'prompts' ? 'Prompts' : 'Topic'}: ${tags.join(', ')}`} description={`Explore ${activeTab === 'prompts' ? 'prompts' : 'posts'} tagged with ${tags.join(' and ')} on Panospace.`} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* Header */}
@@ -51,20 +62,49 @@ const TopicPage = () => {
                 {/* Content Feed */}
                 <div style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '4rem' }}>
 
-                    {/* Feed Controls */}
+                    {/* Tab Navigation */}
                     <div style={{
-                        padding: '1rem 2rem',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
-                        color: '#7FFFD4',
-                        fontFamily: 'monospace',
-                        fontSize: '0.8rem',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.1em',
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        marginBottom: '1rem',
+                        padding: '0 2rem'
                     }}>
-                        <span>LATEST POSTS</span>
+                        <button
+                            onClick={() => setActiveTab('feed')}
+                            style={{
+                                padding: '1rem 1.5rem',
+                                background: 'transparent',
+                                border: 'none',
+                                color: activeTab === 'feed' ? '#7FFFD4' : '#666',
+                                borderBottom: activeTab === 'feed' ? '2px solid #7FFFD4' : '2px solid transparent',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            FEED
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('prompts')}
+                            style={{
+                                padding: '1rem 1.5rem',
+                                background: 'transparent',
+                                border: 'none',
+                                color: activeTab === 'prompts' ? '#7FFFD4' : '#666',
+                                borderBottom: activeTab === 'prompts' ? '2px solid #7FFFD4' : '2px solid transparent',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            PROMPTS
+                        </button>
                     </div>
 
                     {/* Feed List */}
@@ -74,9 +114,9 @@ const TopicPage = () => {
                         <div style={{ padding: '4rem', textAlign: 'center', color: '#ff6b6b' }}>Error loading topic: {error}</div>
                     ) : posts.length === 0 ? (
                         <div style={{ padding: '4rem', textAlign: 'center' }}>
-                            <h3 style={{ color: '#fff', marginBottom: '1rem' }}>No posts yet.</h3>
+                            <h3 style={{ color: '#fff', marginBottom: '1rem' }}>No {activeTab === 'prompts' ? 'prompts' : 'posts'} yet.</h3>
                             <button
-                                onClick={() => navigate('/create-post', { state: { tags: tags } })}
+                                onClick={() => navigate('/create-post', { state: { tags: tags, initialPostType: activeTab === 'prompts' ? 'text' : 'image' } })}
                                 style={{
                                     background: 'transparent',
                                     border: '1px solid #7FFFD4',
@@ -86,7 +126,7 @@ const TopicPage = () => {
                                     cursor: 'pointer'
                                 }}
                             >
-                                Start the conversation
+                                {activeTab === 'prompts' ? 'Launch a prompt' : 'Start the conversation'}
                             </button>
                         </div>
                     ) : (

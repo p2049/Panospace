@@ -57,8 +57,8 @@ const PageHeader = ({
                     .page-header-container {
                         padding: 0.75rem 1rem;
                         padding-top: max(0.75rem, env(safe-area-inset-top));
-                        padding-left: max(1rem, env(safe-area-inset-left));
-                        padding-right: max(1rem, env(safe-area-inset-right));
+                        padding-left: 0;
+                        padding-right: 0;
                         width: 100%;
                         max-width: 100vw;
                         box-sizing: border-box;
@@ -147,7 +147,7 @@ const PageHeader = ({
 };
 
 PageHeader.propTypes = {
-    title: PropTypes.string.isRequired,
+    title: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
     leftAction: PropTypes.node,
     rightAction: PropTypes.node,
     showProgress: PropTypes.bool,

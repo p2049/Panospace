@@ -7,6 +7,7 @@ import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import ContextOptionsSection from './ContextOptionsSection';
 import ReportModal from './ReportModal';
+import FeedControlBar from './feed/FeedControlBar';
 
 import { useFeedStore } from '@/core/store/useFeedStore';
 import { useCustomFeeds } from '@/hooks/useCustomFeeds';
@@ -40,6 +41,17 @@ import {
     FaShoppingCart,
     FaTimes
 } from 'react-icons/fa';
+import {
+    FiImage,
+    FiMessageSquare,
+    FiPlus,
+    FiUsers,
+    FiGlobe,
+    FiLayers,
+    FiEye,
+    FiHash,
+    FiMenu
+} from 'react-icons/fi';
 import { useCart } from '@/context/CartContext';
 
 // Mobile Navigation / Hamburger Menu
@@ -67,14 +79,34 @@ const MobileNavigation = () => {
         setActiveCustomFeed,
         toggleCustomFeed,
         activeCustomFeedId,
-        activeCustomFeedName
+        activeCustomFeedName,
+        feedScope,
+        setFeedScope,
+        feedContentType,
+        setFeedContentType,
+        feedViewMode,
+        setFeedViewMode,
+        listFilter,
+        setListFilter
     } = useFeedStore();
     const { setTheme, accentColor } = useThemeStore();
 
+    // PANO BRAND COLORS (Matching FeedControlBar)
+    const BRAND_COLORS = {
+        mint: '#7FFFD4',
+        blue: '#4CC9F0',
+        ionBlue: '#1B82FF',
+        pink: '#FF6B9D',
+        lightPink: '#FFB7D5',
+        purple: '#6C5CE7'
+    };
 
 
-    const [showCustomSelector, setShowCustomSelector] = useState(false);
+
+
     const [showHubPanel, setShowHubPanel] = useState(false); // New Hub Panel
+    const [showFiltersPanel, setShowFiltersPanel] = useState(false); // New Filters Panel
+    const [showCustomOrbitsPanel, setShowCustomOrbitsPanel] = useState(false); // Custom Orbits Panel
     const [showNotifications, setShowNotifications] = useState(false); // Notifications Popup State
     const [unreadNotifications, setUnreadNotifications] = useState(0); // Notification count
     const { feeds } = useCustomFeeds();
@@ -116,22 +148,22 @@ const MobileNavigation = () => {
     useEffect(() => {
         const checkInactivity = () => {
             // Close selector if inactive too
-            if ((isOpen || showCustomSelector) && Date.now() - lastActivity > 10000) {
+            if (isOpen && Date.now() - lastActivity > 10000) {
                 setIsOpen(false);
-                setShowCustomSelector(false);
             }
         };
         inactivityTimerRef.current = setInterval(checkInactivity, 1000);
         return () => clearInterval(inactivityTimerRef.current);
-    }, [lastActivity, isOpen, showCustomSelector]);
+    }, [lastActivity, isOpen]);
     */
 
     // Close selector when clicking outside
     // Close selector when clicking outside
     useEffect(() => {
         if (!isOpen) {
-            setShowCustomSelector(false);
             setShowHubPanel(false);
+            setShowFiltersPanel(false);
+            setShowCustomOrbitsPanel(false);
             setShowNotifications(false);
         }
     }, [isOpen]);
@@ -234,32 +266,38 @@ const MobileNavigation = () => {
     };
 
     const toggleHubPanel = () => {
-        // Toggle Hub, ensure Custom Feeds is closed
-        if (!showHubPanel) setShowCustomSelector(false);
+        // Toggle Hub, ensure others are closed
+        if (!showHubPanel) {
+            setShowFiltersPanel(false);
+            setShowCustomOrbitsPanel(false);
+        }
         setShowHubPanel(!showHubPanel);
         handleInteraction();
     };
 
-    const toggleCustomFeedsPanel = () => {
-        // Toggle Custom Feeds, ensure Hub is closed
-        if (!showCustomSelector) setShowHubPanel(false);
-        setShowCustomSelector(!showCustomSelector);
+    const toggleFiltersPanel = () => {
+        // Toggle Filters, ensure others are closed
+        if (!showFiltersPanel) {
+            setShowHubPanel(false);
+            setShowCustomOrbitsPanel(false);
+        }
+        setShowFiltersPanel(!showFiltersPanel);
         handleInteraction();
     };
 
-    const handleCustomFeedSelect = (feedId, feedName) => {
-        setActiveCustomFeed(feedId, feedName);
-        setCustomFeedEnabled(true);
-        setShowCustomSelector(false);
-        setIsOpen(false);
+    const toggleCustomOrbitsPanel = () => {
+        // Toggle Custom Orbits, ensure others are closed
+        if (!showCustomOrbitsPanel) {
+            setShowHubPanel(false);
+            setShowFiltersPanel(false);
+        }
+        setShowCustomOrbitsPanel(!showCustomOrbitsPanel);
+        handleInteraction();
     };
 
-    const handleDisableCustomFeed = () => {
-        setCustomFeedEnabled(false);
-        setActiveCustomFeed(null, null);
-        setShowCustomSelector(false);
-        setIsOpen(false);
-    };
+    // The previous toggleCustomFeedsPanel function is removed as per instruction.
+
+
 
     // Close both when opening one? Logic handled in toggles.
 
@@ -308,7 +346,7 @@ const MobileNavigation = () => {
         boxShadow: '-10px 0 30px rgba(0,0,0,0.8)',
         transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         zIndex: 80000,
-        paddingTop: '80px', // Space for button
+        paddingTop: '55px', // Reduced from 80px to move buttons up closer to station
         display: 'flex',
         flexDirection: 'column',
     };
@@ -325,7 +363,8 @@ const MobileNavigation = () => {
         transition: 'background 0.2s, color 0.2s',
         display: 'flex',
         alignItems: 'center',
-        gap: '1rem' // Space for icon
+        justifyContent: 'flex-start',
+        gap: '1rem'
     };
 
     const switchStyle = {
@@ -364,15 +403,129 @@ const MobileNavigation = () => {
 
     return (
         <>
+            {/* Feed Control Bar - Slides out when menu is open */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 'max-content',
+                paddingTop: 'max(8px, env(safe-area-inset-top))',
+                background: 'rgba(0,0,0,0.85)',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                zIndex: 80000,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: (isOpen && !isMobileVertical) ? 'auto' : 'none',
+                opacity: (isOpen && !isMobileVertical) ? 1 : 0
+            }}>
+                <FeedControlBar />
+            </div>
+
+            {/* Left UI - PANOSPACE logo (rendered AFTER banner so it's ON TOP) - Matches Feed.jsx exactly */}
+            {isOpen && (
+                <div
+                    onClick={() => {
+                        const newMode = feedViewMode === 'image' ? 'list' : 'image';
+                        setFeedViewMode(newMode);
+                    }}
+                    style={{
+                        position: 'fixed',
+                        top: 'max(0.5rem, env(safe-area-inset-top))',
+                        left: '0.75rem',
+                        zIndex: 90000,
+                        pointerEvents: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: '2px',
+                        cursor: 'pointer',
+                        background: 'transparent',
+                        padding: '4px'
+                    }}>
+                    {/* Row 1: PANOSPACE Label */}
+                    <span style={{
+                        fontSize: '0.55rem',
+                        color: accentColor,
+                        letterSpacing: '0.1em',
+                        fontWeight: '700',
+                        fontFamily: "'Orbitron', sans-serif",
+                        textShadow: `0 0 5px ${accentColor}`,
+                        marginLeft: '2px',
+                        marginTop: '3px'
+                    }}>
+                        PANOSPACE
+                    </span>
+
+                    {/* Row 2: Planet Icon + Mode Label */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.6rem',
+                        marginTop: '-8px'
+                    }}>
+                        <div style={{ position: 'relative', width: '32px', height: '32px' }}>
+                            <svg
+                                width="32"
+                                height="32"
+                                viewBox="-5 -5 34 34"
+                                style={{
+                                    filter: `drop-shadow(0 0 8px ${accentColor})`,
+                                    overflow: 'visible',
+                                    transition: 'filter 0.2s ease'
+                                }}
+                            >
+                                <defs>
+                                    <radialGradient id="planetGradientNav" cx="40%" cy="40%">
+                                        <stop offset="0%" style={{ stopColor: accentColor, stopOpacity: 1 }} />
+                                        <stop offset="100%" style={{ stopColor: accentColor, stopOpacity: 0.6 }} />
+                                    </radialGradient>
+                                    <filter id="planetGlowNav" x="-50%" y="-50%" width="200%" height="200%">
+                                        <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                                        <feMerge>
+                                            <feMergeNode in="coloredBlur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+                                <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.4" transform="rotate(-20 12 12)" />
+                                <circle cx="12" cy="12" r="7" fill="url(#planetGradientNav)" opacity="0.95" filter="url(#planetGlowNav)" />
+                                <ellipse cx="12" cy="12" rx="14" ry="4" fill="none" stroke={accentColor} strokeWidth="1.5" opacity="0.6" transform="rotate(-20 12 12)" strokeDasharray="0,8,20,100" />
+                                <circle cx="12" cy="12" r="7" fill="none" stroke={accentColor} strokeWidth="0.5" opacity="0.3" />
+                            </svg>
+                        </div>
+
+                        <span style={{
+                            display: 'inline-block',
+                            fontSize: '0.55rem',
+                            background: 'repeating-linear-gradient(to bottom, rgba(127, 255, 212, 1) 0px, rgba(127, 255, 212, 1) 1px, rgba(127, 255, 212, 0.6) 1px, rgba(127, 255, 212, 0.6) 2px)',
+                            WebkitBackgroundClip: 'text',
+                            backgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            color: 'transparent',
+                            filter: 'drop-shadow(0 0 2px rgba(127, 255, 212, 0.5))',
+                            letterSpacing: '0.1em',
+                            fontWeight: '700',
+                            fontFamily: "'Orbitron', sans-serif",
+                            marginLeft: '-3px'
+                        }}>
+                            {feedViewMode === 'image' ? 'VISUAL' : 'LIST'}
+                        </span>
+                    </div>
+                </div>
+            )}
 
 
             {/* Mobile Vertical: "Main Menu" Sidebar Return Bar (Futuristic Tab) */}
-            {isMobileVertical && isOpen && (showCustomSelector || showHubPanel || showNotifications) && (
+            {isMobileVertical && isOpen && (showHubPanel || showNotifications || showFiltersPanel || showCustomOrbitsPanel) && (
                 <div
                     onClick={() => {
-                        setShowCustomSelector(false);
                         setShowHubPanel(false);
                         setShowNotifications(false);
+                        setShowFiltersPanel(false);
+                        setShowCustomOrbitsPanel(false);
                     }}
                     style={{
                         position: 'fixed',
@@ -383,7 +536,7 @@ const MobileNavigation = () => {
                         width: '44px',
                         background: 'rgba(5, 5, 5, 0.9)',
                         backdropFilter: 'blur(10px)',
-                        zIndex: 90000,
+                        zIndex: 110000, // Higher than all secondary panels
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -546,138 +699,370 @@ const MobileNavigation = () => {
                 {/* We need to render the "Sidecar" panel outside of the main drawer div but conditional on state */}
             </div>
 
-            {/* Sidecar Panel for Feed Options */}
+
+
+            {/* Filters Panel (Dedicated Feed Options for Mobile Vertical) */}
             <div style={{
                 position: 'fixed',
                 top: 0,
-                // On vertical mobile (<=768), overlay the drawer (0). On desktop, side-by-side (300px)
-                right: (isOpen && showCustomSelector)
+                right: (isOpen && showFiltersPanel)
                     ? (isMobileVertical ? '0' : '300px')
                     : (isMobileVertical ? '-100%' : '-320px'),
-                width: isMobileVertical ? '300px' : '260px', // Match drawer width on mobile
-                maxWidth: isMobileVertical ? '80vw' : 'none',
+                width: isMobileVertical ? '300px' : '260px',
+                maxWidth: isMobileVertical ? '85vw' : 'none',
                 height: '100vh',
-                background: '#111111',
+                background: '#050505',
                 borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
                 transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: isMobileVertical ? 85000 : 80000, // Higher z-index on mobile to overlay main drawer
+                zIndex: isMobileVertical ? 100005 : 99999,
                 paddingTop: '80px',
                 display: 'flex',
                 flexDirection: 'column',
-                pointerEvents: isOpen ? 'auto' : 'none'
+                pointerEvents: isOpen ? 'auto' : 'none',
+                overflow: 'hidden'
             }} onClick={(e) => e.stopPropagation()}>
 
+                {/* Header */}
                 <div style={{
-                    padding: '1rem',
+                    padding: '1.2rem 1.5rem',
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    marginBottom: '0.5rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '1rem'
+                    justifyContent: 'center',
+                    position: 'relative',
+                    minHeight: '60px'
                 }}>
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: accentColor, letterSpacing: '0.05em' }}>CUSTOM ORBITS</h3>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: '0.85rem',
+                        color: '#fff',
+                        letterSpacing: '0.15em',
+                        fontWeight: '800',
+                        textAlign: 'center'
+                    }}>
+                        ORBIT FILTERS
+                    </h3>
                 </div>
 
-                {/* App-Curated Feeds Section REMOVED from Custom Panel - Moved to Hub */}
+                {/* Filters Content */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem 1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                <div style={{ fontSize: '0.7rem', color: '#888', padding: '1rem 1rem 0.5rem 1rem' }}>SAVED ORBITS</div>
+                        {/* 1. Orbit Scope */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>ORBIT SCOPE</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'all', label: 'ALL', color: BRAND_COLORS.mint, icon: FiLayers },
+                                    { id: 'following', label: 'ADDED', color: BRAND_COLORS.lightPink, icon: FiUsers },
+                                    { id: 'global', label: 'GLOBAL', color: BRAND_COLORS.ionBlue, icon: FiGlobe }
+                                ].map(option => {
+                                    const active = feedScope === option.id;
+                                    const Icon = option.icon;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => setFeedScope(option.id)}
+                                            style={{
+                                                padding: '0.8rem 0.4rem',
+                                                borderRadius: '10px',
+                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
+                                                color: active ? option.color : '#666',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                boxShadow: active ? `0 0 15px ${option.color}20` : 'none'
+                                            }}
+                                        >
+                                            <Icon size={14} />
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
-                {/* Feeds List */}
-                <div style={{
-                    flex: 1,
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.2rem',
-                    padding: '0 1rem'
-                }}>
-                    {/* Default / Disable Option */}
-                    <button
-                        onClick={handleDisableCustomFeed}
-                        style={{
-                            padding: '0.8rem',
-                            borderRadius: '8px',
-                            border: 'none',
-                            background: !customFeedEnabled ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: !customFeedEnabled ? '#fff' : 'rgba(255,255,255,0.6)',
-                            textAlign: 'left',
-                            fontSize: '0.9rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
+                        {/* 2. Content Type */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>CONTENT TYPE</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'all', label: 'ALL', color: BRAND_COLORS.mint, icon: FiLayers },
+                                    { id: 'art', label: 'ART', color: BRAND_COLORS.pink, icon: FiImage },
+                                    { id: 'social', label: 'SOCIAL', color: BRAND_COLORS.mint, icon: FiMessageSquare }
+                                ].map(option => {
+                                    const active = feedContentType === option.id;
+                                    const Icon = option.icon;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => {
+                                                if (listFilter === 'text' && option.id !== 'social') setListFilter('all');
+                                                setFeedContentType(option.id);
+                                            }}
+                                            style={{
+                                                padding: '0.8rem 0.4rem',
+                                                borderRadius: '10px',
+                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
+                                                color: active ? option.color : '#666',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                boxShadow: active ? `0 0 15px ${option.color}20` : 'none'
+                                            }}
+                                        >
+                                            <Icon size={14} />
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 3. List Filter */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>LIST FILTER</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'all', label: 'ALL', color: BRAND_COLORS.mint, icon: FiLayers },
+                                    { id: 'visual', label: 'VISUAL', color: BRAND_COLORS.blue, icon: FiEye },
+                                    { id: 'text', label: 'PINGS', color: BRAND_COLORS.purple, icon: FiHash }
+                                ].map(option => {
+                                    const active = listFilter === option.id;
+                                    const Icon = option.icon;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => {
+                                                if (option.id === 'text' && feedContentType !== 'social') setFeedContentType('social');
+                                                setListFilter(option.id);
+                                            }}
+                                            style={{
+                                                padding: '0.8rem 0.4rem',
+                                                borderRadius: '10px',
+                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
+                                                color: active ? option.color : '#666',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                boxShadow: active ? `0 0 15px ${option.color}20` : 'none'
+                                            }}
+                                        >
+                                            <Icon size={14} />
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 4. Display Mode */}
+                        <div style={{
                             display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between'
-                        }}
-                    >
-                        <span>Standard Orbit</span>
-                        {!customFeedEnabled && <div style={{ width: 8, height: 8, borderRadius: '50%', background: accentColor }} />}
-                    </button>
+                            flexDirection: 'column',
+                            gap: '1rem',
+                            marginTop: '0.5rem',
+                            borderTop: '1px solid rgba(255,255,255,0.05)',
+                            paddingTop: '2rem'
+                        }}>
+                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>DISPLAY MODE</div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'image', label: 'VISUAL', icon: FiImage },
+                                    { id: 'list', label: 'LIST', icon: FiMenu }
+                                ].map(mode => {
+                                    const active = feedViewMode === mode.id;
+                                    const Icon = mode.icon;
+                                    return (
+                                        <button
+                                            key={mode.id}
+                                            onClick={() => setFeedViewMode(mode.id)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '1rem',
+                                                borderRadius: '12px',
+                                                border: `1px solid ${active ? accentColor : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${accentColor}10` : 'transparent',
+                                                color: active ? '#fff' : '#444',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '900',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.6rem',
+                                                transition: 'all 0.3s ease',
+                                                letterSpacing: '0.1em'
+                                            }}
+                                        >
+                                            <Icon size={16} color={active ? accentColor : '#444'} />
+                                            {mode.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    {feeds.map(feed => (
+            {/* Custom Orbits Panel (Saved Custom Feeds) */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                right: (isOpen && showCustomOrbitsPanel)
+                    ? (isMobileVertical ? '0' : '300px')
+                    : (isMobileVertical ? '-100%' : '-320px'),
+                width: isMobileVertical ? '300px' : '260px',
+                maxWidth: isMobileVertical ? '85vw' : 'none',
+                height: '100vh',
+                background: '#050505',
+                borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
+                transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                zIndex: isMobileVertical ? 100005 : 99999,
+                paddingTop: '80px',
+                display: 'flex',
+                flexDirection: 'column',
+                pointerEvents: isOpen ? 'auto' : 'none',
+                overflow: 'hidden'
+            }} onClick={(e) => e.stopPropagation()}>
+
+                {/* Header */}
+                <div style={{
+                    padding: '1.2rem 1.5rem',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center', // Centered like others
+                    position: 'relative',
+                    minHeight: '60px'
+                }}>
+                    <h3 style={{
+                        margin: 0,
+                        fontSize: '0.85rem',
+                        color: '#fff',
+                        letterSpacing: '0.15em',
+                        fontWeight: '800',
+                        textAlign: 'center'
+                    }}>
+                        CUSTOM ORBITS
+                    </h3>
+                </div>
+
+                {/* Custom Orbits Content */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+                        {/* Add New Orbit */}
                         <button
-                            key={feed.id}
-                            onClick={() => handleCustomFeedSelect(feed.id, feed.name)}
+                            onClick={() => {
+                                handleNavClick('/custom-feeds/create');
+                                setShowCustomOrbitsPanel(false);
+                            }}
                             style={{
-                                padding: '0.8rem',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: (customFeedEnabled && activeCustomFeedId === feed.id) ? accentColor : 'transparent',
-                                color: (customFeedEnabled && activeCustomFeedId === feed.id) ? '#000' : '#fff',
-                                textAlign: 'left',
-                                fontSize: '0.9rem',
-                                cursor: 'pointer',
-                                fontWeight: (customFeedEnabled && activeCustomFeedId === feed.id) ? 'bold' : 'normal',
-                                transition: 'all 0.2s',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
+                                width: '100%',
+                                padding: '1rem',
+                                borderRadius: '12px',
+                                border: `1px dashed ${accentColor}40`,
+                                background: 'rgba(255,255,255,0.03)',
+                                color: accentColor,
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between'
+                                justifyContent: 'center',
+                                gap: '0.8rem',
+                                fontSize: '0.9rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
                             }}
                         >
-                            <span>{feed.name}</span>
-                            {(customFeedEnabled && activeCustomFeedId === feed.id) && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#000' }} />}
+                            <FiPlus size={18} />
+                            CREATE NEW ORBIT
                         </button>
-                    ))}
 
-                    {feeds.length === 0 && (
-                        <div style={{ padding: '1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', fontStyle: 'italic', textAlign: 'center' }}>
-                            No saved orbits
+                        {/* Saved Orbits List */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#888', letterSpacing: '0.1em' }}>SAVED FREQUENCIES</div>
+                            {feeds.length === 0 ? (
+                                <div style={{
+                                    padding: '2rem 1rem',
+                                    textAlign: 'center',
+                                    color: '#555',
+                                    fontSize: '0.8rem',
+                                    fontStyle: 'italic',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    borderRadius: '8px'
+                                }}>
+                                    No custom frequencies detected
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                    {feeds.map(feed => {
+                                        const isActive = customFeedEnabled && activeCustomFeedId === feed.id;
+                                        return (
+                                            <div
+                                                key={feed.id}
+                                                onClick={() => {
+                                                    if (isActive) {
+                                                        setCustomFeedEnabled(false);
+                                                        setActiveCustomFeed(null, null);
+                                                    } else {
+                                                        setCustomFeedEnabled(true);
+                                                        setActiveCustomFeed(feed.id, feed.name);
+                                                    }
+                                                }}
+                                                style={{
+                                                    padding: '1rem',
+                                                    borderRadius: '8px',
+                                                    border: `1px solid ${isActive ? accentColor : 'rgba(255,255,255,0.1)'}`,
+                                                    background: isActive ? `${accentColor}15` : 'rgba(255,255,255,0.03)',
+                                                    color: isActive ? accentColor : '#fff',
+                                                    fontSize: '0.9rem',
+                                                    fontWeight: '700',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                                    <FaSatellite size={14} opacity={isActive ? 1 : 0.5} />
+                                                    {feed.name}
+                                                </div>
+                                                {isActive && (
+                                                    <div style={{
+                                                        width: '8px',
+                                                        height: '8px',
+                                                        borderRadius: '50%',
+                                                        background: accentColor,
+                                                        boxShadow: `0 0 10px ${accentColor}`
+                                                    }} />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
-
-                <div style={{ padding: '1rem' }}>
-                    <button
-                        onClick={() => {
-                            navigate('/custom-feeds/create');
-                            setIsOpen(false);
-                            setShowCustomSelector(false);
-                        }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.8rem',
-                            background: `${accentColor}20`,
-                            border: 'none',
-                            borderRadius: '8px',
-                            color: accentColor,
-                            fontSize: '0.9rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            width: '100%',
-                            justifyContent: 'center',
-                            transition: 'background 0.2s'
-                        }}
-                    >
-                        <FaPlus size={12} />
-                        CREATE NEW
-                    </button>
-                </div>
-
             </div>
 
             {/* Hub Panel (New Secondary Panel) - Slides out to the left of the main drawer */}
@@ -708,7 +1093,7 @@ const MobileNavigation = () => {
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: '130px', // Adjusted to align with neighboring tab bottom
+                    height: isMobileVertical ? '100px' : '130px', // Adjusted to align with neighboring tab bottom
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
@@ -751,7 +1136,7 @@ const MobileNavigation = () => {
                     {/* Space Station - Larger & Boldly Placed */}
                     <div style={{
                         position: 'absolute',
-                        top: '40px', // Pushed down to interact/overlap with horizon
+                        top: isMobileVertical ? '25px' : '40px', // Pushed down to interact/overlap with horizon
                         left: '50%',
                         transform: 'translateX(-50%)',
                         zIndex: 2,
@@ -771,7 +1156,7 @@ const MobileNavigation = () => {
                     {/* Earth Horizon Glow - Compressed Height, Brand Blue */}
                     <div style={{
                         position: 'absolute',
-                        bottom: '-350px', // Adjusted for new height
+                        bottom: isMobileVertical ? '-380px' : '-350px', // Adjusted for new height
                         left: '50%',
                         transform: 'translateX(-50%)',
                         width: '800px', // Wider arc
@@ -1394,91 +1779,77 @@ const MobileNavigation = () => {
                     left: '1rem',
                     right: '4.5rem',
                     display: 'flex',
-                    flexDirection: 'column',
+                    flexDirection: 'row',
                     gap: '0.5rem',
-                    alignItems: 'center',
+                    alignItems: 'stretch',
                     pointerEvents: 'auto',
                     zIndex: 10002
                 }}>
 
-                    {/* Standard Feed Toggles - Visible when NOT custom feed enabled or always visible but disabled? */}
-                    {/* User wants them "back where they were". Originally they were separate buttons in the main header of the drawer. */}
+                    {/* Station Button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleHubPanel();
+                        }}
+                        style={{
+                            flex: 1.5,
+                            padding: '0.6rem 0.5rem',
+                            borderRadius: '8px',
+                            border: `1px solid ${accentColor}`,
+                            background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
+                            color: showHubPanel ? '#000' : accentColor,
+                            fontSize: '0.7rem',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            whiteSpace: 'nowrap',
+                            height: '40px',
+                            backdropFilter: 'blur(10px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem',
+                            opacity: 0.9
+                        }}
+                    >
+                        <span style={{ display: 'inline-block', transform: 'rotate(-30deg)' }}>
+                            <FaSatellite size={12} />
+                        </span> STATION
+                    </button>
 
-                    {/* Standard Feed Toggles - Grid Layout for alignment */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr', // Single column for stacked full-width buttons
-                        gap: '0.4rem',
-                        width: '100%'
-                    }}>
-
-
-                        {/* Custom Feeds Button */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleCustomFeedsPanel();
-                            }}
-                            style={{
-                                padding: '0.6rem 0.5rem',
-                                borderRadius: '8px',
-                                border: `1px solid ${accentColor}`,
-                                background: showCustomSelector ? accentColor : 'rgba(0,0,0,0.6)',
-                                color: showCustomSelector ? '#000' : accentColor,
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap',
-                                height: 'auto',
-                                minHeight: '32px',
-                                backdropFilter: 'blur(10px)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem'
-                            }}
-                        >
-                            <FaFilter size={12} /> CUSTOM ORBITS
-                        </button>
-
-                        {/* Station Button (Full Width) */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                toggleHubPanel();
-                            }}
-                            style={{
-                                padding: '0.6rem 0.5rem',
-                                borderRadius: '8px',
-                                border: `1px solid ${accentColor}`,
-                                background: showHubPanel ? accentColor : 'rgba(0,0,0,0.6)',
-                                color: showHubPanel ? '#000' : accentColor,
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                whiteSpace: 'nowrap',
-                                height: 'auto',
-                                minHeight: '32px',
-                                backdropFilter: 'blur(10px)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem',
-                                opacity: 0.9
-                            }}
-                        >
-                            <span style={{ display: 'inline-block', transform: 'rotate(-30deg)' }}>
-                                <FaSatellite size={14} />
-                            </span> STATION
-                        </button>
-
-                    </div>
+                    {/* Custom Orbits Header Button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCustomOrbitsPanel();
+                        }}
+                        style={{
+                            flex: 1,
+                            padding: '0.6rem 0.5rem',
+                            borderRadius: '8px',
+                            border: `1px solid ${showCustomOrbitsPanel ? accentColor : 'rgba(255,255,255,0.2)'}`,
+                            background: showCustomOrbitsPanel ? `${accentColor}20` : 'rgba(0,0,0,0.6)',
+                            color: showCustomOrbitsPanel ? accentColor : '#fff',
+                            fontSize: '0.65rem',
+                            fontWeight: 'bold',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            whiteSpace: 'nowrap',
+                            height: '40px',
+                            backdropFilter: 'blur(10px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem'
+                        }}
+                    >
+                        <FaSatellite size={10} /> ORBITS
+                    </button>
                 </div>
 
                 {/* Main Navigation List */}
@@ -1486,7 +1857,8 @@ const MobileNavigation = () => {
                     flex: 1,
                     overflowY: 'auto',
                     paddingTop: '0.5rem',
-                    marginTop: '1.5rem' // Ensure clearance from header buttons
+                    paddingRight: (isOpen && !isMobileVertical) ? '60px' : '0', // Clear hamburger in horizontal
+                    marginTop: '0.25rem'
                 }}>
                     <div onClick={() => handleNavClick('/')} style={{
                         ...navItemStyle,
@@ -1572,8 +1944,6 @@ const MobileNavigation = () => {
                         {t('nav.create')}
                     </div>
 
-                    {/* Market and Calendar Removed from Main List (Moved to Hub) */}
-
                     <div onClick={() => handleNavClick('/settings')} style={{
                         ...navItemStyle,
                         color: location.pathname === '/settings' ? accentColor : '#fff',
@@ -1586,6 +1956,23 @@ const MobileNavigation = () => {
                         <FaCog color={location.pathname === '/settings' ? accentColor : '#aaa'} size={20} />
                         {t('settings.title')}
                     </div>
+
+                    {/* Feed Filters Option for Mobile Vertical (User Request) */}
+                    {isMobileVertical && (
+                        <>
+                            <div onClick={toggleFiltersPanel} style={{
+                                ...navItemStyle,
+                                color: showFiltersPanel ? accentColor : '#fff',
+                                background: showFiltersPanel ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                                borderLeft: showFiltersPanel ? `2px solid ${accentColor}` : '2px solid transparent',
+                                marginTop: '1rem',
+                                borderTop: '1px solid rgba(255,255,255,0.1)'
+                            }}>
+                                <FaFilter color={showFiltersPanel ? accentColor : '#aaa'} size={18} />
+                                ORBIT FILTERS
+                            </div>
+                        </>
+                    )}
                 </div>
             </div >
 

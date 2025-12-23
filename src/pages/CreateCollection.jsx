@@ -31,7 +31,7 @@ import { sanitizeTitle, sanitizeDescription } from '@/core/utils/sanitize';
 import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 
 const CreateCollection = () => {
-    const { currentUser, isAdmin } = useAuth();
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
     const { showError, showSuccess } = useToast();
     const { createCollection, loading: creating } = useCreateCollection();
@@ -232,7 +232,7 @@ const CreateCollection = () => {
         // Museum mode
         if (creationMode === 'museum') {
             // Check if user is Ultra-tier Space Creator or Admin
-            if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
+            if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
                 showError('Museums are exclusive to Space Creator members. Please upgrade to continue.');
                 return;
             }
@@ -290,7 +290,7 @@ const CreateCollection = () => {
         }
 
         // Check if user is Ultra-tier Space Creator or Admin/Founder for Studio creation
-        if (creationMode === 'gallery' && userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
+        if (creationMode === 'gallery' && userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
             showError('Studios are exclusive to Space Creator members. Please upgrade to continue.');
             return;
         }

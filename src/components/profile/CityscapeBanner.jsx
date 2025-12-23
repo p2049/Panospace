@@ -322,7 +322,7 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
     };
 
     // HIGH RES KINETIC
-    const width = 3840;
+    const width = 1920;
     const height = 1080;
     canvas.width = width;
     canvas.height = height;
@@ -372,7 +372,7 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
         ctx.fillStyle = sColor;
         // Use sColor for fill
 
-        for (let i = 0; i < 400; i++) {
+        for (let i = 0; i < 200; i++) {
             const sx = rand() * width;
             const sy = rand() * (height * 0.85); // Down to horizon
             const size = rand() * 2;
@@ -768,99 +768,9 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
         ctx.fillRect(0, 0, width, height);
     }
 
-    // --- 2.8 FESTIVAL BACKDROP (Bay & Mountains) ---
-    if (theme.foreground?.type === 'festival_terrain') {
-        // 1. OCEAN BAY
-        const oceanY = height * 0.85;
-        const sea = ctx.createLinearGradient(0, oceanY, 0, height);
-        sea.addColorStop(0, COLORS.deepOrbitPurple);
-        sea.addColorStop(1, COLORS.ionBlue);
-        ctx.fillStyle = sea;
-        ctx.fillRect(0, oceanY, width, height - oceanY);
 
-        // Glimmer
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        for (let i = 0; i < 100; i++) {
-            const gx = rand() * width;
-            const gy = oceanY + rand() * (height - oceanY);
-            ctx.fillRect(gx, gy, rand() * 20 + 5, 2);
-        }
 
-        // 2. MOUNTAINS (Framing)
-        // Lighter buildings, Darker Mountains
-        ctx.fillStyle = '#000000';
-        // Left Peak
-        ctx.beginPath(); ctx.moveTo(0, height); ctx.lineTo(0, height * 0.5);
-        ctx.quadraticCurveTo(width * 0.1, height * 0.55, width * 0.20, height); ctx.fill();
 
-        // MOUNTAINSIDE ROAD (Solar Pink Beam)
-        // "Sliver" effect created by the glowing beam cutting the darkness
-        const rx1 = 0; const ry1 = height * 0.60;
-        const rx2 = width * 0.15; const ry2 = height * 0.75; // Middle of mountain
-
-        const beamGrad = ctx.createLinearGradient(rx1, ry1, rx2, ry2);
-        beamGrad.addColorStop(0, COLORS.solarPink);
-        beamGrad.addColorStop(1, 'transparent');
-
-        ctx.shadowBlur = 15; ctx.shadowColor = COLORS.solarPink;
-        ctx.strokeStyle = beamGrad;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(rx1, ry1);
-        ctx.quadraticCurveTo(width * 0.06, height * 0.68, rx2, ry2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        // Right Peak
-        ctx.beginPath(); ctx.moveTo(width, height); ctx.lineTo(width, height * 0.4);
-        ctx.quadraticCurveTo(width * 0.9, height * 0.5, width * 0.80, height); ctx.fill();
-
-        // 3. FERRIS WHEEL (Distant)
-        if (theme.atmosphere?.ferris_wheel) {
-            const wx = width * 0.92;
-            const wy = height * 0.55;
-            const wr = 50;
-
-            // Rim
-            ctx.strokeStyle = COLORS.solarPink; ctx.lineWidth = 2;
-            ctx.shadowBlur = 10; ctx.shadowColor = COLORS.solarPink;
-            ctx.beginPath(); ctx.arc(wx, wy, wr, 0, Math.PI * 2); ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            // Spokes
-            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
-            for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
-                ctx.beginPath(); ctx.moveTo(wx, wy);
-                ctx.lineTo(wx + Math.cos(a) * wr, wy + Math.sin(a) * wr); ctx.stroke();
-            }
-        }
-    }
-
-    // --- 2.9 FESTIVAL FIREWORKS ---
-    if (theme.atmosphere?.festival_fx) {
-        const colors = [COLORS.solarPink, COLORS.classicMint, COLORS.ionBlue, COLORS.iceWhite];
-        for (let f = 0; f < 8; f++) {
-            const fx = rand() * width;
-            const fy = rand() * (height * 0.5);
-            const fColor = colors[Math.floor(rand() * colors.length)];
-            const fSize = rand() * 60 + 20;
-            // Burst Lines
-            ctx.strokeStyle = fColor;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
-                ctx.moveTo(fx, fy);
-                ctx.lineTo(fx + Math.cos(a) * fSize, fy + Math.sin(a) * fSize);
-            }
-            ctx.stroke();
-            // Core Glow
-            const glow = ctx.createRadialGradient(fx, fy, 2, fx, fy, fSize);
-            glow.addColorStop(0, 'rgba(255,255,255,0.8)');
-            glow.addColorStop(0.5, fColor);
-            glow.addColorStop(1, 'transparent');
-            ctx.fillStyle = glow;
-            ctx.beginPath(); ctx.arc(fx, fy, fSize, 0, Math.PI * 2); ctx.fill();
-        }
-    }
 
     const drawBuilding = (ctx, bx, baseY, bw, bh, scale, color, isNear, isMid, isFar, theme, themeId, seed) => {
         // DETERMINISTIC RANDOM

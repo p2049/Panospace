@@ -9,6 +9,8 @@ const COLORS = {
     neonOrange: '#FF914D'
 };
 
+const RENDER_CACHE = new Map();
+
 const OmegaBorealis = () => {
     // -------------------------------------------------------------------------
     // LAYER 1: NORTHERN LIGHTS (React/CSS/SVG Implementation)
@@ -32,12 +34,17 @@ const OmegaBorealis = () => {
     const [canvasImage, setCanvasImage] = useState('');
 
     useEffect(() => {
+        if (RENDER_CACHE.has('omega_borealis')) {
+            setCanvasImage(RENDER_CACHE.get('omega_borealis'));
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const w = 3840;
-        const h = 2160;
+        const w = 1920;
+        const h = 1080;
         canvas.width = w;
         canvas.height = h;
         const cx = w * 0.5;
@@ -50,8 +57,9 @@ const OmegaBorealis = () => {
         // EFFECT A: THE OMEGASPHERE (From OmegasphereBanner.jsx)
         // =====================================================================
         // 3D Point Cloud Projection
-        const density = 2000; // Slightly reduced for combo performance
-        const radius = 550;   // Larger to encompass the core
+        // Optimized: 2000 -> 800
+        const density = 800;
+        const radius = 275;   // Scale for 1080p (was 550)
         const phi = Math.PI * (3 - Math.sqrt(5)); // Golden angle
 
         for (let i = 0; i < density; i++) {
@@ -101,8 +109,9 @@ const OmegaBorealis = () => {
         // We render the manifold INSIDE the sphere
 
         const renderManifold = (centerX, centerY, phase, scaleFactor) => {
-            const uSteps = 140;
-            const vSteps = 80;
+            // Optimized steps for 1080p
+            const uSteps = 70;
+            const vSteps = 40;
             const PHI = 1.618;
 
             const localPoints = [];
@@ -202,7 +211,9 @@ const OmegaBorealis = () => {
         ctx.fill();
 
         // Convert to image
-        setCanvasImage(canvas.toDataURL('image/webp', 0.9));
+        const result = canvas.toDataURL('image/webp', 0.9);
+        RENDER_CACHE.set('omega_borealis', result);
+        setCanvasImage(result);
 
     }, []);
 

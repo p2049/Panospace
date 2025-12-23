@@ -1,7 +1,7 @@
 /**
  * @file bannerOverlays.js
  * @description Definitions for the Visual Overlay (Lens) system for PanoSpace banners.
- * Inspired by PS2 system display behavior and early digital capture characteristics.
+ * Inspired by retro console system display behavior and early digital capture characteristics.
  */
 
 export const OVERLAY_CATEGORIES = {
@@ -19,6 +19,11 @@ export const OVERLAY_CATEGORIES = {
         id: 'OPTICAL',
         label: 'Optical / Material',
         description: 'Simulates physical light interaction and lens properties.'
+    },
+    GRADE: {
+        id: 'GRADE',
+        label: 'Color Grade / Post',
+        description: 'Atmospheric color treatments and film simulations.'
     }
 };
 
@@ -123,6 +128,65 @@ export const BANNER_OVERLAYS = [
         label: 'Healing Silk',
         description: 'Ultra-soft light diffusion and chromatic warmth.',
         compatibleWith: ['bloom_optical', 'warm_light', 'soft_optics'],
+    },
+    {
+        id: 'grain',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Grain',
+        description: 'Physical film grain simulation with organic noise.',
+        compatibleWith: ['standard_digital', 'soft_optics', 'warm_light', 'cool_light', 'monochrome', 'vignette_optical', 'bloom_optical'],
+    },
+    {
+        id: 'film_flare',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Film Flare',
+        description: 'Physical light leak and anamorphic lens flare artifacts.',
+        compatibleWith: ['grain', 'vignette_optical', 'soft_optics', 'warm_light', 'bloom_optical']
+    },
+
+    // --- COLOR GRADE / POST ---
+    {
+        id: 'grade_magma',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Magma Grade',
+        description: 'Intense red/orange scale with deep crushed shadows.',
+        compatibleWith: ['grain', 'vignette_optical', 'crt_signal', 'soft_optics']
+    },
+    {
+        id: 'grade_teal',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Oceanic Grade',
+        description: 'Cinematic teal shadows with preserved skin tones.',
+        compatibleWith: ['grain', 'bloom_optical', 'soft_optics', 'film_flare']
+    },
+
+    {
+        id: 'grade_nostalgia',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Nostalgic Grade',
+        description: 'Warm, faded vintage tones with lifted shadows.',
+        compatibleWith: ['grain', 'vignette_optical', 'film_flare', 'soft_optics']
+    },
+    {
+        id: 'film_slide',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Vivid Slide',
+        description: 'Punchy saturation and contrast (Positive Film).',
+        compatibleWith: ['grain', 'vignette_optical', 'bloom_optical', 'soft_optics']
+    },
+    {
+        id: 'film_print',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Soft Print',
+        description: 'Low contrast, lifted blacks, and pastel tones (Negative Film).',
+        compatibleWith: ['grain', 'vignette_optical', 'film_flare', 'warm_light']
+    },
+    {
+        id: 'film_instant',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Instant Film',
+        description: 'Cool shadows and warm highlights with faded dynamic range.',
+        compatibleWith: ['grain', 'vignette_optical', 'film_flare', 'soft_optics']
     }
 ];
 

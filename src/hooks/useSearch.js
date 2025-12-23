@@ -18,6 +18,11 @@ import { logger } from '@/core/utils/logger';
 // Global cache for search results
 export const SEARCH_CACHE = {};
 
+// Mobile-aware limit helper - reduces batch sizes on mobile for faster loading
+const isMobile = () => typeof window !== 'undefined' && (window.innerWidth <= 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent));
+const mobileLimit = (desktopLimit) => isMobile() ? Math.min(Math.ceil(desktopLimit * 0.5), 30) : desktopLimit;
+
+
 
 export const useSearch = (config = {}) => {
     const {
@@ -257,7 +262,7 @@ export const useSearch = (config = {}) => {
                     postsRef,
                     where('authorId', 'in', safeAuthorIds),
                     orderBy(orderByField, orderDirection),
-                    limit(50)
+                    limit(mobileLimit(50))
                 );
                 if (lastDoc) q = query(q, startAfter(lastDoc));
 
@@ -272,7 +277,7 @@ export const useSearch = (config = {}) => {
                     postsRef,
                     where('tags', 'array-contains', primaryTag),
                     orderBy(orderByField, orderDirection),
-                    limit(50)
+                    limit(mobileLimit(50))
                 );
                 if (lastDoc) q = query(q, startAfter(lastDoc));
 
@@ -288,7 +293,7 @@ export const useSearch = (config = {}) => {
                     constraints = [
                         where('postType', '==', 'text'),
                         orderBy(orderByField, orderDirection),
-                        limit(50)
+                        limit(mobileLimit(50))
                     ];
                 } else {
                     // Standard Feed (Art/Social)
@@ -296,7 +301,7 @@ export const useSearch = (config = {}) => {
                     constraints = [
                         where('type', '==', targetContentMode),
                         orderBy(orderByField, orderDirection),
-                        limit(50)
+                        limit(mobileLimit(50))
                     ];
                 }
 
@@ -319,10 +324,10 @@ export const useSearch = (config = {}) => {
                     if (postType === 'text') {
                         // If text mode index is missing, fallback to fetching recent posts (mixed) and filtering client-side
                         // We increase limit to 100 to ensure we find some text posts
-                        fallbackQ = query(postsRef, orderBy(orderByField, orderDirection), limit(100));
+                        fallbackQ = query(postsRef, orderBy(orderByField, orderDirection), limit(mobileLimit(100)));
                     } else {
                         // Otherwise fallback to the type filter (art/social)
-                        fallbackQ = query(postsRef, where('type', '==', targetContentMode), orderBy(orderByField, orderDirection), limit(50));
+                        fallbackQ = query(postsRef, where('type', '==', targetContentMode), orderBy(orderByField, orderDirection), limit(mobileLimit(50)));
                     }
 
                     if (lastDoc) fallbackQ = query(fallbackQ, startAfter(lastDoc));

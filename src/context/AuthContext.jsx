@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { auth, db } from '@/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import AppLoading from '@/components/AppLoading';
 import { migrateUserPosts } from '@/utils/postMigration';
@@ -14,9 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [customClaims, setCustomClaims] = useState({});
-    const [isAdmin, setIsAdmin] = useState(false);
     const [isUltra, setIsUltra] = useState(false);
-    const [isGodMode, setIsGodMode] = useState(false);
     const [loading, setLoading] = useState(true);
     const migrationRanRef = useRef(false);
 
@@ -38,52 +36,23 @@ export const AuthProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        // AuthContext: Setting up onAuthStateChanged listener
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
 
             if (user) {
                 try {
-                    // 1. Get Custom Claims (Production standard)
+                    // Get Custom Claims
                     const tokenResult = await user.getIdTokenResult();
                     const claims = tokenResult.claims || {};
                     setCustomClaims(claims);
 
-                    // 2. Fetch Firestore Profile for supplemental role info
+                    // Fetch Firestore Profile
                     const userRef = doc(db, 'users', user.uid);
                     const userSnap = await getDoc(userRef);
+                    const userData = userSnap.exists() ? userSnap.data() : {};
 
-                    let userData = userSnap.exists() ? userSnap.data() : {};
-
-                    // 3. GOD MODE / FOUNDER: Auto-provision for specific email
-                    // ONLY for the specific founder account.
-                    if (user.email === 'founder@panospaceapp.com') {
-                        try {
-                            await setDoc(userRef, {
-                                role: 'founder',
-                                isAdmin: true,
-                                isUltra: true,
-                                isGodMode: true,
-                                subscriptionStatus: 'active',
-                                email: user.email,
-                                uid: user.uid,
-                                updatedAt: serverTimestamp(),
-                                createdAt: userData.createdAt || serverTimestamp()
-                            }, { merge: true });
-
-                            // Re-fetch or assign locally
-                            userData = { ...userData, isAdmin: true, isUltra: true, isGodMode: true, role: 'founder' };
-                            console.log("[Auth] Founder account recognized and provisioned.");
-                        } catch (e) {
-                            console.warn("[Auth] Founder Doc creation failed (likely permissions):", e);
-                        }
-                    }
-
-                    // 4. Set reactive state based on Claims OR Firestore (Source of Truth)
-                    // No global DEV/localhost bypasses here.
-                    setIsAdmin(claims.isAdmin || userData.isAdmin || userData.role === 'founder' || userData.role === 'admin' || false);
+                    // Set Ultra status based on claims or Firestore
                     setIsUltra(claims.isUltra || userData.isUltra || userData.subscriptionStatus === 'active' || false);
-                    setIsGodMode(userData.isGodMode || userData.role === 'founder' || false);
 
                 } catch (e) {
                     console.error("AuthContext: Error resolving user status", e);
@@ -98,9 +67,7 @@ export const AuthProvider = ({ children }) => {
                 }
             } else {
                 setCustomClaims({});
-                setIsAdmin(false);
                 setIsUltra(false);
-                setIsGodMode(false);
             }
 
             setLoading(false);
@@ -109,7 +76,7 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
         });
 
-        // Fallback: If Firebase doesn't respond in 3 seconds, stop loading
+        // Fallback timeout
         const timeout = setTimeout(() => {
             setLoading(false);
         }, 3000);
@@ -123,9 +90,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         currentUser,
         customClaims,
-        isAdmin,
         isUltra,
-        isGodMode,
         loading,
         signup,
         login,

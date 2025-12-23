@@ -216,7 +216,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
             return <StaticSystemBanners variant={mode} />;
         }
 
-        // 8. PLANET - Apple-style abstract cosmic border (Over-Designed Premium)
+        // 8. PLANET - Abstract cosmic border (Over-Designed Premium)
         if (mode === 'planet') {
             const isBrand = starSettings?.color === 'brand' || starSettings?.color === BRAND_RAINBOW;
             const starColor = (starSettings?.color && !isBrand) ? starSettings.color : color;
@@ -789,7 +789,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
             );
         }
 
-        // 3. UNDERWATER - Classic Mario Atmospheric Depth
+        // 3. UNDERWATER - Atmospheric Depth
         if (mode === 'underwaterY2K') {
             const isBrand = color === 'brand';
 
@@ -1295,7 +1295,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
                     }} />
 
                     <style>{`
-                    @keyframes ps2SystemIdle {
+                    @keyframes retroSystemIdle {
                         0% { transform: translate3d(-20px, 0%, var(--z, 0)) scaleX(1); opacity: var(--o, 0.1); }
                         50% { transform: translate3d(20px, -5%, var(--z, 0)) scaleX(1.2); opacity: calc(var(--o, 0.1) * 1.5); }
                         100% { transform: translate3d(-10px, 5%, var(--z, 0)) scaleX(0.9); opacity: var(--o, 0.1); }
@@ -1313,7 +1313,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
             <div style={{ width: '40px', height: '40px', border: '2px solid rgba(127, 255, 212, 0.1)', borderTopColor: '#7FFFD4', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>}>
-            <BannerOverlayRenderer overlays={overlays}>
+            <BannerOverlayRenderer overlays={overlays} monochromeColor={color}>
                 {renderContent()}
             </BannerOverlayRenderer>
         </React.Suspense>

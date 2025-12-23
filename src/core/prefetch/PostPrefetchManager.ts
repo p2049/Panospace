@@ -43,11 +43,12 @@ export const PostPrefetchManager = {
 
                 // If it has items, determine how many to preload
                 if (Array.isArray(items) && items.length > 0) {
-                    // For optimized performance, we preload the first 3 items/slides full quality.
-                    // Film strips often have many images in one "slide", but here 'items' usually refers to slides.
-                    // If 'items' are frames in a film strip, we want them all visible effectively.
-                    // Let's cap at 5 for heavy film posts to ensure smooth entry without overloading bandwidth.
-                    items.slice(0, 5).forEach((item: any) => {
+                    // Mobile optimization: prefetch fewer images on mobile
+                    const isMobile = typeof window !== 'undefined' &&
+                        (window.innerWidth <= 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent));
+                    const prefetchCount = isMobile ? 2 : 5;
+
+                    items.slice(0, prefetchCount).forEach((item: any) => {
                         if (typeof item === 'string') {
                             urlsToLoad.push(item);
                         } else if (item) {

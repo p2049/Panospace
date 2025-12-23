@@ -84,11 +84,21 @@ const OCEAN_THEMES = {
     }
 };
 
+const OCEAN_RENDER_CACHE = new Map();
+
 const OceanBanner = ({ themeId, starSettings }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
+        const starKey = starSettings ? `_s${starSettings.enabled}_c${starSettings.color}` : '';
+        const cacheKey = (themeId || 'ocean_sunset_classic') + starKey;
+
+        if (OCEAN_RENDER_CACHE.has(cacheKey)) {
+            setBgImage(OCEAN_RENDER_CACHE.get(cacheKey));
+            return;
+        }
+
         let theme = OCEAN_THEMES[themeId];
         if (!theme) theme = OCEAN_THEMES['ocean_sunset_classic'];
 
@@ -97,7 +107,7 @@ const OceanBanner = ({ themeId, starSettings }) => {
         const ctx = canvas.getContext('2d');
 
         // HIGH RES KINETIC
-        const width = 3840;
+        const width = 1920;
         const height = 1080;
         canvas.width = width;
         canvas.height = height;
@@ -149,7 +159,7 @@ const OceanBanner = ({ themeId, starSettings }) => {
             const starClr = starSettings?.color || COLORS.iceWhite;
             ctx.fillStyle = starClr;
 
-            for (let i = 0; i < 600; i++) {
+            for (let i = 0; i < 300; i++) {
                 const sx = rand() * width;
                 const sy = rand() * (horizonY * 0.85); // Stay above haze
                 const size = rand() * 1.5;
@@ -523,7 +533,9 @@ const OceanBanner = ({ themeId, starSettings }) => {
         vig.addColorStop(1, 'rgba(0,0,0,0.4)');
         ctx.fillStyle = vig; ctx.fillRect(0, 0, width, height);
 
-        setBgImage(canvas.toDataURL());
+        const result = canvas.toDataURL();
+        OCEAN_RENDER_CACHE.set(cacheKey, result);
+        setBgImage(result);
 
     }, [themeId, starSettings]);
 

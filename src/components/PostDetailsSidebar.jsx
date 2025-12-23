@@ -18,7 +18,7 @@ const PostDetailsSidebar = ({
     currentSlide = 0
 }) => {
     const navigate = useNavigate();
-    const { currentUser, isAdmin, isGodMode } = useAuth();
+    const { currentUser } = useAuth();
     const canManageContent = currentUser?.uid === (post.userId || post.authorId || post.uid);
     const [shopLinkTarget, setShopLinkTarget] = useState(null);
     const [stats, setStats] = useState({ likeCount: 0, averageRating: 0, totalVotes: 0 });
@@ -547,22 +547,24 @@ const PostDetailsSidebar = ({
                                     {post.postType === 'text' ? 'Edit Ping' : 'Edit Visual'}
                                 </button>
                             )}
-                            <button onClick={async () => {
-                                const msg = post.postType === 'text' ? "Delete this ping?" : "Delete this visual?";
-                                if (window.confirm(msg)) {
-                                    try {
-                                        await deleteDoc(doc(db, "posts", post.id));
-                                        alert("Post deleted successfully");
-                                        onClose();
-                                        navigate('/');
-                                    } catch (error) {
-                                        console.error("Error deleting post:", error);
-                                        alert(`Failed to delete post: ${error.message}`);
+                            {currentUser?.uid === (post.userId || post.authorId || post.uid) && (
+                                <button onClick={async () => {
+                                    const msg = post.postType === 'text' ? "Delete this ping?" : "Delete this visual?";
+                                    if (window.confirm(msg)) {
+                                        try {
+                                            await deleteDoc(doc(db, "posts", post.id));
+                                            alert("Post deleted successfully");
+                                            onClose();
+                                            navigate('/');
+                                        } catch (error) {
+                                            console.error("Error deleting post:", error);
+                                            alert(`Failed to delete post: ${error.message}`);
+                                        }
                                     }
-                                }
-                            }} style={{ padding: '0.8rem', background: 'rgba(255,0,0,0.2)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left' }}>
-                                {post.postType === 'text' ? 'Delete Ping' : 'Delete Visual'}
-                            </button>
+                                }} style={{ padding: '0.8rem', background: 'rgba(255,0,0,0.2)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', color: '#ff6b6b', cursor: 'pointer', textAlign: 'left' }}>
+                                    {post.postType === 'text' ? 'Delete Ping' : 'Delete Visual'}
+                                </button>
+                            )}
                         </>
                     ) : (
                         <>

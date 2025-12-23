@@ -24,7 +24,7 @@ import { logger } from '@/core/utils/logger';
  * 3. Event Handling (Deleting, Reporting - propagated or handled via Context)
  * 4. Renderer Selection (Film vs Instant vs Standard)
  */
-const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick, onResize, onRefresh }) => {
+const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = [], onClick, onResize, onRefresh, isNested = false }) => {
     // Contexts
     const { currentUser } = useAuth();
     const { setActivePost } = useActivePost();
@@ -148,7 +148,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
     // --- 4. RENDERER SELECTION ---
     if (post.postType === 'text') {
         // Fullscreen text post with left-side panel, same as image posts
-        return <FullscreenTextPost post={post} containerRef={containerRef} viewMode={viewMode} />;
+        return <FullscreenTextPost post={post} containerRef={containerRef} viewMode={viewMode} isNested={isNested} />;
     }
 
     // Strict priority: Film -> Instant -> Standard
@@ -157,7 +157,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
 
     if (useFilmStripMode) {
         return (
-            <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+            <div ref={containerRef} style={{ width: '100%', height: isNested ? 'auto' : '100%', aspectRatio: isNested ? '1/1' : 'auto' }}>
                 <FilmStripPost post={post} images={items} uiOverlays={post.uiOverlays} priority={priority} postId={post.id} />
             </div>
         );
@@ -190,7 +190,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
         // This consolidates the logic.
 
         return (
-            <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+            <div ref={containerRef} style={{ width: '100%', height: isNested ? 'auto' : '100%', aspectRatio: isNested ? '1/1' : 'auto' }}>
                 <InstantPhotoPost post={post} images={items} uiOverlays={post.uiOverlays} priority={priority} />
             </div>
         );
@@ -198,7 +198,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
 
     // Default: Standard Post
     return (
-        <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+        <div ref={containerRef} style={{ width: '100%', height: isNested ? 'auto' : '100%' }}>
             <StandardPost
                 post={post}
                 items={items}
@@ -207,11 +207,6 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
                 authorDefaultIconId={authorDefaultIconId}
                 authorProfileTheme={authorProfileTheme}
                 handleAuthorClick={handleAuthorClick}
-                // We pass containerRef mainly for Quartz Date resizing if needed inside, 
-                // though StandardPost creates its own layout. 
-                // Actually StandardPost needs to measure itself for the quartz date.
-                // We should pass the ref or let it handle its own ref?
-                // StandardPost uses `containerRef` prop for `QuartzDateWrapper`.
                 containerRef={containerRef}
                 currentSlide={currentSlide}
                 setCurrentSlide={setCurrentSlide}
@@ -220,6 +215,7 @@ const Post = ({ post, priority = 'normal', viewMode = 'image', contextPosts = []
                 hasNSFWContent={hasNSFWContent}
                 showDetailsSidebar={showDetailsSidebar}
                 setShowDetailsSidebar={setShowDetailsSidebar}
+                isNested={isNested}
             />
         </div>
     );

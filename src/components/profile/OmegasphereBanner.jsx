@@ -13,17 +13,24 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 // - Complex layering of composite operations.
 // Vibe: The Final Frontier of Computing.
 
+const RENDER_CACHE = new Map();
+
 const OmegasphereBanner = () => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
+        if (RENDER_CACHE.has('omegasphere')) {
+            setBgImage(RENDER_CACHE.get('omegasphere'));
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const w = 3840;
-        const h = 2160;
+        const w = 1920;
+        const h = 1080;
         canvas.width = w;
         canvas.height = h;
 
@@ -40,7 +47,8 @@ const OmegasphereBanner = () => {
 
         // 2. THE DIGITAL FLUX (Background Nebula of Code)
         // We use thousands of tiny rectangles to simulate 'glitch fog'
-        for (let i = 0; i < 4000; i++) {
+        // Optimized: 4000 -> 1000
+        for (let i = 0; i < 1000; i++) {
             const x = Math.random() * w;
             const y = Math.random() * h;
             const s = Math.random() * 4;
@@ -54,8 +62,9 @@ const OmegasphereBanner = () => {
         }
 
         // 3. THE OMEGASPHERE (3D Point Cloud Projection)
-        const density = 2500;
-        const radius = 450;
+        // Optimized: 2500 -> 800 (Density maintained at lower res)
+        const density = 800;
+        const radius = 225; // Scaled down for 1080p (was 450)
 
         // Sphere function: Golden Spiral on Sphere surface
         // Fibonacci Sphere algorithm for even distribution
@@ -137,13 +146,14 @@ const OmegasphereBanner = () => {
 
         // 5. ORBITAL RINGS (Holographic Interfaces)
         const drawHoloRing = (rad, tilt, color) => {
+            const scaledRad = rad * 0.5; // Scale rings for 1080p
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(tilt);
             ctx.scale(1, 0.2); // Flatten
 
             ctx.beginPath();
-            ctx.arc(0, 0, rad, 0, Math.PI * 2);
+            ctx.arc(0, 0, scaledRad, 0, Math.PI * 2);
             ctx.lineWidth = 2;
             ctx.strokeStyle = color;
             ctx.shadowColor = color;
@@ -197,7 +207,9 @@ const OmegasphereBanner = () => {
         ctx.fillStyle = vig;
         ctx.fillRect(0, 0, w, h);
 
-        setBgImage(canvas.toDataURL('image/webp', 0.95));
+        const result = canvas.toDataURL('image/webp', 0.95);
+        RENDER_CACHE.set('omegasphere', result);
+        setBgImage(result);
 
     }, []);
 

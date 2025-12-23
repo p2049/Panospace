@@ -81,6 +81,7 @@ export interface UserProfile {
     partnerType?: 'city' | 'campus' | 'park';
     subscriptionStatus?: 'active' | 'canceled' | 'expired';
     subscriptionUpdatedAt?: Timestamp;
+    promptCount?: number;
 }
 
 // ============================================

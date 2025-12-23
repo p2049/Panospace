@@ -24,6 +24,7 @@ const CollectionCard = ({ collection }) => {
                         src={collection.coverImage}
                         alt=""
                         loading="lazy"
+                        decoding="async"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                 ) : (
@@ -45,4 +46,4 @@ const CollectionCard = ({ collection }) => {
     );
 };
 
-export default CollectionCard;
+export default React.memo(CollectionCard);

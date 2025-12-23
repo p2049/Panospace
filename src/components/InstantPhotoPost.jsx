@@ -8,7 +8,6 @@ import DateStampOverlay from './DateStampOverlay';
 import LikeButton from './LikeButton';
 import PlanetUserIcon from './PlanetUserIcon';
 import SpaceCardBadge from './SpaceCardBadge';
-import SoundTagBadge from './SoundTagBadge';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { logger } from '@/core/utils/logger';
@@ -158,14 +157,6 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
                         <SpaceCardBadge
                             type={post.isSpaceCardCreator ? 'creator' : 'owner'}
                             rarity={post.spaceCardRarity || 'Common'}
-                        />
-                    )}
-                </div>
-                <div style={{ pointerEvents: 'auto' }}>
-                    {post?.soundTagId && (
-                        <SoundTagBadge
-                            hasSound={true}
-                            label={post.soundTagTitle || 'SoundTag'}
                         />
                     )}
                 </div>

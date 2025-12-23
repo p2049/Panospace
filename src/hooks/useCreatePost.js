@@ -503,6 +503,35 @@ export const useCreatePost = () => {
 
             const uniqueTags = [...new Set(sanitizedTags)];
 
+            // --- SIGNAL SYSTEM: Signature Tag Generation ---
+            if (postData.isSignal && postData.postType === 'text') {
+                try {
+                    // Using SignalService to generate tag.
+                    const signatureTag = await SignalService.generateSignatureTag(currentUser.uid, username);
+
+                    // Add both the general #Signal tag and the unique signature tag
+                    if (!uniqueTags.includes('#Signal')) uniqueTags.push('#Signal');
+                    if (!uniqueTags.includes(signatureTag)) uniqueTags.push(signatureTag);
+
+                    // Store the generated tag in the post data so it's saved in the doc
+                    postData.signatureTag = signatureTag;
+
+                    if (postData.isContest) if (!uniqueTags.includes('#Contest')) uniqueTags.push('#Contest');
+                    if (postData.isEvent) if (!uniqueTags.includes('#Event')) uniqueTags.push('#Event');
+
+                } catch (signalErr) {
+                    logger.error('Failed to generate signal signature:', signalErr);
+                }
+            }
+
+            // --- SIGNAL SYSTEM: Response Handling ---
+            if (postData.parentSignalTag) {
+                // Responses hard-code the parent's signature tag
+                if (!uniqueTags.includes(postData.parentSignalTag)) {
+                    uniqueTags.push(postData.parentSignalTag);
+                }
+            }
+
             const searchKeywords = [
                 ...generateSearchKeywords(postData.title || ''),
                 ...uniqueTags,
@@ -621,6 +650,17 @@ export const useCreatePost = () => {
                 writerTheme: postData.writerTheme || null,
                 writerTextColor: postData.writerTextColor || null,
                 linkedPostIds: postData.linkedPostIds || [],
+
+                // SIGNAL SYSTEM FIELDS
+                isSignal: postData.isSignal || false,
+                isContest: postData.isContest || false,
+                isEvent: postData.isEvent || false,
+                signatureTag: postData.signatureTag || null,
+                parentSignalTag: postData.parentSignalTag || null,
+                signalData: {
+                    contestRequirements: postData.contestRequirements || null,
+                    eventData: postData.eventSignalData || null
+                }, // Aggregated data object
                 parentType: postData.parentType || (postData.collectionId ? 'collection' : null) || postData.studioId ? 'studio' : null,
                 parentId: postData.parentId || postData.collectionId || postData.studioId || null,
             };

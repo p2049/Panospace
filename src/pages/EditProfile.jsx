@@ -6,7 +6,7 @@ import { db } from '@/firebase';
 // storage imports removed as they are handled by storageUploader
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
-import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock, FaChevronLeft, FaChevronRight, FaStar, FaRegStar } from 'react-icons/fa';
 import { ART_DISCIPLINES } from '@/core/constants/artDisciplines';
 import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '@/core/constants/gradients';
 import { ALL_COLORS, BRAND_RAINBOW } from '@/core/constants/colorPacks';
@@ -1438,13 +1438,20 @@ const EditProfile = () => {
                                     WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
                                     WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#fff'),
                                     color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
-                                    fontSize: '1rem', fontWeight: '600'
+                                    fontSize: '1.2rem', fontWeight: '800'
                                 }}>Profile Banner Theme</label>
                                 <FaInfoCircle size={14} color="#888" title="Unlock more gradients through achievements" />
                             </div>
                             <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
                                 Customize your profile with different themes and gradients.
                             </p>
+
+                            {/* Visual Overlays (Lens) Selection - MOVED ABOVE PREVIEW */}
+                            <BannerOverlaySelector
+                                selectedOverlays={selectedOverlays}
+                                onSelect={setSelectedOverlays}
+                                highlightColor={usernameColor}
+                            />
 
                             {/* Live Banner Preview */}
                             <div style={{
@@ -1483,12 +1490,7 @@ const EditProfile = () => {
                                 />
                             </div>
 
-                            {/* Visual Overlays (Lens) Selection */}
-                            <BannerOverlaySelector
-                                selectedOverlays={selectedOverlays}
-                                onSelect={setSelectedOverlays}
-                                highlightColor={profileBorderColor}
-                            />
+
 
 
 
@@ -1503,15 +1505,39 @@ const EditProfile = () => {
                             {/* Stars Overlay & Color - Expanded to Cities, Oceans, & Cosmic */}
                             {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode === 'cosmic-earth' || bannerMode === 'northern_lights' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
                                 <div style={{ marginBottom: '1rem' }}>
-                                    <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <input
-                                            type="checkbox"
+                                    <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <button
+                                            type="button"
                                             id="useStarsOverlay"
-                                            checked={useStarsOverlay}
-                                            onChange={(e) => setUseStarsOverlay(e.target.checked)}
-                                            style={{ width: '16px', height: '16px', accentColor: (profileBorderColor && profileBorderColor.includes('gradient')) ? '#7FFFD4' : profileBorderColor, cursor: 'pointer' }}
-                                        />
-                                        <label htmlFor="useStarsOverlay" style={{ color: '#fff', fontSize: '0.9rem', cursor: 'pointer' }}>
+                                            onClick={() => setUseStarsOverlay(!useStarsOverlay)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                padding: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                transform: useStarsOverlay ? 'scale(1.1)' : 'scale(1)',
+                                                filter: useStarsOverlay ? `drop-shadow(0 0 8px ${starColor === 'brand' ? '#7FFFD4' : starColor})` : 'none',
+                                                color: useStarsOverlay ? (starColor === 'brand' ? '#7FFFD4' : starColor) : 'rgba(255,255,255,0.3)'
+                                            }}
+                                        >
+                                            {useStarsOverlay ? <FaStar size={20} /> : <FaRegStar size={20} />}
+                                        </button>
+                                        <label
+                                            htmlFor="useStarsOverlay"
+                                            onClick={() => setUseStarsOverlay(!useStarsOverlay)}
+                                            style={{
+                                                color: useStarsOverlay ? '#fff' : 'rgba(255,255,255,0.5)',
+                                                fontSize: '0.9rem',
+                                                cursor: 'pointer',
+                                                fontWeight: useStarsOverlay ? '700' : '500',
+                                                letterSpacing: '0.05em',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
                                             {bannerMode.startsWith('city') ? 'Show Stars' : 'Overlay Stars'}
                                         </label>
                                     </div>

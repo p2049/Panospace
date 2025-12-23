@@ -18,7 +18,6 @@ import ReportModal from '@/components/ReportModal';
 import CreateCardModal from '@/components/CreateCardModal';
 import { CityCardFrame } from '@/components/CityCardFrame';
 import BusinessCardModal from '@/components/BusinessCardModal';
-import CommissionModal from '@/components/monetization/CommissionModal';
 import WalletModal from '@/components/WalletModal';
 import UpgradeModal from '@/components/monetization/AddFundsModal';
 import DisciplinesModal from '@/components/DisciplinesModal';
@@ -50,7 +49,7 @@ const Profile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { currentUser, isAdmin, isGodMode } = useAuth();
+    const { currentUser } = useAuth();
     const { blockUser } = useBlock();
     const { t } = useTranslation();
     const { showSuccess } = useToast();
@@ -75,7 +74,6 @@ const Profile = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [showBusinessCard, setShowBusinessCard] = useState(false);
     const [showCreateCardModal, setShowCreateCardModal] = useState(false);
-    const [showCommissionModal, setShowCommissionModal] = useState(false);
     const [showDisciplinesModal, setShowDisciplinesModal] = useState(false);
     const [showFollowList, setShowFollowList] = useState(false);
     const [followListType, setFollowListType] = useState('followers');
@@ -145,19 +143,6 @@ const Profile = () => {
         fetchOrders();
     }, [activeTab, targetId]);
 
-    const handleAdminDeleteAccount = async () => {
-        if (!user) return;
-        if (window.confirm(`GOD MODE: Delete account for ${user.username || 'this user'}? WARNING: This deletes their Firestore profile immediately.`)) {
-            try {
-                await deleteDoc(doc(db, 'users', targetId));
-                alert("User profile deleted from Firestore.");
-                navigate('/');
-            } catch (err) {
-                console.error("God Mode deletion failed:", err);
-                alert("Failed to delete user profile: " + err.message);
-            }
-        }
-    };
 
     const handleFollow = async () => {
         if (!currentUser || followLoading) return;
@@ -491,25 +476,6 @@ const Profile = () => {
                                 >
                                     {isFollowing ? 'ADDED' : 'ADD'}
                                 </button>
-                                <button
-                                    onClick={() => setShowCommissionModal(true)}
-                                    style={{
-                                        padding: '0.5rem 1.25rem',
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        borderRadius: '2px',
-                                        color: '#fff',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        fontSize: '0.8rem',
-                                        fontFamily: 'var(--font-family-heading)',
-                                        letterSpacing: '0.05em',
-                                        textTransform: 'uppercase',
-                                        clipPath: 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)'
-                                    }}
-                                >
-                                    Commission
-                                </button>
                             </div>
                         )}
                     </div>
@@ -735,56 +701,7 @@ const Profile = () => {
                                             </div>
                                         </div>
 
-                                        {/* Actions Section */}
-                                        {!isOwnProfile && (
-                                            <div style={{ marginTop: '0.5rem', paddingTop: '0.8rem', borderTop: '1px solid rgba(127, 255, 212, 0.15)' }}>
-                                                <button
-                                                    onClick={() => { setShowCommissionModal(true); setShowProfilePopout(false); }}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.6rem',
-                                                        background: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? `${user.profileTheme.usernameColor}22` : 'rgba(127, 255, 212, 0.1)',
-                                                        border: `1px solid ${user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)'}`,
-                                                        color: user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : 'var(--ice-mint)',
-                                                        borderRadius: '8px',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: '700',
-                                                        cursor: 'pointer',
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '0.1em',
-                                                        fontFamily: 'var(--font-family-heading)',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    Commission
-                                                </button>
-                                            </div>
-                                        )}
 
-                                        {(isAdmin || isGodMode) && !isOwnProfile && (
-                                            <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,0,0,0.2)' }}>
-                                                <button
-                                                    onClick={handleAdminDeleteAccount}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '0.5rem',
-                                                        background: 'rgba(255,0,0,0.1)',
-                                                        border: '1px solid #ff6b6b',
-                                                        color: '#ff6b6b',
-                                                        borderRadius: '8px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 'bold',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        gap: '0.5rem'
-                                                    }}
-                                                >
-                                                    <FaBan /> God Mode: Delete Account
-                                                </button>
-                                            </div>
-                                        )}
 
                                     </div>
                                 </>
@@ -2055,20 +1972,6 @@ const Profile = () => {
                         isOpen={showBusinessCard}
                         onClose={() => setShowBusinessCard(false)}
                         user={user}
-                    />
-                )
-            }
-
-            {
-                showCommissionModal && (
-                    <CommissionModal
-                        editorId={targetId}
-                        editorName={user.displayName}
-                        onClose={() => setShowCommissionModal(false)}
-                        onSuccess={() => {
-                            setShowCommissionModal(false);
-                            alert('Commission request submitted successfully!');
-                        }}
                     />
                 )
             }

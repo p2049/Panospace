@@ -65,9 +65,9 @@ const SearchResults = ({
                             style={{
                                 display: 'grid',
                                 gridTemplateColumns: isMobile
-                                    ? 'repeat(auto-fill, minmax(140px, 1fr))'
-                                    : 'repeat(auto-fill, minmax(240px, 1fr))',
-                                gap: isMobile ? '0.75rem' : '1rem',
+                                    ? 'repeat(auto-fill, minmax(110px, 1fr))'
+                                    : 'repeat(auto-fill, minmax(200px, 1fr))',
+                                gap: isMobile ? '4px' : '0.75rem',
                                 animation: 'fadeIn 0.4s ease-out forwards',
                                 opacity: 0
                             }}

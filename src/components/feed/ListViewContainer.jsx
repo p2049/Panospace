@@ -248,8 +248,16 @@ const ListViewContainer = ({ posts, listFilter, contentFilter, initialIndex = 0,
                         padding: 1rem;
                         max-width: 600px;
                         margin: 0 auto;
+                        box-sizing: border-box;
                         /* Ensure grid itself is ready for motion */
                         position: relative;
+                    }
+                    @media (max-width: 768px) {
+                        .list-view-grid {
+                            padding: 0.5rem;
+                            max-width: 100vw;
+                            gap: 0.5rem; /* Tighter gap on mobile */
+                        }
                     }
                     @media (min-width: 1024px) {
                         .list-view-grid {

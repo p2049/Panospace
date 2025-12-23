@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaImage, FaLink, FaQuoteLeft } from 'react-icons/fa';
+import { FaImage, FaLink, FaQuoteLeft, FaArrowLeft } from 'react-icons/fa';
 import { fadeColor } from '@/core/utils/colorUtils';
 import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
 import { RichTextRenderer } from '@/components/RichTextRenderer';
@@ -42,25 +42,24 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
     const plainTextContent = post.body || post.description || post.caption;
 
     React.useLayoutEffect(() => {
-        if (textBodyRef.current) {
-            // Check if scrollHeight is significantly larger than clientHeight
-            const overflowing = textBodyRef.current.scrollHeight > textBodyRef.current.clientHeight + 5;
-            setIsOverflowing(overflowing);
-        }
-    }, [post.bodyRichText, plainTextContent, post.title]);
-
-    // Measure height when expanding and notify parent
-    React.useLayoutEffect(() => {
-        if (onResize && textBodyRef.current) {
-            if (isExpanded) {
-                // Add header + padding + link height estimation or measure container?
-                // Measuring the text body scrollHeight isn't enough, we need total height.
-                // We don't have a ref to the container here easily unless we add one.
-                // Let's use internal ref for container? No, we need it on the root div.
-                // Actually, let's grab the ref from the click event or add a ref to the root.
+        const checkOverflow = () => {
+            if (textBodyRef.current) {
+                // Check if scrollHeight is significantly larger than clientHeight
+                const overflowing = textBodyRef.current.scrollHeight > textBodyRef.current.clientHeight + 5;
+                setIsOverflowing(overflowing);
             }
+        };
+
+        checkOverflow();
+
+        // Robustly observe resize to update overflow state when container resizes
+        const observer = new ResizeObserver(checkOverflow);
+        if (textBodyRef.current) {
+            observer.observe(textBodyRef.current);
         }
-    }, [isExpanded, onResize]);
+
+        return () => observer.disconnect();
+    }, [post.bodyRichText, plainTextContent, post.title, isExpanded]);
 
     // Root Ref
     const cardRef = React.useRef(null);
@@ -86,12 +85,8 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
             <div
                 ref={cardRef}
                 onClick={(e) => {
-                    if (isOverflowing) {
-                        setIsExpanded(!isExpanded);
-                    } else {
-                        // Open the ping detail modal instead of switching to visual feed
-                        setShowDetailModal(true);
-                    }
+                    // Always open ping detail modal on card body click, unless clicking interactive elements
+                    setShowDetailModal(true);
                 }}
                 style={{
                     background: theme.bg,
@@ -104,8 +99,9 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                     flexDirection: 'column',
                     gap: '1rem',
                     color: textColor,
+                    zIndex: isExpanded ? 100 : 1, // Higher zIndex when expanded to overlay
+                    overflow: isExpanded ? 'visible' : 'hidden', // Allow back button to float outside
                     position: 'relative',
-                    overflow: 'hidden',
                     width: '100%',
                     boxSizing: 'border-box',
                     // Strict height control: 100% matches the Grid Cell (Span 2) when collapsed
@@ -113,11 +109,49 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                     maxHeight: isExpanded ? 'none' : (onResize ? 'none' : '320px'),
                     minHeight: onResize ? '100%' : '160px',
                     justifyContent: 'space-between',
-                    zIndex: isExpanded ? 10 : 1
                 }}
                 onMouseEnter={e => { if (isOverflowing || onClick) e.currentTarget.style.transform = 'translateY(-4px)'; }}
                 onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
+                {/* Floating Recollapse Button (Only when expanded) */}
+                {isExpanded && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsExpanded(false);
+                            // Scroll back to view if needed? Frame motion handles layout
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: '0',
+                            left: '-3.5rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            cursor: 'pointer',
+                            zIndex: 110,
+                            pointerEvents: 'auto',
+                            background: 'transparent',
+                            border: 'none'
+                        }}
+                    >
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            background: '#000',
+                            border: '1px solid #333',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
+                        }}>
+                            <FaArrowLeft size={16} />
+                        </div>
+                    </button>
+                )}
+
                 {/* Header: Author & Date */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', flexShrink: 0 }}>
                     <span>{renderCosmicUsername(post.authorName || post.username || 'Writer', textColor)}</span>
@@ -184,9 +218,13 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                             width: '100%',
                             display: 'flex',
                             justifyContent: 'center',
-                            pointerEvents: 'none'
+                            pointerEvents: 'none' // Container is pass-through
                         }}>
-                            <span
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsExpanded(true);
+                                }}
                                 style={{
                                     background: 'rgba(0,0,0,0.6)',
                                     backdropFilter: 'blur(4px)',
@@ -196,11 +234,13 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                                     borderRadius: '20px',
                                     fontSize: '0.8rem',
                                     display: 'inline-block',
-                                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                                    pointerEvents: 'auto', // Button is interactive
+                                    cursor: 'pointer'
                                 }}
                             >
                                 Read More
-                            </span>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -396,4 +436,4 @@ const FeedPostCard = ({ post, contextPosts, onClick, onResize, onRefresh }) => {
     );
 };
 
-export default FeedPostCard;
+export default React.memo(FeedPostCard);

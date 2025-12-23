@@ -20,7 +20,7 @@ const POPULAR_TAGS = [
 
 const CreateStudio = () => {
     const navigate = useNavigate();
-    const { currentUser, isAdmin } = useAuth();
+    const { currentUser } = useAuth();
     const { showError, showSuccess, showWarning } = useToast();
     const [userProfile, setUserProfile] = useState(null);
     const [fetchingProfile, setFetchingProfile] = useState(true);
@@ -65,8 +65,8 @@ const CreateStudio = () => {
         return <div className="loading-spinner">Loading profile...</div>;
     }
 
-    // Check if user is Ultra-tier Space Creator or Admin
-    if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER && !isAdmin) {
+    // Check if user is Ultra-tier Space Creator
+    if (userTier !== USER_TIERS.ULTRA && userTier !== USER_TIERS.PARTNER) {
         return (
             <>
                 <PaywallModal

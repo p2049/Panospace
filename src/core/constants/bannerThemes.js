@@ -329,7 +329,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'abstract_singularity',
-        label: 'The Singularity',
+        label: 'Singularity',
         previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #FFF)',
         needsColor: false,
         isCosmic: true,
@@ -345,7 +345,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'abstract_pinball',
-        label: 'Hyperspace Cadet',
+        label: 'Velocity',
         previewGradient: 'radial-gradient(circle, #5A3FFF, #1B82FF, #000)',
         needsColor: false,
         isCosmic: true,
@@ -414,7 +414,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_aether_gate',
-        label: 'Aether Gate',
+        label: 'Gateway',
         previewGradient: 'radial-gradient(circle, #FFF, #5A3FFF, #000)',
         needsColor: false,
         isCosmic: true,
@@ -422,7 +422,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_omegasphere',
-        label: 'The Omega',
+        label: 'Frontier',
         previewGradient: 'radial-gradient(circle, #8CFFE9, #5A3FFF, #000)',
         needsColor: false,
         isCosmic: true,
@@ -430,7 +430,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_infinite',
-        label: 'The Infinite',
+        label: 'Infinite',
         previewGradient: 'radial-gradient(circle, #FF5C8A, #1B82FF, #000)',
         needsColor: false,
         isCosmic: true,
@@ -438,7 +438,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_ascendant',
-        label: 'The Quintessence',
+        label: 'Quintessence',
         previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #FFF)',
         needsColor: false,
         isCosmic: true,
@@ -446,7 +446,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_apex',
-        label: 'The Apex',
+        label: 'Apex',
         previewGradient: 'radial-gradient(circle, #FFF, #8CFFE9, #5A3FFF, #000)',
         needsColor: false,
         isCosmic: true,
@@ -454,7 +454,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_paradox',
-        label: 'The Paradox',
+        label: 'Paradox',
         previewGradient: 'linear-gradient(135deg, #5A3FFF, #FF5C8A, #8CFFE9)',
         needsColor: false,
         isCosmic: true,
@@ -462,7 +462,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_opus',
-        label: 'The Spectrum',
+        label: 'Spectrum',
         previewGradient: 'linear-gradient(to right, #FFF, #8CFFE9, #FF5C8A, #5A3FFF)',
         needsColor: false,
         isCosmic: true,
@@ -470,7 +470,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_flux',
-        label: 'The Flux',
+        label: 'Flux',
         previewGradient: 'radial-gradient(circle at 30% 30%, #FFF, #CCC, #000)',
         needsColor: false,
         isCosmic: true,
@@ -478,7 +478,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_ether',
-        label: 'The Ether',
+        label: 'Ether',
         previewGradient: 'radial-gradient(circle, rgba(255,255,255,0.2), #000)',
         needsColor: false,
         isCosmic: true,
@@ -486,7 +486,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_absolute',
-        label: 'The Absolute',
+        label: 'Absolute',
         previewGradient: 'radial-gradient(circle, #FFF, #5A3FFF)',
         needsColor: false,
         isCosmic: true,
@@ -501,7 +501,7 @@ export const BANNER_TYPES = [
     },
     {
         id: 'cosmic_omega_borealis',
-        label: 'Omega Borealis',
+        label: 'Aurora Frontier',
         previewGradient: 'radial-gradient(circle, #5A3FFF, #8CFFE9)',
         needsColor: false,
         isCosmic: true,

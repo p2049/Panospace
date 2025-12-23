@@ -58,10 +58,10 @@ const ProjectPage = lazy(() => import('./pages/ProjectPage'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Credits = lazy(() => import('./pages/Credits'));
 const Notifications = lazy(() => import('./pages/Notifications'));
-const AdminCleanup = lazy(() => import('./pages/AdminCleanup'));
-const AdminModeration = lazy(() => import('./pages/AdminModeration'));
 const CampusHub = lazy(() => import('./pages/CampusHub'));
 const EventFeedPage = lazy(() => import('./pages/EventFeedPage'));
+const SignalGallery = lazy(() => import('./pages/SignalGallery'));
+
 
 const MigrateDates = lazy(() => import('./pages/MigrateDates'));
 const ShopSetup = lazy(() => import('./pages/shop/ShopSetupPage'));
@@ -203,6 +203,11 @@ const AnimatedRoutes = () => {
             <MotionWrapper><EventCreator /></MotionWrapper>
           </PrivateRoute>
         } />
+        <Route path="/signal/:signatureTag" element={
+          <PrivateRoute>
+            <MotionWrapper><SignalGallery /></MotionWrapper>
+          </PrivateRoute>
+        } />
         <Route path="/gallery/:type/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
         <Route path="/tag/:tag" element={<MotionWrapper><AestheticGallery /></MotionWrapper>} />
         <Route path="/studio/create" element={
@@ -284,9 +289,6 @@ const AnimatedRoutes = () => {
             <MotionWrapper><Notifications /></MotionWrapper>
           </PrivateRoute>
         } />
-        <Route path="/admin/cleanup" element={<PrivateRoute><MotionWrapper><AdminCleanup /></MotionWrapper></PrivateRoute>} />
-        <Route path="/admin" element={<PrivateRoute><MotionWrapper><AdminModeration /></MotionWrapper></PrivateRoute>} />
-        <Route path="/admin/color-backfill" element={<PrivateRoute><MotionWrapper><ColorBackfillPage /></MotionWrapper></PrivateRoute>} />
         <Route path="/custom-feeds" element={<PrivateRoute><MotionWrapper><CustomFeedManager /></MotionWrapper></PrivateRoute>} />
         <Route path="/custom-feeds/create" element={<PrivateRoute><MotionWrapper><CustomFeedCreator /></MotionWrapper></PrivateRoute>} />
         <Route path="/campus" element={<PrivateRoute><MotionWrapper><CampusHub /></MotionWrapper></PrivateRoute>} />

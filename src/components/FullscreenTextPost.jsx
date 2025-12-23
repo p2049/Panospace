@@ -39,7 +39,7 @@ FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').forEach(colorOption => {
  * - Click-outside-to-exit behavior
  * - Same interaction model as image fullscreen
  */
-const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
+const FullscreenTextPost = ({ post, containerRef, viewMode, isNested = false }) => {
     // If we're in 'list' mode, render the card version used in feeds
     // Import dynamically or use the one we know exists?
     // Actually Post.jsx should handle this check!
@@ -77,8 +77,8 @@ const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
     const navigate = useNavigate();
 
 
-    // Sidebar state - opens by default for text posts
-    const [showDetailsSidebar, setShowDetailsSidebar] = useState(true);
+    // Sidebar state - opens by default for text posts but stays closed if nested
+    const [showDetailsSidebar, setShowDetailsSidebar] = useState(!isNested);
 
     // Author photo state
     const [authorPhoto, setAuthorPhoto] = useState(
@@ -153,21 +153,21 @@ const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
     return (
         <div
             ref={containerRef}
-            className="post-ui--fullscreen-text"
-            onClick={handleBackgroundClick}
+            className={`post-ui--fullscreen-text ${isNested ? 'is-nested' : ''}`}
+            onClick={!isNested ? handleBackgroundClick : undefined}
             style={{
-                height: '100dvh',
-                width: '100vw',
-                scrollSnapAlign: 'start',
+                height: isNested ? 'auto' : '100dvh',
+                width: isNested ? '100%' : '100vw',
+                scrollSnapAlign: isNested ? 'none' : 'start',
                 position: 'relative',
-                overflow: 'hidden',
-                backgroundColor: '#000',
-                willChange: 'transform',
+                overflow: isNested ? 'visible' : 'hidden',
+                backgroundColor: isNested ? 'transparent' : '#000',
+                willChange: isNested ? 'auto' : 'transform',
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 WebkitTouchCallout: 'none',
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: isNested ? 'flex-start' : 'center',
                 justifyContent: 'center'
             }}
             data-testid="fullscreen-text-post"
@@ -177,17 +177,18 @@ const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
                 ref={contentAreaRef}
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    width: '90%',
-                    maxWidth: '700px',
-                    maxHeight: '85vh',
-                    overflowY: 'auto',
-                    background: theme.bg,
-                    border: theme.border,
-                    borderRadius: '16px',
-                    padding: '2rem',
+                    width: isNested ? '100%' : '90%',
+                    maxWidth: isNested ? '100%' : '700px',
+                    height: isNested ? 'auto' : undefined,
+                    maxHeight: isNested ? 'none' : '85vh',
+                    overflowY: isNested ? 'visible' : 'auto',
+                    background: isNested ? 'transparent' : theme.bg,
+                    border: isNested ? 'none' : theme.border,
+                    borderRadius: isNested ? '0' : '16px',
+                    padding: isNested ? '0' : '2rem',
                     boxSizing: 'border-box',
                     color: textColor,
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+                    boxShadow: isNested ? 'none' : '0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
                     position: 'relative',
                     zIndex: 10
                 }}
@@ -246,113 +247,118 @@ const FullscreenTextPost = ({ post, containerRef, viewMode }) => {
                 </div>
             </div>
 
-            {/* Author Info Overlay - Bottom Left (mirrors StandardPost) */}
-            <div
-                style={{
-                    position: 'absolute',
-                    bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
-                    left: '20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: '4px',
-                    zIndex: 20,
-                    maxWidth: '300px'
-                }}
-            >
+            {/* Author Info Overlay - Hidden when nested */}
+            {!isNested && (
                 <div
-                    className="author-overlay"
                     style={{
+                        position: 'absolute',
+                        bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
+                        left: '20px',
                         display: 'flex',
-                        alignItems: 'stretch',
-                        background: 'rgba(0, 0, 0, 0.6)',
-                        backdropFilter: 'blur(8px)',
-                        borderRadius: '8px',
-                        width: 'fit-content',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        overflow: 'hidden'
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: '4px',
+                        zIndex: 20,
+                        maxWidth: '300px'
                     }}
                 >
-                    {/* Profile Picture Button */}
                     <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleAuthorClick();
-                        }}
+                        className="author-overlay"
                         style={{
-                            width: '40px',
-                            height: '40px',
-                            padding: '0',
                             display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRight: '1px solid rgba(255,255,255,0.1)',
-                            cursor: 'pointer'
+                            alignItems: 'stretch',
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            backdropFilter: 'blur(8px)',
+                            borderRadius: '8px',
+                            width: 'fit-content',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            overflow: 'hidden'
                         }}
                     >
-                        {authorPhoto && authorPhoto.startsWith('http') ? (
-                            <img
-                                src={authorPhoto}
-                                alt={post.username}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    borderRadius: '0'
-                                }}
-                                onError={(e) => {
-                                    e.target.style.display = 'none';
-                                }}
-                            />
-                        ) : (
-                            <PlanetUserIcon size={28} color="#7FFFD4" />
-                        )}
-                    </div>
+                        {/* Profile Picture Button */}
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleAuthorClick();
+                            }}
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                padding: '0',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(255,255,255,0.05)',
+                                borderRight: '1px solid rgba(255,255,255,0.1)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {authorPhoto && authorPhoto.startsWith('http') ? (
+                                <img
+                                    src={authorPhoto}
+                                    alt={post.username}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        borderRadius: '0'
+                                    }}
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <PlanetUserIcon size={28} color="#7FFFD4" />
+                            )}
+                        </div>
 
-                    {/* Username Button - Opens Sidebar */}
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDetailsSidebar(true);
-                        }}
-                        style={{
-                            padding: '0.4rem 0.8rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            gap: '2px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <span style={{
-                            color: '#7FFFD4',
-                            fontWeight: '700',
-                            fontSize: '0.9rem',
-                            fontFamily: '"Rajdhani", monospace',
-                            letterSpacing: '1px',
-                            textTransform: 'uppercase',
-                            lineHeight: 1
-                        }}>
-                            {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
-                        </span>
+                        {/* Username Button - Opens Sidebar */}
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowDetailsSidebar(true);
+                            }}
+                            style={{
+                                padding: '0.4rem 0.8rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                gap: '2px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <span style={{
+                                color: '#7FFFD4',
+                                fontWeight: '700',
+                                fontSize: '0.9rem',
+                                fontFamily: '"Rajdhani", monospace',
+                                letterSpacing: '1px',
+                                textTransform: 'uppercase',
+                                lineHeight: 1
+                            }}>
+                                {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Left Side Details Sidebar */}
-            <PostDetailsSidebar
-                isVisible={showDetailsSidebar}
-                onClose={() => setShowDetailsSidebar(false)}
-                post={post}
-                items={[]} // Text posts have no images
-                currentSlide={0}
-            />
+            {/* Sidebars and Actions - Hidden when nested */}
+            {!isNested && (
+                <>
+                    <PostDetailsSidebar
+                        isVisible={showDetailsSidebar}
+                        onClose={() => setShowDetailsSidebar(false)}
+                        post={post}
+                        items={[]} // Text posts have no images
+                        currentSlide={0}
+                    />
 
-            {/* Like Button - Bottom Right (matches StandardPost) */}
-            <div className="post-actions-container">
-                <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={false} />
-            </div>
+                    <div className="post-actions-container">
+                        <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={false} />
+                    </div>
+                </>
+            )}
         </div>
     );
 };

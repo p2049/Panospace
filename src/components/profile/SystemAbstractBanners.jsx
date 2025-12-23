@@ -10,20 +10,13 @@ const RENDER_CACHE = new Map();
 
 // --- NOISE GENERATOR ---
 // High-performance static noise for texture
+// High-performance static noise for texture
 function applyNoise(ctx, width, height, balpha = 0.05) {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const buffer32 = new Uint32Array(imageData.data.buffer);
-    const len = buffer32.length;
-
-    // We'll just draw noise on top separately to avoid slow per-pixel math if possible, 
-    // but for "Max Effort" texture, per-pixel is best. 
-    // Optimization: Draw noise to erratic canvas once and pattern it? 
-    // Let's stick to simple overlay method for safety:
-
-    // Actually, let's use a procedural approach for Grain:
+    // Optimization: Drastically reduced particle count from per-pixel
     ctx.save();
     ctx.globalCompositeOperation = 'overlay';
-    for (let i = 0; i < len / 10; i++) {
+    // 5000 specks is plenty for texture at 1080p
+    for (let i = 0; i < 5000; i++) {
         const x = Math.random() * width;
         const y = Math.random() * height;
         ctx.fillStyle = Math.random() > 0.5 ? '#FFF' : '#000';
@@ -36,6 +29,8 @@ function applyNoise(ctx, width, height, balpha = 0.05) {
 // --- RENDERER: ORBITAL RESONANCE (Cosmic) ---
 // Concept: A high-fidelity "Eclipse" event. Volumetric light wrapping around a dark body.
 function renderOrbital(canvas) {
+    if (RENDER_CACHE.has('system_orbital')) return RENDER_CACHE.get('system_orbital');
+
     const ctx = canvas.getContext('2d');
     const w = canvas.width = 1920;
     const h = canvas.height = 1080;
@@ -76,7 +71,8 @@ function renderOrbital(canvas) {
     // Thousands of fine lines forming a ring
     ctx.globalCompositeOperation = 'screen';
     ctx.lineWidth = 1;
-    for (let i = 0; i < 2000; i++) {
+    // Optimized: 2000 -> 800
+    for (let i = 0; i < 800; i++) {
         const angle = Math.random() * Math.PI; // Top half arc
         const dist = r * (0.9 + Math.random() * 0.6);
         const x = cx + Math.cos(angle - Math.PI) * dist * 1.5; // Stretch horizontally
@@ -96,13 +92,17 @@ function renderOrbital(canvas) {
     // 4. ATMOSPHERIC HAZE
     applyNoise(ctx, w, h, 0.08);
 
-    return canvas.toDataURL('image/webp', 0.95);
+    const res = canvas.toDataURL('image/webp', 0.95);
+    RENDER_CACHE.set('system_orbital', res);
+    return res;
 }
 
 // --- RENDERER: MEMORY FIELD (Abstract) ---
 // Concept: Infinite Recursion / The "Machine City" from above. 
 // A dense, structured texture of data blocks.
 function renderMemory(canvas) {
+    if (RENDER_CACHE.has('system_memory')) return RENDER_CACHE.get('system_memory');
+
     const ctx = canvas.getContext('2d');
     const w = canvas.width = 1920;
     const h = canvas.height = 1080;
@@ -176,13 +176,17 @@ function renderMemory(canvas) {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, w, h);
 
-    return canvas.toDataURL('image/webp', 0.95);
+    const res = canvas.toDataURL('image/webp', 0.95);
+    RENDER_CACHE.set('system_memory', res);
+    return res;
 }
 
 // --- RENDERER: IDLE STATE (Liminal) ---
 // Concept: Brutalist Architecture. A concrete room waiting for an event.
 // High texture, stark lighting.
 function renderIdle(canvas) {
+    if (RENDER_CACHE.has('system_idle')) return RENDER_CACHE.get('system_idle');
+
     const ctx = canvas.getContext('2d');
     const w = canvas.width = 1920;
     const h = canvas.height = 1080;
@@ -224,7 +228,9 @@ function renderIdle(canvas) {
     ctx.shadowColor = COLORS.auroraMint;
     ctx.fillRect(w * 0.1, h * 0.8, 40, 6);
 
-    return canvas.toDataURL('image/webp', 0.95);
+    const res = canvas.toDataURL('image/webp', 0.95);
+    RENDER_CACHE.set('system_idle', res);
+    return res;
 }
 
 

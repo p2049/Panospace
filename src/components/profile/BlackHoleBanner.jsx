@@ -15,8 +15,8 @@ function renderBlackHoleToCanvas(canvas) {
     if (RENDER_CACHE.has(cacheKey)) return RENDER_CACHE.get(cacheKey);
 
     const ctx = canvas.getContext('2d');
-    const w = 3840;
-    const h = 2160;
+    const w = 1920; // Reduced from 4K for performance
+    const h = 1080;
     canvas.width = w;
     canvas.height = h;
 
@@ -37,10 +37,12 @@ function renderBlackHoleToCanvas(canvas) {
         ctx.translate(cx, cy);
         ctx.scale(1, scaleY);
 
-        const rStart = 300;
-        const rEnd = 900;
+        // Scaled stats for 1080p
+        const rStart = 150;
+        const rEnd = 450;
 
-        for (let i = 0; i < 400; i++) {
+        // Reduced particle count for performance (400 -> 200)
+        for (let i = 0; i < 200; i++) {
             const rad = rStart + Math.random() * (rEnd - rStart);
             const angle = Math.random() * Math.PI * 2;
 
@@ -57,7 +59,8 @@ function renderBlackHoleToCanvas(canvas) {
 
             // TAPERED STREAK (Pointed Ends)
             const arcLen = 0.1 + Math.random() * 0.3;
-            const wHalf = 2 + Math.random() * 4;
+            // Scaled width (2-6 -> 1-3)
+            const wHalf = 1 + Math.random() * 2;
 
             // Calc points for fluid tapered shape
             const x1 = rad * Math.cos(angle);
@@ -91,21 +94,21 @@ function renderBlackHoleToCanvas(canvas) {
 
     // 3. THE EVENT HORIZON (Shadow Sphere)
     ctx.globalCompositeOperation = 'source-over';
-    const sphere = ctx.createRadialGradient(cx, cy, 0, cx, cy, 300);
+    const sphere = ctx.createRadialGradient(cx, cy, 0, cx, cy, 150); // Scaled 300->150
     sphere.addColorStop(0, '#000');
     sphere.addColorStop(1, '#000');
     ctx.fillStyle = sphere;
     ctx.beginPath();
-    ctx.arc(cx, cy, 280, 0, Math.PI * 2); // Slightly smaller than disk start
+    ctx.arc(cx, cy, 140, 0, Math.PI * 2); // Scaled 280->140
     ctx.fill();
 
     // 4. PHOTON RING (The thin light circle gravitylens)
     ctx.strokeStyle = COLORS.ionBlue; // Blue-shift photon ring
-    ctx.lineWidth = 2;
-    ctx.shadowBlur = 10;
+    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 5;
     ctx.shadowColor = COLORS.ionBlue;
     ctx.beginPath();
-    ctx.arc(cx, cy, 290, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 145, 0, Math.PI * 2); // Scaled 290->145
     ctx.stroke();
 
     // Disk Front
@@ -118,10 +121,11 @@ function renderBlackHoleToCanvas(canvas) {
         ctx.translate(cx, cy);
 
         ctx.beginPath();
-        // Semi circle arch
-        ctx.arc(0, 0, 500, isTop ? Math.PI : 0, isTop ? 0 : Math.PI);
+        // Semi circle arch - Scaled 500->250
+        ctx.arc(0, 0, 250, isTop ? Math.PI : 0, isTop ? 0 : Math.PI);
 
-        const grad = ctx.createRadialGradient(0, isTop ? -500 : 500, 100, 0, isTop ? -300 : 300, 400);
+        // Gradients scaled 100/300/400 -> 50/150/200
+        const grad = ctx.createRadialGradient(0, isTop ? -250 : 250, 50, 0, isTop ? -150 : 150, 200);
         grad.addColorStop(0, COLORS.deepOrbitPurple); // Brand Purple Warp
         grad.addColorStop(1, 'transparent');
 
@@ -137,15 +141,17 @@ function renderBlackHoleToCanvas(canvas) {
 
     // 6. STARFIELD
     ctx.globalCompositeOperation = 'screen';
-    for (let i = 0; i < 3000; i++) {
+    // Reduced stars 3000 -> 800
+    for (let i = 0; i < 800; i++) {
         const x = Math.random() * w;
         const y = Math.random() * h;
         // Avoid center
         const dx = x - cx;
         const dy = y - cy;
-        if (Math.sqrt(dx * dx + dy * dy) < 350) continue;
+        // Scaled exclusion zone 350 -> 175
+        if (Math.sqrt(dx * dx + dy * dy) < 175) continue;
 
-        const s = Math.random() * 2;
+        const s = Math.random() * 1.5;
         ctx.fillStyle = '#FFF';
         ctx.globalAlpha = Math.random() * 0.8;
         ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
@@ -160,7 +166,9 @@ function renderBlackHoleToCanvas(canvas) {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, w, h);
 
-    return canvas.toDataURL('image/webp', 0.95);
+    const result = canvas.toDataURL('image/webp', 0.90);
+    RENDER_CACHE.set(cacheKey, result);
+    return result;
 }
 
 const BlackHoleBanner = () => {

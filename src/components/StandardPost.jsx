@@ -4,7 +4,6 @@ import { FaExclamationTriangle, FaCamera } from 'react-icons/fa';
 import LikeButton from './LikeButton';
 import PostDetailsSidebar from './PostDetailsSidebar';
 import SpaceCardBadge from './SpaceCardBadge';
-import SoundTagBadge from './SoundTagBadge';
 import PlanetUserIcon from './PlanetUserIcon';
 import SmartImage from './SmartImage';
 import DateStampOverlay from './DateStampOverlay';
@@ -63,36 +62,74 @@ const StandardPost = ({
     setShowNSFWContent,
     hasNSFWContent,
     showDetailsSidebar,
-    setShowDetailsSidebar
+    setShowDetailsSidebar,
+    isNested = false
 }) => {
-    const touchStartRef = useRef({ x: null, y: null });
+    const touchStartRef = useRef({ x: null, y: null, time: null });
     const touchEndRef = useRef({ x: null, y: null });
+    const [dragOffset, setDragOffset] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
 
-    // Touch handlers with refs to avoid re-renders
+    // Touch handlers with drag-to-follow and velocity tracking
     const onTouchStart = useCallback((e) => {
         touchStartRef.current = {
             x: e.targetTouches[0].clientX,
-            y: e.targetTouches[0].clientY
+            y: e.targetTouches[0].clientY,
+            time: Date.now()
         };
         touchEndRef.current = { x: null, y: null };
+        setIsDragging(true);
     }, []);
 
     const onTouchMove = useCallback((e) => {
-        touchEndRef.current = {
-            x: e.targetTouches[0].clientX,
-            y: e.targetTouches[0].clientY
-        };
-    }, []);
+        if (!isDragging) return;
+
+        const currentX = e.targetTouches[0].clientX;
+        const currentY = e.targetTouches[0].clientY;
+
+        touchEndRef.current = { x: currentX, y: currentY };
+
+        const start = touchStartRef.current;
+        if (!start.x) return;
+
+        const deltaX = currentX - start.x;
+        const deltaY = currentY - start.y;
+
+        // Only track horizontal drag if it's more horizontal than vertical
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // Full-width swipe like Instagram/TikTok
+            let constrainedDrag = deltaX;
+
+            // Apply resistance only when at boundaries (first/last slide)
+            if ((currentSlide === 0 && deltaX > 0) ||
+                (currentSlide === items.length - 1 && deltaX < 0)) {
+                // At boundary - apply heavy resistance (rubber band effect)
+                constrainedDrag = deltaX * 0.15;
+            }
+
+            setDragOffset(constrainedDrag);
+        }
+    }, [isDragging, currentSlide, items.length]);
 
     const onTouchEnd = useCallback(() => {
         const start = touchStartRef.current;
         const end = touchEndRef.current;
 
+        setIsDragging(false);
+        setDragOffset(0);
+
         if (!start.x || !end.x) return;
 
         const distanceX = start.x - end.x;
         const distanceY = start.y - end.y;
-        const minSwipeDistance = 50;
+        const elapsed = Date.now() - (start.time || Date.now());
+
+        // Calculate velocity (pixels per ms)
+        const velocityX = Math.abs(distanceX) / Math.max(elapsed, 1);
+
+        // Velocity-based threshold: quick flicks need less distance
+        const isQuickFlick = velocityX > 0.5; // Fast swipe
+        const minSwipeDistance = isQuickFlick ? 30 : 50;
 
         // Check if it's more horizontal than vertical
         const isHorizontal = Math.abs(distanceX) > Math.abs(distanceY);
@@ -174,15 +211,16 @@ const StandardPost = ({
 
     return (
         <div
-            className="post-ui--standard"
+            className={`post-ui--standard ${isNested ? 'is-nested' : ''}`}
             style={{
-                height: '100dvh',
-                width: '100vw',
-                scrollSnapAlign: 'start',
+                height: isNested ? 'auto' : '100dvh',
+                width: isNested ? '100%' : '100vw',
+                minHeight: isNested ? '300px' : 'none',
+                scrollSnapAlign: isNested ? 'none' : 'start',
                 position: 'relative',
-                overflow: 'hidden',
-                backgroundColor: '#000',
-                willChange: 'transform',
+                overflow: isNested ? 'visible' : 'hidden',
+                backgroundColor: isNested ? 'transparent' : '#000',
+                willChange: isNested ? 'auto' : 'transform',
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 WebkitTouchCallout: 'none'
@@ -215,8 +253,9 @@ const StandardPost = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: '#000',
-                            position: 'relative'
+                            background: isNested ? 'transparent' : '#000',
+                            position: 'relative',
+                            aspectRatio: isNested ? (aspectRatio || '1/1') : 'auto'
                         }}>
                             {/* Cinematic Gradient Layer */}
                             {isCinematic && (
@@ -240,47 +279,6 @@ const StandardPost = ({
                             <div style={{ zIndex: 1, width: '100%', height: '100%', flex: 1 }}>
                                 {renderSlideContent(items[0], 0)}
                             </div>
-
-                            {/* NSFW Warning Overlay */}
-                            {hasNSFWContent && !showNSFWContent && (
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowNSFWContent(true);
-                                    }}
-                                    style={{
-                                        position: 'absolute',
-                                        inset: 0,
-                                        background: 'rgba(0,0,0,0.95)',
-                                        backdropFilter: 'blur(20px)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        zIndex: 100,
-                                        padding: '2rem'
-                                    }}
-                                >
-                                    <FaExclamationTriangle size={64} color="#ff6b6b" style={{ marginBottom: '1.5rem' }} />
-                                    <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', color: '#fff' }}>Sensitive Content</h3>
-                                    <p style={{ color: '#aaa', marginBottom: '1.5rem', textAlign: 'center', maxWidth: '300px' }}>
-                                        This post may contain sensitive or mature material
-                                    </p>
-                                    <button style={{
-                                        padding: '0.75rem 1.5rem',
-                                        background: '#7FFFD4',
-                                        color: '#000',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        fontSize: '1rem'
-                                    }}>
-                                        Tap to View
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     );
                 })()
@@ -289,7 +287,8 @@ const StandardPost = ({
                 <div
                     style={{
                         width: '100%',
-                        height: '100%',
+                        height: isNested ? 'auto' : '100%',
+                        aspectRatio: isNested ? (items[0]?.aspectRatio || '1/1') : 'none',
                         position: 'relative',
                         overflow: 'hidden'
                     }}
@@ -303,8 +302,12 @@ const StandardPost = ({
                             display: 'flex',
                             width: '100%',
                             height: '100%',
-                            transform: `translateX(-${currentSlide * 100}%)`,
-                            transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+                            transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`,
+                            // Smooth, cinematic transition
+                            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                            willChange: 'transform',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden'
                         }}
                     >
                         {items.map((item, index) => (
@@ -415,98 +418,101 @@ const StandardPost = ({
             {/* End of Items Ternary */}
 
             {/* Digital Goods Badges */}
-            <div style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                zIndex: 20,
-                alignItems: 'flex-end'
-            }}>
-                {post.spaceCardId && (
-                    <SpaceCardBadge
-                        type={post.isSpaceCardCreator ? 'creator' : 'owner'}
-                        rarity={post.spaceCardRarity || 'Common'}
-                    />
-                )}
-                {post.soundTagId && (
-                    <SoundTagBadge
-                        hasSound={true}
-                        label={post.soundTagTitle || 'SoundTag'}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            alert("SoundTag Preview Coming Soon");
-                        }}
-                    />
-                )}
-            </div>
-
-
-
-            {/* Author Info & Location - REDESIGNED */}
-            <div
-                style={{
+            {!isNested && (
+                <div style={{
                     position: 'absolute',
-                    bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
-                    left: '20px',
+                    top: '20px',
+                    right: '20px',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    gap: '4px',
-                    zIndex: 10,
-                    maxWidth: '300px'
-                }}
-            >
+                    gap: '8px',
+                    zIndex: 20,
+                    alignItems: 'flex-end'
+                }}>
+                    {post.spaceCardId && (
+                        <SpaceCardBadge
+                            type={post.isSpaceCardCreator ? 'creator' : 'owner'}
+                            rarity={post.spaceCardRarity || 'Common'}
+                        />
+                    )}
+                </div>
+            )}
+
+
+
+            {/* Author Info & Location - Hidden when nested */}
+            {!isNested && (
                 <div
-                    className="author-overlay"
                     style={{
+                        position: 'absolute',
+                        bottom: 'max(80px, calc(80px + env(safe-area-inset-bottom)))',
+                        left: '20px',
                         display: 'flex',
-                        alignItems: 'stretch', // Ensure equal height
-                        background: 'rgba(0, 0, 0, 0.6)',
-                        backdropFilter: 'blur(8px)',
-                        borderRadius: '8px',
-                        width: 'fit-content',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        overflow: 'hidden' // For border radius
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: '4px',
+                        zIndex: 10,
+                        maxWidth: '300px'
                     }}
                 >
-                    {/* 1. Profile Picture Button (Left) */}
                     <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleAuthorClick();
-                        }}
+                        className="author-overlay"
                         style={{
-                            width: '40px', // Fixed square width
-                            height: '40px', // Fixed square height
-                            padding: '0', // Removing padding to fill the box
                             display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRight: '1px solid rgba(255,255,255,0.1)',
-                            cursor: 'pointer'
+                            alignItems: 'stretch', // Ensure equal height
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            backdropFilter: 'blur(8px)',
+                            borderRadius: '8px',
+                            width: 'fit-content',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            overflow: 'hidden' // For border radius
                         }}
                     >
-                        {authorPhoto && authorPhoto.startsWith('http') ? (
-                            <img
-                                src={authorPhoto}
-                                alt={post.username}
-                                style={{
-                                    width: '100%', // Fill container
-                                    height: '100%', // Fill container
-                                    objectFit: 'cover',
-                                    borderRadius: '0'
-                                }}
-                                onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    e.target.nextSibling.style.display = 'flex'; // Flex to center icon
-                                }}
-                            />
-                        ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {/* 1. Profile Picture Button (Left) */}
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleAuthorClick();
+                            }}
+                            style={{
+                                width: '40px', // Fixed square width
+                                height: '40px', // Fixed square height
+                                padding: '0', // Removing padding to fill the box
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(255,255,255,0.05)',
+                                borderRight: '1px solid rgba(255,255,255,0.1)',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            {authorPhoto && authorPhoto.startsWith('http') ? (
+                                <img
+                                    src={authorPhoto}
+                                    alt={post.username}
+                                    style={{
+                                        width: '100%', // Fill container
+                                        height: '100%', // Fill container
+                                        objectFit: 'cover',
+                                        borderRadius: '0'
+                                    }}
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex'; // Flex to center icon
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <PlanetUserIcon
+                                        size={28}
+                                        color={authorProfileTheme?.usernameColor && !authorProfileTheme.usernameColor.includes('gradient') ? authorProfileTheme.usernameColor : '#7FFFD4'}
+                                        icon={authorDefaultIconId || 'planet-head'}
+                                        glow={authorProfileTheme?.textGlow}
+                                    />
+                                </div>
+                            )}
+                            {/* Fallback */}
+                            <div style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
                                 <PlanetUserIcon
                                     size={28}
                                     color={authorProfileTheme?.usernameColor && !authorProfileTheme.usernameColor.includes('gradient') ? authorProfileTheme.usernameColor : '#7FFFD4'}
@@ -514,82 +520,76 @@ const StandardPost = ({
                                     glow={authorProfileTheme?.textGlow}
                                 />
                             </div>
-                        )}
-                        {/* Fallback */}
-                        <div style={{ display: 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                            <PlanetUserIcon
-                                size={28}
-                                color={authorProfileTheme?.usernameColor && !authorProfileTheme.usernameColor.includes('gradient') ? authorProfileTheme.usernameColor : '#7FFFD4'}
-                                icon={authorDefaultIconId || 'planet-head'}
-                                glow={authorProfileTheme?.textGlow}
-                            />
+                        </div>
+
+                        {/* 2. Username Button (Right) */}
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowDetailsSidebar(true);
+                            }}
+                            style={{
+                                padding: '0.4rem 0.8rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                gap: '2px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <span style={{
+                                color: '#7FFFD4',
+                                fontWeight: '700',
+                                fontSize: '0.9rem',
+                                fontFamily: '"Rajdhani", monospace',
+                                letterSpacing: '1px',
+                                textTransform: 'uppercase',
+                                lineHeight: 1
+                            }}>
+                                {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
+                            </span>
                         </div>
                     </div>
 
-                    {/* 2. Username Button (Right) */}
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDetailsSidebar(true);
-                        }}
-                        style={{
-                            padding: '0.4rem 0.8rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            gap: '2px',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <span style={{
-                            color: '#7FFFD4',
-                            fontWeight: '700',
-                            fontSize: '0.9rem',
+                    {/* Frame Counter Below Profile */}
+                    {items.length > 1 && (
+                        <div style={{
+                            padding: '2px 6px',
+                            background: 'rgba(0, 0, 0, 0.5)',
+                            backdropFilter: 'blur(4px)',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            fontSize: '0.75rem',
+                            color: 'rgba(255, 255, 255, 0.85)',
                             fontFamily: '"Rajdhani", monospace',
+                            fontWeight: '600',
                             letterSpacing: '1px',
-                            textTransform: 'uppercase',
-                            lineHeight: 1
+                            marginLeft: '2px' // Align slightly with the profile box visual weight
                         }}>
-                            {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
-                        </span>
-                    </div>
+                            {currentSlide + 1}/{items.length}
+                        </div>
+                    )}
                 </div>
+            )}
 
-                {/* Frame Counter Below Profile */}
-                {items.length > 1 && (
-                    <div style={{
-                        padding: '2px 6px',
-                        background: 'rgba(0, 0, 0, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        fontSize: '0.75rem',
-                        color: 'rgba(255, 255, 255, 0.85)',
-                        fontFamily: '"Rajdhani", monospace',
-                        fontWeight: '600',
-                        letterSpacing: '1px',
-                        marginLeft: '2px' // Align slightly with the profile box visual weight
-                    }}>
-                        {currentSlide + 1}/{items.length}
-                    </div>
-                )}
-            </div>
-
-            {/* DETAILS SIDEBAR */}
-            <PostDetailsSidebar
-                isVisible={showDetailsSidebar}
-                onClose={() => setShowDetailsSidebar(false)}
-                post={post}
-                items={items}
-                currentSlide={currentSlide}
-            />
+            {/* DETAILS SIDEBAR - Hidden when nested */}
+            {!isNested && (
+                <PostDetailsSidebar
+                    isVisible={showDetailsSidebar}
+                    onClose={() => setShowDetailsSidebar(false)}
+                    post={post}
+                    items={items}
+                    currentSlide={currentSlide}
+                />
+            )}
 
 
             {/* Like Button & Slide Counter */}
-            <div className="post-actions-container">
-                <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={false} />
-            </div>
-
+            {!isNested && (
+                <div className="post-actions-container">
+                    <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={false} />
+                </div>
+            )}
         </div >
     );
 };

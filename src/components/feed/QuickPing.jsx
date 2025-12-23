@@ -21,6 +21,7 @@ const QuickPing = ({ onPostSuccess }) => {
     const [selectedColor, setSelectedColor] = useState(FREE_COLOR_PACK.find(c => c.id === 'classic-mint') || FREE_COLOR_PACK[1]);
     const [selectedTextColor, setSelectedTextColor] = useState('#ffffff');
     const [isPosting, setIsPosting] = useState(false);
+    const [isSignal, setIsSignal] = useState(false);
 
     const getAvailableTextColors = (bgColorOption) => {
         if (!bgColorOption) return [];
@@ -119,10 +120,10 @@ const QuickPing = ({ onPostSuccess }) => {
             body: body.trim(),
             postType: 'text',
             type: 'social', // Pings are social
-            writerTheme: selectedColor.id,
             writerTextColor: selectedTextColor,
             atmosphereBackground: selectedColor.isGradient ? selectedColor.color : 'black',
-            tags: ['ping'],
+            tags: isSignal ? ['ping', 'Signal'] : ['ping'],
+            isSignal: isSignal,
             showInProfile: true,
             layoutSettings: {
                 compact: true
@@ -135,6 +136,7 @@ const QuickPing = ({ onPostSuccess }) => {
             await createPost(postData, []);
             setTitle('');
             setBody('');
+            setIsSignal(false);
             // Small delay to allow Firestore to index the new document before refreshing
             if (onPostSuccess) {
                 setTimeout(() => onPostSuccess(), 500);
@@ -155,7 +157,8 @@ const QuickPing = ({ onPostSuccess }) => {
                 initialBody: body,
                 initialTheme: selectedColor.id,
                 initialTextColor: selectedTextColor,
-                initialPostType: 'text'
+                initialPostType: 'text',
+                isSignal: isSignal
             }
         });
     };
@@ -233,9 +236,9 @@ const QuickPing = ({ onPostSuccess }) => {
                         background: 'rgba(0,0,0,0.3)',
                         border: `1px solid ${fadeColor(selectedColor.color, 0.2)}`,
                         borderRadius: '6px',
-                        padding: '6px 10px',
+                        padding: '5px 10px',
                         color: selectedTextColor,
-                        fontSize: '0.85rem',
+                        fontSize: '0.8rem',
                         fontFamily: "'Rajdhani', sans-serif",
                         width: '100%',
                         outline: 'none'
@@ -250,12 +253,12 @@ const QuickPing = ({ onPostSuccess }) => {
                         background: 'rgba(0,0,0,0.3)',
                         border: `1px solid ${fadeColor(selectedColor.color, 0.2)}`,
                         borderRadius: '6px',
-                        padding: '8px 10px',
+                        padding: '6px 10px',
                         color: selectedTextColor,
                         fontSize: '0.8rem',
                         fontFamily: "'Rajdhani', sans-serif",
                         width: '100%',
-                        flex: 1,
+                        minHeight: '34px',
                         resize: 'none',
                         outline: 'none',
                         scrollbarWidth: 'thin',
@@ -274,7 +277,7 @@ const QuickPing = ({ onPostSuccess }) => {
                             padding: '2px 0'
                         }}
                     >
-                        {FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors').map((color) => (
+                        {FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors' && c.id !== 'transparent').map((color) => (
                             <button
                                 key={color.id}
                                 onClick={() => setSelectedColor(color)}
@@ -312,6 +315,57 @@ const QuickPing = ({ onPostSuccess }) => {
                             </button>
                         ))}
                     </div>
+
+                    {/* Text Color Toggle */}
+                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '12px' }}>
+                        <button
+                            onClick={() => setSelectedTextColor('#ffffff')}
+                            style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#ffffff',
+                                border: selectedTextColor === '#ffffff' ? '2px solid #7FFFD4' : '1px solid #333',
+                                cursor: 'pointer',
+                                padding: 0
+                            }}
+                            title="White Text"
+                        />
+                        <button
+                            onClick={() => setSelectedTextColor('#000000')}
+                            style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#000000',
+                                border: selectedTextColor === '#000000' ? '2px solid #7FFFD4' : '1px solid #333',
+                                cursor: 'pointer',
+                                padding: 0
+                            }}
+                            title="Black Text"
+                        />
+                    </div>
+
+                    {/* Signal Toggle */}
+                    <label style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.65rem',
+                        fontWeight: '700',
+                        color: isSignal ? '#7FFFD4' : '#666',
+                        textTransform: 'uppercase',
+                        userSelect: 'none'
+                    }}>
+                        <input
+                            type="checkbox"
+                            checked={isSignal}
+                            onChange={(e) => setIsSignal(e.target.checked)}
+                            style={{ accentColor: '#7FFFD4', transform: 'scale(0.9)' }}
+                        />
+                        Signal
+                    </label>
 
                     <button
                         onClick={handlePost}

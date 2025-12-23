@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/firebase';
-import { doc, deleteDoc, getDoc } from 'firebase/firestore';
-import { FaHeart, FaTimes, FaEdit, FaTrash, FaFlag, FaBan, FaLink, FaCalendarAlt } from 'react-icons/fa';
+import { doc, deleteDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { FaHeart, FaTimes, FaEdit, FaTrash, FaFlag, FaBan, FaLink, FaCalendarAlt, FaPenFancy, FaCamera } from 'react-icons/fa';
 import { logger } from '@/core/utils/logger';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { RichTextRenderer } from '@/components/RichTextRenderer';
@@ -13,7 +13,7 @@ import PlanetUserIcon from './PlanetUserIcon';
 
 const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
     const navigate = useNavigate();
-    const { currentUser, isAdmin, isGodMode } = useAuth();
+    const { currentUser } = useAuth();
 
     // Get post owner ID - check all possible field names for backwards compatibility
     const postOwnerId = post?.userId || post?.authorId || post?.uid || post?.creatorId || post?.owner || post?.ownerId;
@@ -110,7 +110,26 @@ const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
         // Second click: actually delete
         try {
             console.log('[PingDetailModal] Deleting post:', post.id);
+
+            // Check if this is a Parent Signal
+            const isSignal = post.tags?.some(t => t === 'Signal' || t === '#Signal');
+            const signatureTag = post.tags?.find(t => t.startsWith('Signal') && t !== 'Signal') ||
+                post.tags?.find(t => t.startsWith('#Signal') && t !== '#Signal');
+
             await deleteDoc(doc(db, "posts", post.id));
+
+            // Cascading deletion
+            if (isSignal && signatureTag) {
+                console.log('[PingDetailModal] Deleting responses with tag:', signatureTag);
+                const postsRef = collection(db, 'posts');
+                const q = query(postsRef, where('tags', 'array-contains', signatureTag));
+                const snapshot = await getDocs(q);
+
+                const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                console.log(`[PingDetailModal] Deleted ${snapshot.docs.length} responses.`);
+            }
+
             console.log('[PingDetailModal] Delete successful');
             setDeleteConfirm(false);
             onClose();
@@ -314,34 +333,7 @@ const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
                         flex: 1,
                         color: '#fff'
                     }}>
-                        {/* Title */}
-                        {post.title && (
-                            <h2 style={{
-                                margin: '0 0 1rem 0',
-                                fontSize: '1.5rem',
-                                fontFamily: '"Rajdhani", sans-serif',
-                                fontWeight: '700',
-                                lineHeight: 1.2,
-                                textTransform: 'uppercase',
-                                color: '#fff'
-                            }}>
-                                {post.title}
-                            </h2>
-                        )}
 
-                        {/* Body */}
-                        <div style={{
-                            fontSize: '1rem',
-                            lineHeight: 1.6,
-                            marginBottom: '1.5rem',
-                            color: '#e0e0e0'
-                        }}>
-                            {post.bodyRichText ? (
-                                <RichTextRenderer content={post.bodyRichText} textColor="#e0e0e0" />
-                            ) : (
-                                <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{plainTextContent}</p>
-                            )}
-                        </div>
 
                         {/* Meta Info */}
                         <div style={{
@@ -401,6 +393,111 @@ const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
                         zIndex: 10,
                         pointerEvents: 'auto'
                     }}>
+                        {/* Join Signal Action */}
+                        {post.tags?.some(t => t === 'Signal' || t === '#Signal') && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                                <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: '800', textAlign: 'center', letterSpacing: '0.1em' }}>JOIN SIGNAL AS</div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        onClick={() => {
+                                            const signatureTag = post.tags.find(t => t.startsWith('Signal') && t !== 'Signal') ||
+                                                post.tags.find(t => t.startsWith('#Signal') && t !== '#Signal');
+                                            onClose();
+                                            navigate('/create', {
+                                                state: {
+                                                    parentSignalTag: signatureTag,
+                                                    initialBody: `@${post.username} `,
+                                                    initialPostType: 'text'
+                                                }
+                                            });
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.6rem',
+                                            background: 'rgba(127, 255, 212, 0.1)',
+                                            border: '1px solid rgba(127, 255, 212, 0.3)',
+                                            borderRadius: '8px',
+                                            color: '#7FFFD4',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.4rem',
+                                            fontWeight: '800',
+                                            fontSize: '0.7rem',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    >
+                                        <FaPenFancy size={12} /> Ping
+                                    </button>
+
+                                    {/* Visual Response */}
+                                    <button
+                                        onClick={() => {
+                                            const signatureTag = post.tags.find(t => t.startsWith('Signal') && t !== 'Signal') ||
+                                                post.tags.find(t => t.startsWith('#Signal') && t !== '#Signal');
+                                            onClose();
+                                            navigate('/create', {
+                                                state: {
+                                                    parentSignalTag: signatureTag,
+                                                    initialBody: `@${post.username} `,
+                                                    initialPostType: 'image'
+                                                }
+                                            });
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.6rem',
+                                            background: 'var(--ice-mint)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: '#000',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '0.4rem',
+                                            fontWeight: '800',
+                                            fontSize: '0.7rem',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    >
+                                        <FaCamera size={12} /> Visual
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* View Discussion Action */}
+                        {(post.tags?.some(t => t.startsWith('Signal') || t.startsWith('#Signal'))) && (
+                            <button
+                                onClick={() => {
+                                    const signatureTag = post.tags.find(t => t.startsWith('Signal') && t !== 'Signal') ||
+                                        post.tags.find(t => t.startsWith('#Signal') && t !== '#Signal');
+                                    onClose();
+                                    navigate(`/signal/${encodeURIComponent(signatureTag)}`);
+                                }}
+                                style={{
+                                    padding: '0.8rem',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '8px',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                    textAlign: 'center',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    fontWeight: '600',
+                                    marginBottom: '0.5rem'
+                                }}
+                            >
+                                <FaLink size={14} />
+                                View Discussion
+                            </button>
+                        )}
+
                         {canManageContent ? (
                             <>
                                 {isOwnPost && (
@@ -424,29 +521,31 @@ const PingDetailModal = ({ isVisible, onClose, post, onDelete }) => {
                                         Edit Ping
                                     </button>
                                 )}
-                                <button
-                                    type="button"
-                                    onClick={handleDeletePost}
-                                    style={{
-                                        padding: '0.8rem',
-                                        background: deleteConfirm ? 'rgba(255,0,0,0.4)' : 'rgba(255,0,0,0.1)',
-                                        border: deleteConfirm ? '2px solid #ff4444' : '1px solid rgba(255,0,0,0.3)',
-                                        borderRadius: '8px',
-                                        color: deleteConfirm ? '#fff' : '#ff6b6b',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        fontWeight: '600',
-                                        width: '100%',
-                                        pointerEvents: 'auto',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                >
-                                    <FaTrash size={14} />
-                                    {deleteConfirm ? 'TAP AGAIN TO DELETE' : 'Delete Ping'}
-                                </button>
+                                {isOwnPost && (
+                                    <button
+                                        type="button"
+                                        onClick={handleDeletePost}
+                                        style={{
+                                            padding: '0.8rem',
+                                            background: deleteConfirm ? 'rgba(255,0,0,0.4)' : 'rgba(255,0,0,0.1)',
+                                            border: deleteConfirm ? '2px solid #ff4444' : '1px solid rgba(255,0,0,0.3)',
+                                            borderRadius: '8px',
+                                            color: deleteConfirm ? '#fff' : '#ff6b6b',
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            fontWeight: '600',
+                                            width: '100%',
+                                            pointerEvents: 'auto',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <FaTrash size={14} />
+                                        {deleteConfirm ? 'TAP AGAIN TO DELETE' : 'Delete Ping'}
+                                    </button>
+                                )}
                             </>
                         ) : (
                             <>

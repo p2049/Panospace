@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useEvents, useFollowingEvents } from '@/hooks/useEvents';
+import { EventService } from '@/services/EventService';
 
-import { FaPlus, FaChevronLeft, FaChevronRight, FaCalendar, FaUsers, FaSearch, FaMoon } from 'react-icons/fa';
+import { FaPlus, FaChevronLeft, FaChevronRight, FaCalendar, FaUsers, FaSearch, FaList, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
+import PlanetUserIcon from '@/components/PlanetUserIcon';
 import { formatDateForInput } from '@/core/utils/dates';
 import { generateCalendarDays } from '@/core/utils/dates';
 
@@ -13,9 +15,10 @@ const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(null);
 
-    const [viewMode, setViewMode] = useState('all'); // 'all' or 'following'
+    // 'calendar' or 'events'
+    const [pageTab, setPageTab] = useState('calendar');
 
-    // Calculate month boundaries
+    // Calendar Grid Data
     const monthStart = useMemo(() => {
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         date.setHours(0, 0, 0, 0);
@@ -28,418 +31,326 @@ const Calendar = () => {
         return date;
     }, [currentDate]);
 
-    // Fetch events
-    const { events: allEvents, loading: loadingAll, refetch: refetchAll } = useEvents(monthStart, monthEnd);
-
-    // For following view - would need to get following list from user profile
-    // For now, just show empty array
-    const { events: followingEvents, loading: loadingFollowing } = useFollowingEvents([], monthStart, monthEnd);
-
-    const events = viewMode === 'all' ? allEvents : followingEvents;
-    const loading = viewMode === 'all' ? loadingAll : loadingFollowing;
-
-    // Generate calendar days
+    const { events: gridEvents, loading: loadingGrid } = useEvents(monthStart, monthEnd);
     const calendarDays = useMemo(() => generateCalendarDays(currentDate), [currentDate]);
 
-    // Get events for a specific day
+    // Events List Data
+    const [listEvents, setListEvents] = useState([]);
+    const [loadingList, setLoadingList] = useState(false);
+
+    useEffect(() => {
+        if (pageTab === 'events') {
+            const fetchList = async () => {
+                setLoadingList(true);
+                try {
+                    const events = await EventService.getVisibleEvents();
+                    // Sort by upcoming Date
+                    events.sort((a, b) => {
+                        const dateA = a.eventDate ? new Date(a.eventDate) : new Date(0);
+                        const dateB = b.eventDate ? new Date(b.eventDate) : new Date(0);
+                        return dateA - dateB;
+                    });
+                    setListEvents(events);
+                } catch (err) {
+                    console.error("Error fetching event list:", err);
+                } finally {
+                    setLoadingList(false);
+                }
+            };
+            fetchList();
+        }
+    }, [pageTab]);
+
     const getEventsForDay = (date) => {
-        return events.filter(event => {
-            // Handle various date formats (Timestamp, String, Date object)
+        return gridEvents.filter(event => {
             let raw = event.dateUTC || event.date || event.eventDate;
             let d = null;
             if (raw && raw.toDate) d = raw.toDate();
             else if (raw) d = new Date(raw);
-
             if (!d) return false;
-
-            // Strict UTC comparison as requested
-            // But 'date' argument is local from Calendar grid.
-            // We must compare the YYYY-MM-DD components.
             return d.getFullYear() === date.getFullYear() &&
                 d.getMonth() === date.getMonth() &&
                 d.getDate() === date.getDate();
         });
     };
 
-    const handlePrevMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    };
-
-    const handleNextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    };
-
-    const handleToday = () => {
-        setCurrentDate(new Date());
-    };
-
-    const handleDayClick = (date) => {
-        setSelectedDate(date);
-    };
-
-
-
-    const selectedDayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
+    const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    const handleToday = () => setCurrentDate(new Date());
 
     return (
-        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem', position: 'relative', overflow: 'hidden' }}>
-            {/* Animated Stars Background */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                pointerEvents: 'none',
-                zIndex: 0
-            }}>
-                {[...Array(50)].map((_, i) => {
-                    const starColor = '#7FFFD4'; // Default to PanoSpace green for calendar
-                    return (
-                        <div
-                            key={i}
-                            style={{
-                                position: 'absolute',
-                                width: Math.random() * 2 + 1 + 'px',
-                                height: Math.random() * 2 + 1 + 'px',
-                                background: starColor,
-                                borderRadius: '50%',
-                                top: Math.random() * 100 + '%',
-                                left: Math.random() * 100 + '%',
-                                opacity: Math.random() * 0.5 + 0.3,
-                                animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
-                                animationDelay: `${Math.random() * 2}s`,
-                                boxShadow: `0 0 ${Math.random() * 3 + 2}px ${starColor}`
-                            }}
-                        />
-                    );
-                })}
+        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', paddingBottom: '6rem', position: 'relative', overflowX: 'hidden' }}>
+            {/* Stars Background */}
+            <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+                {[...Array(30)].map((_, i) => (
+                    <div key={i} style={{
+                        position: 'absolute',
+                        width: Math.random() * 2 + 'px',
+                        height: Math.random() * 2 + 'px',
+                        background: '#7FFFD4',
+                        opacity: Math.random() * 0.5 + 0.2,
+                        top: Math.random() * 100 + '%',
+                        left: Math.random() * 100 + '%',
+                        borderRadius: '50%'
+                    }} />
+                ))}
             </div>
 
-            {/* Content Wrapper to ensure it sits above stars */}
-            <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ position: 'relative', zIndex: 1, maxWidth: '800px', margin: '0 auto' }}>
+
                 {/* Header */}
                 <div style={{
-                    padding: '1rem 2rem',
+                    padding: '1rem',
+                    paddingTop: 'max(1rem, env(safe-area-inset-top))',
                     borderBottom: '1px solid #333',
+                    background: 'rgba(0,0,0,0.9)',
+                    backdropFilter: 'blur(10px)',
                     position: 'sticky',
                     top: 0,
-                    background: '#000',
                     zIndex: 100
                 }}>
-                    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-                                <FaCalendar style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-                                Community Calendar
-                            </h1>
+                    {/* Top Row: Brand & Create */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <PlanetUserIcon size={28} color="#7FFFD4" icon="planet" />
+                            <span style={{
+                                fontFamily: '"Rajdhani", sans-serif',
+                                fontWeight: '800',
+                                fontSize: '1.2rem',
+                                letterSpacing: '1px'
+                            }}>
+                                PANOSPACE
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <button
                                 onClick={() => navigate('/event/create')}
                                 style={{
                                     background: '#7FFFD4',
                                     color: '#000',
                                     border: 'none',
-                                    padding: '0.75rem 1.5rem',
+                                    padding: '0.4rem 1rem',
                                     borderRadius: '20px',
                                     fontWeight: 'bold',
+                                    fontSize: '0.8rem',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.5rem'
+                                    gap: '0.4rem'
                                 }}
                             >
-                                <FaPlus /> Create Event
-                            </button>
-
-                        </div>
-
-                        {/* View Toggle */}
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button
-                                onClick={() => setViewMode('all')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    background: viewMode === 'all' ? 'rgba(127, 255, 212, 0.2)' : 'transparent',
-                                    border: viewMode === 'all' ? '1px solid #7FFFD4' : '1px solid #333',
-                                    borderRadius: '20px',
-                                    color: viewMode === 'all' ? '#7FFFD4' : '#888',
-                                    cursor: 'pointer',
-                                    fontWeight: '600'
-                                }}
-                            >
-                                <FaCalendar style={{ marginRight: '0.5rem' }} />
-                                All Events
-                            </button>
-                            <button
-                                onClick={() => setViewMode('following')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    background: viewMode === 'following' ? 'rgba(127, 255, 212, 0.2)' : 'transparent',
-                                    border: viewMode === 'following' ? '1px solid #7FFFD4' : '1px solid #333',
-                                    borderRadius: '20px',
-                                    color: viewMode === 'following' ? '#7FFFD4' : '#888',
-                                    cursor: 'pointer',
-                                    fontWeight: '600'
-                                }}
-                            >
-                                <FaUsers style={{ marginRight: '0.5rem' }} />
-                                Following
+                                <FaPlus /> Create
                             </button>
                         </div>
                     </div>
+
+                    {/* Tabs */}
+                    <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                        <button
+                            onClick={() => setPageTab('calendar')}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: pageTab === 'calendar' ? '2px solid #7FFFD4' : '2px solid transparent',
+                                color: pageTab === 'calendar' ? '#7FFFD4' : '#888',
+                                padding: '0.5rem 0',
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                letterSpacing: '1px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <FaCalendar /> CALENDAR
+                        </button>
+                        <button
+                            onClick={() => setPageTab('events')}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: pageTab === 'events' ? '2px solid #7FFFD4' : '2px solid transparent',
+                                color: pageTab === 'events' ? '#7FFFD4' : '#888',
+                                padding: '0.5rem 0',
+                                fontSize: '0.9rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                letterSpacing: '1px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <FaList /> EVENTS
+                        </button>
+                    </div>
                 </div>
 
-                <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: selectedDate ? '2fr 1fr' : '1fr', gap: '2rem' }}>
-                        {/* Calendar Grid */}
-                        <div>
+                {/* Body Content */}
+                <div style={{ padding: '1rem' }}>
+
+                    {/* CALENDAR VIEW */}
+                    {pageTab === 'calendar' && (
+                        <div style={{ animation: 'fadeIn 0.3s ease' }}>
                             {/* Month Navigation */}
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: '1.5rem'
+                                marginBottom: '1.5rem',
+                                background: '#111',
+                                padding: '0.5rem',
+                                borderRadius: '12px',
+                                border: '1px solid #222'
                             }}>
-                                <button
-                                    onClick={handlePrevMonth}
-                                    style={{
-                                        background: '#222',
-                                        border: '1px solid #333',
-                                        borderRadius: '8px',
-                                        padding: '0.5rem 1rem',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <FaChevronLeft />
-                                </button>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+                                <button onClick={handlePrevMonth} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '0.5rem' }}><FaChevronLeft /></button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <h2 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
                                         {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                                     </h2>
-                                    <button
-                                        onClick={handleToday}
-                                        style={{
-                                            background: '#222',
-                                            border: '1px solid #333',
-                                            borderRadius: '8px',
-                                            padding: '0.5rem 1rem',
-                                            color: '#7FFFD4',
-                                            cursor: 'pointer',
-                                            fontSize: '0.9rem'
-                                        }}
-                                    >
-                                        Today
-                                    </button>
+                                    <button onClick={handleToday} style={{ background: 'rgba(127, 255, 212, 0.1)', border: 'none', borderRadius: '4px', color: '#7FFFD4', fontSize: '0.7rem', padding: '2px 8px', cursor: 'pointer', fontWeight: 'bold' }}>TODAY</button>
                                 </div>
-
-                                <button
-                                    onClick={handleNextMonth}
-                                    style={{
-                                        background: '#222',
-                                        border: '1px solid #333',
-                                        borderRadius: '8px',
-                                        padding: '0.5rem 1rem',
-                                        color: '#fff',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <FaChevronRight />
-                                </button>
+                                <button onClick={handleNextMonth} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: '0.5rem' }}><FaChevronRight /></button>
                             </div>
 
-                            {/* Weekday Headers */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(7, 1fr)',
-                                gap: '0.5rem',
-                                marginBottom: '0.5rem'
-                            }}>
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                    <div key={day} style={{
-                                        textAlign: 'center',
-                                        color: '#888',
-                                        fontWeight: '600',
-                                        fontSize: '0.9rem',
-                                        padding: '0.5rem'
-                                    }}>
-                                        {day}
-                                    </div>
+                            {/* Grid Headers */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '0.5rem', textAlign: 'center' }}>
+                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                                    <div key={d} style={{ color: '#666', fontSize: '0.75rem', fontWeight: 'bold' }}>{d}</div>
                                 ))}
                             </div>
 
                             {/* Calendar Days */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(7, 1fr)',
-                                gap: '0.5rem'
-                            }}>
-                                {calendarDays.map((day, index) => {
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+                                {calendarDays.map((day, i) => {
                                     const dayEvents = getEventsForDay(day.date);
                                     const isToday = day.date.toDateString() === new Date().toDateString();
                                     const isSelected = selectedDate && day.date.toDateString() === selectedDate.toDateString();
 
                                     return (
                                         <div
-                                            key={index}
-                                            onClick={() => handleDayClick(day.date)}
+                                            key={i}
+                                            onClick={() => setSelectedDate(day.date)}
                                             style={{
-                                                background: isSelected ? 'rgba(127, 255, 212, 0.2)' : '#111',
-                                                border: isToday ? '2px solid #7FFFD4' : '1px solid #333',
+                                                aspectRatio: '1',
+                                                background: isSelected ? 'rgba(127, 255, 212, 0.2)' : (day.isCurrentMonth ? '#1a1a1a' : '#0a0a0a'),
+                                                border: isToday ? '1px solid #7FFFD4' : (isSelected ? '1px solid rgba(127, 255, 212, 0.5)' : '1px solid #222'),
                                                 borderRadius: '8px',
-                                                padding: '0.75rem',
-                                                minHeight: '100px',
+                                                padding: '4px',
                                                 cursor: 'pointer',
-                                                opacity: day.isCurrentMonth ? 1 : 0.5,
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.background = '#1a1a1a';
-                                                }
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                if (!isSelected) {
-                                                    e.currentTarget.style.background = '#111';
-                                                }
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                opacity: day.isCurrentMonth ? 1 : 0.4
                                             }}
                                         >
-                                            <div style={{
-                                                fontWeight: 'bold',
-                                                marginBottom: '0.5rem',
-                                                color: isToday ? '#7FFFD4' : '#fff'
-                                            }}>
-                                                {day.date.getDate()}
+                                            <span style={{ fontSize: '0.8rem', color: isToday ? '#7FFFD4' : '#888', fontWeight: isToday ? 'bold' : 'normal' }}>{day.date.getDate()}</span>
+                                            <div style={{ flex: 1, display: 'flex', flexWrap: 'wrap', content: 'center', justifyContent: 'center', gap: '2px', alignContent: 'center' }}>
+                                                {dayEvents.slice(0, 4).map((evt, idx) => (
+                                                    <div key={idx} style={{ width: '4px', height: '4px', borderRadius: '50%', background: evt.color || '#7FFFD4' }} />
+                                                ))}
+                                                {dayEvents.length > 4 && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#666' }} />}
                                             </div>
-                                            {dayEvents.length > 0 && (
-                                                <div style={{ fontSize: '0.75rem', color: '#7FFFD4', display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
-                                                    {dayEvents.map((evt, evtIndex) => {
-                                                        // Icon Logic
-                                                        let icon = "📸"; // Default
-                                                        const name = (evt.title || evt.name || "").toLowerCase();
-                                                        const type = (evt.type || "").toLowerCase();
-
-                                                        if (name.includes('full moon')) icon = "🌕";
-                                                        else if (name.includes('lunar eclipse')) icon = "🌘";
-                                                        else if (name.includes('solar eclipse')) icon = "🌑";
-                                                        else if (name.includes('meteor')) icon = "✨";
-                                                        else if (name.includes('solstice') || name.includes('equinox')) icon = "🍂";
-                                                        else if (type.includes('holiday')) icon = "🎉";
-                                                        else if (evt.icon) icon = evt.icon;
-
-                                                        return (
-                                                            <span key={evt.id || evtIndex} title={evt.title || evt.name} style={{ fontSize: '14px' }}>
-                                                                {icon}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
-                        </div>
 
-                        {/* Selected Day Events */}
-                        {selectedDate && (
-                            <div>
-                                <div style={{
-                                    background: '#111',
-                                    border: '1px solid #333',
-                                    borderRadius: '12px',
-                                    padding: '1.5rem',
-                                    position: 'sticky',
-                                    top: '100px'
-                                }}>
-                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                                        {selectedDate.toLocaleDateString('en-US', {
-                                            weekday: 'long',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}
+                            {/* Selected Date Detail */}
+                            {selectedDate && (
+                                <div style={{ marginTop: '2rem', padding: '1rem', background: '#111', borderRadius: '12px', border: '1px solid #222', animation: 'fadeIn 0.2s ease' }}>
+                                    <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#7FFFD4' }}>
+                                        {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                                     </h3>
 
-                                    {/* Search photos from this date button */}
-                                    <button
-                                        onClick={() => navigate(`/search?date=${formatDateForInput(selectedDate)}`)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem',
-                                            background: 'rgba(127, 255, 212, 0.1)',
-                                            border: '1px solid #7FFFD4',
-                                            borderRadius: '8px',
-                                            color: '#7FFFD4',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '0.5rem',
-                                            marginBottom: '1rem'
-                                        }}
-                                    >
-                                        <FaSearch /> Search photos from this date
-                                    </button>
-
-                                    {selectedDayEvents.length === 0 ? (
-                                        <div style={{ color: '#666', textAlign: 'center', padding: '2rem 0' }}>
-                                            No events on this day
-                                        </div>
+                                    {getEventsForDay(selectedDate).length === 0 ? (
+                                        <div style={{ color: '#666', fontSize: '0.9rem', fontStyle: 'italic' }}>No events scheduled</div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            {selectedDayEvents.map(event => (
-                                                <div
-                                                    key={event.id}
-                                                    style={{
-                                                        background: '#222',
-                                                        border: '1px solid #333',
-                                                        borderRadius: '8px',
-                                                        padding: '1rem'
-                                                    }}
-                                                >
-                                                    <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                                                        {event.title}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                            {getEventsForDay(selectedDate).map(evt => (
+                                                <div key={evt.id} style={{ display: 'flex', gap: '0.8rem', alignItems: 'flex-start' }}>
+                                                    <div style={{ background: 'rgba(127, 255, 212, 0.1)', padding: '0.5rem', borderRadius: '8px', color: '#7FFFD4' }}>
+                                                        <FaClock />
                                                     </div>
-                                                    {event.description && (
-                                                        <div style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '0.5rem' }}>
-                                                            {event.description}
+                                                    <div>
+                                                        <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{evt.title || evt.name}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: '#888' }}>
+                                                            {new Date(evt.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </div>
-                                                    )}
-                                                    <div style={{ fontSize: '0.8rem', color: '#7FFFD4' }}>
-                                                        {new Date(event.eventDate).toLocaleTimeString('en-US', {
-                                                            hour: 'numeric',
-                                                            minute: '2-digit'
-                                                        })}
+                                                        {evt.location && <div style={{ fontSize: '0.8rem', color: '#666' }}>📍 {evt.location}</div>}
                                                     </div>
-                                                    {event.eventType && (
-                                                        <div style={{
-                                                            display: 'inline-block',
-                                                            marginTop: '0.5rem',
-                                                            padding: '0.25rem 0.75rem',
-                                                            background: 'rgba(127, 255, 212, 0.2)',
-                                                            borderRadius: '12px',
-                                                            fontSize: '0.75rem',
-                                                            color: '#7FFFD4'
-                                                        }}>
-                                                            {event.eventType}
-                                                        </div>
-                                                    )}
                                                 </div>
                                             ))}
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* EVENTS LIST VIEW */}
+                    {pageTab === 'events' && (
+                        <div style={{ animation: 'fadeIn 0.3s ease', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {loadingList ? (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>Loading upcoming events...</div>
+                            ) : listEvents.length === 0 ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', color: '#666', border: '1px dashed #333', borderRadius: '12px' }}>
+                                    No upcoming events found.
+                                </div>
+                            ) : (
+                                listEvents.map(event => (
+                                    <div
+                                        key={event.id}
+                                        onClick={() => navigate(`/event/${event.id}`)}
+                                        style={{
+                                            background: '#111',
+                                            border: '1px solid #222',
+                                            borderRadius: '12px',
+                                            padding: '1rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            gap: '1rem',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <div style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            padding: '0.5rem',
+                                            borderRadius: '8px',
+                                            minWidth: '50px'
+                                        }}>
+                                            <span style={{ fontSize: '0.7rem', color: '#7FFFD4', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                                                {new Date(event.eventDate).toLocaleString('default', { month: 'short' })}
+                                            </span>
+                                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff' }}>
+                                                {new Date(event.eventDate).getDate()}
+                                            </span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <h3 style={{ margin: '0 0 0.3rem 0', fontSize: '1rem', color: '#fff' }}>{event.name || event.title}</h3>
+                                            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#888' }}>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaClock size={10} /> {new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                {event.location && <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><FaMapMarkerAlt size={10} /> {event.location}</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </div>
 
+                <style>{`
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}</style>
             </div>
         </div>
-
-
     );
 };
 

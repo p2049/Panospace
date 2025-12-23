@@ -41,13 +41,35 @@ const DisciplineSelector = ({
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: '0.5rem',
-                    cursor: 'pointer'
+                    marginBottom: '1rem',
+                    cursor: 'pointer',
+                    background: isSectionCollapsed ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.08)',
+                    padding: '0.8rem 1.2rem',
+                    borderRadius: '12px',
+                    border: `1px solid ${isSectionCollapsed ? 'rgba(255,255,255,0.1)' : getRgba(0.3)}`,
+                    transition: 'all 0.3s ease',
+                    boxShadow: !isSectionCollapsed ? `0 4px 20px ${getRgba(0.15)}` : 'none'
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <label style={{ ...textStyle, fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-block' }}>Art Disciplines</label>
-                    <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <label style={{
+                        ...textStyle,
+                        fontSize: '0.9rem',
+                        fontWeight: '800',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        display: 'inline-block',
+                        filter: !isSectionCollapsed && !isGradient ? `drop-shadow(0 0 5px ${accentColor}80)` : 'none'
+                    }}>Art Disciplines</label>
+                    <span style={{
+                        fontSize: '0.75rem',
+                        color: isSectionCollapsed ? '#888' : '#fff',
+                        background: isSectionCollapsed ? 'rgba(255,255,255,0.05)' : getRgba(0.2),
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        transition: 'all 0.3s'
+                    }}>
                         {selectedMain.length} selected
                     </span>
                 </div>

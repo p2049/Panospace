@@ -19,7 +19,7 @@ function renderAbstractToCanvas(canvas, variant, baseColor) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
-    const width = 3840;
+    const width = 1920;
     const height = 1080;
     canvas.width = width;
     canvas.height = height;
@@ -73,8 +73,8 @@ function renderAbstractToCanvas(canvas, variant, baseColor) {
         ctx.stroke();
     };
 
-    // Generate 70 fine glowing ribbons (Increased density)
-    for (let i = 0; i < 70; i++) {
+    // Generate 40 fine glowing ribbons (Reduced density for performance)
+    for (let i = 0; i < 40; i++) {
         const c = colors[Math.floor(rand() * colors.length)];
         const yBase = height * 0.5 + (rand() - 0.5) * height * 1.2; // Overflow coverage
         const frequency = 0.0002 + rand() * 0.0018;
@@ -88,7 +88,7 @@ function renderAbstractToCanvas(canvas, variant, baseColor) {
 
     // 4. DATA NODES (The Neural Part)
     ctx.globalAlpha = 0.6;
-    for (let k = 0; k < 150; k++) {
+    for (let k = 0; k < 80; k++) {
         const px = rand() * width;
         const py = rand() * height;
         const size = rand() * 2;

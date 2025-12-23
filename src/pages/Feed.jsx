@@ -182,15 +182,15 @@ const Feed = () => {
             {/* Planet Logo / View Toggle - Visible in both modes */}
             <div
                 style={{
-                    position: 'absolute',
-                    top: 'max(0.75rem, env(safe-area-inset-top))',
-                    left: '1rem',
-                    zIndex: 1100, // Above FeedControlBar
+                    position: 'fixed',
+                    top: 'max(0.5rem, env(safe-area-inset-top))',
+                    left: '0.75rem',
+                    zIndex: 9999999,
                     pointerEvents: 'auto',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'flex-start',
-                    gap: '2px', // Tight vertical gap
+                    gap: '2px',
                     cursor: 'pointer',
                     background: 'transparent',
                     backdropFilter: 'none',
@@ -276,8 +276,25 @@ const Feed = () => {
                 </div>
             </div>
 
-            {/* List View Controls */}
-            {feedViewMode === 'list' && <FeedControlBar />}
+            {/* Feed Controls - Only visible in List mode */}
+            {feedViewMode === 'list' && (
+                <div style={{
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: 'max-content',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: 'max(8px, env(safe-area-inset-top))',
+                    background: 'rgba(0,0,0,0.85)',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    zIndex: 80000,
+                }}>
+                    <FeedControlBar />
+                </div>
+            )}
 
             {
                 loading && posts.length === 0 && (

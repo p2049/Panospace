@@ -1,10 +1,9 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaImage, FaAlignLeft } from 'react-icons/fa';
-import SmartImage from './SmartImage';
+import GridImage from './GridImage';
 import { getDerivedDate } from '@/core/utils/dates';
 import SpaceCardBadge from './SpaceCardBadge';
-import SoundTagBadge from './SoundTagBadge';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 
 const WRITER_THEMES = {
@@ -131,10 +130,8 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                             </div>
                         </div>
                     ) : displaySrc ? (
-                        <SmartImage
+                        <GridImage
                             src={displaySrc}
-                            previewSrc={placeholderSrc}
-                            thumbnailSrc={placeholderSrc} // Use placeholder as thumbnail level
                             alt={post.title || ''}
                             aspectRatio="1/1"
                             objectFit="cover"
@@ -143,13 +140,8 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                                 height: '100%',
                                 position: 'absolute',
                                 top: 0,
-                                left: 0,
-                                display: 'block'
+                                left: 0
                             }}
-                            showDateStamp={post.showDateStamp}
-                            dateStampStyle={post.dateStampStyle}
-                            date={getDerivedDate(post)}
-                            eager={false} // Ensure lazy loading
                         />
                     ) : (
                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -174,14 +166,6 @@ const GridPostCard = memo(({ post, contextPosts, selectedOrientation, selectedAs
                             <SpaceCardBadge
                                 type={post.isSpaceCardCreator ? 'creator' : 'owner'}
                                 rarity={post.spaceCardRarity || 'Common'}
-                            />
-                        </div>
-                    )}
-                    {post.soundTagId && (
-                        <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left' }}>
-                            <SoundTagBadge
-                                hasSound={true}
-                                label="" // No text for grid view
                             />
                         </div>
                     )}

@@ -123,7 +123,9 @@ export const usePersonalizedFeed = ({
                 return;
             }
 
-            let limitSize = isFollowing ? 50 : 100;
+            // Mobile optimization: smaller batch sizes for faster first paint
+            const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent));
+            let limitSize = isFollowing ? (isMobile ? 20 : 50) : (isMobile ? 30 : 100);
             let constraints = [];
 
             // 1. STRATEGY: Following

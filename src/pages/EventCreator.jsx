@@ -357,69 +357,7 @@ const EventCreator = () => {
                         </div>
                     </section>
 
-                    {/* Monetization (Contests Only) */}
-                    {(eventType === 'contest' || eventType === 'photo-month') && (
-                        <section style={{
-                            background: 'linear-gradient(135deg, #1a1a1a 0%, #222 100%)',
-                            padding: '1.5rem',
-                            borderRadius: '12px',
-                            border: '1px solid #FFD700'
-                        }}>
-                            <h2 style={{ fontSize: '1.1rem', color: '#FFD700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FaGem /> Monetization
-                            </h2>
 
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '0.2rem' }}>Pay-to-Enter Contest</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#888' }}>Participants pay an entry fee to join.</div>
-                                </div>
-                                <div
-                                    onClick={() => setIsPayToEnter(!isPayToEnter)}
-                                    style={{
-                                        width: '50px', height: '26px',
-                                        background: isPayToEnter ? '#FFD700' : '#333',
-                                        borderRadius: '13px', position: 'relative', cursor: 'pointer',
-                                        transition: 'background 0.2s'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '22px', height: '22px', background: '#fff', borderRadius: '50%',
-                                        position: 'absolute', top: '2px',
-                                        left: isPayToEnter ? '26px' : '2px', transition: 'left 0.2s'
-                                    }} />
-                                </div>
-                            </div>
-
-                            {isPayToEnter && (
-                                <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
-                                    <div style={{ marginBottom: '1rem' }}>
-                                        <label style={{ display: 'block', color: '#ccc', marginBottom: '0.5rem' }}>Entry Fee ($)</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <FaDollarSign style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={entryFee}
-                                                onChange={e => setEntryFee(e.target.value)}
-                                                style={{ width: '100%', padding: '0.8rem 0.8rem 0.8rem 2.5rem', background: '#000', border: '1px solid #444', borderRadius: '8px', color: '#fff' }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        padding: '1rem',
-                                        background: 'rgba(255, 215, 0, 0.1)',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                                        fontSize: '0.9rem',
-                                        color: '#FFD700'
-                                    }}>
-                                        <strong>Prize Pool Split:</strong> 80% to Winner / 20% to Platform
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-                    )}
 
                     {/* Prompt Text (for prompt events) */}
                     {eventType === 'prompt' && (

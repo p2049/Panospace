@@ -7,17 +7,24 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 //          plus a subtle canvas star/dust field.
 // Vibe: Deep, Atmospheric, Turbulent.
 
+const RENDER_CACHE = new Map();
+
 const NebulaBanner = () => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
+        if (RENDER_CACHE.has('nebula')) {
+            setBgImage(RENDER_CACHE.get('nebula'));
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const w = 3840;
-        const h = 2160;
+        const w = 1920;
+        const h = 1080;
         canvas.width = w;
         canvas.height = h;
 
@@ -35,7 +42,7 @@ const NebulaBanner = () => {
             ctx.fill();
         };
 
-        for (let i = 0; i < 400; i++) {
+        for (let i = 0; i < 150; i++) {
             drawStar(
                 Math.random() * w,
                 Math.random() * h,
@@ -46,7 +53,7 @@ const NebulaBanner = () => {
 
         // 3. BRAND COLORED DUST (Very subtle)
         // Just small specs of Ion Blue / Pink floating
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 40; i++) {
             ctx.fillStyle = Math.random() > 0.5 ? COLORS.ionBlue : COLORS.solarPink;
             ctx.globalAlpha = Math.random() * 0.4;
             const s = Math.random() * 2;
@@ -65,7 +72,9 @@ const NebulaBanner = () => {
         ctx.fillStyle = vig;
         ctx.fillRect(0, 0, w, h);
 
-        setBgImage(canvas.toDataURL('image/webp', 0.95));
+        const result = canvas.toDataURL('image/webp', 0.95);
+        RENDER_CACHE.set('nebula', result);
+        setBgImage(result);
 
     }, []);
 

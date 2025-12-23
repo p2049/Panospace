@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
+import { BRAND_RAINBOW } from '@/core/constants/colorPacks';
 
 /**
  * TrainWindowBanner - Continuous World Parallax
