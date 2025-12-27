@@ -26,7 +26,7 @@ import CollectionSelector from '@/components/create-post/CollectionSelector';
 import RatingSystemSelector from '@/components/create-post/RatingSystemSelector';
 
 import SearchEmojiPicker from '@/components/SearchEmojiPicker';
-import ImageSizeWarningModal from '@/components/ImageSizeWarningModal';
+
 import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { SpaceCardService } from '@/services/SpaceCardService';
@@ -405,17 +405,7 @@ const CreatePost = () => {
         collaborators: []
     });
 
-    // Image Size Warning Modal State
-    const [sizeWarningModal, setSizeWarningModal] = useState({
-        isOpen: false,
-        file: null,
-        fileIndex: null,
-        imageName: '',
-        actualSize: '',
-        isPremium: false,
-        isScaling: false,
-        pendingFiles: [],  // Queue of files to process after current
-    });
+    const [isScaling, setIsScaling] = useState(false);
     const [userIsPremium, setUserIsPremium] = useState(false);
 
 
@@ -462,174 +452,81 @@ const CreatePost = () => {
         }
     };
 
-    // Handle file selection with size validation
+    // Handle file selection with automatic size scaling
     const handleFileSelect = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
+        const selectedFiles = Array.from(e.target.files);
+        if (selectedFiles.length === 0) return;
 
         // Enforce 10 image limit
-        if (slides.length + files.length > 10) {
+        if (slides.length + selectedFiles.length > 10) {
             alert('You can only upload up to 10 images per post.');
             return;
         }
 
-        // Get ALL EXIF from first slide to auto-fill new slides
+        // Get ALL EXIF from first slide to auto-fill new slides (if adding more)
         const firstSlideExif = slides.length > 0 ? (slides[0].manualExif || slides[0].exif) : null;
         const commonExif = firstSlideExif ? { ...firstSlideExif } : null;
 
-        // Check each file for size limits
-        const validFiles = [];
-        let oversizedFile = null;
-        let remainingFiles = [];
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const validation = validateImageSize(file.size, userIsPremium);
-
-            if (validation.isValid) {
-                validFiles.push(file);
-            } else {
-                // Found an oversized file - show modal
-                oversizedFile = file;
-                remainingFiles = files.slice(i + 1); // Files after this one
-                break;
-            }
-        }
-
-        // Add valid files as slides
-        if (validFiles.length > 0) {
-            const newSlides = validFiles.map(file => ({
-                type: 'image',
-                file,
-                preview: URL.createObjectURL(file),
-                title: '',
-                exif: null,
-                manualExif: commonExif
-            }));
-
-            setSlides(prev => {
-                const updated = [...prev, ...newSlides];
-                if (prev.length === 0) setActiveSlideIndex(0);
-                return updated;
-            });
-        }
-
-        // If there's an oversized file, show the warning modal
-        if (oversizedFile) {
-            const validation = validateImageSize(oversizedFile.size, userIsPremium);
-            setSizeWarningModal({
-                isOpen: true,
-                file: oversizedFile,
-                fileIndex: slides.length + validFiles.length,
-                imageName: oversizedFile.name,
-                actualSize: validation.actualMB,
-                isPremium: userIsPremium,
-                isScaling: false,
-                pendingFiles: remainingFiles,
-                commonExif: commonExif,
-            });
-        }
-    };
-
-    // Handle scaling the oversized image
-    const handleScaleDown = async () => {
-        const { file, pendingFiles, commonExif } = sizeWarningModal;
-        if (!file) return;
-
-        setSizeWarningModal(prev => ({ ...prev, isScaling: true }));
+        setIsScaling(true);
+        const newProcessedSlides = [];
 
         try {
-            const maxSize = getMaxImageSize(userIsPremium);
-            const result = await scaleImageToFit(file, maxSize);
+            for (const file of selectedFiles) {
+                const validation = validateImageSize(file.size, userIsPremium);
+                let fileToUse = file;
+                let wasScaled = false;
+                let originalSizeStr = null;
+                let finalSizeStr = null;
 
-            if (result.success) {
-                // Add the scaled file as a slide
-                const newSlide = {
+                if (!validation.isValid) {
+                    // Automatically downscale without prompt
+                    const maxSizeThreshold = getMaxImageSize(userIsPremium);
+                    const result = await scaleImageToFit(file, maxSizeThreshold);
+
+                    if (result.success) {
+                        fileToUse = result.file;
+                        wasScaled = true;
+                        originalSizeStr = formatFileSizeMB(result.originalSize);
+                        finalSizeStr = formatFileSizeMB(result.finalSize);
+                        logger.log(`[CreatePost] Auto-scaled ${file.name} from ${originalSizeStr} to ${finalSizeStr}`);
+                    } else {
+                        logger.warn(`[CreatePost] Failed to auto-scale ${file.name}. It might be too large even after compression.`);
+                        // If scaling failed, we still try to use the best effort file if it's smaller, 
+                        // but if it's still over limit, we must alert and skip to avoid storage rule rejection.
+                        if (fileToUse.size > maxSizeThreshold) {
+                            alert(`Could not add "${file.name}" because it is larger than the limit (${validation.actualMB} > ${getMaxImageSizeMB(userIsPremium)}MB) and could not be compressed.`);
+                            continue;
+                        }
+                    }
+                }
+
+                newProcessedSlides.push({
                     type: 'image',
-                    file: result.file,
-                    preview: URL.createObjectURL(result.file),
+                    file: fileToUse,
+                    preview: URL.createObjectURL(fileToUse),
                     title: '',
                     exif: null,
-                    manualExif: commonExif || null,
-                    wasScaled: true,
-                    originalSize: formatFileSizeMB(result.originalSize),
-                    scaledSize: formatFileSizeMB(result.finalSize),
-                };
+                    manualExif: commonExif,
+                    wasScaled,
+                    originalSize: originalSizeStr,
+                    scaledSize: finalSizeStr
+                });
+            }
 
+            if (newProcessedSlides.length > 0) {
                 setSlides(prev => {
-                    const updated = [...prev, newSlide];
+                    const updated = [...prev, ...newProcessedSlides];
                     if (prev.length === 0) setActiveSlideIndex(0);
                     return updated;
                 });
-
-                // Show success feedback
-                logger.log(`[CreatePost] Scaled image from ${formatFileSizeMB(result.originalSize)} to ${formatFileSizeMB(result.finalSize)}`);
-
-                // Close modal and process remaining files
-                setSizeWarningModal({
-                    isOpen: false,
-                    file: null,
-                    fileIndex: null,
-                    imageName: '',
-                    actualSize: '',
-                    isPremium: false,
-                    isScaling: false,
-                    pendingFiles: [],
-                });
-
-                // Process any remaining files
-                if (pendingFiles && pendingFiles.length > 0) {
-                    // Create a synthetic event to trigger handleFileSelect
-                    const dataTransfer = new DataTransfer();
-                    pendingFiles.forEach(f => dataTransfer.items.add(f));
-                    handleFileSelect({ target: { files: dataTransfer.files } });
-                }
-            } else {
-                alert(`Could not scale image to fit within limit: ${result.error}`);
-                setSizeWarningModal(prev => ({ ...prev, isScaling: false }));
             }
         } catch (err) {
-            logger.error('[CreatePost] Scaling failed:', err);
-            alert(`Scaling failed: ${err.message}`);
-            setSizeWarningModal(prev => ({ ...prev, isScaling: false }));
-        }
-    };
-
-    // Handle upgrade navigation
-    const handleUpgrade = () => {
-        setSizeWarningModal({
-            isOpen: false,
-            file: null,
-            fileIndex: null,
-            imageName: '',
-            actualSize: '',
-            isPremium: false,
-            isScaling: false,
-            pendingFiles: [],
-        });
-        navigate('/subscribe'); // Navigate to subscription page
-    };
-
-    // Handle cancel - skip this file and continue with the rest
-    const handleCancelOversized = () => {
-        const { pendingFiles, commonExif } = sizeWarningModal;
-
-        setSizeWarningModal({
-            isOpen: false,
-            file: null,
-            fileIndex: null,
-            imageName: '',
-            actualSize: '',
-            isPremium: false,
-            isScaling: false,
-            pendingFiles: [],
-        });
-
-        // Process remaining files if any
-        if (pendingFiles && pendingFiles.length > 0) {
-            const dataTransfer = new DataTransfer();
-            pendingFiles.forEach(f => dataTransfer.items.add(f));
-            handleFileSelect({ target: { files: dataTransfer.files } });
+            logger.error('[CreatePost] File processing error:', err);
+            alert('An error occurred while processing your images.');
+        } finally {
+            setIsScaling(false);
+            // Clear input so same files can be picked again if removed
+            if (e.target) e.target.value = '';
         }
     };
 
@@ -3097,18 +2994,34 @@ const CreatePost = () => {
                 }
             `}</style>
 
-            {/* Image Size Warning Modal */}
-            <ImageSizeWarningModal
-                isOpen={sizeWarningModal.isOpen}
-                imageName={sizeWarningModal.imageName}
-                actualSize={sizeWarningModal.actualSize}
-                limitSize={getMaxImageSizeMB(userIsPremium)}
-                isPremium={userIsPremium}
-                onScaleDown={handleScaleDown}
-                onUpgrade={handleUpgrade}
-                onCancel={handleCancelOversized}
-                isScaling={sizeWarningModal.isScaling}
-            />
+            {/* Scaling Indicator Overlay */}
+            {isScaling && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0, 0, 0, 0.7)',
+                    backdropFilter: 'blur(5px)',
+                    zIndex: 99999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '1rem'
+                }}>
+                    <FaRocket className="loading-rocket" size={48} color="#7FFFD4" />
+                    <h2 style={{ color: '#7FFFD4', margin: 0 }}>Scaling to fit...</h2>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Optimizing images for high-speed upload</p>
+                    <style>{`
+                        @keyframes rocket-float {
+                            0%, 100% { transform: translateY(0) rotate(45deg); }
+                            50% { transform: translateY(-20px) rotate(45deg); }
+                        }
+                        .loading-rocket {
+                            animation: rocket-float 1.5s ease-in-out infinite;
+                        }
+                    `}</style>
+                </div>
+            )}
         </div >
     );
 };

@@ -59,7 +59,7 @@ const SearchResults = ({
                     width: '100%',
                     flex: '1'
                 }}>
-                    {viewMode === 'grid' ? (
+                    {viewMode === 'grid' && currentMode !== 'text' ? (
                         <div
                             key={`${currentMode}-${results[currentMode]?.length || 0}-${sortBy}`}
                             style={{
@@ -80,11 +80,6 @@ const SearchResults = ({
     `}</style>
                             {currentMode === 'posts' && results.posts.map(post => {
                                 if (isMarketplaceMode) {
-                                    // If in marketplace mode, we expect 'post' to actually be a ShopItem or a Post with shop data?
-                                    // For now, let's assume 'post' object has what we need OR we are reusing the post visual.
-                                    // NOTE: Real implementation would require fetching 'shopItems' in Search.jsx.
-                                    // For this step, I'm just adding the UI switch.
-                                    // Let's render a "Shop Item Version" of the card.
                                     return (
                                         <div key={post.id} style={{ position: 'relative', borderRadius: '12px', overflow: 'visible', border: '1px solid #333' }}>
                                             <GridPostCard
@@ -123,13 +118,6 @@ const SearchResults = ({
                                     />
                                 );
                             })}
-                            {currentMode === 'text' && results.text.map(post => (
-                                <GridPostCard
-                                    key={post.id}
-                                    post={post}
-                                    contextPosts={results.text}
-                                />
-                            ))}
                             {currentMode === 'users' && results.users.map(user => (
                                 <UserCard key={user.id} user={user} />
                             ))}
@@ -158,6 +146,8 @@ const SearchResults = ({
                         <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <ListViewContainer
                                 posts={results[currentMode] || []}
+                                listFilter={currentMode === 'text' ? 'text' : 'all'}
+                                onRefresh={() => performSearch(false)}
                                 renderPost={(item) => {
                                     switch (currentMode) {
                                         case 'users':
@@ -180,7 +170,7 @@ const SearchResults = ({
                                         case 'posts':
                                         case 'text':
                                         default:
-                                            return <Post post={item} priority="normal" viewMode="list" />;
+                                            return <Post post={item} priority="normal" viewMode="list" onRefresh={() => performSearch(false)} />;
                                     }
                                 }}
                                 style={{

@@ -58,6 +58,14 @@ export const CITY_THEMES = {
         foreground: { type: 'lunar_surface', color: '#050505' }
     },
 
+    'city_realistic': {
+        name: 'Realistic Metropolis',
+        sky: [BRAND_COLORS.black, '#0d1b2a', '#1b263b'],
+        buildings: { color: '#050a10', windowColor: ['#fff8dc', '#f0e68c'], density: 1.0, glow: false },
+        atmosphere: { stars: true },
+        celestial: { type: 'none' }
+    },
+
     'city_retrowave': {
         name: 'Retrowave',
         sky: [BRAND_COLORS.voidPurple, BRAND_COLORS.black],

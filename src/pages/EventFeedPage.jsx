@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { EventService } from '@/services/EventService';
 import InfiniteGrid from '@/components/InfiniteGrid';
+import GridPostCard from '@/components/GridPostCard';
 import StarBackground from '@/components/StarBackground';
 import { FaArrowLeft, FaFire, FaClock, FaTrophy, FaStar } from 'react-icons/fa';
 import { useThemeStore } from '@/core/store/useThemeStore';
@@ -271,9 +272,15 @@ const EventFeedPage = () => {
                 ) : (
                     <InfiniteGrid
                         items={posts}
+                        renderItem={(item) => (
+                            <GridPostCard
+                                post={item}
+                                contextPosts={posts}
+                            />
+                        )}
                         hasMore={false} // Simple MVP
-                        loadMore={() => { }}
-                        loading={false}
+                        onLoadMore={() => { }}
+                        loading={loading}
                     />
                 )}
 

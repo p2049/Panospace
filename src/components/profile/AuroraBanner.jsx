@@ -89,15 +89,19 @@ const AuroraBanner = ({ starSettings, variant = 'main' }) => {
             ctx.fillRect(0, 0, width, height);
 
             ctx.globalCompositeOperation = 'screen';
-            const coreY = height * 0.85;
-            const grad = ctx.createLinearGradient(0, coreY - 120, 0, coreY + 120);
+            // Use 50% for centering, or slightly lower for effect. 
+            // Was 0.85 which pushed it too far down on thin banners.
+            const coreY = height * 0.5;
+            const bandHeight = height * 0.6; // Scale height relatively
+
+            const grad = ctx.createLinearGradient(0, coreY - bandHeight / 2, 0, coreY + bandHeight / 2);
             grad.addColorStop(0.2, 'transparent');
             grad.addColorStop(0.5, hexToRgba(palette.coreGrad[0], 0.4));
             grad.addColorStop(0.8, hexToRgba(palette.coreGrad[1], 0.3));
             grad.addColorStop(1, 'transparent');
 
             ctx.fillStyle = grad;
-            ctx.fillRect(0, coreY - 120, width, 240);
+            ctx.fillRect(0, coreY - bandHeight / 2, width, bandHeight);
 
             shards.forEach(s => {
                 if (!isLowPower) {
@@ -105,7 +109,11 @@ const AuroraBanner = ({ starSettings, variant = 'main' }) => {
                     if (Math.abs(s.targetX - s.x) < 2) s.targetX = Math.random() * width;
                 }
                 const pulse = Math.sin(time * 0.04 + s.x * 0.005) * 0.5 + 0.5;
-                const h = s.h * (1 + pulse * 2);
+                // Scale shard height relative to canvas height
+                // original was 20-60, let's say 10%-30% of height?
+                const baseH = s.h * (height / 200);
+                const h = baseH * (1 + pulse * 2);
+
                 ctx.globalAlpha = s.opacity * (0.4 + pulse * 0.6);
                 ctx.fillStyle = s.color;
                 ctx.fillRect(s.x, coreY - h / 2, s.width, h);

@@ -1,7 +1,7 @@
 .post-actions-container {
     position: absolute;
-    bottom: max(120px, calc(120px + env(safe-area-inset-bottom)));
-    /* Higher for mobile visibility */
+    bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
+    /* Lowered back to standard position */
     right: 20px;
     z-index: 10;
     display: flex;

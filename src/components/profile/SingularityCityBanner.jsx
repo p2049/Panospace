@@ -26,8 +26,8 @@ const SingularityCityBanner = () => {
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const w = 1920;
-        const h = 1080;
+        const w = 2560;
+        const h = 800; // Banner-optimized height
         canvas.width = w;
         canvas.height = h;
 

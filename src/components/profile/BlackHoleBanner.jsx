@@ -15,8 +15,8 @@ function renderBlackHoleToCanvas(canvas) {
     if (RENDER_CACHE.has(cacheKey)) return RENDER_CACHE.get(cacheKey);
 
     const ctx = canvas.getContext('2d');
-    const w = 1920; // Reduced from 4K for performance
-    const h = 1080;
+    const w = 2560; // Banner Optimized Width
+    const h = 800; // Banner Optimized Height
     canvas.width = w;
     canvas.height = h;
 

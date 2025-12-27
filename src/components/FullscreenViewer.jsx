@@ -2,12 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { FaTimes, FaChevronLeft, FaChevronRight, FaInfoCircle, FaCamera } from 'react-icons/fa';
 import { formatExifForDisplay } from '@/core/utils/exif';
 import { preloadImage } from '@/core/utils/imageCache';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [showInfo, setShowInfo] = useState(false);
-    const [touchStart, setTouchStart] = useState(null);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [width, setWidth] = useState(0);
+    const carouselRef = useRef(null);
+
+    // Track container width for pixel-perfect carousel movement
+    useEffect(() => {
+        if (!carouselRef.current) return;
+
+        const updateWidth = () => {
+            if (carouselRef.current) {
+                setWidth(carouselRef.current.offsetWidth);
+            }
+        };
+
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(carouselRef.current);
+        updateWidth();
+
+        return () => observer.disconnect();
+    }, []);
 
     // Normalize items
     let items = post.items || post.slides || [];
@@ -47,21 +65,22 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
         });
     }, [currentSlide, items]);
 
-    const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
-    const handleTouchEnd = (e) => {
-        if (!touchStart) return;
-        const touchEnd = e.changedTouches[0].clientX;
-        const diff = touchStart - touchEnd;
-        if (Math.abs(diff) > 50) {
-            if (diff > 0) { // Left swipe
-                if (currentSlide < totalSlides - 1) setCurrentSlide(c => c + 1);
-                else if (onNext) onNext();
-            } else { // Right swipe
-                if (currentSlide > 0) setCurrentSlide(c => c - 1);
-                else if (onPrev) onPrev();
-            }
+    const handleDragEnd = (e, info) => {
+        const offset = info.offset.x;
+        const velocity = info.velocity.x;
+        const currentWidth = width || window.innerWidth;
+
+        // IG Style One-at-a-time snap:
+        if (offset < -currentWidth * 0.2 || velocity < -500) {
+            // Commit next
+            if (currentSlide < totalSlides - 1) setCurrentSlide(c => c + 1);
+            else if (onNext) onNext();
+        } else if (offset > currentWidth * 0.2 || velocity > 500) {
+            // Commit prev
+            if (currentSlide > 0) setCurrentSlide(c => c - 1);
+            else if (onPrev) onPrev();
         }
-        setTouchStart(null);
+        // Snap back happens automatically if state doesn't change
     };
 
     // Keyboard Navigation
@@ -99,9 +118,18 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
 
     return (
         <div
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-            style={{ position: 'fixed', inset: 0, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, touchAction: 'pan-y' }}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                background: '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10000,
+                overflow: 'hidden',
+                touchAction: 'pan-y pinch-zoom'
+            }}
+            ref={carouselRef}
         >
             {/* Close */}
             <button onClick={onClose} aria-label="Close viewer" style={{ position: 'absolute', top: '1rem', right: '1rem', width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, WebkitTapHighlightColor: 'transparent' }}>
@@ -138,20 +166,65 @@ const FullscreenViewer = ({ post, onClose, onNext, onPrev }) => {
                 <FaInfoCircle />
             </button>
 
-            {/* Main Image */}
-            <img
-                src={imageUrl}
-                alt={post.title || 'Post'}
-                loading="eager"
-                decoding="async"
-                style={{
-                    width: '100%',
-                    height: 'auto',
-                    maxHeight: '100vh',
-                    objectFit: 'contain'
-                }}
-                onError={(e) => { e.target.src = ''; e.target.alt = 'Failed to load'; e.target.style.display = 'none'; }}
-            />
+            {/* Slides Container */}
+            {items.map((item, index) => {
+                const url = item?.url || (typeof item === 'string' ? item : post?.images?.[0]?.url || post.imageUrl || post.shopImageUrl || '');
+                return (
+                    <motion.div
+                        key={index}
+                        drag="x"
+                        dragDirectionLock
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={1}
+                        dragMomentum={false}
+                        onDragEnd={handleDragEnd}
+                        animate={{ x: (index - currentSlide) * width }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                            mass: 0.8
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            willChange: 'transform'
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                position: 'relative'
+                            }}
+                        >
+                            <img
+                                src={url}
+                                alt={post.title || `Slide ${index + 1}`}
+                                loading={Math.abs(index - currentSlide) <= 1 ? "eager" : "lazy"}
+                                decoding="async"
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100vh',
+                                    objectFit: 'contain',
+                                    userSelect: 'none',
+                                    WebkitUserDrag: 'none'
+                                }}
+                                onError={(e) => { e.target.src = ''; e.target.alt = 'Failed to load'; e.target.style.display = 'none'; }}
+                            />
+                        </div>
+                    </motion.div>
+                );
+            })}
 
             {/* Slide indicator */}
             {totalSlides > 1 && (

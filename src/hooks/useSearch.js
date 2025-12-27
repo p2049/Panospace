@@ -297,12 +297,16 @@ export const useSearch = (config = {}) => {
                     ];
                 } else {
                     // Standard Feed (Art/Social)
-                    const targetContentMode = type || 'social';
                     constraints = [
-                        where('type', '==', targetContentMode),
                         orderBy(orderByField, orderDirection),
                         limit(mobileLimit(50))
                     ];
+
+                    // Only add type filter if it's NOT 'all'
+                    if (type !== 'all') {
+                        const targetContentMode = type || 'social';
+                        constraints.unshift(where('type', '==', targetContentMode));
+                    }
                 }
 
                 if (filters.parkId) {
@@ -600,8 +604,19 @@ export const useSearch = (config = {}) => {
                 snapshot = await getDocs(q);
             } catch (indexErr) {
                 logger.warn('Studios Search: Missing index, falling back to basic query', indexErr);
-                const fallbackQ = query(galleriesRef, orderBy('createdAt', 'desc'), limit(50));
-                snapshot = await getDocs(fallbackQ);
+                // Fallback: Must maintain visibility filter? Galleries usually have visibility.
+                const fallbackQ = query(
+                    galleriesRef,
+                    where('visibility', '==', 'public'),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+                try {
+                    snapshot = await getDocs(fallbackQ);
+                } catch (fallbackErr) {
+                    logger.error('Galleries Search Fallback failed:', fallbackErr);
+                    return { data: [], lastDoc: null };
+                }
             }
 
             const docs = snapshot.docs.map(d => ({
@@ -724,9 +739,19 @@ export const useSearch = (config = {}) => {
                 snapshot = await getDocs(q);
             } catch (indexErr) {
                 logger.warn('Collections Search: Missing index, falling back to basic query', indexErr);
-                // Fallback: Drop visibility filter or keywords and just get recent
-                const fallbackQ = query(collectionsRef, orderBy('createdAt', 'desc'), limit(50));
-                snapshot = await getDocs(fallbackQ);
+                // Fallback: Must maintain visibility filter for firestore rules
+                const fallbackQ = query(
+                    collectionsRef,
+                    where('visibility', '==', 'public'),
+                    orderBy('createdAt', 'desc'),
+                    limit(50)
+                );
+                try {
+                    snapshot = await getDocs(fallbackQ);
+                } catch (fallbackErr) {
+                    logger.error('Collections Search Fallback failed:', fallbackErr);
+                    return { results: [], lastDoc: null };
+                }
             }
             const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
@@ -826,7 +851,12 @@ export const useSearch = (config = {}) => {
             } catch (indexErr) {
                 logger.warn('Contests Search: Missing index, falling back to basic query', indexErr);
                 const fallbackQ = query(contestsRef, orderBy('deadline', 'asc'), limit(50));
-                snapshot = await getDocs(fallbackQ);
+                try {
+                    snapshot = await getDocs(fallbackQ);
+                } catch (fallbackErr) {
+                    logger.error('Contests Search Fallback failed:', fallbackErr);
+                    return { data: [], lastDoc: null };
+                }
             }
             const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;

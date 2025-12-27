@@ -332,7 +332,7 @@ const FilmStripPost = ({ post, images = [], uiOverlays = null, priority = 'norma
                 right: '20px',
                 zIndex: 10
             }}>
-                <LikeButton postId={post?.id || postId} />
+                <LikeButton postId={post?.id || postId} enableRatings={post?.enableRatings} showCount={true} />
             </div>
 
             {/* Post Details Sidebar */}

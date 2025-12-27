@@ -293,7 +293,9 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
 
     // Defensive Fallback for Theme
     let theme = themeOverride || CITY_THEMES[themeId];
-    if (!theme) theme = CITY_THEMES['city_realistic'];
+    if (!theme) {
+        theme = CITY_THEMES['city_realistic'] || CITY_THEMES['city_vaporwave'] || Object.values(CITY_THEMES)[0];
+    }
 
     // Check Cache
     const starKey = starSettings?.enabled !== undefined ? `_s${starSettings.enabled}_c${starSettings.color}` : '';
@@ -321,9 +323,9 @@ function renderCityToCanvas(canvas, themeId, starSettings, themeOverride) {
         return seed / 233280;
     };
 
-    // HIGH RES KINETIC
-    const width = 1920;
-    const height = 1080;
+    // HIGH RES KINETIC (Banner Optimized Aspect Ratio)
+    const width = 2560;
+    const height = 800; // Wider and shorter to prevent zooming on desktop
     canvas.width = width;
     canvas.height = height;
 

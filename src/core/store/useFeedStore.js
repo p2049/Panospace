@@ -132,7 +132,14 @@ export const useFeedStore = create(
 
             // View Mode (Session Only - 'image' | 'list')
             feedViewMode: 'image',
-            setFeedViewMode: (mode) => set({ feedViewMode: mode }),
+            setFeedViewMode: (mode) => {
+                const state = get();
+                if (mode === 'image' && state.listFilter === 'text') {
+                    set({ feedViewMode: mode, listFilter: 'visual' });
+                } else {
+                    set({ feedViewMode: mode });
+                }
+            },
 
             // List View Filter (Session Only - 'all' | 'visual' | 'text')
             listFilter: 'all',

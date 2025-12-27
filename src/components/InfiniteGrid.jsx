@@ -9,13 +9,14 @@ const InfiniteGrid = ({
     batchSize = 20,
     gap = '1.5rem',
     className = '',
-    onLoadMore = null,
+    onLoadMore = () => { },
     hasMore = false,
-    loading = false
+    loading = false,
+    itemData: externalItemData = null
 }) => {
     const [columnCount, setColumnCount] = useState(() => {
         if (typeof columns === 'number') return columns;
-        return columns.desktop || 3;
+        return (columns && columns.desktop) || 3;
     });
     const containerRef = useRef(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -40,49 +41,59 @@ const InfiniteGrid = ({
         updateWidth();
         window.addEventListener('resize', updateWidth);
         return () => window.removeEventListener('resize', updateWidth);
-    }, [columns.mobile, columns.tablet, columns.desktop]);
+    }, [columns]);
 
-    const rowCount = Math.ceil(items.length / columnCount);
-    const itemWidth = containerWidth ? (containerWidth - (columnCount - 1) * 24) / columnCount : 0;
+    const rowCount = Math.ceil(items.length / (columnCount || 1));
+    const effectiveColumnCount = columnCount || 1;
+
+    // Total gap width is (columns - 1) * 24px
+    const totalGapWidth = (effectiveColumnCount - 1) * 24;
+    const itemWidth = containerWidth ? (containerWidth - totalGapWidth) / effectiveColumnCount : 0;
 
     // Parse aspect ratio
-    const [ratioW, ratioH] = itemAspectRatio.split('/').map(Number);
+    const [ratioW, ratioH] = (itemAspectRatio || '1/1').split('/').map(Number);
     const itemHeight = itemWidth * (ratioH / ratioW);
 
     // Cell renderer for react-window
     const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
-        const index = rowIndex * columnCount + columnIndex;
+        const index = rowIndex * effectiveColumnCount + columnIndex;
         if (index >= items.length) return null;
 
         const item = items[index];
 
-        // Add gap to style
         const adjustedStyle = {
             ...style,
-            left: Number(style.left) + columnIndex * 0, // Injected by Grid
-            top: Number(style.top) + rowIndex * 0,
-            padding: `0 ${columnIndex === columnCount - 1 ? 0 : 24}px ${24}px 0`,
+            paddingRight: columnIndex === effectiveColumnCount - 1 ? 0 : 24,
+            paddingBottom: rowIndex === rowCount - 1 ? 0 : 24,
             boxSizing: 'border-box'
         };
 
         return (
             <div style={adjustedStyle}>
-                {renderItem(item, index)}
+                {renderItem ? renderItem(item, index) : null}
             </div>
         );
-    }, [items, columnCount, renderItem]);
+    }, [items, effectiveColumnCount, renderItem, rowCount]);
+
+    const gridData = useMemo(() => ({
+        items,
+        columnCount: effectiveColumnCount,
+        renderItem,
+        externalData: externalItemData
+    }), [items, effectiveColumnCount, renderItem, externalItemData]);
 
     if (!containerWidth) return <div ref={containerRef} className="w-full h-full" />;
 
     return (
-        <div ref={containerRef} className={`w-full ${className}`}>
+        <div ref={containerRef} className={`w-full ${className}`} style={{ minHeight: '400px' }}>
             <Grid
-                columnCount={columnCount}
-                columnWidth={itemWidth + (columnCount > 1 ? 24 / (columnCount - 1) : 0)} // Approximation
+                columnCount={effectiveColumnCount}
+                columnWidth={itemWidth + 24}
                 height={window.innerHeight} // Use virtualized height or fixed
                 rowCount={rowCount}
                 rowHeight={itemHeight + 24}
                 width={containerWidth}
+                style={{}}
                 onScroll={({ verticalScrollDirection, scrollOffset, scrollUpdateWasRequested }) => {
                     if (!scrollUpdateWasRequested &&
                         verticalScrollDirection === 'backward' &&

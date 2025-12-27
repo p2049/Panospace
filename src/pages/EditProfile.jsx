@@ -23,6 +23,7 @@ import BannerOverlaySelector from '@/components/edit-profile/BannerOverlaySelect
 import PixelAvatarCreator from '@/components/pixel-avatar/PixelAvatarCreator';
 import { FaTh } from 'react-icons/fa';
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
+const BannerOverlayRenderer = React.lazy(() => import('@/components/profile/BannerOverlayRenderer'));
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
 import PlanetUserIcon from '@/components/PlanetUserIcon';
@@ -69,7 +70,9 @@ const EditProfile = () => {
     const [bannerColor, setBannerColor] = useState('#7FFFD4'); // Separate from border color
     const [useStarsOverlay, setUseStarsOverlay] = useState(false);
     const [textGlow, setTextGlow] = useState(false);
-    const [selectedOverlays, setSelectedOverlays] = useState([]);
+    const [selectedOverlays, setSelectedOverlays] = useState([]); // This tracks Banner Overlays (legacy name kept for safety)
+    const [profileOverlays, setProfileOverlays] = useState([]); // Tracks Profile Picture Overlays
+    const [overlayTarget, setOverlayTarget] = useState('both'); // 'both' | 'banner' | 'profile'
     const [defaultIconId, setDefaultIconId] = useState('planet-head'); // New state for default icon
 
     useEffect(() => {
@@ -106,8 +109,10 @@ const EditProfile = () => {
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
                         setTextGlow(data.profileTheme.textGlow || false);
                         setPixelGlow(data.profileTheme.pixelGlow || false);
+                        setPixelGlow(data.profileTheme.pixelGlow || false);
                         setPixelGrid(data.profileTheme.pixelGrid !== false); // Default to true if undefined
                         setSelectedOverlays(data.profileTheme.overlays || []);
+                        setProfileOverlays(data.profileTheme.profileOverlays || data.profileTheme.overlays || []); // Fallback to matching banner if new
                         setPixelAvatarData(data.pixel_avatar_data || null); // Load raw pixel data if exists
                     }
                 }
@@ -122,6 +127,17 @@ const EditProfile = () => {
     const [pixelGlow, setPixelGlow] = useState(false); // Track pixel glow status
     const [pixelGrid, setPixelGrid] = useState(true); // Track grid/gap status
     const [pixelAvatarData, setPixelAvatarData] = useState(null); // The raw pixel array (256 length)
+    const [showDefaultIconPopup, setShowDefaultIconPopup] = useState(false); // Popup state for default icons
+
+    const cycleBorderColor = (direction) => {
+        const currentIndex = ALL_COLORS.findIndex(c => c.color === profileBorderColor);
+        let nextIndex = (currentIndex !== -1 ? currentIndex : 0) + direction;
+
+        if (nextIndex < 0) nextIndex = ALL_COLORS.length - 1;
+        if (nextIndex >= ALL_COLORS.length) nextIndex = 0;
+
+        setProfileBorderColor(ALL_COLORS[nextIndex].color);
+    };
 
     const cycleDefaultIcon = (direction) => {
         const currentIndex = DEFAULT_ICONS.indexOf(defaultIconId);
@@ -622,7 +638,10 @@ const EditProfile = () => {
                     textGlow: textGlow || false,
                     pixelGlow: pixelGlow || false, // Persist pixel glow
                     pixelGrid: pixelGrid, // Persist grid preference
-                    overlays: selectedOverlays || []
+                    pixelGlow: pixelGlow || false, // Persist pixel glow
+                    pixelGrid: pixelGrid, // Persist grid preference
+                    overlays: selectedOverlays || [],
+                    profileOverlays: profileOverlays || []
                 },
                 pixel_avatar_data: pixelAvatarData, // Save raw pixels for re-editing
                 defaultIconId: defaultIconId // Save the selected default icon
@@ -807,14 +826,275 @@ const EditProfile = () => {
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                        {/* Photo Section */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+
+
+                        {/* Unified Username Input/Preview w/ Built-in Color Picker */}
+                        <div className="form-group" style={{ order: -1 }}> {/* Move to top */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label style={{
+                                    display: 'block',
+                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
+                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
+                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#7FFFD4'),
+                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
+                                    fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase'
+                                }}>Username</label>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {/* Activate Glow Toggle - Compact */}
+                                    <div
+                                        onClick={() => setTextGlow(!textGlow)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            padding: '2px 8px',
+                                            borderRadius: '4px',
+                                            background: textGlow ? 'rgba(255,255,255,0.2)' : 'transparent',
+                                            border: `1px solid ${textGlow ? ((usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4') : 'rgba(255,255,255,0.2)'}`,
+                                            fontSize: '0.65rem',
+                                            color: '#fff',
+                                            fontWeight: '700',
+                                            textTransform: 'uppercase',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        GLOW {textGlow ? 'ON' : 'OFF'}
+                                    </div>
+
+                                    {/* Live Character Count */}
+                                    <span style={{ fontSize: '0.7rem', color: '#666' }}>
+                                        {getRenderedUsernameLength(username)} / 20
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                                {/* Iridescent Border Effect */}
+                                {(profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient'))) && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        inset: '-2px',
+                                        borderRadius: '14px',
+                                        padding: '2px', // Size of the border
+                                        background: profileBorderColor === 'brand' ? BRAND_RAINBOW : profileBorderColor,
+                                    }} />
+                                )}
+
+                                <div style={{
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                                    backdropFilter: 'blur(7px)',
+                                    WebkitBackdropFilter: 'blur(7px)',
+                                    border: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
+                                        ? 'none'
+                                        : `2px solid ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor}`,
+                                    borderRadius: '12px',
+                                    minHeight: '60px', // Tighter height
+                                    display: 'flex',
+                                    alignItems: 'center', // Center vertically
+                                    justifyContent: 'center',
+                                    padding: '0 3rem', // Add padding for arrows
+                                    boxShadow: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
+                                        ? '0 0 20px rgba(0,0,0,0.5)'
+                                        : `0 0 15px ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor}40, 0 8px 32px rgba(0,0,0,0.5)`,
+                                    transition: 'all 0.3s'
+                                }}>
+
+                                    {/* Left Arrow Color Picker */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const colors = ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand' && c.id !== 'transparent-border');
+                                            const currentIndex = colors.findIndex(c => c.color === usernameColor);
+                                            let nextIndex = currentIndex - 1;
+                                            if (nextIndex < 0) nextIndex = colors.length - 1;
+                                            // Skip locked if necessary, for now just simple cycle
+                                            // Handle premium skipping if needed, for now assuming user sees all or we skip locked logic here
+                                            // Let's simple cycle
+                                            setUsernameColor(colors[nextIndex].color);
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            left: '10px',
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: 'none',
+                                            color: 'rgba(255,255,255,0.5)',
+                                            borderRadius: '50%',
+                                            width: '28px',
+                                            height: '28px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            zIndex: 20
+                                        }}
+                                    >
+                                        <FaChevronLeft size={12} />
+                                    </button>
+
+                                    {/* The "Visual Layer" - rendered emojis and text */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        pointerEvents: 'none',
+                                        fontSize: '1.5rem',
+                                        fontWeight: '800',
+                                        fontFamily: 'var(--font-family-heading)',
+                                        // Gradient Handling
+                                        ...(usernameColor && usernameColor.includes('gradient') ? {
+                                            backgroundImage: usernameColor,
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            color: 'transparent'
+                                        } : { color: usernameColor || '#7FFFD4' }),
+                                        textShadow: textGlow ? `0 0 10px ${(usernameColor && usernameColor.includes('gradient')) ? '#fff' : (usernameColor || '#7FFFD4')}80` : 'none',
+                                        width: '100%',
+                                        zIndex: 1
+                                    }}>
+                                        {renderCosmicUsername(username, usernameColor, textGlow)}
+                                    </div>
+
+                                    {/* The "Interactive Layer" - transparent input */}
+                                    <input
+                                        ref={usernameInputRef}
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                                        onKeyDown={handleUsernameKeyDown}
+                                        onFocus={() => setShowSymbolGuide(true)} // Using existing state or new one for emoji bar? User said "emoji bar only pops up when active"
+                                        onBlur={() => setTimeout(() => setShowSymbolGuide(false), 200)} // Delay for click
+                                        placeholder="@yourname"
+                                        style={{
+                                            width: 'calc(100% - 80px)', // Avoid arrows
+                                            height: '100%',
+                                            position: 'absolute',
+                                            top: 0,
+                                            background: 'transparent',
+                                            border: 'none',
+                                            outline: 'none',
+                                            textAlign: 'center',
+                                            fontSize: '1.5rem',
+                                            fontWeight: '800',
+                                            fontFamily: 'var(--font-family-heading)',
+                                            color: 'transparent', // Text is rendered by the layer below
+                                            caretColor: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', // Show the caret though!
+                                            zIndex: 5, // Above visual, below arrows? No arrows need to be clickable.
+                                            // Arrows Z is 20. Input Z is 5. Visual Z is 1.
+                                            textTransform: 'lowercase'
+                                        }}
+                                    />
+
+                                    {/* Right Arrow Color Picker */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const colors = ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand' && c.id !== 'transparent-border');
+                                            const currentIndex = colors.findIndex(c => c.color === usernameColor);
+                                            let nextIndex = currentIndex + 1;
+                                            if (nextIndex >= colors.length) nextIndex = 0;
+                                            setUsernameColor(colors[nextIndex].color);
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            right: '10px',
+                                            background: 'rgba(255,255,255,0.1)',
+                                            border: 'none',
+                                            color: 'rgba(255,255,255,0.5)',
+                                            borderRadius: '50%',
+                                            width: '28px',
+                                            height: '28px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            zIndex: 20
+                                        }}
+                                    >
+                                        <FaChevronRight size={12} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* EMOJI SCROLLBAR - Conditional */}
+                        {showSymbolGuide && (
+                            <div className="custom-scrollbar" style={{
+                                display: 'flex',
+                                gap: '0.75rem',
+                                overflowX: 'auto',
+                                padding: '0.5rem 0',
+                                marginBottom: '1.5rem',
+                                marginTop: '-0.5rem',
+                                maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
+                                WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
+                                animation: 'fadeIn 0.3s ease'
+                            }}>
+                                {/* Render PATTERNS first (multi-char) */}
+                                {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
+                                    <button
+                                        key={`pat-${i}`}
+                                        type="button" // Important to prevent form submit
+                                        onMouseDown={(e) => {
+                                            e.preventDefault(); // Prevent blur
+                                            handleInsertSymbol(p.pattern);
+                                        }}
+                                        style={{
+                                            flex: '0 0 auto',
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(127, 255, 212, 0.2)',
+                                            background: 'rgba(127, 255, 212, 0.05)',
+                                            fontSize: '1.2rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#fff'
+                                        }}
+                                    >
+                                        {p.replacement}
+                                    </button>
+                                ))}
+                                {/* Render CHAR_MAP symbols */}
+                                {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
+                                    <button
+                                        key={`char-${i}`}
+                                        type="button"
+                                        onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            handleInsertSymbol(char);
+                                        }}
+                                        style={{
+                                            flex: '0 0 auto',
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(127, 255, 212, 0.2)',
+                                            background: 'rgba(127, 255, 212, 0.05)',
+                                            fontSize: '1.2rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#fff'
+                                        }}
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Photo Section - Moved Down */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                                {/* Left Arrow - Outside */}
+                                {/* Left Arrow - Profile Border Cycle */}
                                 {!preview && (
                                     <button
                                         type="button"
-                                        onClick={() => cycleDefaultIcon(-1)}
+                                        onClick={() => cycleBorderColor(-1)}
                                         style={{
                                             background: 'rgba(255,255,255,0.1)',
                                             border: 'none',
@@ -871,35 +1151,43 @@ const EditProfile = () => {
                                             ? '0 0 15px rgba(0,0,0,0.5)'
                                             : `0 0 15px ${profileBorderColor}40`
                                     }}>
-                                        {preview ? (
-                                            <img
-                                                src={preview}
-                                                alt="Profile"
-                                                style={{
-                                                    width: '100%',
-                                                    height: '100%',
-                                                    objectFit: 'cover',
-                                                    imageRendering: 'pixelated' // Keeps pixel art crisp
-                                                }}
-                                            />
-                                        ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
-                                                <PlanetUserIcon
-                                                    size={64}
-                                                    color={usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4'}
-                                                    icon={defaultIconId}
-                                                    glow={textGlow}
-                                                />
-                                            </div>
-                                        )}
+                                        <React.Suspense fallback={null}>
+                                            {/* We use profileOverlays here. We pass empty monchromeColor if it's 'brand' to avoid unwanted tinting */}
+                                            <BannerOverlayRenderer
+                                                overlays={profileOverlays}
+                                                monochromeColor={(profileBorderColor && !profileBorderColor.includes('gradient') && profileBorderColor !== 'brand') ? profileBorderColor : null}
+                                            >
+                                                {preview ? (
+                                                    <img
+                                                        src={preview}
+                                                        alt="Profile"
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'cover',
+                                                            imageRendering: 'pixelated' // Keeps pixel art crisp
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
+                                                        <PlanetUserIcon
+                                                            size={64}
+                                                            color={usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4'}
+                                                            icon={defaultIconId}
+                                                            glow={textGlow}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </BannerOverlayRenderer>
+                                        </React.Suspense>
                                     </div>
                                 </div>
 
-                                {/* Right Arrow - Outside */}
+                                {/* Right Arrow - Profile Border Cycle */}
                                 {!preview && (
                                     <button
                                         type="button"
-                                        onClick={() => cycleDefaultIcon(1)}
+                                        onClick={() => cycleBorderColor(1)}
                                         style={{
                                             background: 'rgba(255,255,255,0.1)',
                                             border: 'none',
@@ -919,7 +1207,7 @@ const EditProfile = () => {
                                     </button>
                                 )}
                             </div>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', position: 'relative' }}>
                                 <label style={{
                                     cursor: 'pointer',
                                     color: '#000',
@@ -935,7 +1223,7 @@ const EditProfile = () => {
                                     border: 'none',
                                     boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
                                 }}>
-                                    <FaCamera /> {preview ? 'Change Photo' : 'Upload Photo'}
+                                    <FaCamera /> {preview ? 'Change' : 'Upload'}
                                     <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
                                 </label>
                                 <button
@@ -960,6 +1248,79 @@ const EditProfile = () => {
                                 >
                                     <FaTh /> Pixel Art
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDefaultIconPopup(!showDefaultIconPopup)}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: '0.85rem',
+                                        padding: '0.6rem 1.2rem',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        backdropFilter: 'blur(10px)',
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '20px',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                    }}
+                                >
+                                    Default
+                                </button>
+
+                                {showDefaultIconPopup && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '110%',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        background: '#1a1a1a',
+                                        border: '1px solid #333',
+                                        borderRadius: '16px',
+                                        padding: '1rem',
+                                        zIndex: 1000,
+                                        width: '280px',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(5, 1fr)',
+                                        gap: '0.5rem'
+                                    }}>
+                                        <div style={{ gridColumn: '1 / -1', textAlign: 'center', marginBottom: '0.5rem', fontSize: '0.8rem', color: '#888', fontWeight: '600' }}>SELECT ICON</div>
+                                        {DEFAULT_ICONS.map(iconId => (
+                                            <button
+                                                key={iconId}
+                                                type="button"
+                                                onClick={() => {
+                                                    setDefaultIconId(iconId);
+                                                    setPreview(null);
+                                                    setShowDefaultIconPopup(false);
+                                                }}
+                                                style={{
+                                                    background: defaultIconId === iconId ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                                    border: defaultIconId === iconId ? `1px solid ${usernameColor}` : '1px solid transparent',
+                                                    borderRadius: '8px',
+                                                    padding: '8px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <PlanetUserIcon
+                                                    size={24}
+                                                    color={defaultIconId === iconId ? usernameColor : '#666'}
+                                                    icon={iconId}
+                                                    glow={false}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
                                 {preview && (
                                     <button
                                         type="button"
@@ -990,467 +1351,36 @@ const EditProfile = () => {
                             </div>
                         </div>
 
-                        {/* Profile Picture Border Color Customization (Scrollable) */}
-                        <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                            <label style={{
-                                display: 'block',
-                                background: (profileBorderColor && profileBorderColor.includes('gradient')) ? profileBorderColor : undefined,
-                                WebkitBackgroundClip: (profileBorderColor && profileBorderColor.includes('gradient')) ? 'text' : undefined,
-                                WebkitTextFillColor: (profileBorderColor && profileBorderColor.includes('gradient')) ? 'transparent' : ((profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : (profileBorderColor || '#7FFFD4')),
-                                color: (profileBorderColor && !profileBorderColor.includes('gradient')) ? ((profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor) : 'transparent',
-                                marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center',
-                                filter: textGlow ? `drop-shadow(0 0 5px ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : (profileBorderColor || '#7FFFD4')}80)` : 'none'
-                            }}>Profile Border</label>
-
-                            <div className="custom-gradient-scrollbar" style={{
-                                display: 'flex',
-                                gap: '1rem',
-                                overflowX: 'auto',
-                                padding: '0.5rem',
-                                scrollBehavior: 'smooth',
-                                justifyContent: 'flex-start',
-                                maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
-                                paddingBottom: '12px'
-                            }}>
-                                <style>{`
-                                    .custom-gradient-scrollbar::-webkit-scrollbar {
-                                        height: 4px;
-                                    }
-                                    .custom-gradient-scrollbar::-webkit-scrollbar-track {
-                                        background: rgba(255, 255, 255, 0.05);
-                                        border-radius: 4px;
-                                    }
-                                    .custom-gradient-scrollbar::-webkit-scrollbar-thumb {
-                                        background: ${profileBorderColor === 'brand'
-                                        ? 'linear-gradient(90deg, #FF914D, #FF5C8A, #FFB7D5, #5A3FFF, #7FFFD4)'
-                                        : (profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border'
-                                            ? '#fff'
-                                            : profileBorderColor || '#7FFFD4')
-                                    };
-                                        border-radius: 4px;
-                                    }
-                                `}</style>
-                                {ALL_COLORS.map(option => {
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            type="button"
-                                            onClick={() => setProfileBorderColor(option.color)}
-                                            style={{
-                                                flex: '0 0 auto',
-                                                padding: '0',
-                                                border: profileBorderColor === option.color
-                                                    ? `2px solid ${(option.color.includes('gradient')) ? '#fff' : (option.id === 'transparent-border' ? '#7FFFD4' : option.color)}`
-                                                    : '2px solid #333',
-                                                borderRadius: '50%',
-                                                width: '44px', // Slightly larger touch target
-                                                height: '44px',
-                                                cursor: 'pointer',
-                                                background: profileBorderColor === option.color ? 'rgba(255,255,255,0.1)' : 'transparent',
-                                                backdropFilter: profileBorderColor === option.color ? 'blur(2px)' : 'none',
-                                                position: 'relative',
-                                                boxShadow: profileBorderColor === option.color
-                                                    ? `0 0 15px ${(option.color.includes('gradient')) ? '#fff' : option.color}`
-                                                    : 'none',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                opacity: 1,
-                                                transition: 'all 0.2s'
-                                            }}
-                                            title={option.name}
-                                        >
-                                            {/* Inner Swatch */}
-                                            <div style={{
-                                                width: profileBorderColor === option.color ? '22px' : '100%',
-                                                height: profileBorderColor === option.color ? '22px' : '100%',
-                                                borderRadius: '50%',
-                                                background: option.id === 'glass'
-                                                    ? 'linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05))'
-                                                    : (option.id === 'transparent-border' ? 'rgba(255, 255, 255, 0.1)' : (option.id === 'brand-colors' ? BRAND_RAINBOW : option.color)),
-                                                border: option.id === 'glass' || option.id === 'transparent-border' ? '1px solid rgba(255,255,255,0.3)' : 'none',
-                                                backdropFilter: option.id === 'glass' ? 'blur(4px)' : 'none',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', // Center content
-                                                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                                            }}>
-                                                {option.id === 'transparent-border' && (
-                                                    <div style={{ width: '60%', height: '2px', background: '#ff4444', transform: 'rotate(-45deg)', borderRadius: '1px' }} />
-                                                )}
-                                            </div>
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Unified Username Input/Preview */}
-                        <div className="form-group">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{
-                                    display: 'block',
-                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
-                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
-                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#7FFFD4'),
-                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
-                                    fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase'
-                                }}>Username</label>
-
-                                {/* Live Character Count */}
-                                <span style={{ fontSize: '0.7rem', color: '#666' }}>
-                                    {getRenderedUsernameLength(username)} / 20
-                                </span>
-                            </div>
-
-                            <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                                {/* Iridescent Border Effect */}
-                                {(profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient'))) && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        inset: '-2px',
-                                        borderRadius: '14px',
-                                        padding: '2px', // Size of the border
-                                        background: profileBorderColor === 'brand' ? BRAND_RAINBOW : profileBorderColor,
-                                    }} />
-                                )}
 
 
 
-                                <div style={{
-                                    position: 'relative',
-                                    zIndex: 1,
-                                    background: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-                                    backdropFilter: 'blur(7px)',
-                                    WebkitBackdropFilter: 'blur(7px)',
-                                    border: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
-                                        ? 'none'
-                                        : `2px solid ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor}`,
-                                    borderRadius: '12px',
-                                    minHeight: '80px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: (profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient')))
-                                        ? '0 0 20px rgba(0,0,0,0.5)'
-                                        : `0 0 15px ${(profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border') ? '#7FFFD4' : profileBorderColor}40, 0 8px 32px rgba(0,0,0,0.5)`,
-                                    transition: 'all 0.3s'
-                                }}>
-                                    {/* The "Visual Layer" - rendered emojis and text */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        inset: 0,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        pointerEvents: 'none',
-                                        fontSize: '1.5rem',
-                                        fontWeight: '800',
-                                        fontFamily: 'var(--font-family-heading)',
-                                        padding: '0 1rem',
-                                        // Gradient Handling
-                                        ...(usernameColor && usernameColor.includes('gradient') ? {
-                                            backgroundImage: usernameColor,
-                                            WebkitBackgroundClip: 'text',
-                                            WebkitTextFillColor: 'transparent',
-                                            color: 'transparent'
-                                        } : { color: usernameColor || '#7FFFD4' }),
-                                        textShadow: textGlow ? `0 0 10px ${(usernameColor && usernameColor.includes('gradient')) ? '#fff' : (usernameColor || '#7FFFD4')}80` : 'none'
-                                    }}>
-                                        {renderCosmicUsername(username, usernameColor, textGlow)}
-                                    </div>
-
-                                    {/* The "Interactive Layer" - transparent input */}
-                                    <input
-                                        ref={usernameInputRef}
-                                        type="text"
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                                        onKeyDown={handleUsernameKeyDown}
-                                        placeholder="@yourname"
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            background: 'transparent',
-                                            border: 'none',
-                                            outline: 'none',
-                                            textAlign: 'center',
-                                            fontSize: '1.5rem',
-                                            fontWeight: '800',
-                                            fontFamily: 'var(--font-family-heading)',
-                                            color: 'transparent', // Text is rendered by the layer below
-                                            caretColor: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', // Show the caret though!
-                                            padding: '0 1rem',
-                                            zIndex: 2,
-                                            textTransform: 'lowercase'
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* EMOJI SCROLLBAR */}
-                        <div className="custom-scrollbar" style={{
-                            display: 'flex',
-                            gap: '0.75rem',
-                            overflowX: 'auto',
-                            padding: '0.5rem 0',
-                            marginBottom: '0.75rem',
-                            maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
-                            WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
-                        }}>
-                            {/* Render PATTERNS first (multi-char) */}
-                            {PATTERNS.filter(p => p.replacement !== ' ').map((p, i) => (
-                                <button
-                                    key={`pat-${i}`}
-                                    type="button"
-                                    onClick={() => handleInsertSymbol(p.pattern)}
-                                    style={{
-                                        flex: '0 0 auto',
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(127, 255, 212, 0.2)',
-                                        background: 'rgba(127, 255, 212, 0.05)',
-                                        fontSize: '1.2rem',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    {p.replacement}
-                                </button>
-                            ))}
-                            {/* Render CHAR_MAP symbols */}
-                            {Object.entries(CHAR_MAP).map(([char, emoji], i) => (
-                                <button
-                                    key={`char-${i}`}
-                                    type="button"
-                                    onClick={() => handleInsertSymbol(char)}
-                                    style={{
-                                        flex: '0 0 auto',
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(127, 255, 212, 0.2)',
-                                        background: 'rgba(127, 255, 212, 0.05)',
-                                        fontSize: '1.2rem',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff'
-                                    }}
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </div>
 
 
-                        <div className="form-group">
-                            <label style={{
-                                display: 'block',
-                                background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
-                                WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
-                                WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#7FFFD4'),
-                                color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
-                                marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.05em', textTransform: 'uppercase'
-                            }}>Bio</label>
-                            <textarea
-                                value={bio}
-                                onChange={(e) => setBio(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.8rem',
-                                    background: 'rgba(127, 255, 212, 0.05)',
-                                    border: '1px solid rgba(127, 255, 212, 0.2)',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
-                                    minHeight: '80px',
-                                    resize: 'vertical',
-                                    transition: 'all 0.2s'
-                                }}
-                                onFocus={(e) => {
-                                    e.target.style.borderColor = '#7FFFD4';
-                                    e.target.style.background = 'rgba(127, 255, 212, 0.1)';
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.borderColor = 'rgba(127, 255, 212, 0.2)';
-                                    e.target.style.background = 'rgba(127, 255, 212, 0.05)';
-                                }}
-                                placeholder="Tell us about yourself..."
-                            />
-                        </div>
 
-                        {/* Discipline Selection */}
-                        <DisciplineSelector
-                            selectedMain={selectedMain}
-                            selectedNiches={selectedNiches}
-                            expandedDiscipline={expandedDiscipline}
-                            setExpandedDiscipline={setExpandedDiscipline}
-                            toggleMainDiscipline={toggleMainDiscipline}
-                            toggleNiche={toggleNiche}
-                            accentColor={usernameColor} // Passing as accentColor for clarity
-                        />
 
-                        {/* Profile Theme (Username Color) - Slider Box */}
-                        <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{
-                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
-                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
-                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#fff'),
-                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
-                                    fontSize: '1rem', fontWeight: '600',
-                                    filter: textGlow ? `drop-shadow(0 0 5px ${usernameColor || '#7FFFD4'}80)` : 'none'
-                                }}>Profile Theme</label>
-                            </div>
-                            <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
-                                Choose a color for your username.
-                            </p>
 
-                            {/* Activate Glow Toggle - Neon Design */}
-                            <div
-                                onClick={() => setTextGlow(!textGlow)}
-                                style={{
-                                    marginBottom: '1rem',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    cursor: 'pointer',
-                                    padding: '0.5rem 1rem', // Added horizontal padding to prevent glow cutoff
-                                    width: 'fit-content'
-                                }}
-                            >
-                                <div style={{
-                                    width: '24px',
-                                    height: '24px',
-                                    borderRadius: '6px',
-                                    border: `2px solid ${(usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4'}`,
-                                    background: textGlow ? ((usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4') : 'transparent',
-                                    boxShadow: textGlow ? `0 0 8px ${(usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4'}` : 'none', // Reduced glow from 15px to 8px
-                                    transition: 'all 0.3s ease',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    {textGlow && <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.2)' }} />}
-                                </div>
-                                <label style={{
-                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#fff',
-                                    fontSize: '0.9rem',
-                                    fontWeight: '700',
-                                    cursor: 'pointer',
-                                    letterSpacing: '0.05em'
-                                }}>
-                                    <span style={{ textShadow: textGlow ? `0 0 5px ${(usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4')}80` : 'none', transition: 'text-shadow 0.3s' }}>ACTIVATE</span> <span style={{ textShadow: `0 0 5px ${(usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4')}80` }}>GLOW</span>
-                                </label>
-                            </div>
-
-                            <div className="custom-gradient-scrollbar" style={{
-                                display: 'flex',
-                                gap: '1rem',
-                                overflowX: 'auto',
-                                padding: '1rem 0.5rem', /* Increased padding for glow space */
-                                scrollBehavior: 'smooth',
-                                justifyContent: 'flex-start',
-                                maskImage: 'linear-gradient(to right, black 90%, transparent 100%)'
-                            }}>
-                                {ALL_COLORS.filter(c => c.color !== '#000000' && c.color !== 'brand' && c.id !== 'transparent-border').map(option => {
-                                    const isPremiumLocked = option.isPremium && !isPremiumUser;
-
-                                    // Text style for solid vs gradient
-                                    const textStyle = option.color.includes('gradient') ? {
-                                        background: option.color,
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                        backgroundClip: 'text',
-                                        color: 'transparent'
-                                    } : {
-                                        color: option.color
-                                    };
-
-                                    // Glow style
-                                    const glowStyle = textGlow ? {
-                                        filter: `drop-shadow(0 0 1px ${option.color.includes('gradient') ? '#fff' : option.color})`
-                                    } : {};
-
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            type="button"
-                                            onClick={() => !isPremiumLocked && setUsernameColor(option.color)}
-                                            style={{
-                                                flex: '0 0 auto',
-                                                width: '90px',
-                                                height: '90px',
-                                                padding: '0.5rem',
-                                                border: usernameColor === option.color ? `3px solid ${(profileBorderColor && profileBorderColor.includes('gradient')) ? '#fff' : (profileBorderColor === 'transparent' || profileBorderColor === 'transparent-border' ? '#7FFFD4' : profileBorderColor)}` : '2px solid #333',
-                                                borderRadius: '16px',
-                                                overflow: 'hidden',
-                                                cursor: isPremiumLocked ? 'not-allowed' : 'pointer',
-                                                background: '#000',
-                                                position: 'relative',
-                                                opacity: isPremiumLocked ? 0.6 : 1,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                transition: 'all 0.2s',
-                                                boxShadow: usernameColor === option.color && textGlow
-                                                    ? `0 0 20px ${(option.color.includes('gradient') ? '#fff' : option.color)}40`
-                                                    : '0 4px 12px rgba(0,0,0,0.3)'
-                                            }}
-                                        >
-                                            {isPremiumLocked && (
-                                                <div style={{ position: 'absolute', top: '6px', right: '6px', zIndex: 10 }}>
-                                                    <FaLock size={10} color="#333" />
-                                                </div>
-                                            )}
-                                            <span style={{
-                                                fontSize: '0.7rem',
-                                                lineHeight: '1.2',
-                                                fontWeight: '800',
-                                                textAlign: 'center',
-                                                wordBreak: 'normal',
-                                                overflowWrap: 'break-word',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.02em',
-                                                ...textStyle,
-                                                ...glowStyle
-                                            }}>{option.name}</span>
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        </div>
 
                         {/* Profile Banner Theme - Slider Box */}
                         <div className="form-group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label style={{
-                                    background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
-                                    WebkitBackgroundClip: (usernameColor && usernameColor.includes('gradient')) ? 'text' : undefined,
-                                    WebkitTextFillColor: (usernameColor && usernameColor.includes('gradient')) ? 'transparent' : (usernameColor || '#fff'),
-                                    color: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : 'transparent',
-                                    fontSize: '1.2rem', fontWeight: '800'
-                                }}>Profile Banner Theme</label>
-                                <FaInfoCircle size={14} color="#888" title="Unlock more gradients through achievements" />
-                            </div>
-                            <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '1rem' }}>
-                                Customize your profile with different themes and gradients.
-                            </p>
+
 
                             {/* Visual Overlays (Lens) Selection - MOVED ABOVE PREVIEW */}
+
                             <BannerOverlaySelector
-                                selectedOverlays={selectedOverlays}
-                                onSelect={setSelectedOverlays}
+                                selectedOverlays={overlayTarget === 'profile' ? profileOverlays : selectedOverlays} // 'Both' defaults to showing current banner overlays as primary source of truth for display
+                                onSelect={(newVal) => {
+                                    if (overlayTarget === 'both') {
+                                        setSelectedOverlays(newVal);
+                                        setProfileOverlays(newVal);
+                                    } else if (overlayTarget === 'banner') {
+                                        setSelectedOverlays(newVal);
+                                    } else {
+                                        setProfileOverlays(newVal);
+                                    }
+                                }}
                                 highlightColor={usernameColor}
+                                overlayTarget={overlayTarget}
+                                setOverlayTarget={setOverlayTarget}
                             />
 
                             {/* Live Banner Preview */}
@@ -1758,6 +1688,18 @@ const EditProfile = () => {
                         </div>
 
 
+
+                        {/* Discipline Selection - Moved to Bottom */}
+                        <DisciplineSelector
+                            selectedMain={selectedMain}
+                            selectedNiches={selectedNiches}
+                            expandedDiscipline={expandedDiscipline}
+                            setExpandedDiscipline={setExpandedDiscipline}
+                            toggleMainDiscipline={toggleMainDiscipline}
+                            toggleNiche={toggleNiche}
+                            accentColor={usernameColor} // Passing as accentColor for clarity
+                        />
+
                         {/* Final Save Button */}                        <button
                             type="submit"
                             disabled={loading}
@@ -1806,54 +1748,56 @@ const EditProfile = () => {
 
             </div > {/* End wrapper */}
             {/* Pixel Avatar Modal */}
-            {showPixelCreator && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    zIndex: 2000,
-                    background: 'rgba(0,0,0,0.9)',
-                    backdropFilter: 'blur(8px)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    padding: '5vh 2rem 2rem 2rem',
-                    overflowY: 'auto'
-                }}>
-                    {/* Back Arrow - Outside the box */}
-                    <button
-                        onClick={() => setShowPixelCreator(false)}
-                        style={{
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            width: '48px',
-                            height: '48px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            marginBottom: '16px',
-                            color: '#fff',
-                            fontSize: '1.5rem',
-                            transition: 'all 0.2s'
-                        }}
-                        title="Close Pixel Lab"
-                    >
-                        ←
-                    </button>
-                    <div>
-                        <PixelAvatarCreator
-                            initialData={pixelAvatarData}
-                            initialGlow={pixelGlow}
-                            initialGrid={pixelGrid}
-                            onSave={handleSavePixelAvatar}
-                            onClose={() => setShowPixelCreator(false)}
-                        />
+            {
+                showPixelCreator && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 2000,
+                        background: 'rgba(0,0,0,0.9)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        padding: '5vh 2rem 2rem 2rem',
+                        overflowY: 'auto'
+                    }}>
+                        {/* Back Arrow - Outside the box */}
+                        <button
+                            onClick={() => setShowPixelCreator(false)}
+                            style={{
+                                background: 'rgba(255,255,255,0.1)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '50%',
+                                width: '48px',
+                                height: '48px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                marginBottom: '16px',
+                                color: '#fff',
+                                fontSize: '1.5rem',
+                                transition: 'all 0.2s'
+                            }}
+                            title="Close Pixel Lab"
+                        >
+                            ←
+                        </button>
+                        <div>
+                            <PixelAvatarCreator
+                                initialData={pixelAvatarData}
+                                initialGlow={pixelGlow}
+                                initialGrid={pixelGrid}
+                                onSave={handleSavePixelAvatar}
+                                onClose={() => setShowPixelCreator(false)}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

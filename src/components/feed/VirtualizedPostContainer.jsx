@@ -151,7 +151,8 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
     }, [currentIndex, posts]);
 
     // Calculate total scroll height
-    const totalHeight = `${posts.length * 100}dvh`;
+    // Using percentage ensures it's exactly tied to the container's height
+    const totalHeight = `${posts.length * 100}%`;
 
     // Determine render window
     // We render [current - 1, current, current + 1]
@@ -179,12 +180,15 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
             className="no-scrollbar"
             style={{
                 height: '100dvh',
-                width: '100vw',
-                overflowY: 'scroll',
+                width: '100%',
+                overflowY: 'auto',
+                overflowX: 'hidden',
                 scrollSnapType: pullDistance > 0 ? 'none' : 'y mandatory',
                 position: 'relative',
                 scrollBehavior: 'smooth',
-                willChange: 'scroll-position'
+                willChange: 'scroll-position',
+                overscrollBehaviorY: 'contain',
+                WebkitOverflowScrolling: 'touch'
             }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -194,6 +198,23 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
             <style>{`
                 .is-scrolling-active * {
                     pointer-events: none !important; 
+                }
+                /* Targeted Scrollbar Kill for Main Feed Only */
+                .no-scrollbar::-webkit-scrollbar,
+                .no-scrollbar::-webkit-scrollbar-track,
+                .no-scrollbar::-webkit-scrollbar-thumb,
+                .no-scrollbar::-webkit-scrollbar-corner {
+                    display: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                    background: transparent !important;
+                    -webkit-appearance: none !important;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none !important;
+                    scrollbar-width: none !important;
+                    overscroll-behavior-y: contain;
+                    -webkit-overflow-scrolling: touch;
                 }
             `}</style>
             {/* Pull-to-Refresh Indicator - Rocket */}
@@ -273,20 +294,19 @@ const VirtualizedPostContainer = ({ posts, renderPost, initialIndex = 0, onRefre
 
                 return (
                     <div
-                        key={post.id} // Stable key ensures component reuse if possible, or correct unmount
+                        key={post.id}
+                        className="virtualized-post-wrapper"
                         style={{
                             position: 'absolute',
                             top: 0,
                             left: 0,
                             width: '100%',
-                            height: '100dvh',
+                            height: '100%',
                             // GPU Acceleration:
-                            transform: `translate3d(0, ${index * 100}dvh, 0)`,
+                            transform: `translate3d(0, ${index * 100}%, 0)`,
                             willChange: 'transform',
-                            // Snap formatting to ensure native snap catches this absolute box
                             scrollSnapAlign: 'start',
                             scrollSnapStop: 'always',
-                            // Accessibility / Visibility optimization
                             visibility: 'visible',
                             pointerEvents: 'auto'
                         }}

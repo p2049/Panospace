@@ -44,6 +44,7 @@ import { BRAND_RAINBOW } from '@/core/constants/colorPacks';
 
 
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
+import BannerOverlayRenderer from '@/components/profile/BannerOverlayRenderer';
 
 const Profile = () => {
     const { id } = useParams();
@@ -536,31 +537,34 @@ const Profile = () => {
                                     ? `0 0 15px ${(user.profileTheme?.borderColor || solidPlanetColor)}44, 0 8px 32px rgba(0,0,0,0.5)`
                                     : '0 8px 32px rgba(0,0,0,0.5)'
                             }}>
-                                {user.photoURL ? (
-                                    <img
-                                        src={user.photoURL}
-                                        alt={user.displayName}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            // Only use pixelated for non-SVGs (legacy photos). 
-                                            // SVGs handle their own sharpness and filters.
-                                            imageRendering: user.photoURL?.includes('.svg') || user.photoURL?.includes('image/svg+xml') ? 'auto' : 'pixelated',
-                                            msImageRendering: user.photoURL?.includes('.svg') || user.photoURL?.includes('image/svg+xml') ? 'auto' : 'pixelated',
-                                            WebkitFontSmoothing: 'none'
-                                        }}
-                                    />
-                                ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
-                                        <PlanetUserIcon
-                                            size={parseInt(layout.profile.avatarSize, 10) * 0.7}
-                                            color={user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : '#7FFFD4'}
-                                            icon={user.defaultIconId || 'planet-head'}
-                                            glow={user.profileTheme?.textGlow}
+                                <BannerOverlayRenderer
+                                    overlays={user.profileTheme?.profileOverlays || []}
+                                    monochromeColor={(user.profileTheme?.borderColor && !user.profileTheme.borderColor.includes('gradient') && user.profileTheme.borderColor !== 'brand') ? user.profileTheme.borderColor : null}
+                                >
+                                    {user.photoURL ? (
+                                        <img
+                                            src={user.photoURL}
+                                            alt={user.displayName}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                imageRendering: user.photoURL?.includes('.svg') || user.photoURL?.includes('image/svg+xml') ? 'auto' : 'pixelated',
+                                                msImageRendering: user.photoURL?.includes('.svg') || user.photoURL?.includes('image/svg+xml') ? 'auto' : 'pixelated',
+                                                WebkitFontSmoothing: 'none'
+                                            }}
                                         />
-                                    </div>
-                                )}
+                                    ) : (
+                                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
+                                            <PlanetUserIcon
+                                                size={parseInt(layout.profile.avatarSize, 10) * 0.7}
+                                                color={user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : '#7FFFD4'}
+                                                icon={user.defaultIconId || 'planet-head'}
+                                                glow={user.profileTheme?.textGlow}
+                                            />
+                                        </div>
+                                    )}
+                                </BannerOverlayRenderer>
                             </div>
 
                             {/* Notification Badge */}

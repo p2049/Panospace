@@ -247,7 +247,7 @@ const InstantPhotoPost = ({ post, images = [], uiOverlays = null, priority = 'no
             {/* Actions (Bottom Right) */}
             <div className="post-actions-container">
                 {/* Photo count removed */}
-                <LikeButton postId={post?.id} />
+                <LikeButton postId={post?.id} enableRatings={post?.enableRatings} showCount={true} />
             </div>
             {/* Sidebar */}
             <PostDetailsSidebar

@@ -336,19 +336,20 @@ const MobileNavigation = () => {
     const drawerStyle = {
         position: 'fixed',
         top: 0,
-        right: isOpen ? 0 : '-320px',
+        right: isOpen ? 0 : '-100vw', // Move completely off-screen
         width: '300px',
-        maxWidth: '80vw',
+        maxWidth: '85vw',
         height: '100vh',
-        background: 'rgba(10, 10, 10, 0.95)',
+        background: 'rgba(5, 5, 5, 0.95)',
         backdropFilter: 'blur(20px)',
-        borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '-10px 0 30px rgba(0,0,0,0.8)',
+        borderLeft: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+        boxShadow: isOpen ? '-10px 0 30px rgba(0,0,0,0.8)' : 'none', // Kill shadow when closed
         transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         zIndex: 80000,
-        paddingTop: '55px', // Reduced from 80px to move buttons up closer to station
+        paddingTop: '55px',
         display: 'flex',
         flexDirection: 'column',
+        visibility: isOpen ? 'visible' : 'hidden', // Extra safety
     };
 
     const navItemStyle = {

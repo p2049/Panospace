@@ -106,9 +106,8 @@ const OceanBanner = ({ themeId, starSettings }) => {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        // HIGH RES KINETIC
-        const width = 1920;
-        const height = 1080;
+        const width = 2560; // Banner Optimized Width
+        const height = 800; // Banner Optimized Height
         canvas.width = width;
         canvas.height = height;
 

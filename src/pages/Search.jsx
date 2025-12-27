@@ -167,18 +167,21 @@ const Search = () => {
         }
     }, [searchParams]);
     const {
-        searchDefault,
-        currentFeed: searchMode,
-        switchToFeed: setSearchMode,
-        followingOnly,
-        setFollowingOnly
+        feedContentType,
+        setFeedContentType,
+        feedScope,
+        setFeedScope,
+        listFilter,
+        setListFilter,
+        feedViewMode,
+        setFeedViewMode
     } = useFeedStore();
     const [selectedCamera, setSelectedCamera] = useState(null);
     const [selectedFilm, setSelectedFilm] = useState(null);
     const [selectedOrientation, setSelectedOrientation] = useState(null);
     const [selectedAspectRatio, setSelectedAspectRatio] = useState(null);
     const [sortBy, setSortBy] = useState('newest');
-    // const [searchMode, setSearchMode] = useState(searchDefault || 'social'); // Phase 3: Search Mode State ('art' | 'social')
+
     const [isMarketplaceMode, setIsMarketplaceMode] = useState(false); // NEW: Marketplace Toggle
 
 
@@ -195,7 +198,7 @@ const Search = () => {
         const mode = searchParams.get('mode');
         return mode === 'galleries' ? 'studios' : (mode || 'posts');
     }); // 'posts' | 'studios' | 'collections' | 'museums' | 'contests' | 'events' | 'users' | 'spacecards'
-    // const [followingOnly, setFollowingOnly] = useState(false);
+
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
     const sortDropdownRef = useRef(null);
@@ -270,8 +273,8 @@ const Search = () => {
     useEffect(() => {
         const hasFilters = searchTerm || selectedTags.length > 0 || selectedPark || selectedDate ||
             selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio || selectedMuseum;
-        setIsExploreMode(!hasFilters && !followingOnly && currentMode === 'posts');
-    }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, followingOnly, currentMode, selectedMuseum]);
+        setIsExploreMode(!hasFilters && feedScope !== 'following' && feedContentType === 'all' && currentMode === 'posts');
+    }, [searchTerm, selectedTags, selectedPark, selectedDate, selectedCamera, selectedFilm, selectedOrientation, selectedAspectRatio, feedScope, feedContentType, currentMode, selectedMuseum]);
 
     // Load personalized recommendations for Explore mode
     useEffect(() => {
@@ -284,19 +287,31 @@ const Search = () => {
         loadRecommendations();
     }, [currentUser, isExploreMode]);
 
-    // Trigger search when mode or followingOnly changes
+    // Trigger search when mode, feed filters, or museum changes
     useEffect(() => {
         dispatch({ type: 'RESET_RESULTS' });
         performSearch();
-    }, [currentMode, followingOnly, searchMode, selectedMuseum, isMarketplaceMode]);
+    }, [currentMode, feedScope, feedContentType, selectedMuseum, isMarketplaceMode]);
 
-    // Auto-switch View Mode based on currentMode
+    // Auto-switch Search Mode based on List Filter (Pings vs Visuals)
     useEffect(() => {
-        if (currentMode === 'text') {
-            setViewMode('feed'); // List View
-        } else if (currentMode === 'posts') {
-            setViewMode('grid');
+        if (listFilter === 'text' && currentMode !== 'text') {
+            setCurrentMode('text');
+        } else if (listFilter === 'visual' && currentMode === 'text') {
+            setCurrentMode('posts');
         }
+        // If listFilter is 'all', we do nothing and let the user keep their current tab per request
+    }, [listFilter]);
+
+    // Reverse sync: If currentMode changes to 'text', update listFilter
+    useEffect(() => {
+        if (currentMode === 'text' && listFilter !== 'text') {
+            setListFilter('text');
+        } else if (currentMode === 'posts' && listFilter === 'text') {
+            // If we moved from text to posts, and global was text-only, switch to visual
+            setListFilter('visual');
+        }
+        // If currentMode is 'posts' and listFilter is 'all', we leave it as 'all'
     }, [currentMode]);
 
     // Reset filters when switching away from posts (Fix filter state bugs)
@@ -338,9 +353,8 @@ const Search = () => {
             film: currentSelectedFilmRef.current,
             orientation: currentSelectedOrientationRef.current,
             aspectRatio: currentSelectedAspectRatioRef.current,
-            sortBy: currentSortByRef.current,
-            followingOnly,
-            searchMode, // Art/Social
+            feedScope,
+            feedContentType, // Art/Social/Both
             isMarketplaceMode
         });
 
@@ -372,13 +386,10 @@ const Search = () => {
         }
 
         try {
-            // Check if we're in Explore mode (no filters)
-            // Treat 'text' mode as a filter so we don't restrict by exploreTags (which might not have text posts)
-            // Treat 'image' mode as default (no filter)
             const hasFilters = term || tags.length > 0 || parkId || date ||
                 currentSelectedCameraRef.current || currentSelectedFilmRef.current ||
                 currentSelectedOrientationRef.current || currentSelectedAspectRatioRef.current || selectedMuseum ||
-                currentMode === 'text';
+                currentMode === 'text' || (feedContentType !== 'all'); // 'all' is the default/explore state now
 
             // If Explore mode and we have recommendations, use them
             let exploreTags = [];
@@ -412,16 +423,16 @@ const Search = () => {
                         hasMore = data.length > 0;
                     } else {
                         // STANDARD POSTS MODE
-                        if (followingOnly && followingList.length === 0) {
+                        if (feedScope === 'following' && followingList.length === 0) {
                             resultData = [];
                             newLastDoc = null;
                             hasMore = false;
                         } else {
-                            let searchAuthorIds = followingOnly ? followingList : [];
+                            let searchAuthorIds = (feedScope === 'following') ? followingList : [];
 
                             if (selectedMuseum) {
                                 const museumMemberIds = selectedMuseum.members || [];
-                                if (followingOnly) {
+                                if (feedScope === 'following') {
                                     // Intersection
                                     searchAuthorIds = searchAuthorIds.filter(id => museumMemberIds.includes(id));
                                 } else {
@@ -438,11 +449,9 @@ const Search = () => {
                                     camera: currentSelectedCameraRef.current,
                                     film: currentSelectedFilmRef.current,
                                     orientation: currentSelectedOrientationRef.current,
-                                    aspectRatio: currentSelectedAspectRatioRef.current,
-                                    sort: hasFilters ? currentSortByRef.current : exploreSort,
                                     authorIds: searchAuthorIds,
                                     postType: 'image', // Handle text mode
-                                    type: searchMode // Link search state to backend type filter
+                                    type: feedContentType // Use the store's content type directly
                                 },
                                 isLoadMore ? (currentMode === 'text' ? lastTextDoc : lastPostDoc) : null
                             );
@@ -456,12 +465,12 @@ const Search = () => {
                 }
 
                 case 'text': {
-                    if (followingOnly && followingList.length === 0) {
+                    if (feedScope === 'following' && followingList.length === 0) {
                         resultData = [];
                         newLastDoc = null;
                         hasMore = false;
                     } else {
-                        let searchAuthorIds = followingOnly ? followingList : [];
+                        let searchAuthorIds = (feedScope === 'following') ? followingList : [];
 
                         const { data, lastDoc } = await searchPosts(
                             term,
@@ -485,14 +494,14 @@ const Search = () => {
                     let searchUserIds = [];
                     if (selectedMuseum) {
                         const museumMemberIds = selectedMuseum.members || [];
-                        if (followingOnly) {
+                        if (feedScope === 'following') {
                             // Intersection
                             searchUserIds = followingList.filter(id => museumMemberIds.includes(id));
                             if (searchUserIds.length === 0) searchUserIds = ['NONE']; // Ensure no results if intersection is empty
                         } else {
                             searchUserIds = museumMemberIds;
                         }
-                    } else if (followingOnly) {
+                    } else if (feedScope === 'following') {
                         searchUserIds = followingList.length > 0 ? followingList : ['NONE'];
                     }
 
@@ -524,7 +533,7 @@ const Search = () => {
                     hasMore = data.length > 0;
 
                     // Apply Following filter (Added)
-                    if (followingOnly) {
+                    if (feedScope === 'following') {
                         if (followingList.length > 0) {
                             resultData = resultData.filter(studio => followingList.includes(studio.ownerId));
                         } else {
@@ -546,7 +555,7 @@ const Search = () => {
                     hasMore = data.length > 0;
 
                     // Apply Following filter (Added)
-                    if (followingOnly) {
+                    if (feedScope === 'following') {
                         if (followingList.length > 0) {
                             resultData = resultData.filter(collection => followingList.includes(collection.ownerId));
                         } else {
@@ -569,7 +578,7 @@ const Search = () => {
                     hasMore = data.length > 0;
 
                     // Apply Following filter (Added)
-                    if (followingOnly) {
+                    if (feedScope === 'following') {
                         if (followingList.length > 0) {
                             resultData = resultData.filter(item => followingList.includes(item.ownerId));
                         } else {
@@ -589,7 +598,7 @@ const Search = () => {
                     resultData = data.filter(contest => !blockedUsers.has(contest.hostId) && !blockedUsers.has(contest.ownerId));
 
                     // Apply Following filter (Added)
-                    if (followingOnly) {
+                    if (feedScope === 'following') {
                         if (followingList.length > 0) {
                             resultData = resultData.filter(contest => followingList.includes(contest.hostId) || followingList.includes(contest.ownerId));
                         } else {
@@ -612,7 +621,7 @@ const Search = () => {
                     resultData = data.filter(event => !blockedUsers.has(event.hostId) && !blockedUsers.has(event.ownerId));
 
                     // Apply Following filter (Added)
-                    if (followingOnly) {
+                    if (feedScope === 'following') {
                         if (followingList.length > 0) {
                             resultData = resultData.filter(event => followingList.includes(event.hostId) || followingList.includes(event.ownerId));
                         } else {
@@ -635,7 +644,7 @@ const Search = () => {
                     resultData = data.filter(card => !blockedUsers.has(card.ownerId));
 
                     // Apply Following filter (Added)
-                    if (followingOnly) {
+                    if (feedScope === 'following') {
                         if (followingList.length > 0) {
                             resultData = resultData.filter(card => followingList.includes(card.ownerId));
                         } else {
@@ -660,7 +669,7 @@ const Search = () => {
                     // Quick fetch for trending/recent (empty query, no tags)
                     const { data: fallbackData } = await searchPosts('', {
                         sort: 'trending',
-                        type: searchMode // Keep art/social context
+                        type: feedContentType // Keep art/social context
                     });
                     // Filter blocked
                     const cleanFallback = fallbackData.filter(p => !blockedUsers.has(p.authorId));
@@ -775,7 +784,7 @@ const Search = () => {
             }
             isLoadingRef.current = false;
         }
-    }, [currentMode, followingOnly, followingList, searchUsers, searchPosts, searchShopItems, searchStudios, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastStudioDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, lastTextDoc, hasMorePosts, hasMoreUsers, hasMoreStudios, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, hasMoreText, recommendations, blockedUsers, selectedMuseum, searchMode, isMarketplaceMode]);
+    }, [currentMode, feedScope, followingList, searchUsers, searchPosts, searchShopItems, searchStudios, searchCollections, searchContests, searchEvents, searchSpaceCards, lastPostDoc, lastUserDoc, lastStudioDoc, lastCollectionDoc, lastMuseumDoc, lastContestDoc, lastEventDoc, lastSpaceCardDoc, lastTextDoc, hasMorePosts, hasMoreUsers, hasMoreStudios, hasMoreCollections, hasMoreMuseums, hasMoreContests, hasMoreEvents, hasMoreSpaceCards, hasMoreText, recommendations, blockedUsers, selectedMuseum, feedContentType, isMarketplaceMode]);
 
     // Update refs when search params change
     useEffect(() => {
@@ -984,18 +993,11 @@ const Search = () => {
                 setSearchTerm={setSearchTerm}
                 currentMode={currentMode}
                 setCurrentMode={setCurrentMode}
-                followingOnly={followingOnly}
-                setFollowingOnly={setFollowingOnly}
-                selectedTags={selectedTags}
                 setIsMobileFiltersOpen={setIsMobileFiltersOpen}
                 sortBy={sortBy}
                 setSortBy={setSortBy}
-                viewMode={viewMode}
-                setViewMode={setViewMode}
                 isSortDropdownOpen={isSortDropdownOpen}
                 setIsSortDropdownOpen={setIsSortDropdownOpen}
-                searchMode={searchMode}
-                setSearchMode={setSearchMode}
                 isMarketplaceMode={isMarketplaceMode} // NEW
                 setIsMarketplaceMode={setIsMarketplaceMode} // NEW
                 hasActiveFilters={selectedTags.length > 0 || selectedPark || selectedDate || selectedCamera || selectedFilm || selectedOrientation || selectedAspectRatio || selectedMuseum}

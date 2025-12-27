@@ -106,6 +106,15 @@ const Feed = () => {
     }, [location.pathname]); // Run on navigation to this page
 
     // --- VIEW MODE INTERACTION LOGIC ---
+    useEffect(() => {
+        // Prevent any body/html scrolling while viewing the immersive feed
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+    }, []);
 
     const isSafeTarget = (target) => {
         // Exclude interactive elements and media
@@ -160,13 +169,14 @@ const Feed = () => {
         <div
             style={{
                 height: '100dvh', // Use dynamic viewport height for perfect centering on mobile
-                width: '100vw',
+                width: '100%',
                 background: '#000',
                 overflow: 'hidden',
                 position: 'relative',
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
-                WebkitTouchCallout: 'none'
+                WebkitTouchCallout: 'none',
+                overscrollBehavior: 'none'
             }}
             onContextMenu={handleContextMenu}
             onTouchStart={handleTouchStart}
@@ -419,17 +429,7 @@ const Feed = () => {
 
             {visiblePosts.length > 0 && (
                 <>
-                    <style>
-                        {`
-                            .no-scrollbar::-webkit-scrollbar {
-                                display: none;
-                            }
-                            .no-scrollbar {
-                                -ms-overflow-style: none;
-                                scrollbar-width: none;
-                            }
-                        `}
-                    </style>
+
 
                     {/* Render Container Based on Mode */}
                     {feedViewMode === 'image' ? (

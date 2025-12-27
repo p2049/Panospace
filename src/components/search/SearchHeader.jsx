@@ -5,6 +5,7 @@ import SearchFilters from './SearchFilters';
 import SearchModeTabs from './SearchModeTabs';
 import { useThemeColors } from '@/core/store/useThemeStore';
 import SearchEmojiPicker from '@/components/SearchEmojiPicker';
+import { useFeedStore } from '@/core/store/useFeedStore';
 
 const SearchHeader = ({
     isMobile,
@@ -13,8 +14,6 @@ const SearchHeader = ({
     setSearchTerm,
     currentMode,
     setCurrentMode,
-    followingOnly,
-    setFollowingOnly,
     selectedTags,
     setIsMobileFiltersOpen,
     // Filter props
@@ -24,14 +23,17 @@ const SearchHeader = ({
     setViewMode,
     isSortDropdownOpen,
     setIsSortDropdownOpen,
-    searchMode,
-    setSearchMode,
     isMarketplaceMode,
     setIsMarketplaceMode,
     hasActiveFilters // New prop
 }) => {
     const navigate = useNavigate();
     const { accentColor } = useThemeColors();
+    const { feedScope, feedContentType } = useFeedStore();
+
+    // Derive display labels
+    const scopeLabel = feedScope === 'all' ? 'UNIVERSAL' : (feedScope === 'following' ? 'ADDED' : 'GLOBAL');
+    const contentLabel = feedContentType === 'all' ? 'ART & SOCIAL' : (feedContentType === 'art' ? 'ART ONLY' : 'SOCIAL ONLY');
     const [showPicker, setShowPicker] = React.useState(false);
 
     return (
@@ -144,10 +146,10 @@ const SearchHeader = ({
                             <circle cx="12" cy="12" r="7" fill="none" stroke="#7FFFD4" strokeWidth="0.5" opacity="0.3" />
                         </svg>
 
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.8rem', whiteSpace: 'nowrap' }}>
                             <h1 style={{
                                 color: '#fff',
-                                fontSize: '1.1rem',
+                                fontSize: '0.95rem',
                                 fontWeight: '900',
                                 textShadow: '0 2px 8px rgba(127, 255, 212, 0.4)',
                                 cursor: 'pointer',
@@ -158,26 +160,43 @@ const SearchHeader = ({
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                                 backgroundClip: 'text',
-                                margin: 0
+                                margin: 0,
+                                opacity: 0.9
                             }} onClick={() => navigate('/')}>
                                 PANOSPACE
                             </h1>
-                            <span
-                                style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: '800',
-                                    fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', monospace",
-                                    letterSpacing: '0.1em',
-                                    textTransform: 'uppercase',
-                                    background: 'linear-gradient(135deg, #ffffff 0%, #7FFFD4 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    color: 'transparent',
-                                    filter: 'drop-shadow(0 0 8px rgba(127, 255, 212, 0.3))',
-                                    cursor: 'default',
-                                    userSelect: 'none'
-                                }}>EXPLORE</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
+                                <span
+                                    style={{
+                                        fontSize: '0.65rem',
+                                        fontWeight: '800',
+                                        fontFamily: "'Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', monospace",
+                                        letterSpacing: '0.15em',
+                                        textTransform: 'uppercase',
+                                        background: 'repeating-linear-gradient(to bottom, rgba(255, 255, 255, 1) 0px, rgba(255, 255, 255, 1) 1px, rgba(127, 255, 212, 0.7) 1px, rgba(127, 255, 212, 0.7) 2px)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                        color: 'transparent',
+                                        filter: 'drop-shadow(0 0 4px rgba(127, 255, 212, 0.4))',
+                                        cursor: 'default',
+                                        userSelect: 'none',
+                                        lineHeight: 1.2
+                                    }}>EXPLORE {scopeLabel}</span>
+                                <span
+                                    style={{
+                                        fontSize: '0.55rem',
+                                        fontWeight: '700',
+                                        fontFamily: "'Orbitron', 'Rajdhani', monospace",
+                                        letterSpacing: '0.1em',
+                                        textTransform: 'uppercase',
+                                        color: 'rgba(127, 255, 212, 0.6)',
+                                        cursor: 'default',
+                                        userSelect: 'none',
+                                        opacity: 0.8,
+                                        lineHeight: 1
+                                    }}>{contentLabel}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -258,40 +277,7 @@ const SearchHeader = ({
                         />
                     </div>
 
-                    {/* Desktop: Art/Social Buttons (Only show here if NOT mobile) */}
-                    {!isMobile && currentMode === 'posts' && (
-                        <div className="search-mode-tabs" style={{ flexShrink: 0, display: 'flex', gap: '0.5rem' }}>
-                            <button
-                                onClick={() => setSearchMode(searchMode === "art" ? "social" : "art")}
-                                style={{
-                                    padding: '0.35rem 0.8rem',
-                                    borderRadius: '8px',
-                                    border: `1px solid ${accentColor}`,
-                                    background: searchMode === 'art' ? accentColor : 'transparent',
-                                    color: searchMode === 'art' ? '#000' : accentColor,
-                                    fontSize: '0.8rem',
-                                    fontWeight: 'bold',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    whiteSpace: 'nowrap',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem',
-                                    boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none',
-                                    height: '32px', // Enforce 32px
-                                    boxSizing: 'border-box'
-                                }}
-                            >
-                                {searchMode === 'art' ? 'ART' : 'SOCIAL'}
-                            </button>
 
-
-
-
-                        </div>
-                    )}
 
                     {/* Mobile: Filter button */}
                     {isMobile && (
@@ -318,27 +304,7 @@ const SearchHeader = ({
                     {/* Mobile: Compact Filter Controls Row (Inline now) */}
                     {isMobile && (
                         <>
-                            {/* Following Toggle - Icon Only */}
-                            <button
-                                onClick={() => setFollowingOnly(!followingOnly)}
-                                style={{
-                                    background: followingOnly ? 'rgba(127, 255, 212, 0.15)' : 'transparent',
-                                    border: followingOnly ? '1px solid var(--ice-mint)' : '1px solid rgba(255, 255, 255, 0.2)',
-                                    borderRadius: '8px',
-                                    width: '32px',
-                                    height: '32px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: followingOnly ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.6)',
-                                    cursor: 'pointer',
-                                    flexShrink: 0,
-                                    fontSize: '14px'
-                                }}
-                                title="Added Only"
-                            >
-                                👥
-                            </button>
+
 
                             {/* Sort Dropdown - Compact */}
                             <select
@@ -398,49 +364,7 @@ const SearchHeader = ({
                             flexWrap: 'wrap'
                         }}>
                             {/* Following Toggle - Compact */}
-                            <label style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.45rem 1rem',
-                                background: followingOnly ? 'rgba(127, 255, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                border: followingOnly ? '1px solid var(--ice-mint)' : '1px solid rgba(255, 255, 255, 0.08)',
-                                borderRadius: '8px',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                whiteSpace: 'nowrap',
-                                height: '32px',
-                                boxShadow: followingOnly ? '0 0 15px rgba(127, 255, 212, 0.15)' : 'none',
-                                backdropFilter: 'blur(10px)'
-                            }}>
-                                <input
-                                    type="checkbox"
-                                    checked={followingOnly}
-                                    onChange={(e) => setFollowingOnly(e.target.checked)}
-                                    style={{
-                                        width: '14px',
-                                        height: '14px',
-                                        cursor: 'pointer',
-                                        appearance: 'none',
-                                        WebkitAppearance: 'none',
-                                        border: '2px solid #7FFFD4',
-                                        borderRadius: '3px',
-                                        background: followingOnly ? '#7FFFD4' : '#000',
-                                        position: 'relative',
-                                        transition: 'all 0.2s'
-                                    }}
-                                />
-                                <span style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: followingOnly ? '700' : '500',
-                                    color: followingOnly ? 'var(--ice-mint)' : 'rgba(255, 255, 255, 0.7)',
-                                    fontFamily: "'Rajdhani', 'Orbitron', sans-serif",
-                                    letterSpacing: '0.05em',
-                                    textTransform: 'uppercase'
-                                }}>
-                                    ADDED
-                                </span>
-                            </label>
+
 
                             {/* Search Filters - Integrated */}
                             <SearchFilters
@@ -463,42 +387,11 @@ const SearchHeader = ({
                             currentMode={currentMode}
                             setCurrentMode={setCurrentMode}
                             isMobile={isMobile}
-                        >
-                            {/* Insert Art/Shop Buttons Here as Children for Mobile Scroll */}
-                            {currentMode === 'posts' && (
-                                <>
-                                    <button
-                                        onClick={() => setSearchMode(searchMode === "art" ? "social" : "art")}
-                                        style={{
-                                            padding: '0.35rem 0.5rem',
-                                            borderRadius: '8px',
-                                            border: `1px solid ${accentColor}`,
-                                            background: searchMode === 'art' ? accentColor : 'transparent',
-                                            color: searchMode === 'art' ? '#000' : accentColor,
-                                            fontSize: '0.7rem',
-                                            fontWeight: 'bold',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            whiteSpace: 'nowrap',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            boxShadow: searchMode === 'art' ? `0 0 10px ${accentColor}40` : 'none',
-                                            height: '32px',
-                                            flexShrink: 0
-                                        }}
-                                    >
-                                        {searchMode === 'art' ? 'ART' : 'SOCIAL'}
-                                    </button>
-
-
-                                </>
-                            )}
-                        </SearchModeTabs>
+                        />
                     </div>
                 )}
+
+
             </div>
 
 

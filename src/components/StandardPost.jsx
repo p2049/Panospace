@@ -11,6 +11,7 @@ import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { getQuartzDateStyle } from '@/core/utils/quartzDateUtils';
 import { formatExifForDisplay } from '@/core/utils/exif';
 import ZoomableImageWrapper from './ZoomableImageWrapper';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import '@/styles/Post.css';
 
 // Wrappers and Helper Components
@@ -65,95 +66,58 @@ const StandardPost = ({
     setShowDetailsSidebar,
     isNested = false
 }) => {
-    const touchStartRef = useRef({ x: null, y: null, time: null });
-    const touchEndRef = useRef({ x: null, y: null });
-    const [dragOffset, setDragOffset] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
+    const [width, setWidth] = useState(0);
+    const carouselRef = useRef(null);
 
-    // Touch handlers with drag-to-follow and velocity tracking
-    const onTouchStart = useCallback((e) => {
-        touchStartRef.current = {
-            x: e.targetTouches[0].clientX,
-            y: e.targetTouches[0].clientY,
-            time: Date.now()
+    // Track container width for pixel-perfect carousel movement
+    useEffect(() => {
+        if (!carouselRef.current) return;
+
+        const updateWidth = () => {
+            if (carouselRef.current) {
+                setWidth(carouselRef.current.offsetWidth);
+            }
         };
-        touchEndRef.current = { x: null, y: null };
-        setIsDragging(true);
+
+        const observer = new ResizeObserver(updateWidth);
+        observer.observe(carouselRef.current);
+        updateWidth();
+
+        return () => observer.disconnect();
     }, []);
 
-    const onTouchMove = useCallback((e) => {
-        if (!isDragging) return;
-
-        const currentX = e.targetTouches[0].clientX;
-        const currentY = e.targetTouches[0].clientY;
-
-        touchEndRef.current = { x: currentX, y: currentY };
-
-        const start = touchStartRef.current;
-        if (!start.x) return;
-
-        const deltaX = currentX - start.x;
-        const deltaY = currentY - start.y;
-
-        // Only track horizontal drag if it's more horizontal than vertical
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // Full-width swipe like Instagram/TikTok
-            let constrainedDrag = deltaX;
-
-            // Apply resistance only when at boundaries (first/last slide)
-            if ((currentSlide === 0 && deltaX > 0) ||
-                (currentSlide === items.length - 1 && deltaX < 0)) {
-                // At boundary - apply heavy resistance (rubber band effect)
-                constrainedDrag = deltaX * 0.15;
-            }
-
-            setDragOffset(constrainedDrag);
+    // Navigation logic handled by drag or arrows
+    const nextSlide = useCallback(() => {
+        if (currentSlide < items.length - 1) {
+            setCurrentSlide(prev => prev + 1);
         }
-    }, [isDragging, currentSlide, items.length]);
+    }, [items.length, currentSlide, setCurrentSlide]);
 
-    const onTouchEnd = useCallback(() => {
-        const start = touchStartRef.current;
-        const end = touchEndRef.current;
+    const prevSlide = useCallback(() => {
+        if (currentSlide > 0) {
+            setCurrentSlide(prev => prev - 1);
+        }
+    }, [currentSlide, setCurrentSlide]);
 
-        setIsDragging(false);
-        setDragOffset(0);
+    const handleDragEnd = (e, info) => {
+        const offset = info.offset.x;
+        const velocity = info.velocity.x;
+        const currentWidth = width || window.innerWidth;
 
-        if (!start.x || !end.x) return;
-
-        const distanceX = start.x - end.x;
-        const distanceY = start.y - end.y;
-        const elapsed = Date.now() - (start.time || Date.now());
-
-        // Calculate velocity (pixels per ms)
-        const velocityX = Math.abs(distanceX) / Math.max(elapsed, 1);
-
-        // Velocity-based threshold: quick flicks need less distance
-        const isQuickFlick = velocityX > 0.5; // Fast swipe
-        const minSwipeDistance = isQuickFlick ? 30 : 50;
-
-        // Check if it's more horizontal than vertical
-        const isHorizontal = Math.abs(distanceX) > Math.abs(distanceY);
-
-        if (isHorizontal) {
-            const isLeftSwipe = distanceX > minSwipeDistance;
-            const isRightSwipe = distanceX < -minSwipeDistance;
-
-            if (isLeftSwipe && currentSlide < items.length - 1) {
+        // IG Style One-at-a-time snap:
+        if (offset < -currentWidth * 0.2 || velocity < -500) {
+            // Commit to next slide
+            if (currentSlide < items.length - 1) {
                 setCurrentSlide(prev => prev + 1);
             }
-            if (isRightSwipe && currentSlide > 0) {
+        } else if (offset > currentWidth * 0.2 || velocity > 500) {
+            // Commit to prev slide
+            if (currentSlide > 0) {
                 setCurrentSlide(prev => prev - 1);
             }
         }
-    }, [currentSlide, items.length, setCurrentSlide]);
-
-    const nextSlide = useCallback(() => {
-        setCurrentSlide((prev) => (prev + 1) % items.length);
-    }, [items.length, setCurrentSlide]);
-
-    const prevSlide = useCallback(() => {
-        setCurrentSlide((prev) => (prev - 1 + items.length) % items.length);
-    }, [items.length, setCurrentSlide]);
+        // Snap back happens automatically because each slide's 'x' is determined by currentSlide
+    };
 
     // Helper to render content for both Single and Slideshow views
     const renderSlideContent = (item, index) => {
@@ -214,7 +178,7 @@ const StandardPost = ({
             className={`post-ui--standard ${isNested ? 'is-nested' : ''}`}
             style={{
                 height: isNested ? 'auto' : '100dvh',
-                width: isNested ? '100%' : '100vw',
+                width: isNested ? '100%' : '100%',
                 minHeight: isNested ? '300px' : 'none',
                 scrollSnapAlign: isNested ? 'none' : 'start',
                 position: 'relative',
@@ -290,44 +254,44 @@ const StandardPost = ({
                         height: isNested ? 'auto' : '100%',
                         aspectRatio: isNested ? (items[0]?.aspectRatio || '1/1') : 'none',
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        touchAction: 'pan-y pinch-zoom'
                     }}
-                    onTouchStart={onTouchStart}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}
+                    ref={carouselRef}
                 >
                     {/* Slides Container */}
-                    <div
-                        style={{
-                            display: 'flex',
-                            width: '100%',
-                            height: '100%',
-                            transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`,
-                            // Smooth, cinematic transition
-                            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.4, 0.0, 0.2, 1)',
-                            willChange: 'transform',
-                            backfaceVisibility: 'hidden',
-                            WebkitBackfaceVisibility: 'hidden'
-                        }}
-                    >
-                        {items.map((item, index) => (
-                            <div
-                                key={index}
-                                style={{
-                                    flex: '0 0 100%',
-                                    width: '100%',
-                                    height: '100%',
-                                    position: 'relative',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: '#000'
-                                }}
-                            >
-                                {renderSlideContent(item, index)}
-                            </div>
-                        ))}
-                    </div>
+                    {items.map((item, index) => (
+                        <motion.div
+                            key={index}
+                            drag="x"
+                            dragDirectionLock
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={1}
+                            dragMomentum={false}
+                            onDragEnd={handleDragEnd}
+                            animate={{ x: (index - currentSlide) * width }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 30,
+                                mass: 0.8
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#000',
+                                willChange: 'transform'
+                            }}
+                        >
+                            {renderSlideContent(item, index)}
+                        </motion.div>
+                    ))}
 
                     {/* Navigation Arrows */}
                     {currentSlide > 0 && (
@@ -537,17 +501,22 @@ const StandardPost = ({
                                 cursor: 'pointer'
                             }}
                         >
-                            <span style={{
+                            <button style={{
                                 color: '#7FFFD4',
                                 fontWeight: '700',
                                 fontSize: '0.9rem',
                                 fontFamily: '"Rajdhani", monospace',
                                 letterSpacing: '1px',
                                 textTransform: 'uppercase',
-                                lineHeight: 1
+                                lineHeight: 1,
+                                background: 'none', // Ensure button looks like text
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                textAlign: 'left'
                             }}>
                                 {renderCosmicUsername(post.username || post.authorName || 'ANONYMOUS')}
-                            </span>
+                            </button>
                         </div>
                     </div>
 
@@ -587,7 +556,7 @@ const StandardPost = ({
             {/* Like Button & Slide Counter */}
             {!isNested && (
                 <div className="post-actions-container">
-                    <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={false} />
+                    <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={true} />
                 </div>
             )}
         </div >
