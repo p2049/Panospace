@@ -24,6 +24,7 @@ import PixelAvatarCreator from '@/components/pixel-avatar/PixelAvatarCreator';
 import { FaTh } from 'react-icons/fa';
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
 const BannerOverlayRenderer = React.lazy(() => import('@/components/profile/BannerOverlayRenderer'));
+import { BANNER_OVERLAYS, OVERLAY_CATEGORIES } from '@/core/constants/bannerOverlays';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
 import PlanetUserIcon from '@/components/PlanetUserIcon';
@@ -1091,28 +1092,26 @@ const EditProfile = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                 {/* Left Arrow - Profile Border Cycle */}
-                                {!preview && (
-                                    <button
-                                        type="button"
-                                        onClick={() => cycleBorderColor(-1)}
-                                        style={{
-                                            background: 'rgba(255,255,255,0.1)',
-                                            border: 'none',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            width: '32px',
-                                            height: '32px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            backdropFilter: 'blur(4px)'
-                                        }}
-                                    >
-                                        <FaChevronLeft size={16} />
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => cycleBorderColor(-1)}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        color: 'white',
+                                        borderRadius: '50%',
+                                        width: '32px',
+                                        height: '32px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        backdropFilter: 'blur(4px)'
+                                    }}
+                                >
+                                    <FaChevronLeft size={16} />
+                                </button>
 
                                 <div style={{
                                     position: 'relative',
@@ -1156,6 +1155,7 @@ const EditProfile = () => {
                                             <BannerOverlayRenderer
                                                 overlays={profileOverlays}
                                                 monochromeColor={(profileBorderColor && !profileBorderColor.includes('gradient') && profileBorderColor !== 'brand') ? profileBorderColor : null}
+                                                target="profile"
                                             >
                                                 {preview ? (
                                                     <img
@@ -1184,28 +1184,26 @@ const EditProfile = () => {
                                 </div>
 
                                 {/* Right Arrow - Profile Border Cycle */}
-                                {!preview && (
-                                    <button
-                                        type="button"
-                                        onClick={() => cycleBorderColor(1)}
-                                        style={{
-                                            background: 'rgba(255,255,255,0.1)',
-                                            border: 'none',
-                                            color: 'white',
-                                            borderRadius: '50%',
-                                            width: '32px',
-                                            height: '32px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            backdropFilter: 'blur(4px)'
-                                        }}
-                                    >
-                                        <FaChevronRight size={16} />
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => cycleBorderColor(1)}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        color: 'white',
+                                        borderRadius: '50%',
+                                        width: '32px',
+                                        height: '32px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        backdropFilter: 'blur(4px)'
+                                    }}
+                                >
+                                    <FaChevronRight size={16} />
+                                </button>
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', position: 'relative' }}>
                                 <label style={{
@@ -1371,7 +1369,14 @@ const EditProfile = () => {
                                 onSelect={(newVal) => {
                                     if (overlayTarget === 'both') {
                                         setSelectedOverlays(newVal);
-                                        setProfileOverlays(newVal);
+                                        // Filter out Viewfinder UIs for profile to ensure they only apply to Banner
+                                        const profileSafe = newVal.filter(id => {
+                                            const ov = BANNER_OVERLAYS.find(o => o.id === id);
+                                            if (!ov) return true;
+                                            const isViewfinderUI = ov.category === OVERLAY_CATEGORIES.CAMERA.id || ov.id === 'display_terminal';
+                                            return !isViewfinderUI;
+                                        });
+                                        setProfileOverlays(profileSafe);
                                     } else if (overlayTarget === 'banner') {
                                         setSelectedOverlays(newVal);
                                     } else {

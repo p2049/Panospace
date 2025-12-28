@@ -540,6 +540,7 @@ const Profile = () => {
                                 <BannerOverlayRenderer
                                     overlays={user.profileTheme?.profileOverlays || []}
                                     monochromeColor={(user.profileTheme?.borderColor && !user.profileTheme.borderColor.includes('gradient') && user.profileTheme.borderColor !== 'brand') ? user.profileTheme.borderColor : null}
+                                    target="profile"
                                 >
                                     {user.photoURL ? (
                                         <img

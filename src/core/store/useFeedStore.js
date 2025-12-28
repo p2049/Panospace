@@ -126,8 +126,7 @@ export const useFeedStore = create(
             resetTooltip: () => {
                 set({ hasSeenSwipeTooltip: false });
                 if (typeof window !== 'undefined') {
-                    localStorage.removeItem(TOOLTIP_KEY);
-                }
+                    localStow                }
             },
 
             // View Mode (Session Only - 'image' | 'list')

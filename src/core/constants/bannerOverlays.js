@@ -5,14 +5,19 @@
  */
 
 export const OVERLAY_CATEGORIES = {
+    CAMERA: {
+        id: 'CAMERA',
+        label: 'Camera Interface',
+        description: 'Authentic viewfinder overlays and HUDs.'
+    },
     DISPLAY: {
         id: 'DISPLAY',
-        label: 'Display / Signal',
-        description: 'Simulates the medium through which the image is viewed.'
+        label: 'Retro Display',
+        description: 'Simulates the retro medium (CRT, LCD, etc.) through which the image is viewed.'
     },
     CAPTURE: {
         id: 'CAPTURE',
-        label: 'Capture / Sensor',
+        label: 'Sensor / Capture',
         description: 'Simulates the characteristics of the recording device.'
     },
     OPTICAL: {
@@ -22,31 +27,141 @@ export const OVERLAY_CATEGORIES = {
     },
     GRADE: {
         id: 'GRADE',
-        label: 'Color Grade / Post',
+        label: 'Cinematic Grade',
         description: 'Atmospheric color treatments and film simulations.'
     }
 };
 
 export const BANNER_OVERLAYS = [
-    // --- DISPLAY / SIGNAL ---
+    // --- CAMERA INTERFACE PACK ---
+    {
+        id: 'display_viewfinder',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Digital Finder',
+        description: 'Minimalist camera viewfinder OSD.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'bloom_optical']
+    },
+    {
+        id: 'display_slr_prism',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Split Prism',
+        description: 'Analog focus screen with microprism ring.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'film_flare']
+    },
+    {
+        id: 'display_pano_optic',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Panospace Optic',
+        description: 'Premium brand-aligned optical viewfinder system.',
+        compatibleWith: ['standard_digital', 'clean_optics', 'bloom_optical']
+    },
+    {
+        id: 'display_pro_reflex',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Pro Reflex',
+        description: 'Optical viewfinder with bottom LED info readout.',
+        compatibleWith: ['standard_digital', 'bloom_optical', 'clear_optics']
+    },
+    {
+        id: 'display_hybrid_info',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Hybrid Info',
+        description: 'Modern mirrorless EVF with histogram and level.',
+        compatibleWith: ['standard_digital', 'grade_teal', 'high_gain']
+    },
+    {
+        id: 'display_datacam',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'DataCam EVF',
+        description: 'High-density telemetry overlay in brand colors.',
+        compatibleWith: ['standard_digital', 'grade_teal', 'high_gain']
+    },
+    {
+        id: 'display_neural_optic',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Neural Link',
+        description: 'Bio-digital interface with retinal projection.',
+        compatibleWith: ['display_glitch', 'grade_cyber_chrome', 'bloom_optical']
+    },
+    {
+        id: 'display_cinema_guide',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Cinema Guide',
+        description: 'Professional anamorphic framing markers.',
+        compatibleWith: ['standard_digital', 'bloom_optical', 'grade_teal']
+    },
+    {
+        id: 'display_point_n_shoot',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Compact Auto',
+        description: '90s luxury compact viewfinder overlay.',
+        compatibleWith: ['standard_digital', 'high_gain', 'grade_teal']
+    },
+    {
+        id: 'display_cyber_cam',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Cyber Digicam',
+        description: 'Early 2000s digital camera UI with pixel font.',
+        compatibleWith: ['standard_digital', 'display_glitch', 'grade_cyber_chrome']
+    },
+    {
+        id: 'display_toy_cam',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Disposable',
+        description: 'Plastic lens vignette with flash ready light.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'high_gain']
+    },
+    {
+        id: 'display_vhs_rec',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Tape Cam',
+        description: '90s camcorder OSD with play mode and timestamp.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'display_glitch']
+    },
+    {
+        id: 'display_super_8',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Cine-Film 16',
+        description: 'Rounded gate mask with heavy grain and sprocket shadow.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'warm_light']
+    },
+    {
+        id: 'display_med_format',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Waist-Level 6x6',
+        description: 'Square ground-glass markings.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'bloom_optical']
+    },
+    {
+        id: 'display_rangefinder',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Classic Analog',
+        description: 'Manual focus patch and bright frames.',
+        compatibleWith: ['standard_digital', 'grade_nostalgia', 'soft_optics']
+    },
+    {
+        id: 'display_terminal',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Retro Terminal',
+        description: 'Amber monochrome phosphor text mode.',
+        compatibleWith: ['standard_digital', 'scanline_grid', 'display_glitch']
+    },
+    {
+        id: 'display_scifi_ui',
+        category: OVERLAY_CATEGORIES.CAMERA.id,
+        label: 'Sci-Fi UI',
+        description: 'Cinematic HUD overlay with Panospace brand optics.',
+        compatibleWith: ['standard_digital', 'capture_nightvision', 'display_glitch', 'grade_teal']
+    },
+
+    // --- RETRO DISPLAY PACK ---
     {
         id: 'crt_signal',
         category: OVERLAY_CATEGORIES.DISPLAY.id,
         label: 'CRT Signal',
         description: 'Phosphor bloom, scanlines, and RGB subpixel masking.',
         compatibleWith: ['standard_digital', 'bloom_optical', 'noise_material', 'warm_light', 'cool_light', 'soft_optics', 'monochrome'],
-        settings: {
-            scanlineOpacity: 0.15,
-            chromaticAberration: '0.5px',
-            glow: '0 0 5px rgba(255,255,255,0.2)'
-        }
-    },
-    {
-        id: 'signal_degradation',
-        category: OVERLAY_CATEGORIES.DISPLAY.id,
-        label: 'Signal Loss',
-        description: 'Analog signal interference and slight color bleeding.',
-        compatibleWith: ['high_gain', 'soft_optics', 'monochrome'],
+        settings: { scanlineOpacity: 0.15, chromaticAberration: '0.5px', glow: '0 0 5px rgba(255,255,255,0.2)' }
     },
     {
         id: 'display_glitch',
@@ -54,6 +169,13 @@ export const BANNER_OVERLAYS = [
         label: 'Digital Artifacts',
         description: 'Random data corruption and RGB block artifacts.',
         compatibleWith: ['standard_digital', 'monochrome', 'high_gain']
+    },
+    {
+        id: 'display_vga',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: 'VGA Terminal',
+        description: 'Sharp 720x400 text mode raster with shadow mask.',
+        compatibleWith: ['standard_digital', 'display_glitch']
     },
     {
         id: 'display_interlace',
@@ -87,15 +209,8 @@ export const BANNER_OVERLAYS = [
         id: 'display_halftone',
         category: OVERLAY_CATEGORIES.DISPLAY.id,
         label: 'Ink Press',
-        description: 'CMYK halftone pattern simulation.',
+        description: 'CMYK halftone simulation.',
         compatibleWith: ['soft_optics', 'monochrome']
-    },
-    {
-        id: 'display_engine_v2',
-        category: OVERLAY_CATEGORIES.DISPLAY.id,
-        label: 'Engine V2',
-        description: '480i analog output warmth with ethereal signal noise.',
-        compatibleWith: ['soft_optics', 'bloom_optical']
     },
     {
         id: 'display_handheld_dm',
@@ -140,21 +255,49 @@ export const BANNER_OVERLAYS = [
         compatibleWith: ['standard_digital', 'monochrome']
     },
     {
-        id: 'display_bit_rot',
+        id: 'display_plasma',
         category: OVERLAY_CATEGORIES.DISPLAY.id,
-        label: 'Bit Rot',
-        description: 'Severe compression artifacts and digital signal decay.',
-        compatibleWith: ['display_glitch', 'high_gain']
+        label: 'Plasma Cell',
+        description: 'High-voltage gas discharge with deep blacks and vibrant neon glow.',
+        compatibleWith: ['standard_digital', 'high_gain', 'bloom_optical']
     },
     {
-        id: 'display_vga',
+        id: 'display_led_wall',
         category: OVERLAY_CATEGORIES.DISPLAY.id,
-        label: 'VGA Terminal',
-        description: 'Sharp 720x400 text mode raster with shadow mask.',
-        compatibleWith: ['standard_digital', 'display_glitch']
+        label: 'LED Matrix',
+        description: 'Large-format discrete RGB LED modules with sharp pixel gaps.',
+        compatibleWith: ['standard_digital', 'high_gain', 'grade_cyber_chrome']
+    },
+    {
+        id: 'display_e_ink',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: 'E-Ink',
+        description: 'High-contrast electrophoretic matte display with ghosting artifacts.',
+        compatibleWith: ['monochrome', 'soft_optics', 'grain']
+    },
+    {
+        id: 'display_fiber_bundle',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: 'Fiber Bundle',
+        description: 'Coherent fiber optic plate transmission.',
+        compatibleWith: ['soft_optics', 'bloom_optical', 'capture_nightvision']
+    },
+    {
+        id: 'display_engine_v2',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: 'Engine V2',
+        description: '480i analog output warmth with ethereal signal noise.',
+        compatibleWith: ['soft_optics', 'bloom_optical']
+    },
+    {
+        id: 'signal_degradation',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: 'Signal Loss',
+        description: 'Analog signal interference and slight color bleeding.',
+        compatibleWith: ['high_gain', 'soft_optics', 'monochrome'],
     },
 
-    // --- CAPTURE / SENSOR ---
+    // --- SENSOR PACK ---
     {
         id: 'standard_digital',
         category: OVERLAY_CATEGORIES.CAPTURE.id,
@@ -226,8 +369,7 @@ export const BANNER_OVERLAYS = [
         compatibleWith: ['standard_digital', 'monochrome', 'grade_flux']
     },
 
-
-    // --- OPTICAL / MATERIAL ---
+    // --- OPTICAL PACK ---
     {
         id: 'bloom_optical',
         category: OVERLAY_CATEGORIES.OPTICAL.id,
@@ -278,6 +420,13 @@ export const BANNER_OVERLAYS = [
         compatibleWith: ['grain', 'vignette_optical', 'soft_optics', 'warm_light', 'bloom_optical']
     },
     {
+        id: 'display_spectral',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Spectral Coat',
+        description: 'Anti-reflective lens coating reflection.',
+        compatibleWith: ['standard_digital', 'bloom_optical', 'soft_optics']
+    },
+    {
         id: 'optic_prism',
         category: OVERLAY_CATEGORIES.OPTICAL.id,
         label: 'Prism Refraction',
@@ -285,14 +434,42 @@ export const BANNER_OVERLAYS = [
         compatibleWith: ['standard_digital', 'soft_optics', 'bloom_optical']
     },
     {
-        id: 'optic_holofoil',
+        id: 'optic_caustics',
         category: OVERLAY_CATEGORIES.OPTICAL.id,
-        label: 'Security Foil',
-        description: 'Iridescent authentication hologram verification sheen.',
-        compatibleWith: ['standard_digital', 'monochrome']
+        label: 'Caustic Glass',
+        description: 'Dynamic light refraction lines simulating water or uneven glass.',
+        compatibleWith: ['bloom_optical', 'soft_optics', 'cool_light']
+    },
+    {
+        id: 'optic_fresnel',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Fresnel Lens',
+        description: 'Concentric ring distortion patterns with center magnification.',
+        compatibleWith: ['standard_digital', 'monochrome', 'capture_cctv']
+    },
+    {
+        id: 'optic_oil',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Oil Slick',
+        description: 'Iridescent thin-film interference on the surface.',
+        compatibleWith: ['grain', 'soft_optics', 'display_glitch']
+    },
+    {
+        id: 'optic_frost',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Frost & Mist',
+        description: 'Heavy diffusion / condensation effect with surface texture.',
+        compatibleWith: ['bloom_optical', 'capture_nightvision', 'cool_light']
+    },
+    {
+        id: 'optic_glacier',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Glacial Ice',
+        description: 'Solid frozen surface with deep fracture lines and sub-surface scattering.',
+        compatibleWith: ['cool_light', 'grade_teal', 'bloom_optical']
     },
 
-    // --- COLOR GRADE / POST ---
+    // --- CINEMATIC GRADE PACK ---
     {
         id: 'grade_magma',
         category: OVERLAY_CATEGORIES.GRADE.id,
@@ -307,7 +484,6 @@ export const BANNER_OVERLAYS = [
         description: 'Cinematic teal shadows with preserved skin tones.',
         compatibleWith: ['grain', 'bloom_optical', 'soft_optics', 'film_flare']
     },
-
     {
         id: 'grade_nostalgia',
         category: OVERLAY_CATEGORIES.GRADE.id,
@@ -357,7 +533,6 @@ export const BANNER_OVERLAYS = [
         description: 'High-gloss metallic sheen with cold, futuristic highlights.',
         compatibleWith: ['grain', 'bloom_optical', 'crt_signal', 'film_flare']
     },
-
     {
         id: 'grade_x_process',
         category: OVERLAY_CATEGORIES.GRADE.id,
@@ -365,8 +540,6 @@ export const BANNER_OVERLAYS = [
         description: 'Chemical cross-processing. Green highlights, violet shadows.',
         compatibleWith: ['grain', 'soft_optics', 'film_flare']
     },
-
-
     {
         id: 'grade_cyber_zone',
         category: OVERLAY_CATEGORIES.GRADE.id,
@@ -374,7 +547,6 @@ export const BANNER_OVERLAYS = [
         description: 'Late 90s techno-optimism. Epcot blues, industrial grids, and CRT glow.',
         compatibleWith: ['bloom_optical', 'display_vga', 'display_red_zone']
     },
-
     {
         id: 'grade_anime',
         category: OVERLAY_CATEGORIES.GRADE.id,
@@ -445,8 +617,55 @@ export const BANNER_OVERLAYS = [
         description: 'Pristine high-key clarity. Desaturated reality with mint injection.',
         compatibleWith: ['grain', 'bloom_optical', 'soft_optics']
     },
-
-
+    {
+        id: 'grade_portrait_gold',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Portrait Gold',
+        description: 'The gold standard. Natural warmth, soft contrast, and perfect skin tones.',
+        compatibleWith: ['grain', 'vignette_optical', 'film_flare', 'soft_optics']
+    },
+    {
+        id: 'grade_cine_800',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Cine 800',
+        description: 'Tungsten balanced. Cool shadows, warm highlights, and iconic red halation.',
+        compatibleWith: ['grain', 'bloom_optical', 'film_flare']
+    },
+    {
+        id: 'grade_vivid_50',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Vivid 50',
+        description: 'High impact. Deep saturation and contrast for landscapes.',
+        compatibleWith: ['grain', 'vignette_optical', 'film_flare']
+    },
+    {
+        id: 'grade_chrome_64',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Chrome 64',
+        description: 'Vintage icon. Punchy contrast with signature red/yellow rendering.',
+        compatibleWith: ['grain', 'vignette_optical', 'soft_optics']
+    },
+    {
+        id: 'grade_mono_400',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Mono 400',
+        description: 'Classic monochrome. Gritty structure with deep blacks and rich texture.',
+        compatibleWith: ['grain', 'vignette_optical', 'film_flare', 'noise_material']
+    },
+    {
+        id: 'grade_pro_100',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Pro 100',
+        description: 'Ultra-vivid fine grain. Modern, smooth, and highly saturated.',
+        compatibleWith: ['bloom_optical', 'film_flare']
+    },
+    {
+        id: 'grade_cine_teal',
+        category: OVERLAY_CATEGORIES.GRADE.id,
+        label: 'Cinema Teal',
+        description: 'Hollywood standard. Deep teal shadows and pushed orange skin tones.',
+        compatibleWith: ['grain', 'film_flare', 'bloom_optical']
+    },
 ];
 
 /**
@@ -464,8 +683,19 @@ export const areOverlaysCompatible = (id1, id2) => {
 
     if (!ov1 || !ov2) return false;
 
-    // Check if ov1 explicitly allows ov2 or vice versa
-    return ov1.compatibleWith?.includes(id2) || ov2.compatibleWith?.includes(id1);
+    // Rule 1: Explicitly allowed
+    if (ov1.compatibleWith?.includes(id2) || ov2.compatibleWith?.includes(id1)) return true;
+
+    // Rule 2: Performance/Aesthetic boundary - Allow mixing across different categories (except CAMERA)
+    // Why: Two 'GRIND' (Cinematic Grades) will fight/look bad. Two 'DISPLAY's (CRT+VGA) overlap.
+    // However, a 'GRADE' + a 'DISPLAY' or 'OPTICAL' + 'CAPTURE' is usually fine and creates rich looks.
+    if (ov1.category !== ov2.category) {
+        // Exception: Don't stack two heavy HUD/UI overlays (CAMERA) even if IDs differ
+        // We actually want to allow CAMERA + almost anything else, but only ONE Camera UI at a time.
+        return true;
+    }
+
+    return false;
 };
 
 /**

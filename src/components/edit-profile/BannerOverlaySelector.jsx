@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BANNER_OVERLAYS, OVERLAY_CATEGORIES, areOverlaysCompatible } from '@/core/constants/bannerOverlays';
-import { FaInfoCircle, FaExclamationTriangle, FaCheckCircle, FaTrashAlt } from 'react-icons/fa';
+import { FaInfoCircle, FaCheckCircle, FaTrashAlt, FaMicrochip, FaCamera, FaEye, FaFilm, FaLayerGroup } from 'react-icons/fa';
 import { fadeColor } from '@/core/utils/colorUtils';
 
 /**
  * BannerOverlaySelector
  * UI for selecting visual overlays (Lens) for the profile banner.
+ * Refactored to match BannerTypeSelector UI pattern with scrolling lists.
  */
 const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor = '#7FFFD4', overlayTarget = 'both', setOverlayTarget }) => {
+    // Default to null so it's "closed" initially
+    const [activeCategory, setActiveCategory] = useState(null);
+
+    // Map Category IDs to Icons
+    const categoryIcons = {
+        [OVERLAY_CATEGORIES.CAMERA.id]: FaCamera,
+        [OVERLAY_CATEGORIES.DISPLAY.id]: FaMicrochip,
+        [OVERLAY_CATEGORIES.CAPTURE.id]: FaEye,
+        [OVERLAY_CATEGORIES.OPTICAL.id]: FaLayerGroup,
+        [OVERLAY_CATEGORIES.GRADE.id]: FaFilm
+    };
 
     const handleToggleOverlay = (id) => {
         if (selectedOverlays.includes(id)) {
@@ -16,10 +28,7 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
         }
 
         if (selectedOverlays.length >= 2) {
-            // Check if we can replace or alert
-            // For now, prompt rules say "Display a clear UI message if third selected"
-            // We'll handle this by showing a temporary error or just blocking
-            return;
+            return; // Limit reached
         }
 
         // Compatibility check
@@ -32,32 +41,32 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
         }
     };
 
-    const [isOpen, setIsOpen] = React.useState(false);
-    const [expandedCategory, setExpandedCategory] = React.useState(null); // Track opened category
     const categories = Object.values(OVERLAY_CATEGORIES);
+    const filteredOverlays = activeCategory ? BANNER_OVERLAYS.filter(o => o.category === activeCategory) : [];
+
+    // Color Helpers
+    const isGradient = highlightColor && highlightColor.includes('gradient');
+    // For non-gradient colors, use them as is. For gradients, fallback to mint for borders/text if needed.
+    const safeColor = isGradient ? '#7FFFD4' : highlightColor || '#7FFFD4';
+
+    const getBackgroundWithOpacity = (color, opacity = 0.1) => {
+        if (color && color.startsWith('#')) {
+            const r = parseInt(color.slice(1, 3), 16);
+            const g = parseInt(color.slice(3, 5), 16);
+            const b = parseInt(color.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+        return color;
+    };
+
 
     return (
         <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                style={{
-                    width: '100%',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: isOpen ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${isOpen ? (highlightColor.includes('gradient') ? 'rgba(255,255,255,0.3)' : highlightColor + '80') : 'rgba(255,255,255,0.1)'}`,
-                    padding: '0.8rem 1.2rem',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: isOpen ? `0 4px 20px ${highlightColor.includes('gradient') ? 'rgba(255,255,255,0.1)' : highlightColor + '20'}` : 'none'
-                }}
-            >
+            {/* Header / Title Area */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <label style={{
-                        ...(highlightColor.includes('gradient') ? {
+                        ...(isGradient ? {
                             backgroundImage: highlightColor,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -66,247 +75,255 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
                         fontSize: '0.9rem',
                         fontWeight: '800',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        cursor: 'pointer',
-                        filter: isOpen && !highlightColor.includes('gradient') ? `drop-shadow(0 0 5px ${highlightColor}80)` : 'none'
+                        letterSpacing: '0.08em'
                     }}>Visual Overlays (Lens)</label>
                     {selectedOverlays.length > 0 && (
                         <span style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.7rem',
                             color: '#fff',
-                            background: highlightColor.includes('gradient') ? 'rgba(255,255,255,0.2)' : fadeColor(highlightColor, 0.2),
+                            background: isGradient ? 'rgba(255,255,255,0.2)' : fadeColor(safeColor, 0.2),
                             padding: '2px 8px',
                             borderRadius: '10px'
                         }}>
-                            {selectedOverlays.length} Active
+                            {selectedOverlays.length}/2
                         </span>
                     )}
                 </div>
-                <div style={{
-                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                    color: highlightColor.includes('gradient') ? '#fff' : highlightColor
-                }}>▼</div>
-            </button>
-
-
-            {isOpen && (
-                <div style={{ marginTop: '1rem', animation: 'fadeIn 0.3s ease' }}>
-
-                    {/* TARGET UI SELECTOR MOVED INSIDE */}
-                    <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    {activeCategory && (
                         <button
                             type="button"
-                            onClick={() => setOverlayTarget && setOverlayTarget('both')}
-                            style={{
-                                flex: 1,
-                                padding: '0.6rem',
-                                background: overlayTarget === 'both' ? (highlightColor && highlightColor.includes('gradient') ? '#fff' : highlightColor) : 'transparent',
-                                color: overlayTarget === 'both' ? '#000' : '#888',
-                                borderRadius: '8px',
-                                border: 'none',
-                                fontWeight: '700',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
+                            onClick={() => setActiveCategory(null)}
+                            style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '600' }}
                         >
-                            BOTH
+                            Close Options
                         </button>
+                    )}
+                    {selectedOverlays.length > 0 && (
                         <button
                             type="button"
-                            onClick={() => setOverlayTarget && setOverlayTarget('banner')}
-                            style={{
-                                flex: 1,
-                                padding: '0.6rem',
-                                background: overlayTarget === 'banner' ? (highlightColor && highlightColor.includes('gradient') ? '#fff' : highlightColor) : 'transparent',
-                                color: overlayTarget === 'banner' ? '#000' : '#888',
-                                borderRadius: '8px',
-                                border: 'none',
-                                fontWeight: '700',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
+                            onClick={() => onSelect([])}
+                            style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
-                            BANNER
+                            <FaTrashAlt size={10} /> Clear
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setOverlayTarget && setOverlayTarget('profile')}
-                            style={{
-                                flex: 1,
-                                padding: '0.6rem',
-                                background: overlayTarget === 'profile' ? (highlightColor && highlightColor.includes('gradient') ? '#fff' : highlightColor) : 'transparent',
-                                color: overlayTarget === 'profile' ? '#000' : '#888',
-                                borderRadius: '8px',
-                                border: 'none',
-                                fontWeight: '700',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            PROFILE PIC
-                        </button>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-                        {selectedOverlays.length > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => onSelect([])}
-                                style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
-                                <FaTrashAlt size={10} /> Clear All
-                            </button>
-                        )}
-                    </div>
-
-
-
-                    {categories.map(cat => (
-                        <CategorySection
-                            key={cat.id}
-                            category={cat}
-                            selectedOverlays={selectedOverlays}
-                            onToggleOverlay={handleToggleOverlay}
-                            highlightColor={highlightColor}
-                            isExpanded={expandedCategory === cat.id}
-                            onToggleExpand={() => setExpandedCategory(prev => prev === cat.id ? null : cat.id)}
-                        />
-                    ))}
-
-                    {selectedOverlays.length >= 2 && (
-                        <div style={{
-                            marginTop: '1rem',
-                            padding: '0.75rem',
-                            background: 'rgba(255, 180, 50, 0.05)',
-                            border: '1px solid rgba(255, 180, 50, 0.2)',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px'
-                        }}>
-                            <FaInfoCircle color="rgba(255, 180, 50, 0.8)" size={14} />
-                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 180, 50, 0.8)' }}>
-                                Maximum of 2 overlays reach hardware stability limits.
-                            </span>
-                        </div>
                     )}
                 </div>
-            )}
-        </div>
-    );
-};
+            </div>
 
-// Helper component for collapsible sections
-const CategorySection = ({ category, selectedOverlays, onToggleOverlay, highlightColor, isExpanded, onToggleExpand }) => {
-    // Check if any item in this category is selected to optionally auto-expand or highlight
+            {/* Target Selector */}
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '1rem' }}>
+                {['both', 'banner', 'profile'].map((target) => (
+                    <button
+                        key={target}
+                        type="button"
+                        onClick={() => setOverlayTarget && setOverlayTarget(target)}
+                        style={{
+                            flex: 1,
+                            padding: '0.5rem',
+                            background: overlayTarget === target ? (isGradient ? '#fff' : safeColor) : 'transparent',
+                            color: overlayTarget === target ? '#000' : '#888',
+                            borderRadius: '8px',
+                            border: 'none',
+                            fontWeight: '700',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            textTransform: 'uppercase',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        {target.replace('profile', 'Avatar')}
+                    </button>
+                ))}
+            </div>
 
-    // Check if any item in this category is selected to optionally auto-expand or highlight
-    // Check if any item in this category is selected to optionally auto-expand or highlight
-    const activeItems = BANNER_OVERLAYS.filter(o => o.category === category.id && selectedOverlays.includes(o.id));
-    const hasActive = activeItems.length > 0;
-    const primaryActive = activeItems[0]; // Show info for first active item if multiple
+            {/* Category Tabs (Pills) - These are the "Top Selections" */}
+            <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: activeCategory ? '1rem' : '0.5rem' }}>
+                {categories.map(cat => {
+                    const isActive = activeCategory === cat.id;
+                    const Icon = categoryIcons[cat.id] || FaLayerGroup;
+                    return (
+                        <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => setActiveCategory(isActive ? null : cat.id)}
+                            style={{
+                                padding: '6px 12px',
+                                borderRadius: '20px',
+                                border: '1px solid',
+                                borderColor: isActive ? (isGradient ? '#fff' : safeColor) : 'rgba(255,255,255,0.2)',
+                                background: isActive ? (isGradient ? 'rgba(255,255,255,0.1)' : getBackgroundWithOpacity(safeColor, 0.1)) : 'transparent',
+                                color: isActive ? (isGradient ? '#fff' : safeColor) : '#888',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            <Icon size={12} />
+                            {cat.label.replace(' / ', ' ')} {/* Shorten label slightly */}
+                        </button>
+                    );
+                })}
+            </div>
 
-    return (
-        <div style={{ marginBottom: '0.5rem', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', overflow: 'hidden' }}>
-            <button
-                type="button"
-                onClick={onToggleExpand}
-                style={{
-                    width: '100%',
-                    padding: '0.8rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    background: 'rgba(255,255,255,0.02)',
-                    border: 'none',
-                    borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                    cursor: 'pointer',
-                    color: '#fff'
-                }}
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                    <span style={{
-                        fontSize: '0.75rem',
-                        color: hasActive ? (highlightColor.includes('gradient') ? '#fff' : highlightColor) : 'rgba(255,255,255,0.6)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '1px',
-                        fontWeight: hasActive ? '700' : '500',
-                        whiteSpace: 'nowrap'
-                    }}>
-                        {category.label}
-                    </span>
-                    {hasActive && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: highlightColor.includes('gradient') ? '#fff' : highlightColor, flexShrink: 0 }} />}
+            {/* Horizontal Scrollable Overlay List (2 Rows) - ONLY OPEN WHEN CATEGORY SELECTED */}
+            {activeCategory && (
+                <div
+                    className="custom-gradient-scrollbar"
+                    style={{
+                        display: 'grid',
+                        gridTemplateRows: 'repeat(2, 90px)',
+                        gridAutoFlow: 'column',
+                        gap: '10px',
+                        overflowX: 'auto',
+                        padding: '4px',
+                        WebkitOverflowScrolling: 'touch',
+                        scrollBehavior: 'smooth'
+                    }}
+                >
+                    {filteredOverlays.map((overlay) => {
+                        const isSelected = selectedOverlays.includes(overlay.id);
+                        const isMaxed = selectedOverlays.length >= 2 && !isSelected;
+                        const isCompatibleWithCurrent = selectedOverlays.every(id => areOverlaysCompatible(id, overlay.id));
 
-                    {/* Active Item Description in Header - REMOVED */}
-                </div>
-                <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>▼</div>
-            </button>
+                        // Identify Viewfinder/UI overlays that shouldn't be on profile
+                        const isViewfinderUI = overlay.category === OVERLAY_CATEGORIES.CAMERA.id || overlay.id === 'display_terminal';
+                        const isProfileRestricted = overlayTarget === 'profile' && isViewfinderUI;
 
-            {isExpanded && (
-                <div style={{ padding: '0.8rem', background: 'rgba(0,0,0,0.2)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '6px' }}>
-                        {BANNER_OVERLAYS.filter(o => o.category === category.id).map(overlay => {
-                            const isSelected = selectedOverlays.includes(overlay.id);
-                            const isMaxed = selectedOverlays.length >= 2 && !isSelected;
+                        // Only hard-disable if it's literally impossible (like Banner-Only while on Profile target)
+                        const isHardDisabled = isProfileRestricted && !isSelected;
+                        const needsSwap = (isMaxed || !isCompatibleWithCurrent) && !isSelected && !isHardDisabled;
 
-                            // Compatibility check for this specific button
-                            const isCompatibleWithCurrent = selectedOverlays.every(id => areOverlaysCompatible(id, overlay.id));
-                            const isDisabled = (isMaxed || !isCompatibleWithCurrent) && !isSelected;
-
-                            return (
+                        return (
+                            <div
+                                key={overlay.id}
+                                style={{
+                                    flex: '0 0 auto',
+                                    width: '130px',
+                                    height: '90px',
+                                    position: 'relative',
+                                }}
+                            >
                                 <button
-                                    key={overlay.id}
                                     type="button"
-                                    disabled={isDisabled}
-                                    onClick={() => onToggleOverlay(overlay.id)}
+                                    disabled={isHardDisabled}
+                                    onClick={() => {
+                                        if (needsSwap) {
+                                            onSelect([overlay.id]);
+                                        } else {
+                                            handleToggleOverlay(overlay.id);
+                                        }
+                                    }}
                                     style={{
-                                        background: isSelected ? 'rgba(127, 255, 212, 0.1)' : 'rgba(255,255,255,0.03)',
-                                        border: isSelected ? `1px solid ${highlightColor}` : '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '6px',
-                                        padding: '6px 8px',
+                                        width: '100%',
+                                        height: '100%',
+                                        background: isSelected ? getBackgroundWithOpacity(safeColor, 0.05) : 'rgba(255,255,255,0.03)',
+                                        border: isSelected ? `2px solid ${isGradient ? '#fff' : safeColor}` : '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '12px',
+                                        padding: '10px',
                                         textAlign: 'left',
-                                        cursor: isDisabled ? 'not-allowed' : 'pointer',
-                                        opacity: isDisabled ? 0.3 : 1,
-                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        cursor: isHardDisabled ? 'not-allowed' : 'pointer',
+                                        opacity: isHardDisabled ? 0.4 : 1,
+                                        transition: 'all 0.2s',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        gap: '4px',
-                                        position: 'relative'
+                                        justifyContent: 'space-between',
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                     }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: isSelected ? '700' : '500', color: isSelected ? (highlightColor.includes('gradient') ? '#fff' : highlightColor) : '#fff' }}>
-                                            {overlay.label}
-                                        </span>
-                                        {isSelected && <FaCheckCircle size={10} color={highlightColor.includes('gradient') ? '#fff' : highlightColor} />}
+                                    {/* Card Content */}
+                                    <div style={{ width: '100%' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <span style={{
+                                                fontSize: '0.8rem',
+                                                fontWeight: isSelected ? '700' : '600',
+                                                color: isSelected ? (isGradient ? '#fff' : safeColor) : '#eee',
+                                                lineHeight: '1.2'
+                                            }}>
+                                                {overlay.label}
+                                            </span>
+                                            {isSelected && <FaCheckCircle size={14} color={isGradient ? '#fff' : safeColor} style={{ flexShrink: 0 }} />}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '0.65rem',
+                                            color: 'rgba(255,255,255,0.5)',
+                                            marginTop: '4px',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            overflow: 'hidden'
+                                        }}>
+                                            {overlay.description}
+                                        </div>
                                     </div>
 
-                                    {!isSelected && !isCompatibleWithCurrent && selectedOverlays.length > 0 && (
+                                    {/* Banner Only Restriction - Keep this as simple message since it's a hard limit */}
+                                    {isProfileRestricted && !isSelected && (
                                         <div style={{
                                             position: 'absolute',
                                             inset: 0,
-                                            background: 'rgba(0,0,0,0.8)',
-                                            borderRadius: '6px',
+                                            background: 'rgba(0,0,0,0.85)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            padding: '4px',
-                                            opacity: 0,
-                                            transition: 'opacity 0.2s',
-                                            pointerEvents: 'none',
                                             zIndex: 5
-                                        }} className="incompatible-tip">
-                                            <span style={{ fontSize: '0.55rem', color: '#ff4d4d', textAlign: 'center' }}>Incompatible</span>
+                                        }}>
+                                            <span style={{ fontSize: '0.7rem', color: '#ff4d4d', fontWeight: 'bold' }}>Banner Only</span>
+                                        </div>
+                                    )}
+
+                                    {/* Swap UI - User Friendly Incompatibility resolution */}
+                                    {needsSwap && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            inset: 0,
+                                            background: 'rgba(0,0,0,0.7)',
+                                            backdropFilter: 'blur(2px)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            zIndex: 10,
+                                            padding: '5px'
+                                        }}>
+                                            <div style={{
+                                                background: '#fff',
+                                                color: '#000',
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.65rem',
+                                                fontWeight: '800',
+                                                textAlign: 'center',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                Swap Overlays
+                                            </div>
                                         </div>
                                     )}
                                 </button>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Compatibility Hint / Warning Footer */}
+            {selectedOverlays.length >= 2 && (
+                <div style={{
+                    marginTop: '0.75rem',
+                    fontSize: '0.75rem',
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                }}>
+                    <FaInfoCircle size={10} /> Max overlays reached. Deselect one to change.
                 </div>
             )}
         </div>

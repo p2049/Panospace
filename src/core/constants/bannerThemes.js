@@ -165,6 +165,54 @@ export const BANNER_TYPES = [
         ]
     },
 
+    {
+        id: 'window_boat',
+        label: 'Boat',
+        previewGradient: 'linear-gradient(to bottom, #1B82FF, #2A0E61)',
+        needsColor: true,
+        description: 'Below deck looking out a porthole',
+        customVariants: [
+            { id: 'boat_storm', name: 'Deep Orbit', color: 'linear-gradient(to bottom, #2A0E61, #5A3FFF)' },
+            { id: 'boat_sunset', name: 'Pink Dusk', color: 'linear-gradient(to bottom, #FF5C8A, #FF914D)' },
+            { id: 'boat_mint', name: 'Aurora Wake', color: 'linear-gradient(to bottom, #2A0E61, #8CFFE9)' }
+        ]
+    },
+    {
+        id: 'window_submarine',
+        label: 'Submarine',
+        previewGradient: 'linear-gradient(to bottom, #0D2B36, #010408)',
+        needsColor: true,
+        description: 'Underwater observation deck',
+        customVariants: [
+            { id: 'sub_reef', name: 'Coral Reef', color: 'linear-gradient(to bottom, #1B82FF, #8CFFE9)' },
+            { id: 'sub_abyss', name: 'The Abyss', color: 'linear-gradient(to bottom, #010408, #0D2B36)' },
+            { id: 'sub_neon', name: 'Bio-Lume', color: 'linear-gradient(to bottom, #2A0E61, #FF5C8A)' }
+        ]
+    },
+    {
+        id: 'window_rocket',
+        label: 'Rocket Pilot',
+        previewGradient: 'linear-gradient(to bottom, #000, #5A3FFF)',
+        needsColor: true,
+        description: 'Pilot POV from a high-speed spacecraft',
+        customVariants: [
+            { id: 'rocket_warp', name: 'Hyperspace', color: 'linear-gradient(to bottom, #000, #7FDBFF)' },
+            { id: 'rocket_nebula', name: 'Nebula Drift', color: 'linear-gradient(to bottom, #2A0E61, #FF5C8A)' }
+        ]
+    },
+    {
+        id: 'window_aquarium',
+        label: 'Aquarium Wall',
+        previewGradient: 'linear-gradient(to bottom, #001835, #00F3FF)',
+        needsColor: true,
+        description: 'Vibey architectural aquarium viewing wall',
+        customVariants: [
+            { id: 'marine_blue', name: 'Marine Ocean', color: 'linear-gradient(to bottom, #001835, #1B82FF)' },
+            { id: 'tropical_reef', name: 'Tropical Reef', color: 'linear-gradient(to bottom, #003d5b, #8CFFE9)' },
+            { id: 'deep_abyss', name: 'Deep Abyss', color: 'linear-gradient(to bottom, #000000, #1A1A2E)' }
+        ]
+    },
+
     // --- CITYSCAPE PACK ---
     {
         id: 'city_space',
@@ -214,6 +262,13 @@ export const BANNER_TYPES = [
         previewGradient: 'linear-gradient(to right, #000, #7FFFD4, #FF5C8A, #1B82FF)',
         needsColor: false,
         description: 'Chaotic digital corruption'
+    },
+    {
+        id: 'city_vista',
+        label: 'Hilltop Vista',
+        previewGradient: 'linear-gradient(to bottom, #050210, #1b263b)',
+        needsColor: false,
+        description: 'Looking down on a twinkling city'
     },
 
     // --- CITY-3000 PACK ---
@@ -310,7 +365,29 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Lava flows & smoke'
     },
+    {
+        id: 'ocean_lighthouse',
+        label: 'Lighthouse Sunset',
+        previewGradient: 'linear-gradient(to bottom, #2A0E61, #FF914D)',
+        needsColor: false,
+        description: 'Lonesome lighthouse guarding the sunset shore'
+    },
+    {
+        id: 'ocean_lighthouse_night',
+        label: 'Lighthouse Moonnight',
+        previewGradient: 'linear-gradient(to bottom, #000, #2A0E61)',
+        needsColor: false,
+        description: 'Deep night lighthouse with glowing bioluminescence'
+    },
 
+    {
+        id: 'abstract_scifi_ui',
+        label: 'Sci-Fi UI',
+        previewGradient: 'linear-gradient(135deg, #020406, #7FFFD4, #05080a)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Cinematic data visualization interface'
+    },
     {
         id: 'abstract_genesis_core',
         label: 'Genesis Core (Abstract)',

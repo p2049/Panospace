@@ -201,6 +201,45 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                         </div>
                                     </div>
                                 )}
+                                {type.id === 'window_submarine' && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: '#05070a',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}>
+                                        <div style={{
+                                            width: '30px', height: '30px',
+                                            border: '2px solid #8CFFE955',
+                                            borderRadius: '50%',
+                                            background: 'radial-gradient(circle at 30% 30%, #1B82FF, #011627)',
+                                            boxShadow: '0 0 10px rgba(0,0,0,0.8), inset 0 0 5px rgba(0,0,0,0.5)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}>
+                                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(255,255,255,0.1), transparent)', opacity: 0.5 }} />
+                                        </div>
+                                    </div>
+                                )}
+                                {type.id === 'window_rocket' && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: '#000',
+                                        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                                        padding: '4px'
+                                    }}>
+                                        {/* Stars */}
+                                        <div style={{ flex: 1, position: 'relative' }}>
+                                            <div style={{ position: 'absolute', top: '20%', left: '30%', width: '1px', height: '1px', background: '#fff' }} />
+                                            <div style={{ position: 'absolute', top: '50%', left: '70%', width: '1px', height: '1px', background: '#fff' }} />
+                                            <div style={{ position: 'absolute', top: '40%', left: '10%', width: '1px', height: '1px', background: '#fff' }} />
+                                        </div>
+                                        {/* Dashboard */}
+                                        <div style={{ height: '12px', background: '#111', borderTop: '1px solid #5A3FFF', borderRadius: '2px', display: 'flex', gap: '2px', padding: '2px' }}>
+                                            <div style={{ width: '4px', height: '4px', background: '#5A3FFF', borderRadius: '50%' }} />
+                                            <div style={{ flex: 1, height: '2px', background: '#5A3FFF44' }} />
+                                        </div>
+                                    </div>
+                                )}
                                 {type.id === 'technicolor_hardware' && (
                                     <div style={{
                                         position: 'absolute', inset: 0,

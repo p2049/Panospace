@@ -36,6 +36,10 @@ const TrainWindowBanner = React.lazy(() => import('./TrainWindowBanner'));
 const ShuttleWindowBanner = React.lazy(() => import('./ShuttleWindowBanner'));
 const PlaneWindowBanner = React.lazy(() => import('./PlaneWindowBanner'));
 const MetroWindowBanner = React.lazy(() => import('./MetroWindowBanner'));
+const BoatWindowBanner = React.lazy(() => import('./BoatWindowBanner'));
+const SubmarineWindowBanner = React.lazy(() => import('./SubmarineWindowBanner'));
+const RocketWindowBanner = React.lazy(() => import('./RocketWindowBanner'));
+const AquariumWindowBanner = React.lazy(() => import('./AquariumWindowBanner'));
 const PulseBanner = React.lazy(() => import('./PulseBanner'));
 const OmegaBorealis = React.lazy(() => import('./OmegaBorealis'));
 const ElysiumBanner = React.lazy(() => import('./ElysiumBanner'));
@@ -47,6 +51,9 @@ const WaveGridBanner = React.lazy(() => import('./WaveGridBanner'));
 const AuroraBanner = React.lazy(() => import('./AuroraBanner'));
 const NorthernLightsBanner = React.lazy(() => import('./NorthernLightsBanner'));
 const TechnicolorTechBanner = React.lazy(() => import('./TechnicolorTechBanner'));
+const LighthouseOceanBanner = React.lazy(() => import('./LighthouseOceanBanner'));
+const SciFiUiBanner = React.lazy(() => import('./SciFiUiBanner'));
+const CityVistaBanner = React.lazy(() => import('./CityVistaBanner'));
 
 const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
     const overlayStyle = {
@@ -76,19 +83,40 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         if (mode === 'window_metro') {
             return <MetroWindowBanner variant={color || 'metro_tunnel'} />;
         }
+        if (mode === 'window_boat') {
+            return <BoatWindowBanner starSettings={starSettings} variant={color || 'boat_storm'} />;
+        }
+        if (mode === 'window_submarine') {
+            return <SubmarineWindowBanner variant={color || 'sub_reef'} />;
+        }
+        if (mode === 'window_rocket') {
+            return <RocketWindowBanner starSettings={starSettings} variant={color || 'rocket_warp'} />;
+        }
+        if (mode === 'window_aquarium') {
+            return <AquariumWindowBanner variant={color || 'marine_blue'} />;
+        }
         // 5. CITYSCAPE PACK
         if (mode.startsWith('city') || mode === 'panospace_beyond') {
+            if (mode === 'city_vista') {
+                return <CityVistaBanner starSettings={starSettings} />;
+            }
             return <CityscapeBanner themeId={mode} starSettings={starSettings} />;
         }
 
         // 6. OCEAN PACK
         // 6. OCEAN PACK
         if ((mode.startsWith('ocean') && mode !== 'ocean_depths') || mode === 'deep_underwater') {
+            if (mode === 'ocean_lighthouse' || mode === 'ocean_lighthouse_night') {
+                return <LighthouseOceanBanner starSettings={starSettings} variant={mode} />;
+            }
             const themeToUse = mode === 'deep_underwater' ? 'ocean_night_bio' : mode;
             return <OceanBanner themeId={themeToUse} starSettings={starSettings} />;
         }
 
         // 6.5 ABSTRACT PACK
+        if (mode === 'abstract_scifi_ui') {
+            return <SciFiUiBanner />;
+        }
         if (mode === 'abstract_neural_silk') {
             return <AbsoluteAbstractBanner variant={mode} color={color} />;
         }
