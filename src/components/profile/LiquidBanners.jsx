@@ -1,114 +1,6 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+// (Obsidian Mercury Removed)
 
-/**
- * LiquidBanners - A collection of high-fidelity liquid physics banners
- * Using the "Lava Lamp" metaball technique pushed to its creative limits.
- */
-
-const BRAND = {
-    MINT: '#7FFFD4',
-    ION_BLUE: '#1B82FF',
-    DEEP_PURPLE: '#5A3FFF',
-    SOLAR_PINK: '#FF5C8A',
-    STELLAR_ORANGE: '#FF914D',
-    VOID: '#010101',
-    GOLD: '#FFD700',
-    CYBER_RED: '#FF003C'
-};
-
-/**
- * 1. OBSIDIAN MERCURY
- * Concept: Liquid black metal with razor-sharp neon edge glows.
- * Visual: High contrast, metallic, premium.
- */
-export const ObsidianMercuryBanner = () => {
-    const canvasRef = useRef(null);
-    const stateRef = useRef({ time: 0 });
-
-    const blobs = useMemo(() => Array.from({ length: 8 }, (_, i) => ({
-        id: i,
-        x: Math.random(),
-        y: Math.random(),
-        vx: (Math.random() - 0.5) * 0.001,
-        vy: (Math.random() - 0.5) * 0.001,
-        size: 80 + Math.random() * 120,
-        phase: Math.random() * Math.PI * 2,
-        deform: Array.from({ length: 12 }, () => 0.8 + Math.random() * 0.4)
-    })), []);
-
-    useEffect(() => {
-        const canvas = canvasRef.current; if (!canvas) return;
-        const ctx = canvas.getContext('2d', { alpha: false });
-        let active = true;
-
-        const render = () => {
-            if (!active) return;
-            stateRef.current.time += 0.005;
-            const t = stateRef.current.time;
-            const w = canvas.width, h = canvas.height, dpr = window.devicePixelRatio || 1;
-
-            // Deep background
-            ctx.fillStyle = '#050508'; ctx.fillRect(0, 0, w, h);
-
-            // Subtle base grid
-            ctx.strokeStyle = 'rgba(127, 255, 212, 0.03)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < w; i += 100 * dpr) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke(); }
-
-            blobs.forEach(b => {
-                // Physics: Gentle drift with screen wrap
-                b.x += b.vx; b.y += b.vy;
-                if (b.x < -0.2) b.x = 1.2; if (b.x > 1.2) b.x = -0.2;
-                if (b.y < -0.2) b.y = 1.2; if (b.y > 1.2) b.y = -0.2;
-
-                const bx = b.x * w, by = b.y * h;
-                const bSize = b.size * dpr;
-
-                // Prepare path
-                ctx.beginPath();
-                const points = 12;
-                for (let j = 0; j <= points; j++) {
-                    const angle = (j / points) * Math.PI * 2;
-                    const def = b.deform[j % points] + Math.sin(t + b.phase + j) * 0.1;
-                    const r = bSize * def;
-                    const px = bx + Math.cos(angle) * r;
-                    const py = by + Math.sin(angle) * r;
-                    if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-                }
-                ctx.closePath();
-
-                // Draw Glow
-                ctx.shadowColor = i % 2 === 0 ? BRAND.MINT : BRAND.SOLAR_PINK;
-                ctx.shadowBlur = 20 * dpr;
-                ctx.fillStyle = '#0a0a0a';
-                ctx.fill();
-
-                // Draw Stroke
-                ctx.shadowBlur = 0;
-                ctx.strokeStyle = i % 2 === 0 ? BRAND.MINT : BRAND.SOLAR_PINK;
-                ctx.lineWidth = 2 * dpr;
-                ctx.stroke();
-            });
-
-            ctx.restore();
-
-            // Hardware Shine overlays
-            const shine = ctx.createLinearGradient(0, 0, w, h);
-            shine.addColorStop(0, 'rgba(255,255,255,0.05)');
-            shine.addColorStop(0.5, 'transparent');
-            shine.addColorStop(1, 'rgba(255,255,255,0.02)');
-            ctx.fillStyle = shine; ctx.fillRect(0, 0, w, h);
-
-            if (active) requestAnimationFrame(render);
-        };
-
-        const res = () => { if (!canvas) return; const dPR = window.devicePixelRatio || 1; canvas.width = canvas.offsetWidth * dPR; canvas.height = canvas.offsetHeight * dPR; };
-        res(); window.addEventListener('resize', res); render();
-        return () => { active = false; window.removeEventListener('resize', res); };
-    }, [blobs]);
-
-    return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}><canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} /></div>;
-};
+// (Solar Radiance Removed)
 
 /**
  * 2. NEON NEBULA GOSSAMER
@@ -256,11 +148,6 @@ export const CyberKineticBanner = () => {
 };
 
 /**
- * 4. SOL-SYSTEM RADIANCE
- * Concept: Liquid sun. Slow, massive, pulsating golden-orange surface.
- * Visual: Volumetric, warm, authoritative.
- */
-/**
  * 4. PANOSPACE MAGNUS OPUS (Replacing Solar Radiance)
  * Concept: The "Alchemist's Flow". A mesmerizing, high-fidelity liquid simulation.
  * Visual: Deep, multi-layered, organic lava flow with suspended stardust.
@@ -270,43 +157,47 @@ export const SolarRadianceBanner = () => {
     const canvasRef = useRef(null);
     const stateRef = useRef({ time: 0 });
 
-    // COMPLEXITY LEVEL: GOD MODE
-    // We create multiple "layers" of liquid to simulate depth
+    // COMPLEXITY LEVEL: GOD MODE (CALM & MESMERIZING)
+    // Structure: Deep flow + Foreground detailed flow + Sparkle layer
     const layers = useMemo(() => [
-        { scale: 0.6, count: 12, alpha: 0.4, blur: 30, speedMod: 0.5, z: 'back' }, // Deep background flow
-        { scale: 1.0, count: 18, alpha: 1.0, blur: 20, speedMod: 1.0, z: 'mid' }   // Crisp foreground flow
+        { scale: 0.5, count: 14, alpha: 0.3, blur: 40, speedMod: 0.2, z: 'back' }, // Slower
+        { scale: 0.9, count: 12, alpha: 0.8, blur: 25, speedMod: 0.4, z: 'mid' },
+        { scale: 1.2, count: 8, alpha: 1.0, blur: 15, speedMod: 0.6, z: 'front' } // Slower foreground
     ].map(layer => ({
         ...layer,
         blobs: Array.from({ length: layer.count }, (_, i) => ({
             id: i,
             x: Math.random(),
             y: 0.1 + Math.random() * 0.8,
-            vx: (Math.random() - 0.5) * 0.0001, // Tiniest drift
+            vx: (Math.random() - 0.5) * 0.0002,
             vy: 0,
-            baseSize: (60 + Math.random() * 100) * layer.scale,
-            size: 0, // Dynamic
+            baseSize: (50 + Math.random() * 110) * layer.scale,
+            size: 0,
             state: Math.random() > 0.5 ? 'rising' : 'sinking',
-            wait: Math.random() * 800,
+            wait: Math.random() * 600,
             phase: Math.random() * 200,
-            colorPhase: Math.random(),
-            deform: Array.from({ length: 16 }, () => 0.9 + Math.random() * 0.2)
+            colorPhase: Math.random(), // Unique starting color
+            deform: Array.from({ length: 16 }, () => 0.8 + Math.random() * 0.4)
         }))
     })), []);
 
-    // Suspended "Stardust" Particles
-    const particles = useMemo(() => Array.from({ length: 50 }, () => ({
+    // Soothing "Fairy dust" 
+    const particles = useMemo(() => Array.from({ length: 60 }, () => ({
         x: Math.random(),
         y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.0005, // Very slow drift
         vy: (Math.random() - 0.5) * 0.0005,
         size: Math.random() * 2,
-        alpha: 0.2 + Math.random() * 0.6,
-        blink: Math.random() * 10
+        alpha: 0.1 + Math.random() * 0.5,
+        blinkSpeed: 0.01 + Math.random() * 0.02, // Slow pulse
+        blinkPhase: Math.random() * 10
     })), []);
 
-    const MASTER_PALETTE = [
+    // STRICT BRAND PALETTE ONLY - High saturation, high contrast
+    const MASTER_PALETTE = useMemo(() => [
         BRAND.MINT, BRAND.ION_BLUE, BRAND.DEEP_PURPLE, BRAND.SOLAR_PINK,
-        BRAND.GOLD, '#FFFFFF', BRAND.CYBER_RED, BRAND.MINT // Loop back
-    ];
+        BRAND.MINT, BRAND.ION_BLUE // Cycle ensuring smooth loop
+    ], []);
 
     useEffect(() => {
         const canvas = canvasRef.current; if (!canvas) return;
@@ -322,92 +213,65 @@ export const SolarRadianceBanner = () => {
 
         const render = () => {
             if (!active) return;
-            stateRef.current.time += 0.0025; // Mesmerizingly slow time
+            stateRef.current.time += 0.0015; // Slower time
             const t = stateRef.current.time;
             const w = canvas.width, h = canvas.height, dpr = window.devicePixelRatio || 1;
 
-            // 1. VOID BACKGROUND
+            // 1. DEEP VOID
             const bg = ctx.createLinearGradient(0, 0, 0, h);
-            bg.addColorStop(0, '#020005'); bg.addColorStop(1, '#0a0a12');
+            bg.addColorStop(0, '#000000'); bg.addColorStop(1, '#050010');
             ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
 
             // 2. RENDER LAYERS
             layers.forEach(layer => {
                 ctx.save();
-                // "Metaball" effect: Blur then Contrast
-                // Adjusted per layer for depth perception
-                ctx.filter = `blur(${layer.blur * dpr}px) contrast(${layer.z === 'mid' ? 300 : 150}%) brightness(110%)`;
-
-                // Opacity handling for background fades
+                ctx.filter = `blur(${layer.blur * dpr}px)`; // Blur only - no contrast glitching
                 ctx.globalAlpha = layer.alpha;
 
                 layer.blobs.forEach(b => {
-                    // --- PHYSICS: Omni-Flow Logic (OG Lava Lamp) ---
-                    const speedMult = 1.0 * layer.speedMod;
-                    const gravity = 0.0000008 * speedMult;
-                    const riseStrength = 0.0000025 * speedMult;
+                    // Omni-Physics Update
+                    const speedMult = layer.speedMod;
+                    const riseStrength = 0.000003 * speedMult;
+                    const gravity = 0.000001 * speedMult;
 
-                    if (b.state === 'heating') {
-                        b.y = Math.min(0.96, b.y + 0.0004 * speedMult);
-                        b.vy *= 0.5;
-                        if (Math.random() > 0.992) b.state = 'rising';
-                    } else if (b.state === 'rising') {
+                    if (b.state === 'rising') {
                         b.vy -= riseStrength;
-                        if (b.vy < -0.001) b.vy = -0.001; // Terminal UP
-                        if (b.y < 0.1) { b.state = 'cooling'; b.wait = 400 + Math.random() * 400; }
-                    } else if (b.state === 'cooling') {
-                        b.wait -= 1;
-                        b.vy *= 0.94;
-                        if (b.wait <= 0) b.state = 'sinking';
-                    } else if (b.state === 'sinking') {
+                        if (b.vy < -0.0015) b.vy = -0.0015;
+                        if (b.y < -0.1) { b.y = 1.1; b.state = 'sinking'; b.vy = 0; }
+                    } else {
                         b.vy += gravity;
-                        if (b.vy > 0.0008) b.vy = 0.0008; // Terminal DOWN
-                        if (b.y > 0.9) b.state = 'heating';
+                        if (b.vy > 0.0015) b.vy = 0.0015;
+                        if (b.y > 1.1) { b.y = -0.1; b.state = 'rising'; b.vy = 0; }
                     }
-
-                    b.vy *= 0.99;
                     b.y += b.vy;
+                    b.x += Math.sin(t * 0.5 + b.id) * 0.0002; // Gentle swaying
 
-                    // Wrap check
-                    if (b.y < -0.2) b.y = 1.2;
-                    if (b.y > 1.2) b.y = -0.2;
-
-                    // --- DRAWING: Organic Velocity Shapes ---
+                    // Visuals
                     const bx = b.x * w;
                     const by = b.y * h;
-                    const bSize = b.baseSize * dpr;
+                    const bSize = b.baseSize * dpr; // Static size - no pumping
 
-                    // Velocity Stretch & Squash
-                    let stretchY = 1 + Math.abs(b.vy) * 1500; // Go hard on the stretch
-                    if (b.state === 'heating') stretchY = 0.5; // Pancake at bottom
-                    if (b.state === 'cooling') stretchY = 0.8; // Mushroom at top
+                    // Stretch
+                    let stretchY = 1 + Math.abs(b.vy) * 2000;
                     const stretchX = 1 / stretchY;
 
-                    // COLOR: Triangulated Palette Cycling
-                    const speed = 0.1;
-                    const val = (t * speed + b.colorPhase) % 1;
-                    const idx = Math.floor(val * (MASTER_PALETTE.length - 1));
-                    const nextIdx = idx + 1;
-                    const f = (val * (MASTER_PALETTE.length - 1)) % 1;
-                    ctx.fillStyle = lerpColor(MASTER_PALETTE[idx], MASTER_PALETTE[nextIdx], f);
+                    // Fixed Color per blob - no cycling to prevent glitching
+                    const colorIdx = Math.floor(b.colorPhase * MASTER_PALETTE.length) % MASTER_PALETTE.length;
+                    ctx.fillStyle = MASTER_PALETTE[colorIdx];
 
-                    // SHAPE: 16-point organic Outline
+                    // Organic Shape
                     ctx.beginPath();
                     const points = 16;
-                    const wobble = Math.sin(t * 0.8 + b.phase) * 0.12;
+                    const wobble = Math.sin(t * 0.3 + b.phase) * 0.03; // Gentle wobble
                     for (let j = 0; j <= points; j++) {
                         const angle = (j / points) * Math.PI * 2;
                         const deformation = b.deform[j % 16] || 1;
+                        // Morphing logic
+                        const morph = Math.sin(t * 0.5 + j + b.id) * 0.01; // Tiny morph
 
-                        // OG Asymmetry Logic
-                        let asymmetry = 1.0;
-                        if (b.vy < -0.0001 && angle > Math.PI) asymmetry = 1.3; // Trail bottom when rising
-                        if (b.vy > 0.0001 && angle < Math.PI) asymmetry = 1.3; // Trail top when sinking
-
-                        const reach = bSize * (deformation + wobble) * asymmetry;
-                        const px = bx + Math.cos(angle) * reach * stretchX;
-                        const py = by + Math.sin(angle) * reach * stretchY;
-
+                        const r = bSize * (deformation + wobble + morph);
+                        const px = bx + Math.cos(angle) * r * stretchX;
+                        const py = by + Math.sin(angle) * r * stretchY;
                         if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
                     }
                     ctx.fill();
@@ -415,22 +279,23 @@ export const SolarRadianceBanner = () => {
                 ctx.restore();
             });
 
-            // 3. STARDUST PARTICLES (Suspended in the flow)
+            // 3. SPARKLE DUST
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
             particles.forEach(p => {
-                p.y += p.vy;
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
                 if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
 
-                // Twinkle
-                const alpha = p.alpha * (0.5 + 0.5 * Math.sin(t * 2 + p.blink));
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                const flicker = 1; // No flicker - static glow
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * flicker})`;
 
                 const px = p.x * w;
                 const py = p.y * h;
-                const ps = p.size * dpr;
 
-                ctx.beginPath(); ctx.arc(px, py, ps, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath();
+                ctx.arc(px, py, p.size * dpr, 0, Math.PI * 2);
+                ctx.fill();
             });
             ctx.restore();
 

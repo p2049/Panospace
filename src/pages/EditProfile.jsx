@@ -22,6 +22,7 @@ import BannerColorSelector from '@/components/edit-profile/BannerColorSelector';
 import BannerOverlaySelector from '@/components/edit-profile/BannerOverlaySelector';
 import PixelAvatarCreator from '@/components/pixel-avatar/PixelAvatarCreator';
 import { FaTh } from 'react-icons/fa';
+import CatalogModal from '@/components/edit-profile/CatalogModal';
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
 const BannerOverlayRenderer = React.lazy(() => import('@/components/profile/BannerOverlayRenderer'));
 import { BANNER_OVERLAYS, OVERLAY_CATEGORIES } from '@/core/constants/bannerOverlays';
@@ -75,6 +76,7 @@ const EditProfile = () => {
     const [profileOverlays, setProfileOverlays] = useState([]); // Tracks Profile Picture Overlays
     const [overlayTarget, setOverlayTarget] = useState('both'); // 'both' | 'banner' | 'profile'
     const [defaultIconId, setDefaultIconId] = useState('planet-head'); // New state for default icon
+    const [catalogMode, setCatalogMode] = useState(null); // 'banner' | 'overlay' | null
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -1383,6 +1385,7 @@ const EditProfile = () => {
                                 highlightColor={usernameColor}
                                 overlayTarget={overlayTarget}
                                 setOverlayTarget={setOverlayTarget}
+                                onOpenCatalog={() => setCatalogMode('overlay')}
                             />
 
                             {/* Live Banner Preview */}
@@ -1405,6 +1408,7 @@ const EditProfile = () => {
                                         color: starColor
                                     }}
                                     overlays={selectedOverlays}
+                                    profileBorderColor={profileBorderColor}
                                 />
                                 <div style={{ position: 'absolute', top: '8px', right: '12px', background: 'rgba(0,0,0,0.6)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', zIndex: 1000 }}>
                                     Live Preview
@@ -1419,6 +1423,7 @@ const EditProfile = () => {
                                     highlightColor={profileBorderColor}
                                     bannerColor={bannerColor}
                                     onColorSelect={handleBannerColorChange}
+                                    onOpenCatalog={() => setCatalogMode('banner')}
                                 />
                             </div>
 
@@ -1799,7 +1804,60 @@ const EditProfile = () => {
                     </div>
                 )
             }
-        </div >
+
+            <CatalogModal
+                isOpen={!!catalogMode}
+                onClose={() => setCatalogMode(null)}
+                type={catalogMode}
+                onSelect={(id) => {
+                    if (catalogMode === 'banner') {
+                        handleBannerModeChange(id);
+                    } else {
+                        // Handle Overlay Toggle logic
+                        const currentList = overlayTarget === 'profile' ? profileOverlays : selectedOverlays;
+                        const isAlreadySelected = currentList.includes(id);
+
+                        let newList;
+                        if (isAlreadySelected) {
+                            newList = currentList.filter(o => o !== id);
+                        } else {
+                            if (currentList.length < 2) {
+                                // Add if compatible
+                                const isCompatible = currentList.every(alreadySelected => areOverlaysCompatible(alreadySelected, id));
+                                if (isCompatible) {
+                                    newList = [...currentList, id];
+                                } else {
+                                    newList = [id]; // Swap
+                                }
+                            } else {
+                                newList = [id]; // Swap if maxed
+                            }
+                        }
+
+                        if (newList) {
+                            // Apply new list using existing logic
+                            if (overlayTarget === 'both') {
+                                setSelectedOverlays(newList);
+                                const profileSafe = newList.filter(oid => {
+                                    const ov = BANNER_OVERLAYS.find(o => o.id === oid);
+                                    if (!ov) return true;
+                                    return ov.category !== OVERLAY_CATEGORIES.CAMERA.id && oid !== 'display_terminal';
+                                });
+                                setProfileOverlays(profileSafe);
+                            } else if (overlayTarget === 'banner') {
+                                setSelectedOverlays(newList);
+                            } else {
+                                setProfileOverlays(newList);
+                            }
+                        }
+                    }
+                }}
+                selectedId={catalogMode === 'banner' ? bannerMode : (overlayTarget === 'profile' ? profileOverlays : selectedOverlays)}
+                highlightColor={profileBorderColor}
+                bannerColor={bannerColor}
+                overlayTarget={overlayTarget}
+            />
+        </div>
     );
 };
 

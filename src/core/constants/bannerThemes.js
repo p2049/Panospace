@@ -107,6 +107,69 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Mesmerizing undulating grid of light'
     },
+    {
+        id: 'abstract_oscilloscope',
+        label: 'Vector Dynamics',
+        previewGradient: 'linear-gradient(to right, #000 0%, #7FFFD4 50%, #000 100%)',
+        needsColor: true,
+        description: 'Advanced mathematical projections and vector visualizations.',
+        customVariants: [
+            { id: 'os_classic', name: 'Digital Sphere', color: '#7FFFD4' },
+            { id: 'os_amber', name: 'Vintage Amber', color: '#FF914D' },
+            { id: 'os_cyan', name: 'Digital Cyan', color: '#1B82FF' },
+            { id: 'os_daft', name: 'Prism Geometry', color: 'linear-gradient(135deg, #FF5C8A, #1B82FF, #7FFFD4)' },
+            { id: 'os_tesseract', name: 'Hypercube 4D', color: 'linear-gradient(45deg, #5A3FFF, #7FFFD4)' },
+            { id: 'math_aizawa', name: 'Aizawa Chaos', color: '#7FFFD4' },
+            { id: 'math_lorenz', name: 'Lorenz Logic', color: '#1B82FF' },
+            { id: 'math_rossler', name: 'Rossler Band', color: '#FF5C8A' },
+            { id: 'math_knot', name: 'Torus Knot', color: '#1B82FF' },
+            { id: 'math_enneper', name: 'Enneper Field', color: '#5A3FFF' },
+            { id: 'math_mobius', name: 'Mobius Loop', color: '#7FFFD4' },
+            { id: 'math_pentachoron', name: '5-Cell Simplex', color: '#5A3FFF' },
+            { id: 'math_24cell', name: '24-Cell Project', color: '#1B82FF' },
+            { id: 'math_wave', name: 'Quantum Wave', color: '#7FFFD4' },
+            { id: 'math_interference', name: 'Interference', color: '#1B82FF' },
+            { id: 'math_quantum_foam', name: 'Quantum Foam', color: '#FF5C8A' },
+            { id: 'math_phyllotaxis', name: 'Golden Ratio', color: '#7FFFD4' },
+            { id: 'math_fibonacci', name: 'Fibonacci Life', color: '#FFFFFF' },
+            { id: 'math_lissajous', name: 'Harmonic Field', color: '#1B82FF' },
+            { id: 'math_hypotrochoid', name: 'Spirograph', color: '#FF5C8A' },
+            { id: 'math_supershape', name: 'Supershape', color: '#5A3FFF' },
+            { id: 'math_calabi', name: 'Calabi-Yau 6D', color: '#7FFFD4' },
+            { id: 'math_singularity', name: 'Event Horizon', color: '#000000' },
+            { id: 'math_ribbon', name: 'Attractor Ribbon', color: '#FF5C8A' },
+            { id: 'math_fire', name: 'Fractal Flame', color: '#FF5C8A' },
+            { id: 'math_mandala', name: 'Geo Symphony', color: '#5A3FFF' },
+            { id: 'math_nebula', name: 'Transcendence', color: '#7FFFD4' }
+        ]
+    },
+    {
+        id: 'abstract_lava_cube',
+        label: 'Lava Fusion',
+        previewGradient: 'linear-gradient(135deg, #FF5C8A, #5A3FFF, #7FFFD4)',
+        needsColor: true,
+        description: 'Organic 3D geometry. Lava lamp physics meeting digital structure.',
+        customVariants: [
+            { id: 'fusion_prism', name: 'Prism Flow', color: 'linear-gradient(135deg, #FF5C8A, #5A3FFF, #7FFFD4)' },
+            { id: 'fusion_mint', name: 'Neo Mint', color: '#7FFFD4' },
+            { id: 'fusion_pink', name: 'Solar Pulse', color: '#FF5C8A' },
+            { id: 'fusion_blue', name: 'Ion Static', color: '#1B82FF' },
+            { id: 'fusion_deep', name: 'Void Flux', color: '#5A3FFF' }
+        ]
+    },
+    {
+        id: 'abstract_omni_paradox',
+        label: 'Omni Paradox',
+        previewGradient: 'linear-gradient(135deg, #FF5C8A, #5A3FFF, #7FFFD4, #FF914D)',
+        needsColor: true,
+        description: 'The ultimate fusion of liquid physics and 4D geometry. State-of-the-art.',
+        customVariants: [
+            { id: 'paradox_prism', name: 'Prism Nova', color: 'linear-gradient(135deg, #FF5C8A, #5A3FFF, #7FFFD4)' },
+            { id: 'paradox_stellar', name: 'Stellar Wind', color: '#FF914D' },
+            { id: 'paradox_cyber', name: 'Cyber Grid', color: '#7FFFD4' },
+            { id: 'paradox_void', name: 'Deep Void', color: '#5A3FFF' }
+        ]
+    },
 
     // --- WINDOW BANNERS ---
     {
@@ -728,14 +791,7 @@ export const BANNER_TYPES = [
     },
 
     // --- LIQUID DYNAMICS PACK ---
-    {
-        id: 'liquid_obsidian',
-        label: 'Obsidian Mercury',
-        previewGradient: 'linear-gradient(to bottom, #000, #111, #000)',
-        needsColor: false,
-        isCosmic: true,
-        description: 'Synthetic liquid metal with neon edge-glow.'
-    },
+
     {
         id: 'liquid_gossamer',
         label: 'Gossamer Silk',
@@ -752,12 +808,5 @@ export const BANNER_TYPES = [
         isCosmic: true,
         description: 'High-velocity data streams in fluid motion.'
     },
-    {
-        id: 'liquid_solar',
-        label: 'Solar Radiance',
-        previewGradient: 'radial-gradient(circle, #FFD700, #FF914D, #FF5C8A)',
-        needsColor: false,
-        isCosmic: true,
-        description: 'The pulsating warmth of a liquid sun.'
-    },
+
 ];

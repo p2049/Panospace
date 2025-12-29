@@ -666,6 +666,28 @@ export const BANNER_OVERLAYS = [
         description: 'Hollywood standard. Deep teal shadows and pushed orange skin tones.',
         compatibleWith: ['grain', 'film_flare', 'bloom_optical']
     },
+    // --- NEW REQUESTED OVERLAYS ---
+    {
+        id: 'display_dither_bw',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: '1-Bit Dither',
+        description: 'Hard monochrome dithering for a retro Macintosh look.',
+        compatibleWith: ['standard_digital', 'monochrome']
+    },
+    {
+        id: 'display_halftone_bw',
+        category: OVERLAY_CATEGORIES.DISPLAY.id,
+        label: 'Mono Halftone',
+        description: 'Black and white newsprint halftone pattern.',
+        compatibleWith: ['standard_digital', 'monochrome']
+    },
+    {
+        id: 'grain_heavy',
+        category: OVERLAY_CATEGORIES.OPTICAL.id,
+        label: 'Heavy Grain',
+        description: 'Intense ISO 3200 film grain simulation.',
+        compatibleWith: ['standard_digital', 'monochrome', 'black_white']
+    },
 ];
 
 /**

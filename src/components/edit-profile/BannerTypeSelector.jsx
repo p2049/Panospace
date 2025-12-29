@@ -4,7 +4,9 @@ import { fadeColor } from '@/core/utils/colorUtils';
 
 import BannerColorSelector from './BannerColorSelector';
 
-const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4', bannerColor, onColorSelect }) => {
+import { FaLayerGroup } from 'react-icons/fa';
+
+const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4', bannerColor, onColorSelect, onOpenCatalog }) => {
     const [activeCategory, setActiveCategory] = useState('City');
 
     const getCategory = (id) => {
@@ -13,7 +15,6 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
         if (id.startsWith('cosmic') || id.startsWith('atmos') || id.startsWith('liquid') || ['stars', 'nebula', 'orbital', 'planet', 'ice-planet', 'northern-lights', 'aurora', 'system_orbital', 'borealis_live'].includes(id)) return 'Cosmic';
         if (id === 'elysium') return 'Cosmic';
         if (id.startsWith('window_')) return 'Window';
-        if (id === 'wave_grid') return 'Abstract';
         return 'Abstract';
     };
 
@@ -44,6 +45,31 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* Category Pills */}
             <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                <button
+                    type="button"
+                    onClick={() => onOpenCatalog && onOpenCatalog()}
+                    style={{
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        background: '#7FFFD4',
+                        color: '#000',
+                        fontSize: '0.75rem',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 0 15px rgba(127, 255, 212, 0.4)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}
+                >
+                    <FaLayerGroup size={11} />
+                    CATALOG
+                </button>
                 {categories.map(cat => (
                     <button
                         key={cat}
@@ -262,6 +288,29 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
                                         backgroundSize: '15px 15px',
                                         opacity: 0.5
                                     }} />
+                                )}
+                                {type.id === 'abstract_oscilloscope' && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: '#000',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            width: '80%', height: '2px',
+                                            background: '#7FFFD4',
+                                            boxShadow: '0 0 8px #7FFFD4',
+                                            position: 'relative',
+                                            animation: 'oscilloscope-thumb 1s infinite ease-in-out'
+                                        }}>
+                                            <style>{`
+                                                @keyframes oscilloscope-thumb {
+                                                    0%, 100% { transform: scaleY(1); }
+                                                    50% { transform: scaleY(5); }
+                                                }
+                                            `}</style>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 

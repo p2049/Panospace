@@ -229,6 +229,19 @@ const OverlayLayer = ({ overlay, index, monochromeColor, target, isSimplified })
                 }} />
             );
 
+        case 'display_halftone_bw':
+            return (
+                <div style={{
+                    ...fullCoverStyle,
+                    // Newsprint Look: Black dots, high contrast
+                    backgroundImage: `radial-gradient(circle, #000 1.2px, transparent 1.5px)`,
+                    backgroundSize: '5px 5px',
+                    mixBlendMode: 'multiply',
+                    opacity: 0.6,
+                    filter: 'grayscale(1) contrast(1.5)'
+                }} />
+            );
+
         case 'display_handheld_dm':
             return (
                 <div style={{
@@ -306,6 +319,27 @@ const OverlayLayer = ({ overlay, index, monochromeColor, target, isSimplified })
                         backgroundSize: '2px 2px',
                         mixBlendMode: 'overlay',
                         opacity: 0.5
+                    }} />
+                </div>
+            );
+
+        case 'display_dither_bw':
+            return (
+                <div style={{
+                    ...fullCoverStyle,
+                    // Hard 1-Bit Dither Look
+                    filter: 'grayscale(1) contrast(3) brightness(1.2)',
+                    mixBlendMode: 'hard-light',
+                }}>
+                    {/* Bayer Matrix 4x4 */}
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundImage: `url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQIW2NkQAKrVq36zwjjgzhQwomIA0GQgn/gTNwmgCwAEBcRQ9xF+KEAAAAASUVORK5CYII=")`,
+                        backgroundSize: '4px 4px',
+                        imageRendering: 'pixelated',
+                        mixBlendMode: 'overlay',
+                        opacity: 0.8
                     }} />
                 </div>
             );
@@ -962,6 +996,30 @@ const OverlayLayer = ({ overlay, index, monochromeColor, target, isSimplified })
                     mixBlendMode: 'overlay', // Changed from soft-light for better blending
                     opacity: 0.3, // Reduced from 0.8 to 0.3
                     filter: 'contrast(1.1) brightness(1.05) sepia(0.05)', // Reduced contrast from 1.4
+                    pointerEvents: 'none'
+                }} />
+            );
+
+        case 'grain_heavy':
+            return (
+                <div style={{
+                    ...fullCoverStyle,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grainyHeavy'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grainyHeavy)' opacity='1'/%3E%3C/svg%3E")`,
+                    mixBlendMode: 'overlay',
+                    opacity: 0.7, // Significantly heavier than standard grain (0.3)
+                    filter: 'contrast(1.5) brightness(1.1) grayscale(1)', // Gritty
+                    pointerEvents: 'none'
+                }} />
+            );
+
+        case 'grain_heavy':
+            return (
+                <div style={{
+                    ...fullCoverStyle,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grainyHeavy'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grainyHeavy)' opacity='1'/%3E%3C/svg%3E")`,
+                    mixBlendMode: 'overlay',
+                    opacity: 0.7, // Significantly heavier than standard grain (0.3)
+                    filter: 'contrast(1.5) brightness(1.1) grayscale(1)', // Gritty
                     pointerEvents: 'none'
                 }} />
             );

@@ -8,7 +8,7 @@ import { fadeColor } from '@/core/utils/colorUtils';
  * UI for selecting visual overlays (Lens) for the profile banner.
  * Refactored to match BannerTypeSelector UI pattern with scrolling lists.
  */
-const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor = '#7FFFD4', overlayTarget = 'both', setOverlayTarget }) => {
+const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor = '#7FFFD4', overlayTarget = 'both', setOverlayTarget, onOpenCatalog }) => {
     // Default to null so it's "closed" initially
     const [activeCategory, setActiveCategory] = useState(null);
 
@@ -139,6 +139,31 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
 
             {/* Category Tabs (Pills) - These are the "Top Selections" */}
             <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: activeCategory ? '1rem' : '0.5rem' }}>
+                <button
+                    type="button"
+                    onClick={() => onOpenCatalog && onOpenCatalog()}
+                    style={{
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        background: '#7FFFD4',
+                        color: '#000',
+                        fontSize: '0.75rem',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 0 15px rgba(127, 255, 212, 0.4)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                    }}
+                >
+                    <FaLayerGroup size={11} />
+                    CATALOG
+                </button>
                 {categories.map(cat => {
                     const isActive = activeCategory === cat.id;
                     const Icon = categoryIcons[cat.id] || FaLayerGroup;

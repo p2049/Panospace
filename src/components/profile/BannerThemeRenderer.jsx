@@ -30,6 +30,12 @@ const ResonanceBanner = React.lazy(() => import('./ResonanceBanner'));
 const InterferenceBanner = React.lazy(() => import('./InterferenceBanner'));
 const OmniscienceBanner = React.lazy(() => import('./OmniscienceBanner'));
 const AbsoluteBanner = React.lazy(() => import('./AbsoluteBanner'));
+const AttractorBanner = React.lazy(() => import('./AttractorBanner'));
+const ManifoldBanner = React.lazy(() => import('./ManifoldBanner'));
+const LavaCubeBanner = React.lazy(() => import('./LavaCubeBanner'));
+const OmniParadoxBanner = React.lazy(() => import('./OmniParadoxBanner'));
+const OscilloscopeBanner = React.lazy(() => import('./OscilloscopeBanner'));
+const SciFiUiBanner = React.lazy(() => import('./SciFiUiBanner'));
 const StaticSystemBanners = React.lazy(() => import('./SystemAbstractBanners'));
 const BannerOverlayRenderer = React.lazy(() => (import('./BannerOverlayRenderer')));
 const TrainWindowBanner = React.lazy(() => import('./TrainWindowBanner'));
@@ -58,16 +64,15 @@ const AuroraBanner = React.lazy(() => import('./AuroraBanner'));
 const NorthernLightsBanner = React.lazy(() => import('./NorthernLightsBanner'));
 const TechnicolorTechBanner = React.lazy(() => import('./TechnicolorTechBanner'));
 const LighthouseOceanBanner = React.lazy(() => import('./LighthouseOceanBanner'));
-const SciFiUiBanner = React.lazy(() => import('./SciFiUiBanner'));
 const CityVistaBanner = React.lazy(() => import('./CityVistaBanner'));
 
 // Liquid Dynamics Pack (Named Exports)
-const ObsidianMercuryBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.ObsidianMercuryBanner })));
 const GossamerLiquidBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.GossamerLiquidBanner })));
 const CyberKineticBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.CyberKineticBanner })));
-const SolarRadianceBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.SolarRadianceBanner })));
 
-const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
+
+
+const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profileBorderColor }) => {
     const overlayStyle = {
         position: 'absolute',
         inset: 0,
@@ -126,10 +131,8 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
             return <OmniPortalBanner variant={color || 'omni_storm'} />;
         }
         // 6. LIQUID DYNAMICS PACK
-        if (mode === 'liquid_obsidian') return <ObsidianMercuryBanner />;
         if (mode === 'liquid_gossamer') return <GossamerLiquidBanner />;
         if (mode === 'liquid_kinetic') return <CyberKineticBanner />;
-        if (mode === 'liquid_solar') return <SolarRadianceBanner />;
 
         // 5. CITYSCAPE PACK
         if (mode.startsWith('city') || mode === 'panospace_beyond') {
@@ -150,6 +153,15 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         }
 
         // 6.5 ABSTRACT PACK
+        if (mode === 'abstract_oscilloscope') {
+            return <OscilloscopeBanner color={color} variant={color} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        }
+        if (mode === 'abstract_lava_cube') {
+            return <LavaCubeBanner color={color} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        }
+        if (mode === 'abstract_omni_paradox') {
+            return <OmniParadoxBanner color={color} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        }
         if (mode === 'abstract_scifi_ui') {
             return <SciFiUiBanner />;
         }
