@@ -55,10 +55,10 @@ const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
                             height: isCustom ? '45px' : '36px',
                             borderRadius: isCustom ? '8px' : '50%',
                             background: isSelected
-                                ? ((isBrandColors || opt.color.includes('gradient')) ? 'rgba(255,255,255,0.1)' : fadeColor(opt.color, 0.15))
+                                ? ((isBrandColors || opt.color?.includes('gradient')) ? 'rgba(255,255,255,0.1)' : fadeColor(opt.color, 0.15))
                                 : 'transparent',
                             backdropFilter: isSelected ? 'blur(2px)' : 'none',
-                            border: isSelected ? `2px solid ${(isBrandColors || opt.color.includes('gradient')) ? '#fff' : opt.color}` : '2px solid rgba(255,255,255,0.1)',
+                            border: isSelected ? `2px solid ${(isBrandColors || opt.color?.includes('gradient')) ? '#fff' : opt.color}` : '2px solid rgba(255,255,255,0.1)',
                             boxShadow: isSelected ? `0 0 10px ${glowColor}` : 'none',
                             transition: 'all 0.2s',
                             position: 'relative',

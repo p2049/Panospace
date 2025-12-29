@@ -110,6 +110,89 @@ export const BANNER_TYPES = [
 
     // --- WINDOW BANNERS ---
     {
+        id: 'window_apartment',
+        label: 'Apartment View',
+        previewGradient: 'linear-gradient(to bottom, #351c35, #e3a15c)',
+        needsColor: true,
+        description: 'Your highrise sanctuary',
+        customVariants: [
+            { id: 'apt_lofi', name: 'Loft', color: '#FF914D' },
+            { id: 'apt_cyber', name: 'Grid', color: '#1B82FF' },
+            { id: 'apt_nyc', name: 'Metro', color: '#FFFFFF' },
+            { id: 'apt_vapor', name: 'Vista', color: '#7FFFD4' },
+            { id: 'apt_noir', name: 'Noir', color: '#FF914D' },
+            { id: 'apt_aurora', name: 'Borealis', color: '#7FFFD4' },
+            { id: 'apt_manor', name: 'Heritage', color: '#AA7744' },
+            { id: 'apt_emerald', name: 'Gilded', color: '#D4AF37' },
+            { id: 'apt_starlight', name: 'Silver', color: '#FFFFFF' },
+            { id: 'apt_midnight', name: 'Midnight', color: '#1B82FF' },
+            { id: 'apt_amber', name: 'Horizon', color: '#FF914D' },
+            { id: 'apt_cobalt', name: 'Stream', color: '#7FFFD4' },
+            { id: 'apt_crimson', name: 'District', color: '#FF5C8A' },
+            { id: 'apt_rose', name: 'Suite', color: '#FF5C8A' },
+            { id: 'apt_glacier', name: 'Frontier', color: '#FFFFFF' },
+            { id: 'apt_solaris', name: 'Apex', color: '#FF914D' },
+            { id: 'apt_future', name: 'Zenith', color: '#FFFFFF' },
+            { id: 'apt_terrace', name: 'Terrace', color: '#7FFFD4' },
+            { id: 'apt_penthouse', name: 'Penthouse', color: '#FFD700' }
+        ]
+    },
+    {
+        id: 'window_skydrive',
+        label: 'SkyDrive POV',
+        previewGradient: 'linear-gradient(to right, #001533, #1B82FF, #001533)',
+        needsColor: true,
+        description: 'High-speed pilot POV through a neon megalopolis',
+        customVariants: [
+            { id: 'velocity_blue', name: 'Ion Velocity', color: '#1B82FF' },
+            { id: 'velocity_mint', name: 'Mint Rush', color: '#7FFFD4' },
+            { id: 'velocity_pink', name: 'Solar Streak', color: '#FF5C8A' },
+            { id: 'velocity_orange', name: 'Stellar Burn', color: '#FF914D' }
+        ]
+    },
+    {
+        id: 'window_botanical',
+        label: 'Space Station',
+        previewGradient: 'linear-gradient(to bottom, #000, #1B82FF, #222)',
+        needsColor: true,
+        description: 'Industrial outposts orbiting various core worlds',
+        customVariants: [
+            { id: 'station_moon', name: 'Lunar Outpost', color: '#FFFFFF' },
+            { id: 'station_mars', name: 'Mars Station', color: '#FF914D' },
+            { id: 'station_deep', name: 'Deep Space', color: '#5A3FFF' },
+            { id: 'station_vulcan', name: 'Forge Alpha', color: '#FF5C8A' },
+            { id: 'station_ice', name: 'Glacial Reach', color: '#7FFFD4' },
+            { id: 'singularity_nexus', name: 'Singularity Nexus', color: '#1B82FF' },
+            { id: 'singularity_supernova', name: 'Supernova Forge', color: '#FF914D' }
+        ]
+    },
+    {
+        id: 'window_lava',
+        label: 'Glow Core',
+        previewGradient: 'radial-gradient(circle, #7FFFD4, #1B82FF, #5A3FFF, #FF5C8A)',
+        needsColor: true,
+        description: 'Atmospheric liquid-motion lighting displays',
+        customVariants: [
+            { id: 'lava_plasma', name: 'Plasma Flow', color: 'linear-gradient(45deg, #7FFFD4, #1B82FF, #5A3FFF, #FF5C8A)', description: 'Multi-color rhythmic lava conduits.', customVariants: { variant: 'lava_plasma' } },
+            { id: 'lava_omniflow', name: 'Omni Flow', color: 'linear-gradient(90deg, #7FFFD4, #1B82FF, #5A3FFF, #FF5C8A)', description: 'Screen-wide multi-color wax spread.', customVariants: { variant: 'lava_omniflow' } },
+            { id: 'lava_neon', name: 'Neon Mint', color: 'linear-gradient(45deg, #7FFFD4, #000)', description: 'Monochrome arctic wax flow.', customVariants: { variant: 'lava_neon' } },
+            { id: 'lava_solar', name: 'Solar Flare', color: 'linear-gradient(45deg, #FF914D, #000)', description: 'Monochrome solar wax flow.', customVariants: { variant: 'lava_solar' } },
+            { id: 'lava_nebula', name: 'Deep Nebula', color: 'linear-gradient(45deg, #5A3FFF, #000)', description: 'Monochrome void wax flow.', customVariants: { variant: 'lava_nebula' } }
+        ]
+    },
+    {
+        id: 'window_omni',
+        label: 'Omni Portal',
+        previewGradient: 'conic-gradient(from 180deg at 50% 50%, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF, #7FFFD4)',
+        needsColor: true,
+        description: 'A trans-dimensional gateway to other worlds',
+        customVariants: [
+            { id: 'omni_storm', name: 'Omni Storm', color: 'linear-gradient(135deg, #7FFFD4, #1B82FF, #5A3FFF, #FF5C8A)' },
+            { id: 'omni_void', name: 'Deep Void', color: 'linear-gradient(to bottom, #000, #5A3FFF)' },
+            { id: 'omni_pulse', name: 'Pulse Gate', color: 'linear-gradient(45deg, #FF5C8A, #7FFFD4)' }
+        ]
+    },
+    {
         id: 'window_train',
         label: 'Train',
         previewGradient: 'linear-gradient(to right, #1a1a1a 5%, #7FDBFF 50%, #1a1a1a 95%)',
@@ -164,7 +247,6 @@ export const BANNER_TYPES = [
             { id: 'metro_glitch', name: 'System Error', color: 'linear-gradient(to right, #000, #7FFFD4)' }
         ]
     },
-
     {
         id: 'window_boat',
         label: 'Boat',
@@ -206,6 +288,18 @@ export const BANNER_TYPES = [
         previewGradient: 'linear-gradient(to bottom, #001835, #00F3FF)',
         needsColor: true,
         description: 'Vibey architectural aquarium viewing wall',
+        customVariants: [
+            { id: 'marine_blue', name: 'Marine Ocean', color: 'linear-gradient(to bottom, #001835, #1B82FF)' },
+            { id: 'tropical_reef', name: 'Tropical Reef', color: 'linear-gradient(to bottom, #003d5b, #8CFFE9)' },
+            { id: 'deep_abyss', name: 'Deep Abyss', color: 'linear-gradient(to bottom, #000000, #1A1A2E)' }
+        ]
+    },
+    {
+        id: 'window_aquarium_dual',
+        label: 'Aquarium Dual',
+        previewGradient: 'linear-gradient(to right, #000 10%, #00F3FF 30%, #000 50%, #00F3FF 70%, #000 90%)',
+        needsColor: true,
+        description: 'Two-window observation deck of the deep sea',
         customVariants: [
             { id: 'marine_blue', name: 'Marine Ocean', color: 'linear-gradient(to bottom, #001835, #1B82FF)' },
             { id: 'tropical_reef', name: 'Tropical Reef', color: 'linear-gradient(to bottom, #003d5b, #8CFFE9)' },
@@ -631,5 +725,39 @@ export const BANNER_TYPES = [
         hasAtmosVariants: true,
         isCosmic: true,
         description: 'Rotating 3D illusion of a data-rich world.'
+    },
+
+    // --- LIQUID DYNAMICS PACK ---
+    {
+        id: 'liquid_obsidian',
+        label: 'Obsidian Mercury',
+        previewGradient: 'linear-gradient(to bottom, #000, #111, #000)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Synthetic liquid metal with neon edge-glow.'
+    },
+    {
+        id: 'liquid_gossamer',
+        label: 'Gossamer Silk',
+        previewGradient: 'linear-gradient(135deg, #1B82FF, #5A3FFF, #FF5C8A)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'Weightless iridescent liquid light.'
+    },
+    {
+        id: 'liquid_kinetic',
+        label: 'Cyber Kinetic',
+        previewGradient: 'linear-gradient(to right, #000 0%, #1B82FF 100%)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'High-velocity data streams in fluid motion.'
+    },
+    {
+        id: 'liquid_solar',
+        label: 'Solar Radiance',
+        previewGradient: 'radial-gradient(circle, #FFD700, #FF914D, #FF5C8A)',
+        needsColor: false,
+        isCosmic: true,
+        description: 'The pulsating warmth of a liquid sun.'
     },
 ];

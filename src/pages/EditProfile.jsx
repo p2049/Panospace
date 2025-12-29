@@ -110,7 +110,6 @@ const EditProfile = () => {
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
                         setTextGlow(data.profileTheme.textGlow || false);
                         setPixelGlow(data.profileTheme.pixelGlow || false);
-                        setPixelGlow(data.profileTheme.pixelGlow || false);
                         setPixelGrid(data.profileTheme.pixelGrid !== false); // Default to true if undefined
                         setSelectedOverlays(data.profileTheme.overlays || []);
                         setProfileOverlays(data.profileTheme.profileOverlays || data.profileTheme.overlays || []); // Fallback to matching banner if new
@@ -637,8 +636,6 @@ const EditProfile = () => {
                     bannerColor: bannerColor || '#7FFFD4',
                     useStarsOverlay: useStarsOverlay || false,
                     textGlow: textGlow || false,
-                    pixelGlow: pixelGlow || false, // Persist pixel glow
-                    pixelGrid: pixelGrid, // Persist grid preference
                     pixelGlow: pixelGlow || false, // Persist pixel glow
                     pixelGrid: pixelGrid, // Persist grid preference
                     overlays: selectedOverlays || [],

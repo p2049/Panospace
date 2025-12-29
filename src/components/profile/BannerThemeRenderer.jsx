@@ -40,6 +40,12 @@ const BoatWindowBanner = React.lazy(() => import('./BoatWindowBanner'));
 const SubmarineWindowBanner = React.lazy(() => import('./SubmarineWindowBanner'));
 const RocketWindowBanner = React.lazy(() => import('./RocketWindowBanner'));
 const AquariumWindowBanner = React.lazy(() => import('./AquariumWindowBanner'));
+const SplitAquariumBanner = React.lazy(() => import('./SplitAquariumBanner'));
+const ApartmentWindowBanner = React.lazy(() => import('./ApartmentWindowBanner'));
+const SkyDriveBanner = React.lazy(() => import('./SkyDriveBanner'));
+const SpaceStationWindowBanner = React.lazy(() => import('./SpaceStationWindowBanner'));
+const LavaLampBanner = React.lazy(() => import('./LavaLampBanner'));
+const OmniPortalBanner = React.lazy(() => import('./OmniPortalBanner'));
 const PulseBanner = React.lazy(() => import('./PulseBanner'));
 const OmegaBorealis = React.lazy(() => import('./OmegaBorealis'));
 const ElysiumBanner = React.lazy(() => import('./ElysiumBanner'));
@@ -54,6 +60,12 @@ const TechnicolorTechBanner = React.lazy(() => import('./TechnicolorTechBanner')
 const LighthouseOceanBanner = React.lazy(() => import('./LighthouseOceanBanner'));
 const SciFiUiBanner = React.lazy(() => import('./SciFiUiBanner'));
 const CityVistaBanner = React.lazy(() => import('./CityVistaBanner'));
+
+// Liquid Dynamics Pack (Named Exports)
+const ObsidianMercuryBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.ObsidianMercuryBanner })));
+const GossamerLiquidBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.GossamerLiquidBanner })));
+const CyberKineticBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.CyberKineticBanner })));
+const SolarRadianceBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.SolarRadianceBanner })));
 
 const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
     const overlayStyle = {
@@ -95,6 +107,30 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         if (mode === 'window_aquarium') {
             return <AquariumWindowBanner variant={color || 'marine_blue'} />;
         }
+        if (mode === 'window_aquarium_dual') {
+            return <SplitAquariumBanner variant={color || 'marine_blue'} />;
+        }
+        if (mode === 'window_apartment') {
+            return <ApartmentWindowBanner starSettings={starSettings} variant={color || 'apt_lofi'} />;
+        }
+        if (mode === 'window_skydrive') {
+            return <SkyDriveBanner starSettings={starSettings} variant={color || 'velocity_blue'} />;
+        }
+        if (mode === 'window_botanical') {
+            return <SpaceStationWindowBanner variant={color || 'station_moon'} />;
+        }
+        if (mode === 'window_lava') {
+            return <LavaLampBanner variant={color || 'lava_plasma'} />;
+        }
+        if (mode === 'window_omni') {
+            return <OmniPortalBanner variant={color || 'omni_storm'} />;
+        }
+        // 6. LIQUID DYNAMICS PACK
+        if (mode === 'liquid_obsidian') return <ObsidianMercuryBanner />;
+        if (mode === 'liquid_gossamer') return <GossamerLiquidBanner />;
+        if (mode === 'liquid_kinetic') return <CyberKineticBanner />;
+        if (mode === 'liquid_solar') return <SolarRadianceBanner />;
+
         // 5. CITYSCAPE PACK
         if (mode.startsWith('city') || mode === 'panospace_beyond') {
             if (mode === 'city_vista') {
@@ -192,7 +228,6 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
             return <AbsoluteBanner />;
         }
 
-        // --- NEW COSMIC BANNERS (Flux, Ether, etc) ---
         if (mode === 'iso_wave') {
             return <IsoWaveBanner color={color} starSettings={starSettings} />;
         }
@@ -201,18 +236,6 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [] }) => {
         }
         if (mode === 'wave_grid') {
             return <WaveGridBanner color={color} starSettings={starSettings} />;
-        }
-        if (mode === 'cosmic_opus') {
-            return <SpectrumBanner />;
-        }
-        if (mode === 'cosmic_flux') {
-            return <FluxBanner variant="main" />;
-        }
-        if (mode === 'cosmic_ether') {
-            return <EtherBanner />;
-        }
-        if (mode === 'cosmic_resonance') {
-            return <ResonanceBanner />;
         }
         if (mode === 'cosmic_omega_borealis') {
             return <OmegaBorealis />;

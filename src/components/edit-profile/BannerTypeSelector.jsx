@@ -10,7 +10,7 @@ const BannerTypeSelector = ({ selectedType, onSelect, highlightColor = '#7FFFD4'
     const getCategory = (id) => {
         if (id.startsWith('city') || id === 'panospace_beyond') return 'City';
         if (id.startsWith('ocean') || id === 'underwaterY2K' || id === 'deep_underwater' || id === 'iso_wave' || id === 'marmoris') return 'Ocean';
-        if (id.startsWith('cosmic') || id.startsWith('atmos') || ['stars', 'nebula', 'orbital', 'planet', 'ice-planet', 'northern-lights', 'aurora', 'system_orbital', 'borealis_live'].includes(id)) return 'Cosmic';
+        if (id.startsWith('cosmic') || id.startsWith('atmos') || id.startsWith('liquid') || ['stars', 'nebula', 'orbital', 'planet', 'ice-planet', 'northern-lights', 'aurora', 'system_orbital', 'borealis_live'].includes(id)) return 'Cosmic';
         if (id === 'elysium') return 'Cosmic';
         if (id.startsWith('window_')) return 'Window';
         if (id === 'wave_grid') return 'Abstract';
