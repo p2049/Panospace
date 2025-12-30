@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BANNER_OVERLAYS, OVERLAY_CATEGORIES, areOverlaysCompatible } from '@/core/constants/bannerOverlays';
-import { FaInfoCircle, FaCheckCircle, FaTrashAlt, FaMicrochip, FaCamera, FaEye, FaFilm, FaLayerGroup } from 'react-icons/fa';
+import { FaInfoCircle, FaCheckCircle, FaTrashAlt, FaMicrochip, FaCamera, FaEye, FaFilm, FaLayerGroup, FaMagic } from 'react-icons/fa';
 import { fadeColor } from '@/core/utils/colorUtils';
 
 /**
@@ -9,8 +9,26 @@ import { fadeColor } from '@/core/utils/colorUtils';
  * Refactored to match BannerTypeSelector UI pattern with scrolling lists.
  */
 const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor = '#7FFFD4', overlayTarget = 'both', setOverlayTarget, onOpenCatalog }) => {
-    // Default to null so it's "closed" initially
-    const [activeCategory, setActiveCategory] = useState(null);
+    // Initialize active category based on first selected overlay
+    const [activeCategory, setActiveCategory] = useState(() => {
+        if (selectedOverlays.length === 0) return null;
+        const firstOverlay = typeof selectedOverlays[0] === 'string' ? selectedOverlays[0] : selectedOverlays[0].id;
+        const overlayDef = BANNER_OVERLAYS.find(o => o.id === firstOverlay);
+        return overlayDef?.category || null;
+    });
+    // Track selected color for each overlay (overlayId -> colorId)
+    const [overlayColors, setOverlayColors] = useState({});
+    const scrollContainerRef = React.useRef(null);
+
+    // Auto-scroll to selected items on mount or when category changes
+    React.useEffect(() => {
+        if (scrollContainerRef.current) {
+            const selectedElement = scrollContainerRef.current.querySelector('[data-selected="true"]');
+            if (selectedElement) {
+                selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        }
+    }, [activeCategory, selectedOverlays]);
 
     // Map Category IDs to Icons
     const categoryIcons = {
@@ -18,12 +36,20 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
         [OVERLAY_CATEGORIES.DISPLAY.id]: FaMicrochip,
         [OVERLAY_CATEGORIES.CAPTURE.id]: FaEye,
         [OVERLAY_CATEGORIES.OPTICAL.id]: FaLayerGroup,
-        [OVERLAY_CATEGORIES.GRADE.id]: FaFilm
+        [OVERLAY_CATEGORIES.GRADE.id]: FaFilm,
+        [OVERLAY_CATEGORIES.ANIMATED.id]: FaMagic
     };
 
     const handleToggleOverlay = (id) => {
-        if (selectedOverlays.includes(id)) {
-            onSelect(selectedOverlays.filter(o => o !== id));
+        // Check if overlay is already selected (need to handle both string IDs and objects)
+        const isAlreadySelected = selectedOverlays.some(o =>
+            typeof o === 'string' ? o === id : o.id === id
+        );
+
+        if (isAlreadySelected) {
+            onSelect(selectedOverlays.filter(o =>
+                typeof o === 'string' ? o !== id : o.id !== id
+            ));
             return;
         }
 
@@ -31,15 +57,61 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
             return; // Limit reached
         }
 
-        // Compatibility check
-        const isCompatible = selectedOverlays.every(alreadySelected =>
-            areOverlaysCompatible(alreadySelected, id)
-        );
+        // Compatibility check (handle both string IDs and objects)
+        const isCompatible = selectedOverlays.every(alreadySelected => {
+            const selectedId = typeof alreadySelected === 'string' ? alreadySelected : alreadySelected.id;
+            return areOverlaysCompatible(selectedId, id);
+        });
 
         if (isCompatible) {
-            onSelect([...selectedOverlays, id]);
+            // Create overlay object with color info if it has colorVariants
+            const overlayDef = BANNER_OVERLAYS.find(o => o.id === id);
+            const overlayToAdd = overlayDef?.colorVariants
+                ? { id, selectedColor: overlayColors[id] || overlayDef.colorVariants[0].id }
+                : id;
+
+            onSelect([...selectedOverlays, overlayToAdd]);
         }
     };
+
+    // Helper to cycle through colors for an overlay
+    const cycleColor = (overlayId, direction) => {
+        const overlay = BANNER_OVERLAYS.find(o => o.id === overlayId);
+        if (!overlay?.colorVariants) return;
+
+        const currentColorId = overlayColors[overlayId] || overlay.colorVariants[0].id;
+        const currentIndex = overlay.colorVariants.findIndex(c => c.id === currentColorId);
+        const newIndex = direction === 'next'
+            ? (currentIndex + 1) % overlay.colorVariants.length
+            : (currentIndex - 1 + overlay.colorVariants.length) % overlay.colorVariants.length;
+
+        setOverlayColors(prev => ({
+            ...prev,
+            [overlayId]: overlay.colorVariants[newIndex].id
+        }));
+    };
+
+    // Sync color changes with selected overlays
+    React.useEffect(() => {
+        // Update selected overlays when colors change
+        const updatedOverlays = selectedOverlays.map(overlay => {
+            const id = typeof overlay === 'string' ? overlay : overlay.id;
+            const overlayDef = BANNER_OVERLAYS.find(o => o.id === id);
+
+            // If this overlay has colorVariants and a color is selected
+            if (overlayDef?.colorVariants && overlayColors[id]) {
+                return { id, selectedColor: overlayColors[id] };
+            }
+
+            return overlay;
+        });
+
+        // Only update if something actually changed
+        const hasChanges = JSON.stringify(updatedOverlays) !== JSON.stringify(selectedOverlays);
+        if (hasChanges) {
+            onSelect(updatedOverlays);
+        }
+    }, [overlayColors]);
 
     const categories = Object.values(OVERLAY_CATEGORIES);
     const filteredOverlays = activeCategory ? BANNER_OVERLAYS.filter(o => o.category === activeCategory) : [];
@@ -61,9 +133,9 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
 
 
     return (
-        <div style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+        <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem' }}>
             {/* Header / Title Area */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <label style={{
                         ...(isGradient ? {
@@ -112,7 +184,7 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
             </div>
 
             {/* Target Selector */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', marginBottom: '0.5rem' }}>
                 {['both', 'banner', 'profile'].map((target) => (
                     <button
                         key={target}
@@ -138,7 +210,7 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
             </div>
 
             {/* Category Tabs (Pills) - These are the "Top Selections" */}
-            <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: activeCategory ? '1rem' : '0.5rem' }}>
+            <div className="custom-gradient-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', marginBottom: activeCategory ? '0.75rem' : '0.25rem' }}>
                 <button
                     type="button"
                     onClick={() => onOpenCatalog && onOpenCatalog()}
@@ -199,6 +271,7 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
             {/* Horizontal Scrollable Overlay List (2 Rows) - ONLY OPEN WHEN CATEGORY SELECTED */}
             {activeCategory && (
                 <div
+                    ref={scrollContainerRef}
                     className="custom-gradient-scrollbar"
                     style={{
                         display: 'grid',
@@ -212,9 +285,15 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
                     }}
                 >
                     {filteredOverlays.map((overlay) => {
-                        const isSelected = selectedOverlays.includes(overlay.id);
+                        // Handle both string IDs and objects
+                        const isSelected = selectedOverlays.some(o =>
+                            typeof o === 'string' ? o === overlay.id : o.id === overlay.id
+                        );
                         const isMaxed = selectedOverlays.length >= 2 && !isSelected;
-                        const isCompatibleWithCurrent = selectedOverlays.every(id => areOverlaysCompatible(id, overlay.id));
+                        const isCompatibleWithCurrent = selectedOverlays.every(selected => {
+                            const selectedId = typeof selected === 'string' ? selected : selected.id;
+                            return areOverlaysCompatible(selectedId, overlay.id);
+                        });
 
                         // Identify Viewfinder/UI overlays that shouldn't be on profile
                         const isViewfinderUI = overlay.category === OVERLAY_CATEGORIES.CAMERA.id || overlay.id === 'display_terminal';
@@ -227,6 +306,7 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
                         return (
                             <div
                                 key={overlay.id}
+                                data-selected={isSelected}
                                 style={{
                                     flex: '0 0 auto',
                                     width: '130px',
@@ -286,6 +366,63 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
                                         }}>
                                             {overlay.description}
                                         </div>
+
+                                        {/* Color Picker for overlays with colorVariants */}
+                                        {overlay.colorVariants && (
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                marginTop: '6px',
+                                                gap: '6px'
+                                            }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        cycleColor(overlay.id, 'prev');
+                                                    }}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid rgba(255,255,255,0.2)',
+                                                        borderRadius: '4px',
+                                                        padding: '3px 8px',
+                                                        color: '#fff',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.7rem'
+                                                    }}
+                                                >
+                                                    ◀
+                                                </button>
+                                                <span style={{
+                                                    fontSize: '0.65rem',
+                                                    color: isSelected ? (isGradient ? '#fff' : safeColor) : '#aaa',
+                                                    fontWeight: '600',
+                                                    flex: 1,
+                                                    textAlign: 'center'
+                                                }}>
+                                                    {overlay.colorVariants.find(c => c.id === (overlayColors[overlay.id] || 'mint'))?.label || 'Mint'}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        cycleColor(overlay.id, 'next');
+                                                    }}
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.05)',
+                                                        border: '1px solid rgba(255,255,255,0.2)',
+                                                        borderRadius: '4px',
+                                                        padding: '3px 8px',
+                                                        color: '#fff',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.7rem'
+                                                    }}
+                                                >
+                                                    ▶
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Banner Only Restriction - Keep this as simple message since it's a hard limit */}
@@ -303,31 +440,29 @@ const BannerOverlaySelector = ({ selectedOverlays = [], onSelect, highlightColor
                                         </div>
                                     )}
 
-                                    {/* Swap UI - User Friendly Incompatibility resolution */}
+                                    {/* Swap UI - Clean badge that doesn't hide content */}
                                     {needsSwap && (
                                         <div style={{
                                             position: 'absolute',
-                                            inset: 0,
-                                            background: 'rgba(0,0,0,0.7)',
-                                            backdropFilter: 'blur(2px)',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            zIndex: 10,
-                                            padding: '5px'
+                                            top: '6px',
+                                            right: '6px',
+                                            zIndex: 10
                                         }}>
                                             <div style={{
-                                                background: '#fff',
+                                                background: isGradient ? '#fff' : safeColor,
                                                 color: '#000',
-                                                padding: '4px 8px',
-                                                borderRadius: '4px',
-                                                fontSize: '0.65rem',
-                                                fontWeight: '800',
-                                                textAlign: 'center',
-                                                textTransform: 'uppercase'
+                                                padding: '3px 8px',
+                                                borderRadius: '10px',
+                                                fontSize: '0.6rem',
+                                                fontWeight: '900',
+                                                textTransform: 'uppercase',
+                                                boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '3px',
+                                                letterSpacing: '0.5px'
                                             }}>
-                                                Swap Overlays
+                                                <span style={{ fontSize: '0.75rem' }}>↻</span> Swap
                                             </div>
                                         </div>
                                     )}

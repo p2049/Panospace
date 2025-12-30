@@ -30,7 +30,14 @@ const AetherBanner = ({ starSettings, variant = 'main' }) => {
         deep: { bg: '#010108', colors: [BRAND.ionBlue, BRAND.deepOrbit, BRAND.voidPurple] }
     };
 
-    const palette = VARIANTS[variant] || VARIANTS.main;
+    const palette = React.useMemo(() => {
+        if (VARIANTS[variant]) return VARIANTS[variant];
+        if (variant === 'brand') return VARIANTS.main;
+        if (variant?.startsWith('#')) {
+            return { bg: '#03000a', colors: [variant, BRAND.deepOrbit, BRAND.ionBlue] };
+        }
+        return VARIANTS.main;
+    }, [variant]);
 
     useEffect(() => {
         const canvas = canvasRef.current;

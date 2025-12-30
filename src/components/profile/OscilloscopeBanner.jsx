@@ -21,37 +21,36 @@ const SymmetryBanner = React.lazy(() => import('./SymmetryBanner'));
 const CosmicMathBanner = React.lazy(() => import('./CosmicMathBanner'));
 const TranscendenceBanner = React.lazy(() => import('./TranscendenceBanner'));
 
-const OscilloscopeBanner = ({ color = BRAND.MINT, variant, profileBorderColor, starSettings }) => {
-    // ROUTE TO MATH SUB-COMPONENTS
+const OscilloscopeBanner = ({ variant, color, profileBorderColor, starSettings, animationsEnabled = true }) => {
     if (variant?.startsWith('math_aizawa') || variant?.startsWith('math_lorenz') || variant?.startsWith('math_rossler')) {
-        return <AttractorBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <AttractorBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_knot') || variant?.startsWith('math_enneper') || variant?.startsWith('math_mobius')) {
-        return <ManifoldBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <ManifoldBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_pentachoron') || variant?.startsWith('math_24cell') || variant?.startsWith('math_tesseract_4d')) {
-        return <HyperplexBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <HyperplexBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_wave') || variant?.startsWith('math_interference') || variant?.startsWith('math_quantum_foam')) {
-        return <QuantumFluxBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <QuantumFluxBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_phyllotaxis') || variant?.startsWith('math_fibonacci')) {
-        return <FloraBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <FloraBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_lissajous') || variant?.startsWith('math_hypotrochoid') || variant?.startsWith('math_supershape')) {
-        return <SymmetryBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <SymmetryBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_calabi') || variant?.startsWith('math_singularity') || variant?.startsWith('math_ribbon')) {
-        return <CosmicMathBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <CosmicMathBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
     if (variant?.startsWith('math_fire') || variant?.startsWith('math_mandala') || variant?.startsWith('math_nebula')) {
-        return <TranscendenceBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        return <TranscendenceBanner color={variant} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
     }
 
     const canvasRef = useRef(null);
     const stateRef = useRef({ time: 0 });
 
-    // Build the star field memoized for performance
+    // Build the star field memoized for performance (STATIC if animations disabled)
     const stars = useMemo(() => {
         if (!starSettings?.enabled) return null;
         const count = 40;
@@ -74,13 +73,13 @@ const OscilloscopeBanner = ({ color = BRAND.MINT, variant, profileBorderColor, s
                         left: Math.random() * 100 + '%',
                         opacity: Math.random() * 0.7 + 0.3,
                         boxShadow: `0 0 ${Math.random() * 4 + 2}px ${thisColor}`,
-                        animation: `os-star-twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                        animation: animationsEnabled ? `os-star-twinkle ${Math.random() * 3 + 2}s ease-in-out infinite` : 'none',
                         animationDelay: `${Math.random() * 5}s`
                     }}
                 />
             );
         });
-    }, [starSettings?.enabled, starSettings?.color]);
+    }, [starSettings?.enabled, starSettings?.color, animationsEnabled]);
 
     // Helper to get RGB from Hex for vignette
     const hexToRgba = (hex, alpha) => {
@@ -113,7 +112,11 @@ const OscilloscopeBanner = ({ color = BRAND.MINT, variant, profileBorderColor, s
         };
 
         const render = () => {
-            stateRef.current.time += 0.008;
+            // Only increment time if animations are enabled
+            if (animationsEnabled) {
+                stateRef.current.time += 0.008;
+            }
+
             const t = stateRef.current.time;
             const w = canvas.width;
             const h = canvas.height;
@@ -247,24 +250,27 @@ const OscilloscopeBanner = ({ color = BRAND.MINT, variant, profileBorderColor, s
                 drawGlobe(w * 0.25, 0, 0.4, true);  // Right globe, opposite slow spin
             }
 
-            animationFrame = requestAnimationFrame(render);
+            if (animationsEnabled) {
+                animationFrame = requestAnimationFrame(render);
+            }
         };
 
         const handleResize = () => {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = canvas.offsetWidth * dpr;
             canvas.height = canvas.offsetHeight * dpr;
+            // Force re-render on resize regardless of animation state
+            render();
         };
 
         window.addEventListener('resize', handleResize);
-        handleResize();
-        render();
+        handleResize(); // Initial render
 
         return () => {
             window.removeEventListener('resize', handleResize);
             cancelAnimationFrame(animationFrame);
         };
-    }, [color, variant]);
+    }, [color, variant, animationsEnabled]);
 
     const vColor = getVignetteColor(profileBorderColor, color);
 

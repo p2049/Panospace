@@ -234,7 +234,17 @@ const Profile = () => {
             }
         }
         // 3. Dark Themes (City, Ocean, Stars, Neon): Clash with Black/Dark
-        else if (['stars', 'neonGrid', 'cyberpunkLines'].includes(bannerMode) || bannerMode.startsWith('city') || bannerMode.startsWith('ocean')) {
+        else if (
+            ['stars', 'neonGrid', 'cyberpunkLines'].includes(bannerMode) ||
+            bannerMode.startsWith('city') ||
+            bannerMode.startsWith('ocean') ||
+            bannerMode.startsWith('cosmic_') ||
+            bannerMode.startsWith('zen_') ||
+            bannerMode.startsWith('abstract_') ||
+            bannerMode.startsWith('math_') ||
+            bannerMode.startsWith('os_') ||
+            bannerMode.startsWith('liquid_')
+        ) {
             if (['#000000', '#050505', '#000', '#111', '#0a0a0a'].includes(uc)) {
                 effectiveUsernameColor = '#FFFFFF';
             }
@@ -318,9 +328,12 @@ const Profile = () => {
                     color={user.profileTheme?.bannerColor || user.profileTheme?.borderColor || '#7FFFD4'}
                     starSettings={{
                         enabled: user.profileTheme?.useStarsOverlay,
-                        color: user.profileTheme?.starColor
+                        color: user.profileTheme?.starColor,
+                        seed: user.profileTheme?.bannerSeed,
+                        speed: user.profileTheme?.bannerSpeed || 1.0
                     }}
                     overlays={user.profileTheme?.overlays || []}
+                    profileBorderColor={user.profileTheme?.borderColor}
                 />
 
                 {/* Gradient Polish Overlays (Noise + Vignette) - Only if gradient mode */}
@@ -559,9 +572,10 @@ const Profile = () => {
                                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
                                             <PlanetUserIcon
                                                 size={parseInt(layout.profile.avatarSize, 10) * 0.7}
-                                                color={user.profileTheme?.usernameColor && !user.profileTheme.usernameColor.includes('gradient') ? user.profileTheme.usernameColor : '#7FFFD4'}
+                                                color={user.defaultIconId === 'seed_oscillator' ? (user.pfpOscColor || user.profileTheme?.pfpOscColor || '#7FFFD4') : (effectiveUsernameColor && !effectiveUsernameColor.includes('gradient') ? effectiveUsernameColor : '#7FFFD4')}
                                                 icon={user.defaultIconId || 'planet-head'}
                                                 glow={user.profileTheme?.textGlow}
+                                                seed={user.pfpSeed || user.profileTheme?.pfpSeed || 'panospace'}
                                             />
                                         </div>
                                     )}

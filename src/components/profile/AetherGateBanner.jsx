@@ -10,11 +10,19 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 // 3. Reactor Core (Pure light)
 // Vibe: Grand, Technological, Apex Engineering.
 
-const NeuralAngelBanner = () => {
+const RENDER_CACHE = new Map();
+
+const AetherGateBanner = ({ color: customColor }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
+        const cacheKey = `aether_gate_${customColor || 'brand'}`;
+        if (RENDER_CACHE.has(cacheKey)) {
+            setBgImage(RENDER_CACHE.get(cacheKey));
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -26,6 +34,12 @@ const NeuralAngelBanner = () => {
 
         const cx = w * 0.5;
         const cy = h * 0.5;
+
+        const isBrand = customColor === 'brand';
+        const resolveColor = (fallback) => {
+            if (isBrand) return fallback;
+            return customColor || fallback;
+        };
 
         // 1. DEEP VOID BG
         const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w);
@@ -40,15 +54,13 @@ const NeuralAngelBanner = () => {
             ctx.translate(cx, cy);
             ctx.rotate(angle);
 
-            // Tech Lattice style
             ctx.beginPath();
             ctx.moveTo(100, 0);
-            ctx.lineTo(length, -100); // Taper out
-            ctx.lineTo(length + 50, 0); // Point
-            ctx.lineTo(length, 100);  // Taper back
+            ctx.lineTo(length, -100);
+            ctx.lineTo(length + 50, 0);
+            ctx.lineTo(length, 100);
             ctx.closePath();
 
-            // Fill
             const sailGrad = ctx.createLinearGradient(100, 0, length, 0);
             sailGrad.addColorStop(0, color);
             sailGrad.addColorStop(1, 'transparent');
@@ -56,13 +68,11 @@ const NeuralAngelBanner = () => {
             ctx.globalAlpha = 0.2;
             ctx.fill();
 
-            // Tech Lines
             ctx.lineWidth = 2;
             ctx.strokeStyle = color;
             ctx.globalAlpha = 0.8;
             ctx.stroke();
 
-            // Inner Details
             ctx.beginPath();
             ctx.moveTo(100, 0);
             ctx.lineTo(length, 0);
@@ -73,10 +83,9 @@ const NeuralAngelBanner = () => {
             ctx.restore();
         };
 
-        // 6 Sails in hexagonal symmetry
         for (let i = 0; i < 6; i++) {
             const a = (i / 6) * Math.PI * 2;
-            const col = i % 2 === 0 ? COLORS.ionBlue : COLORS.solarPink;
+            const col = i % 2 === 0 ? resolveColor(COLORS.ionBlue) : resolveColor(COLORS.solarPink);
             drawSail(a, 900, col);
         }
 
@@ -85,7 +94,7 @@ const NeuralAngelBanner = () => {
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(axisRotate);
-            ctx.scale(1, 0.4); // Deep perspective
+            ctx.scale(1, 0.4);
 
             ctx.beginPath();
             ctx.arc(0, 0, rad, 0, Math.PI * 2);
@@ -98,7 +107,6 @@ const NeuralAngelBanner = () => {
             ctx.stroke();
             ctx.shadowBlur = 0;
 
-            // Mechanical notches
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#FFF';
             for (let i = 0; i < 12; i++) {
@@ -114,16 +122,16 @@ const NeuralAngelBanner = () => {
             ctx.restore();
         };
 
-        drawRing(500, 0, COLORS.stellarOrange, 4);
-        drawRing(450, Math.PI / 3, COLORS.ionBlue, 8); // Thick main ring
-        drawRing(400, -Math.PI / 3, COLORS.deepOrbitPurple, 2);
-        drawRing(800, Math.PI / 2, COLORS.auroraMint, 1); // Massive faint outer ring
+        drawRing(500, 0, resolveColor(COLORS.stellarOrange), 4);
+        drawRing(450, Math.PI / 3, resolveColor(COLORS.ionBlue), 8);
+        drawRing(400, -Math.PI / 3, resolveColor(COLORS.deepOrbitPurple), 2);
+        drawRing(800, Math.PI / 2, resolveColor(COLORS.auroraMint), 1);
 
         // 4. THE REACTOR CORE (Pure Energy)
         const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, 200);
-        core.addColorStop(0, '#FFFFFF'); // Hot white center
-        core.addColorStop(0.1, COLORS.auroraMint);
-        core.addColorStop(0.4, COLORS.ionBlue);
+        core.addColorStop(0, '#FFFFFF');
+        core.addColorStop(0.1, resolveColor(COLORS.auroraMint));
+        core.addColorStop(0.4, resolveColor(COLORS.ionBlue));
         core.addColorStop(1, 'transparent');
 
         ctx.fillStyle = core;
@@ -132,12 +140,11 @@ const NeuralAngelBanner = () => {
         ctx.arc(cx, cy, 200, 0, Math.PI * 2);
         ctx.fill();
 
-        // Lens Flare / Beam
-        ctx.fillStyle = COLORS.ionBlue;
+        ctx.fillStyle = resolveColor(COLORS.ionBlue);
         ctx.globalAlpha = 0.2;
         ctx.fillRect(0, cy - 2, w, 4);
 
-        // 5. VIGNETTE (Safety)
+        // 5. VIGNETTE
         ctx.globalCompositeOperation = 'multiply';
         const vig = ctx.createLinearGradient(0, 0, 0, h);
         vig.addColorStop(0, 'transparent');
@@ -146,9 +153,11 @@ const NeuralAngelBanner = () => {
         ctx.fillStyle = vig;
         ctx.fillRect(0, 0, w, h);
 
-        setBgImage(canvas.toDataURL('image/webp', 0.95));
+        const result = canvas.toDataURL('image/webp', 0.95);
+        RENDER_CACHE.set(cacheKey, result);
+        setBgImage(result);
 
-    }, []);
+    }, [customColor]);
 
     return (
         <div style={{
@@ -168,4 +177,4 @@ const NeuralAngelBanner = () => {
     );
 };
 
-export default NeuralAngelBanner;
+export default AetherGateBanner;

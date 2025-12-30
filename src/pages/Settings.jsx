@@ -28,8 +28,55 @@ const Settings = () => {
         currentFeed, switchToFeed, followingOnly, setFollowingOnly,
         feedDefault, profileDefault, createDefault, searchDefault,
         setFeedDefault, setAllFeedDefaults, ratingSystemDefault, setRatingSystemDefault,
-        showHumor, toggleShowHumor
+        showHumor, toggleShowHumor, animationsEnabled, toggleAnimations, setAnimationsEnabled
     } = useFeedStore();
+
+    // ... (rest of local state) ...
+
+    // Fetch User Data from Firestore & Sync Settings
+    const [userData, setUserData] = useState(null);
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (currentUser) {
+                try {
+                    const userRef = doc(db, 'users', currentUser.uid);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        const data = userSnap.data();
+                        setUserData(data);
+
+                        // Sync Animations Preference
+                        if (data.profileTheme?.animationsEnabled !== undefined) {
+                            setAnimationsEnabled(data.profileTheme.animationsEnabled);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error fetching user settings:", error);
+                }
+            }
+        };
+        fetchUserData();
+    }, [currentUser, setAnimationsEnabled]);
+
+    const handleToggleAnimations = async () => {
+        // Toggle Local
+        toggleAnimations();
+
+        // Sync to Firestore
+        if (currentUser) {
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                // We toggle current state, so new value is !animationsEnabled
+                const newValue = !animationsEnabled;
+                await updateDoc(userRef, {
+                    'profileTheme.animationsEnabled': newValue
+                });
+            } catch (error) {
+                console.error("Error syncing animation preference:", error);
+                showToast('Failed to save preference', 'error');
+            }
+        }
+    };
 
     // Language State
     const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -136,23 +183,6 @@ const Settings = () => {
     const [conversionError, setConversionError] = useState('');
 
     // Fetch User Data from Firestore
-    const [userData, setUserData] = useState(null);
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (currentUser) {
-                try {
-                    const userRef = doc(db, 'users', currentUser.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                        setUserData(userSnap.data());
-                    }
-                } catch (error) {
-                    console.error("Error fetching user settings:", error);
-                }
-            }
-        };
-        fetchUserData();
-    }, [currentUser]);
 
     const handleLogout = async () => {
         try {
@@ -495,6 +525,57 @@ const Settings = () => {
                         label={togglingStars ? "Updating..." : "Star Overlay (Experimental)"}
                         onClick={toggleStarsOverlay}
                     />
+                    <button
+                        type="button"
+                        onClick={handleToggleAnimations}
+                        style={{
+                            width: '100%',
+                            height: '50px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0 20px',
+                            background: 'transparent',
+                            border: '1px solid rgba(110, 255, 216, 0.15)',
+                            borderRadius: '8px',
+                            color: 'var(--text-primary, #d8fff1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            pointerEvents: 'auto',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            position: 'relative',
+                            zIndex: 1
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', pointerEvents: 'none' }}>
+                            <FaGem size={18} color="var(--accent, #6effd8)" />
+                            <span style={{ fontSize: '0.95rem', fontWeight: '500' }}>Global Animations</span>
+                        </div>
+                        <div style={{
+                            width: '44px',
+                            height: '24px',
+                            borderRadius: '12px',
+                            background: animationsEnabled ? 'var(--accent, #6effd8)' : 'rgba(255,255,255,0.2)',
+                            position: 'relative',
+                            transition: 'background 0.2s'
+                        }}>
+                            <div style={{
+                                width: '20px',
+                                height: '20px',
+                                background: '#fff',
+                                borderRadius: '50%',
+                                position: 'absolute',
+                                top: '2px',
+                                left: animationsEnabled ? '22px' : '2px',
+                                transition: 'left 0.2s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                            }} />
+                        </div>
+                    </button>
+                    <div style={{ padding: '0 20px', marginTop: '10px', fontSize: '0.8rem', color: '#888', fontStyle: 'italic' }}>
+                        Disable for a static "Still" experience and better performance.
+                    </div>
                     <SettingsRow icon={FaPalette} label={t('settings.theme') + ' (Coming Soon)'} onClick={() => { }} disabled={true} />
                 </div>
 

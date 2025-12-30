@@ -29,6 +29,11 @@ export const OVERLAY_CATEGORIES = {
         id: 'GRADE',
         label: 'Cinematic Grade',
         description: 'Atmospheric color treatments and film simulations.'
+    },
+    ANIMATED: {
+        id: 'ANIMATED',
+        label: 'Animated Effects',
+        description: 'Dynamic particle effects and animated overlays like fireflies, rain, and snow.'
     }
 };
 
@@ -688,6 +693,76 @@ export const BANNER_OVERLAYS = [
         description: 'Intense ISO 3200 film grain simulation.',
         compatibleWith: ['standard_digital', 'monochrome', 'black_white']
     },
+    {
+        id: 'firefly_normal',
+        category: OVERLAY_CATEGORIES.ANIMATED.id,
+        label: 'Fireflies',
+        description: 'Gentle floating fireflies creating ambient atmosphere.',
+        compatibleWith: '*', // Compatible with all overlays
+        colorVariants: [
+            { id: 'mint', label: 'Mint', color: '#7FFFD4' },
+            { id: 'pink', label: 'Pink', color: '#FF5C8A' },
+            { id: 'blue', label: 'Blue', color: '#1B82FF' },
+            { id: 'purple', label: 'Purple', color: '#5A3FFF' },
+            { id: 'orange', label: 'Orange', color: '#FF914D' },
+            { id: 'ice', label: 'Ice', color: '#8CFFE9' }
+        ]
+    },
+    {
+        id: 'firefly_swarm',
+        category: OVERLAY_CATEGORIES.ANIMATED.id,
+        label: 'Firefly Swarm',
+        description: 'Dense cluster of fireflies creating magical atmosphere.',
+        compatibleWith: '*', // Compatible with all overlays
+        colorVariants: [
+            { id: 'mint', label: 'Mint', color: '#7FFFD4' },
+            { id: 'pink', label: 'Pink', color: '#FF5C8A' },
+            { id: 'blue', label: 'Blue', color: '#1B82FF' },
+            { id: 'purple', label: 'Purple', color: '#5A3FFF' },
+            { id: 'orange', label: 'Orange', color: '#FF914D' },
+            { id: 'ice', label: 'Ice', color: '#8CFFE9' }
+        ]
+    },
+    {
+        id: 'snow',
+        category: OVERLAY_CATEGORIES.ANIMATED.id,
+        label: 'Snow',
+        description: 'Gentle falling snowflakes creating a winter atmosphere.',
+        compatibleWith: '*'
+    },
+    {
+        id: 'rain',
+        category: OVERLAY_CATEGORIES.ANIMATED.id,
+        label: 'Rain',
+        description: 'Realistic rain effect with falling droplets.',
+        compatibleWith: '*'
+    },
+    {
+        id: 'leaves',
+        category: OVERLAY_CATEGORIES.ANIMATED.id,
+        label: 'Falling Leaves',
+        description: 'Autumn leaves gently drifting downward.',
+        compatibleWith: '*',
+        colorVariants: [
+            { id: 'orange', label: 'Orange', color: '#FF914D' },
+            { id: 'red', label: 'Red', color: '#FF5C5C' },
+            { id: 'yellow', label: 'Yellow', color: '#FFD93D' },
+            { id: 'brown', label: 'Brown', color: '#8B4513' }
+        ]
+    },
+    {
+        id: 'cherry_blossoms',
+        category: OVERLAY_CATEGORIES.ANIMATED.id,
+        label: 'Cherry Blossoms',
+        description: 'Delicate cherry blossom petals gently floating down.',
+        compatibleWith: '*',
+        colorVariants: [
+            { id: 'pink', label: 'Pink', color: '#FFB7C5' },
+            { id: 'white', label: 'White', color: '#FFF5F7' },
+            { id: 'rose', label: 'Rose', color: '#FF9EBA' },
+            { id: 'lavender', label: 'Lavender', color: '#E6C9E6' }
+        ]
+    },
 ];
 
 /**
@@ -704,6 +779,9 @@ export const areOverlaysCompatible = (id1, id2) => {
     const ov2 = BANNER_OVERLAYS.find(o => o.id === id2);
 
     if (!ov1 || !ov2) return false;
+
+    // Rule 0: Check for wildcard compatibility (e.g., fireflies work with everything)
+    if (ov1.compatibleWith === '*' || ov2.compatibleWith === '*') return true;
 
     // Rule 1: Explicitly allowed
     if (ov1.compatibleWith?.includes(id2) || ov2.compatibleWith?.includes(id1)) return true;

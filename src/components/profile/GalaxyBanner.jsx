@@ -9,9 +9,9 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 const RENDER_CACHE = new Map();
 
-function renderGalaxyToCanvas(canvas) {
+function renderGalaxyToCanvas(canvas, customColor) {
     if (!canvas) return '';
-    const cacheKey = 'cosmic_galaxy_v1';
+    const cacheKey = `cosmic_galaxy_v1_${customColor || 'brand'}`;
     if (RENDER_CACHE.has(cacheKey)) return RENDER_CACHE.get(cacheKey);
 
     const ctx = canvas.getContext('2d');
@@ -25,7 +25,7 @@ function renderGalaxyToCanvas(canvas) {
 
     // 1. DEEP VOID BACKGROUND (Purple Tint)
     const base = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.8);
-    base.addColorStop(0, '#100520'); // Deep purple center
+    base.addColorStop(0, customColor ? customColor + '1a' : '#100520'); // Deep purple center
     base.addColorStop(0.5, '#050210');
     base.addColorStop(1, '#000000');
     ctx.fillStyle = base;
@@ -65,7 +65,14 @@ function renderGalaxyToCanvas(canvas) {
             // Color Logic
             const r = Math.random();
             let pColor = '#FFF';
-            if (colorMix === 'cool') {
+            const isBrand = customColor === 'brand';
+
+            if (isBrand) {
+                // If brand, use a sophisticated rainbow mix
+                pColor = r > 0.6 ? COLORS.ionBlue : (r > 0.3 ? COLORS.auroraMint : COLORS.solarPink);
+            } else if (customColor) {
+                pColor = r > 0.4 ? customColor : (r > 0.2 ? '#FFF' : COLORS.deepOrbitPurple);
+            } else if (colorMix === 'cool') {
                 // Blue / Mint / Purple
                 pColor = r > 0.6 ? COLORS.ionBlue : (r > 0.3 ? COLORS.auroraMint : COLORS.deepOrbitPurple);
             } else {
@@ -103,8 +110,8 @@ function renderGalaxyToCanvas(canvas) {
 
     const core = ctx.createRadialGradient(0, 0, 0, 0, 0, 200);
     core.addColorStop(0, '#FFFFFF');
-    core.addColorStop(0.1, COLORS.solarPink);
-    core.addColorStop(0.3, COLORS.deepOrbitPurple);
+    core.addColorStop(0.1, customColor || COLORS.solarPink);
+    core.addColorStop(0.3, customColor || COLORS.deepOrbitPurple);
     core.addColorStop(1, 'transparent');
 
     ctx.fillStyle = core;
@@ -121,7 +128,7 @@ function renderGalaxyToCanvas(canvas) {
             const x = Math.random() * w;
             const y = Math.random() * h;
             const s = Math.random() * 2;
-            ctx.fillStyle = Math.random() > 0.9 ? COLORS.auroraMint : '#FFF';
+            ctx.fillStyle = Math.random() > 0.9 ? (customColor || COLORS.auroraMint) : '#FFF';
             ctx.globalAlpha = Math.random() * brightness;
             ctx.beginPath(); ctx.arc(x, y, s, 0, Math.PI * 2); ctx.fill();
         }
@@ -137,17 +144,19 @@ function renderGalaxyToCanvas(canvas) {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, w, h);
 
-    return canvas.toDataURL('image/webp', 0.95);
+    const result = canvas.toDataURL('image/webp', 0.95);
+    RENDER_CACHE.set(cacheKey, result);
+    return result;
 }
 
-const GalaxyBanner = () => {
+const GalaxyBanner = ({ color }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
-        const bg = renderGalaxyToCanvas(canvasRef.current);
+        const bg = renderGalaxyToCanvas(canvasRef.current, color);
         setBgImage(bg);
-    }, []);
+    }, [color]);
 
     return (
         <div style={{

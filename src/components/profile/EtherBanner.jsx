@@ -13,11 +13,19 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 // 3. Super-ellipse geometry (Squaricles) for that "Premier" feel.
 // Vibe: "Ultra-Premium", "Next-Gen OS", "Weightless", "Perfect".
 
-const EtherBanner = () => {
+const RENDER_CACHE = new Map();
+
+const EtherBanner = ({ color: customColor }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
+        const cacheKey = `ether_${customColor || 'brand'}`;
+        if (RENDER_CACHE.has(cacheKey)) {
+            setBgImage(RENDER_CACHE.get(cacheKey));
+            return;
+        }
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -28,6 +36,12 @@ const EtherBanner = () => {
         canvas.height = h;
         const cx = w * 0.5;
         const cy = h * 0.5;
+
+        const isBrand = customColor === 'brand';
+        const resolveColor = (fallback) => {
+            if (isBrand) return fallback;
+            return customColor || fallback;
+        };
 
         // 1. BASE: THE "DEEP MICA" BACKGROUND
         // A gradient that feels like expensive frosted glass over a void
@@ -53,8 +67,8 @@ const EtherBanner = () => {
         };
 
         // Brand Palette "Nebula" behind the glass
-        drawAura(w * 0.2, h * 0.2, 1200, COLORS.deepOrbitPurple);
-        drawAura(w * 0.8, h * 0.8, 1400, COLORS.ionBlue);
+        drawAura(w * 0.2, h * 0.2, 1200, resolveColor(COLORS.deepOrbitPurple));
+        drawAura(w * 0.8, h * 0.8, 1400, resolveColor(COLORS.ionBlue));
         drawAura(w * 0.5, h * 0.5, 900, 'rgba(255,255,255,0.1)'); // White core
 
         // 3. THE "PERFECT" OBJECT (The Lens)
@@ -119,14 +133,14 @@ const EtherBanner = () => {
         // "Zero Gravity UI"
 
         // Background Plate (Huge, dark)
-        drawSquircle(w * 0.7, h * 0.4, 900, 100, COLORS.deepOrbitPurple, Math.PI * 0.1);
+        drawSquircle(w * 0.7, h * 0.4, 900, 100, resolveColor(COLORS.deepOrbitPurple), Math.PI * 0.1);
 
         // Mid Plate (Mint)
-        drawSquircle(w * 0.3, h * 0.6, 600, 120, COLORS.auroraMint, -Math.PI * 0.05);
+        drawSquircle(w * 0.3, h * 0.6, 600, 120, resolveColor(COLORS.auroraMint), -Math.PI * 0.05);
 
         // HERO PLATE (The Centerpiece)
         // Bright, sharp, in focus
-        drawSquircle(cx, cy, 400, 80, COLORS.solarPink, 0);
+        drawSquircle(cx, cy, 400, 80, resolveColor(COLORS.solarPink), 0);
 
 
         // 4. "NANOTECH" DETAILS (Subtle Texture)
@@ -176,9 +190,11 @@ const EtherBanner = () => {
         ctx.fillStyle = botGrad;
         ctx.fillRect(0, 0, w, h);
 
-        setBgImage(canvas.toDataURL('image/webp', 0.95));
+        const result = canvas.toDataURL('image/webp', 0.95);
+        RENDER_CACHE.set(cacheKey, result);
+        setBgImage(result);
 
-    }, []);
+    }, [customColor]);
 
     return (
         <div style={{

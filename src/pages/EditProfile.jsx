@@ -25,6 +25,7 @@ import { FaTh } from 'react-icons/fa';
 import CatalogModal from '@/components/edit-profile/CatalogModal';
 import BannerThemeRenderer from '@/components/profile/BannerThemeRenderer';
 const BannerOverlayRenderer = React.lazy(() => import('@/components/profile/BannerOverlayRenderer'));
+const SeedOscillatorAvatar = React.lazy(() => import('@/components/profile/SeedOscillatorAvatar'));
 import { BANNER_OVERLAYS, OVERLAY_CATEGORIES } from '@/core/constants/bannerOverlays';
 import { BANNER_TYPES } from '@/core/constants/bannerThemes';
 import { invalidateProfileCache } from '@/hooks/useProfile';
@@ -70,12 +71,17 @@ const EditProfile = () => {
     const [usernameColor, setUsernameColor] = useState('#FFFFFF'); // Default white
     const [bannerMode, setBannerMode] = useState('stars'); // 'stars' or 'gradient'
     const [bannerColor, setBannerColor] = useState('#7FFFD4'); // Separate from border color
+    const [bannerSeed, setBannerSeed] = useState('panospace');
+    const [bannerSpeed, setBannerSpeed] = useState(1.0);
     const [useStarsOverlay, setUseStarsOverlay] = useState(false);
     const [textGlow, setTextGlow] = useState(false);
     const [selectedOverlays, setSelectedOverlays] = useState([]); // This tracks Banner Overlays (legacy name kept for safety)
     const [profileOverlays, setProfileOverlays] = useState([]); // Tracks Profile Picture Overlays
     const [overlayTarget, setOverlayTarget] = useState('both'); // 'both' | 'banner' | 'profile'
     const [defaultIconId, setDefaultIconId] = useState('planet-head'); // New state for default icon
+    const [pfpSeed, setPfpSeed] = useState('panospace');
+    const [pfpOscColor, setPfpOscColor] = useState('#7FFFD4');
+    const [showOscillatorPopup, setShowOscillatorPopup] = useState(false);
     const [catalogMode, setCatalogMode] = useState(null); // 'banner' | 'overlay' | null
 
     useEffect(() => {
@@ -88,7 +94,11 @@ const EditProfile = () => {
                     setProfileBgColor(data.profileBgColor || '#000000');
                     // Improve initialization to ensure valid icon
                     const savedIcon = data.defaultIconId || 'planet-head';
-                    setDefaultIconId(DEFAULT_ICONS.includes(savedIcon) ? savedIcon : 'planet-head');
+                    setDefaultIconId((DEFAULT_ICONS.includes(savedIcon) || savedIcon === 'seed_oscillator') ? savedIcon : 'planet-head');
+
+                    setPfpSeed(data.pfpSeed || data.profileTheme?.pfpSeed || 'panospace');
+                    setPfpOscColor(data.pfpOscColor || data.profileTheme?.pfpOscColor || '#7FFFD4');
+
                     // Fetch username
                     const fetchedUsername = data.username || currentUser.displayName || '';
                     setUsername(fetchedUsername);
@@ -109,6 +119,8 @@ const EditProfile = () => {
                         setUsernameColor(data.profileTheme.usernameColor || '#FFFFFF');
                         setBannerMode(data.profileTheme.bannerMode || 'stars');
                         setBannerColor(data.profileTheme.bannerColor || data.profileTheme.borderColor || '#7FFFD4'); // Fallback for legacy
+                        setBannerSeed(data.profileTheme.bannerSeed || 'panospace');
+                        setBannerSpeed(data.profileTheme.bannerSpeed !== undefined ? data.profileTheme.bannerSpeed : 1.0);
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
                         setTextGlow(data.profileTheme.textGlow || false);
                         setPixelGlow(data.profileTheme.pixelGlow || false);
@@ -333,10 +345,22 @@ const EditProfile = () => {
 
     const handleBannerModeChange = (mode) => {
         setBannerMode(mode);
+
+        // Reset bannerColor if it's an ID-based variant (doesn't start with #)
+        // This prevents "solar_purple" etc. from leaking into banners that expect real colors.
+        if (bannerColor && !bannerColor.startsWith('#') && bannerColor !== 'brand') {
+            setBannerColor('#7FFFD4'); // Default to Mint
+        }
+
         // If switching to Northern Lights, ensure stars are ON and default color is set (Borealis default)
         if (mode === 'northern_lights') {
             setUseStarsOverlay(true);
             setStarColor(NORTHERN_LIGHTS_STAR_DEFAULTS['aurora_borealis']); // Default to first variant
+        }
+
+        // Cap speed for Oscillator if needed
+        if (mode === 'custom_oscillator' && bannerSpeed > 1.0) {
+            setBannerSpeed(1.0);
         }
     };
 
@@ -421,22 +445,20 @@ const EditProfile = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Starting profile save...
-
-        if (!currentUser) {
-            logger.error("No current user found.");
-            return;
-        }
-
         setLoading(true);
 
         try {
+            if (!currentUser) {
+                console.error("No current user found.");
+                setLoading(false);
+                return;
+            }
+
             let newPhotoURL = currentUser.photoURL;
 
             // 1. Handle Image Upload
             if (selectedFile) {
                 try {
-                    // Extract info from selectedFile to be dynamic
                     const fileExt = selectedFile.name.split('.').pop() || 'png';
                     const mimeType = selectedFile.type || 'image/png';
                     const path = `profile_photos/${currentUser.uid}/profile_current.${fileExt}`;
@@ -456,7 +478,7 @@ const EditProfile = () => {
                     newPhotoURL = result.downloadURL;
 
                 } catch (uploadError) {
-                    logger.error("[EditProfile] Image upload failed:", uploadError);
+                    console.error("[EditProfile] Image upload failed:", uploadError);
                     alert("Failed to upload image: " + (uploadError.message || "Unknown error"));
                     setLoading(false);
                     return; // Don't save profile if upload failed
@@ -636,15 +658,21 @@ const EditProfile = () => {
                     bioColor: autoBioColor,
                     bannerMode: bannerMode || 'stars',
                     bannerColor: bannerColor || '#7FFFD4',
+                    bannerSeed: bannerSeed || 'panospace',
+                    bannerSpeed: bannerSpeed,
                     useStarsOverlay: useStarsOverlay || false,
                     textGlow: textGlow || false,
                     pixelGlow: pixelGlow || false, // Persist pixel glow
                     pixelGrid: pixelGrid, // Persist grid preference
                     overlays: selectedOverlays || [],
-                    profileOverlays: profileOverlays || []
+                    profileOverlays: profileOverlays || [],
+                    pfpSeed: pfpSeed, // Duplicate to theme for safety
+                    pfpOscColor: pfpOscColor // Duplicate to theme
                 },
                 pixel_avatar_data: pixelAvatarData, // Save raw pixels for re-editing
-                defaultIconId: defaultIconId // Save the selected default icon
+                defaultIconId: defaultIconId, // Save the selected default icon
+                pfpSeed: pfpSeed,
+                pfpOscColor: pfpOscColor
             };
 
             // Add search keywords
@@ -670,7 +698,7 @@ const EditProfile = () => {
             // Invalidate cache so Profile page refetches
             invalidateProfileCache(currentUser.uid);
 
-            showToast('Profile updated successfully!', 'success');
+            showToast(`Profile updated! Seed: ${pfpSeed}`, 'success');
             navigate('/profile/me');
         } catch (error) {
             console.error("Save failed:", error);
@@ -742,6 +770,25 @@ const EditProfile = () => {
             console.warn("Background update of past content failed (non-critical):", e);
         }
     };
+
+    // --- SMART CONTRAST CHECK ---
+    let effectiveUsernameColor = usernameColor || '#FFFFFF';
+    const uc = effectiveUsernameColor.toLowerCase();
+    if (
+        ['stars', 'neonGrid', 'cyberpunkLines'].includes(bannerMode) ||
+        bannerMode.startsWith('city') ||
+        bannerMode.startsWith('ocean') ||
+        bannerMode.startsWith('cosmic_') ||
+        bannerMode.startsWith('zen_') ||
+        bannerMode.startsWith('abstract_') ||
+        bannerMode.startsWith('math_') ||
+        bannerMode.startsWith('os_') ||
+        bannerMode.startsWith('liquid_')
+    ) {
+        if (['#000000', '#050505', '#000', '#111', '#0a0a0a'].includes(uc)) {
+            effectiveUsernameColor = '#FFFFFF';
+        }
+    }
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#000', color: '#fff', paddingBottom: '100px', position: 'relative' }}>
@@ -821,16 +868,16 @@ const EditProfile = () => {
                     }}>Edit Profile</h1>
                 </div>
 
-                <div style={{ padding: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
+                <div style={{ padding: '0.75rem 1.5rem', maxWidth: '600px', margin: '0 auto' }}>
                     <CosmicGuideModal isOpen={showSymbolGuide} onClose={() => setShowSymbolGuide(false)} />
 
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
 
 
                         {/* Unified Username Input/Preview w/ Built-in Color Picker */}
                         <div className="form-group" style={{ order: -1 }}> {/* Move to top */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                                 <label style={{
                                     display: 'block',
                                     background: (usernameColor && usernameColor.includes('gradient')) ? usernameColor : undefined,
@@ -867,7 +914,7 @@ const EditProfile = () => {
                                 </div>
                             </div>
 
-                            <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                            <div style={{ position: 'relative', marginBottom: '0.25rem' }}>
                                 {/* Iridescent Border Effect */}
                                 {(profileBorderColor === 'brand' || (profileBorderColor && profileBorderColor.includes('gradient'))) && (
                                     <div style={{
@@ -942,17 +989,17 @@ const EditProfile = () => {
                                         fontWeight: '800',
                                         fontFamily: 'var(--font-family-heading)',
                                         // Gradient Handling
-                                        ...(usernameColor && usernameColor.includes('gradient') ? {
-                                            backgroundImage: usernameColor,
+                                        ...(effectiveUsernameColor && effectiveUsernameColor.includes('gradient') ? {
+                                            backgroundImage: effectiveUsernameColor,
                                             WebkitBackgroundClip: 'text',
                                             WebkitTextFillColor: 'transparent',
                                             color: 'transparent'
-                                        } : { color: usernameColor || '#7FFFD4' }),
-                                        textShadow: textGlow ? `0 0 10px ${(usernameColor && usernameColor.includes('gradient')) ? '#fff' : (usernameColor || '#7FFFD4')}80` : 'none',
+                                        } : { color: effectiveUsernameColor || '#7FFFD4' }),
+                                        textShadow: textGlow ? `0 0 10px ${(effectiveUsernameColor && effectiveUsernameColor.includes('gradient')) ? '#fff' : (effectiveUsernameColor || '#7FFFD4')}80` : 'none',
                                         width: '100%',
                                         zIndex: 1
                                     }}>
-                                        {renderCosmicUsername(username, usernameColor, textGlow)}
+                                        {renderCosmicUsername(username, effectiveUsernameColor, textGlow)}
                                     </div>
 
                                     {/* The "Interactive Layer" - transparent input */}
@@ -978,7 +1025,7 @@ const EditProfile = () => {
                                             fontWeight: '800',
                                             fontFamily: 'var(--font-family-heading)',
                                             color: 'transparent', // Text is rendered by the layer below
-                                            caretColor: (usernameColor && !usernameColor.includes('gradient')) ? usernameColor : '#7FFFD4', // Show the caret though!
+                                            caretColor: (effectiveUsernameColor && !effectiveUsernameColor.includes('gradient')) ? effectiveUsernameColor : '#7FFFD4', // Show the caret though!
                                             zIndex: 5, // Above visual, below arrows? No arrows need to be clickable.
                                             // Arrows Z is 20. Input Z is 5. Visual Z is 1.
                                             textTransform: 'lowercase'
@@ -1024,8 +1071,8 @@ const EditProfile = () => {
                                 gap: '0.75rem',
                                 overflowX: 'auto',
                                 padding: '0.5rem 0',
-                                marginBottom: '1.5rem',
-                                marginTop: '-0.5rem',
+                                marginBottom: '0.5rem',
+                                marginTop: '-0.75rem',
                                 maskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
                                 WebkitMaskImage: 'linear-gradient(to right, black 90%, transparent 100%)',
                                 animation: 'fadeIn 0.3s ease'
@@ -1088,7 +1135,7 @@ const EditProfile = () => {
                         )}
 
                         {/* Photo Section - Moved Down */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', marginTop: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', marginTop: '0.2rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                 {/* Left Arrow - Profile Border Cycle */}
                                 <button
@@ -1164,17 +1211,26 @@ const EditProfile = () => {
                                                             width: '100%',
                                                             height: '100%',
                                                             objectFit: 'cover',
-                                                            imageRendering: 'pixelated' // Keeps pixel art crisp
+                                                            imageRendering: 'pixelated'
                                                         }}
                                                     />
                                                 ) : (
                                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 10, opacity: 1 }}>
-                                                        <PlanetUserIcon
-                                                            size={64}
-                                                            color={usernameColor && !usernameColor.includes('gradient') ? usernameColor : '#7FFFD4'}
-                                                            icon={defaultIconId}
-                                                            glow={textGlow}
-                                                        />
+                                                        {defaultIconId === 'seed_oscillator' ? (
+                                                            <div style={{ width: '80%', height: '80%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <SeedOscillatorAvatar
+                                                                    seed={pfpSeed || 'panospace'}
+                                                                    color={pfpOscColor || '#7FFFD4'}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <PlanetUserIcon
+                                                                size={64}
+                                                                color={effectiveUsernameColor && !effectiveUsernameColor.includes('gradient') ? effectiveUsernameColor : '#7FFFD4'}
+                                                                icon={defaultIconId}
+                                                                glow={textGlow}
+                                                            />
+                                                        )}
                                                     </div>
                                                 )}
                                             </BannerOverlayRenderer>
@@ -1267,6 +1323,104 @@ const EditProfile = () => {
                                 >
                                     Default
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setDefaultIconId('seed_oscillator');
+                                        setPreview(null);
+                                        setShowOscillatorPopup(!showOscillatorPopup);
+                                        setShowDefaultIconPopup(false); // Close other popup
+                                    }}
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: '0.85rem',
+                                        padding: '0.6rem 1.2rem',
+                                        background: defaultIconId === 'seed_oscillator' && !preview ? 'rgba(127, 255, 212, 0.2)' : 'rgba(255,255,255,0.1)',
+                                        backdropFilter: 'blur(10px)',
+                                        border: defaultIconId === 'seed_oscillator' && !preview ? '1px solid rgba(127, 255, 212, 0.5)' : '1px solid rgba(255,255,255,0.2)',
+                                        borderRadius: '20px',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                    }}
+                                >
+                                    OSCILLATOR
+                                </button>
+
+                                {showOscillatorPopup && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '120%',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        background: '#1a1a1a',
+                                        border: '1px solid #333',
+                                        borderRadius: '16px',
+                                        padding: '1rem',
+                                        zIndex: 1000,
+                                        width: '280px',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                        animation: 'fadeIn 0.2s ease-out'
+                                    }}>
+                                        <div style={{ textAlign: 'center', marginBottom: '12px', fontSize: '0.8rem', color: '#fff', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                                            Oscillator Settings
+                                        </div>
+
+                                        {/* COLOR SELECTOR */}
+                                        <div style={{ marginBottom: '16px' }}>
+                                            <label style={{ fontSize: '0.7rem', color: '#888', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>Line Color</span>
+                                                <span style={{ color: pfpOscColor === 'brand' ? '#7FFFD4' : pfpOscColor }}>{pfpOscColor === 'brand' ? 'Rainbow' : 'Selected'}</span>
+                                            </label>
+                                            <div className="custom-gradient-scrollbar" style={{ overlay: 'auto', display: 'flex', gap: '8px', paddingBottom: '4px', overflowX: 'auto' }}>
+                                                {ALL_COLORS.filter(c => c.color !== 'transparent').map(c => (
+                                                    <button
+                                                        key={c.id}
+                                                        type="button"
+                                                        onClick={() => setPfpOscColor(c.color)}
+                                                        style={{
+                                                            flex: '0 0 28px',
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            borderRadius: '50%',
+                                                            background: c.color === 'brand' ? BRAND_RAINBOW : c.color,
+                                                            border: pfpOscColor === c.color ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)',
+                                                            transform: pfpOscColor === c.color ? 'scale(1.1)' : 'scale(1)',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* SEED INPUT */}
+                                        <div>
+                                            <label style={{ fontSize: '0.7rem', color: '#888', marginBottom: '4px', display: 'block' }}>Seed Phrase</label>
+                                            <input
+                                                type="text"
+                                                value={pfpSeed}
+                                                onChange={(e) => setPfpSeed(e.target.value)}
+                                                placeholder="Enter seed for avatar..."
+                                                style={{
+                                                    width: '100%',
+                                                    background: '#000',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '8px',
+                                                    padding: '8px 10px',
+                                                    color: '#fff',
+                                                    fontSize: '0.9rem',
+                                                    fontFamily: 'monospace',
+                                                    outline: 'none'
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
                                 {showDefaultIconPopup && (
                                     <div style={{
@@ -1309,7 +1463,7 @@ const EditProfile = () => {
                                             >
                                                 <PlanetUserIcon
                                                     size={24}
-                                                    color={defaultIconId === iconId ? usernameColor : '#666'}
+                                                    color={defaultIconId === iconId ? (effectiveUsernameColor && !effectiveUsernameColor.includes('gradient') ? effectiveUsernameColor : '#7FFFD4') : '#666'}
                                                     icon={iconId}
                                                     glow={false}
                                                 />
@@ -1395,7 +1549,7 @@ const EditProfile = () => {
                                 borderRadius: '12px',
                                 overflow: 'hidden',
                                 position: 'relative',
-                                marginBottom: '1.5rem',
+                                marginBottom: '1rem',
                                 border: `1px solid ${profileBorderColor}40`,
                                 background: '#000',
                                 boxShadow: `0 8px 32px rgba(0,0,0,0.4)`
@@ -1405,7 +1559,9 @@ const EditProfile = () => {
                                     color={bannerColor}
                                     starSettings={{
                                         enabled: useStarsOverlay,
-                                        color: starColor
+                                        color: starColor,
+                                        seed: bannerSeed,
+                                        speed: bannerSpeed
                                     }}
                                     overlays={selectedOverlays}
                                     profileBorderColor={profileBorderColor}
@@ -1426,6 +1582,77 @@ const EditProfile = () => {
                                     onOpenCatalog={() => setCatalogMode('banner')}
                                 />
                             </div>
+
+                            {/* CUSTOM SEED INPUT (BANNER) */}
+                            {['custom_oscillator', 'custom_flow', 'custom_city', 'custom_snapshot', 'custom_voxel'].includes(bannerMode) && (
+                                <div style={{
+                                    marginBottom: '1rem',
+                                    padding: '12px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(127, 255, 212, 0.2)',
+                                    animation: 'fadeIn 0.3s ease'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#7FFFD4', textTransform: 'uppercase' }}>
+                                            Banner Generation Seed
+                                        </label>
+                                        <span style={{ fontSize: '0.65rem', color: '#666' }}>Deterministic Procedural Logic</span>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={bannerSeed}
+                                        onChange={(e) => setBannerSeed(e.target.value)}
+                                        placeholder="Enter any code..."
+                                        style={{
+                                            width: '100%',
+                                            background: '#000',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: '8px',
+                                            padding: '10px 12px',
+                                            color: '#fff',
+                                            fontSize: '0.9rem',
+                                            fontFamily: 'monospace',
+                                            outline: 'none'
+                                        }}
+                                    />
+                                    <p style={{ fontSize: '0.65rem', color: '#888', marginTop: '6px', fontStyle: 'italic' }}>
+                                        Every unique string produces a specific, repeatable mathematical landscape.
+                                    </p>
+
+                                    {/* SPEED SLIDER */}
+                                    <div style={{ marginTop: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#7FFFD4', textTransform: 'uppercase' }}>
+                                                Animation Velocity
+                                            </label>
+                                            <span style={{ fontSize: '0.65rem', color: '#fff' }}>{bannerSpeed.toFixed(1)}x</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0.1"
+                                            max={(bannerMode === 'custom_oscillator' || bannerMode === 'custom_city') ? "1.0" : "3.0"}
+                                            step="0.1"
+                                            value={bannerSpeed}
+                                            onChange={(e) => {
+                                                let val = parseFloat(e.target.value);
+                                                // If switching to oscillator, cap current value if it's over 1.5
+                                                setBannerSpeed(val);
+                                            }}
+                                            style={{
+                                                width: '100%',
+                                                accentColor: '#7FFFD4',
+                                                height: '4px',
+                                                borderRadius: '2px',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                cursor: 'pointer'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+
 
 
 
@@ -1857,7 +2084,7 @@ const EditProfile = () => {
                 bannerColor={bannerColor}
                 overlayTarget={overlayTarget}
             />
-        </div>
+        </div >
     );
 };
 

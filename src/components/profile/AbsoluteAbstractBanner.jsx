@@ -75,7 +75,12 @@ function renderAbstractToCanvas(canvas, variant, baseColor) {
 
     // Generate 40 fine glowing ribbons (Reduced density for performance)
     for (let i = 0; i < 40; i++) {
-        const c = colors[Math.floor(rand() * colors.length)];
+        // If baseColor is provided and is a valid hex, use it primarily
+        const isHex = baseColor && baseColor.startsWith('#');
+        const c = isHex
+            ? (rand() > 0.3 ? baseColor : colors[Math.floor(rand() * colors.length)])
+            : colors[Math.floor(rand() * colors.length)];
+
         const yBase = height * 0.5 + (rand() - 0.5) * height * 1.2; // Overflow coverage
         const frequency = 0.0002 + rand() * 0.0018;
         const amplitude = 80 + rand() * 300;

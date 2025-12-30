@@ -1,5 +1,28 @@
 import React from 'react';
 import { BRAND_RAINBOW } from '../../core/constants/colorPacks';
+import { useFeedStore } from '@/core/store/useFeedStore';
+
+// Hash function: String -> Number
+const hashStr = (str) => {
+    let hash = 0;
+    if (!str) return 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
+
+// Seeded Random Generator (Mulberry32)
+const mulberry32 = (a) => {
+    return () => {
+        let t = (a += 0x6d2b79f5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+};
 
 
 
@@ -35,6 +58,11 @@ const ManifoldBanner = React.lazy(() => import('./ManifoldBanner'));
 const LavaCubeBanner = React.lazy(() => import('./LavaCubeBanner'));
 const OmniParadoxBanner = React.lazy(() => import('./OmniParadoxBanner'));
 const OscilloscopeBanner = React.lazy(() => import('./OscilloscopeBanner'));
+const SeedOscillatorBanner = React.lazy(() => import('./SeedOscillatorBanner'));
+const FlowFieldBanner = React.lazy(() => import('./FlowFieldBanner'));
+const SeededCityBanner = React.lazy(() => import('./SeededCityBanner'));
+const DeepSpaceSnapshotBanner = React.lazy(() => import('./DeepSpaceSnapshotBanner'));
+const SeededVoxelBanner = React.lazy(() => import('./SeededVoxelBanner'));
 const SciFiUiBanner = React.lazy(() => import('./SciFiUiBanner'));
 const StaticSystemBanners = React.lazy(() => import('./SystemAbstractBanners'));
 const BannerOverlayRenderer = React.lazy(() => (import('./BannerOverlayRenderer')));
@@ -58,6 +86,8 @@ const ElysiumBanner = React.lazy(() => import('./ElysiumBanner'));
 const AetherBanner = React.lazy(() => import('./AetherBanner'));
 const GlobeBanner = React.lazy(() => import('./GlobeBanner'));
 const IsoWaveBanner = React.lazy(() => import('./IsoWaveBanner'));
+const SolarSystemBanner = React.lazy(() => import('./SolarSystemBanner'));
+const GodEquationBanner = React.lazy(() => import('./GodEquationBanner'));
 const MarmorisBanner = React.lazy(() => import('./MarmorisBanner'));
 const WaveGridBanner = React.lazy(() => import('./WaveGridBanner'));
 const AuroraBanner = React.lazy(() => import('./AuroraBanner'));
@@ -66,13 +96,136 @@ const TechnicolorTechBanner = React.lazy(() => import('./TechnicolorTechBanner')
 const LighthouseOceanBanner = React.lazy(() => import('./LighthouseOceanBanner'));
 const CityVistaBanner = React.lazy(() => import('./CityVistaBanner'));
 
+
 // Liquid Dynamics Pack (Named Exports)
 const GossamerLiquidBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.GossamerLiquidBanner })));
 const CyberKineticBanner = React.lazy(() => import('./LiquidBanners').then(module => ({ default: module.CyberKineticBanner })));
 
+// Advanced Math Banners
+const LorenzAttractorBanner = React.lazy(() => import('./AdvancedMathBanners').then(module => ({ default: module.LorenzAttractorBanner })));
+const ParticlePhysicsBanner = React.lazy(() => import('./AdvancedMathBanners').then(module => ({ default: module.ParticlePhysicsBanner })));
+const FibonacciSpiralBanner = React.lazy(() => import('./AdvancedMathBanners').then(module => ({ default: module.FibonacciSpiralBanner })));
 
+// Zen & Calm Banners
+const SilkFlowBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.SilkFlowBanner })));
+const ZenRipplesBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenRipplesBanner })));
+const DreamyBokehBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.DreamyBokehBanner })));
+const MistyCloudsBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.MistyCloudsBanner })));
+const SoothingStarsBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.SoothingStarsBanner })));
+const ZenMonolithBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenMonolithBanner })));
+const ZenLavaBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenLavaBanner })));
+const ZenMandalaBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenMandalaBanner })));
+const ZenAurorasBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenAurorasBanner })));
+const ZenPulseBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenPulseBanner })));
+const LiquidZenBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.LiquidZenBanner })));
+const NeuralZenBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.NeuralZenBanner })));
+const CosmicZenBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.CosmicZenBanner })));
+const PrismaticZenBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.PrismaticZenBanner })));
+const FloralZenBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.FloralZenBanner })));
+const ZenRainBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenRainBanner })));
+const ZenFirefliesBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenFirefliesBanner })));
+const ZenGridBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenGridBanner })));
+const ZenHeartbeatBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenHeartbeatBanner })));
+const ZenRaindropsBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenRaindropsBanner })));
+const ZenLanternsBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenLanternsBanner })));
+const ZenTunnelBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenTunnelBanner })));
+const ZenBorealisBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenBorealisBanner })));
+const ZenGeodesicBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenGeodesicBanner })));
+const ZenMercuryBanner = React.lazy(() => import('./CalmBanners').then(module => ({ default: module.ZenMercuryBanner })));
+
+
+
+/**
+ * Resolves a banner color. Handles both hex colors and variant IDs.
+ */
+const resolveBannerColor = (color, profileBorderColor) => {
+    if (!color) return profileBorderColor || '#7FFFD4';
+    if (color.startsWith('#') || color === 'brand') return color;
+
+    // Mapping for known variant IDs to colors
+    const colorMap = {
+        'solar_mint': '#7FFFD4', 'solar_pink': '#FF5C8A', 'solar_blue': '#1B82FF',
+        'solar_purple': '#5A3FFF', 'solar_orange': '#FF914D', 'solar_ice': '#FFFFFF',
+        'solar_classic': '#7FFFD4', 'solar_sunset': '#FF5C8A', 'solar_deep': '#1B82FF',
+        'solar_void': '#5A3FFF', 'solar_monochrome': '#FFFFFF',
+        'aurora_borealis': '#7FFFD4', 'aurora_australis': '#FF5C8A', 'aurora_polar': '#FFFFFF',
+        'aurora_deep': '#1B82FF', 'aurora_plasma': '#FF5C8A', 'aurora_synth': '#7FFFD4',
+        'aurora_rose': '#FF5C8A', 'aurora_mint': '#7FFFD4', 'aurora_spirit': '#A7B6FF',
+        'aurora_azure': '#1B82FF', 'aurora_void': '#2A0E61', 'aurora_prism': '#7FFFD4'
+    };
+
+    return colorMap[color] || profileBorderColor || '#7FFFD4';
+};
 
 const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profileBorderColor }) => {
+    // Resolve the final color to be used to avoid "solar_purple" and other ID strings
+    // from crashing canvas gradients in simple components.
+    const activeColor = resolveBannerColor(color, profileBorderColor);
+    const animationsEnabled = useFeedStore(state => state.animationsEnabled);
+    const [showInfo, setShowInfo] = React.useState(false);
+    const [copied, setCopied] = React.useState(false);
+
+    const isCustom = mode === 'custom_oscillator' || mode === 'custom_flow' || mode === 'custom_city' || mode === 'custom_snapshot' || mode === 'custom_voxel';
+    const seed = starSettings?.seed || 'panospace';
+    const speed = starSettings?.speed || 1.0;
+
+    const handleCopy = (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(seed);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    // Calculate engine details for HUD
+    const engineDetails = React.useMemo(() => {
+        if (!isCustom) return null;
+
+        const numericSeed = hashStr(seed);
+        const rand = mulberry32(numericSeed);
+
+        if (mode === 'custom_oscillator') {
+            const symmetryVal = Math.floor(rand() * 4);
+            const symmetryLabel = symmetryVal === 0 ? 'NONE' : symmetryVal === 1 ? 'HORIZ' : symmetryVal === 2 ? 'VERT' : 'QUAD';
+            return {
+                name: 'OSCILLATOR ENGINE',
+                version: 'v1.2',
+                mode: rand() > 0.5 ? 'lissajous' : 'oscillator',
+                complexity: 500 + Math.floor(rand() * 1500),
+                symmetry: symmetryLabel
+            };
+        } else if (mode === 'custom_flow') {
+            return {
+                name: 'FLOW FIELD ENGINE',
+                version: 'v2.0',
+                palette: 'GENERATE',
+                particles: 200 + Math.floor(rand() * 300),
+                curl: (2 + rand() * 6).toFixed(2)
+            };
+        } else if (mode === 'custom_city') {
+            return {
+                name: 'CITY GENERATOR',
+                version: 'v3.0',
+                blocks: 40 + Math.floor(rand() * 20),
+                theme: seed.substring(0, 2).toUpperCase()
+            };
+        } else if (mode === 'custom_snapshot') {
+            return {
+                name: 'DEEP SPACE SNAPSHOT',
+                version: 'v1.0',
+                bodies: 3 + Math.floor(rand() * 3), // Stars + Planets abstracted count
+                sector: seed.substring(0, 4).toUpperCase()
+            };
+        } else if (mode === 'custom_voxel') {
+            return {
+                name: 'VOXEL BIOME BUILDER',
+                version: 'v1.0',
+                grid: '12x12 ISO',
+                biome: seed.substring(0, 3).toUpperCase()
+            };
+        }
+        return null;
+    }, [isCustom, mode, seed]);
+
     const overlayStyle = {
         position: 'absolute',
         inset: 0,
@@ -82,6 +235,20 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
     };
 
     const renderContent = () => {
+        // --- NEW CUSTOM SEED BANNER ---
+        if (mode === 'custom_oscillator') {
+            return <SeedOscillatorBanner seed={starSettings?.seed || 'panospace'} color={activeColor} speed={starSettings?.speed || 1.0} animationsEnabled={animationsEnabled} />;
+        }
+        if (mode === 'custom_flow') {
+            return <FlowFieldBanner seed={starSettings?.seed || 'panospace'} color={activeColor} speed={starSettings?.speed || 1.0} animationsEnabled={animationsEnabled} />;
+        }
+        if (mode === 'custom_city') {
+            return <SeededCityBanner seed={starSettings?.seed || 'panospace'} color={activeColor} animationsEnabled={animationsEnabled} />;
+        }
+        if (mode === 'custom_voxel') {
+            return <SeededVoxelBanner seed={starSettings?.seed || 'panospace'} animationsEnabled={animationsEnabled} />;
+        }
+
         // --- NEW TECHNICOLOR TECH BANNER ---
         if (mode === 'technicolor_hardware') {
             return <TechnicolorTechBanner variant={color} />;
@@ -133,6 +300,9 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
         // 6. LIQUID DYNAMICS PACK
         if (mode === 'liquid_gossamer') return <GossamerLiquidBanner />;
         if (mode === 'liquid_kinetic') return <CyberKineticBanner />;
+        if (mode === 'liquid_lava_flow') {
+            return <LavaFlowBanner profileBorderColor={profileBorderColor} variant={color} />;
+        }
 
         // 5. CITYSCAPE PACK
         if (mode.startsWith('city') || mode === 'panospace_beyond') {
@@ -153,125 +323,176 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
         }
 
         // 6.5 ABSTRACT PACK
-        if (mode === 'abstract_oscilloscope') {
-            return <OscilloscopeBanner color={color} variant={color} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+        // 6.5 ABSTRACT PACK & MATH PACK
+        if (mode === 'math_god_equation') {
+            return <GodEquationBanner profileBorderColor={activeColor} />;
+        }
+        if (mode === 'math_solar_system') {
+            return <SolarSystemBanner profileBorderColor={activeColor} variant={color} starSettings={starSettings} />;
+        }
+
+        // --- ADVANCED 3D MATH PACK ---
+        if (mode === 'math_butterfly_effect') {
+            const lorenzVariant = color?.includes('rainbow') ? 'rainbow' : (color || 'classic');
+            return <LorenzAttractorBanner profileBorderColor={activeColor} variant={lorenzVariant} />;
+        }
+        if (mode === 'math_gravitational_dance') {
+            return <ParticlePhysicsBanner profileBorderColor={activeColor} />;
+        }
+        if (mode === 'math_golden_spiral') {
+            return <FibonacciSpiralBanner profileBorderColor={activeColor} />;
+        }
+
+        // --- ZEN & CALM PACK ---
+        if (mode === 'zen_silk_flow') return <SilkFlowBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_ripples') return <ZenRipplesBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_bokeh') return <DreamyBokehBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_mist') return <MistyCloudsBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_stars') return <SoothingStarsBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_monolith') return <ZenMonolithBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_lava') return <ZenLavaBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_mandala') return <ZenMandalaBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_aurora') return <ZenAurorasBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_pulse') return <ZenPulseBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_liquid') return <LiquidZenBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_neural') return <NeuralZenBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_cosmic') return <CosmicZenBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_prismatic') return <PrismaticZenBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_floral') return <FloralZenBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_rain') return <ZenRainBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_fireflies') return <ZenFirefliesBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_grid') return <ZenGridBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_heartbeat') return <ZenHeartbeatBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_raindrops') return <ZenRaindropsBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_lanterns') return <ZenLanternsBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_tunnel') return <ZenTunnelBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_garden') return <ZenGardenBanner profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
+        if (mode === 'zen_sky') return <ZenSkyBanner profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
+        if (mode === 'zen_ocean') return <ZenOceanBanner profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
+        if (mode === 'zen_eclipse') return <ZenEclipseBanner profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
+        if (mode === 'zen_borealis') return <ZenBorealisBanner profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
+        if (mode === 'zen_geodesic') return <ZenGeodesicBanner profileBorderColor={activeColor} />;
+        if (mode === 'zen_mercury') return <ZenMercuryBanner profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
+        if (mode === 'abstract_oscilloscope' || mode.startsWith('math_') || mode.startsWith('os_')) {
+            const variantId = mode === 'abstract_oscilloscope' ? color : mode;
+            return <OscilloscopeBanner color={activeColor} variant={variantId} profileBorderColor={profileBorderColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'abstract_lava_cube') {
-            return <LavaCubeBanner color={color} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+            return <LavaCubeBanner color={activeColor} profileBorderColor={activeColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'abstract_omni_paradox') {
-            return <OmniParadoxBanner color={color} profileBorderColor={profileBorderColor} starSettings={starSettings} />;
+            return <OmniParadoxBanner color={activeColor} profileBorderColor={activeColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'abstract_scifi_ui') {
             return <SciFiUiBanner />;
         }
         if (mode === 'abstract_neural_silk') {
-            return <AbsoluteAbstractBanner variant={mode} color={color} />;
+            return <AbsoluteAbstractBanner variant={mode} color={activeColor} />;
         }
         if (mode === 'abstract_genesis_core') {
-            return <GenesisAbstractBanner color={color} />;
+            return <GenesisAbstractBanner color={activeColor} />;
         }
         if (mode === 'abstract_singularity') {
-            return <SingularityBanner />;
+            return <SingularityBanner color={activeColor} />;
         }
         if (mode === 'abstract_black_mirror') {
-            return <BlackMirrorBanner />;
+            return <BlackMirrorBanner color={activeColor} />;
         }
         if (mode === 'abstract_pinball') {
-            return <PinballBanner />;
+            return <PinballBanner color={activeColor} />;
         }
 
         // 7. COSMIC EARTH (Station Theme)
         if (mode === 'cosmic-earth') {
-            return <EarthBanner color={color} starSettings={starSettings} />;
+            return <EarthBanner color={activeColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_black_hole') {
-            return <BlackHoleBanner />;
+            return <BlackHoleBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_singularity_city') {
-            return <SingularityCityBanner />;
+            return <SingularityCityBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_nebula') {
-            return <NebulaBanner />;
+            return <NebulaBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_galaxy') {
-            return <GalaxyBanner />;
+            return <GalaxyBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_aether_gate') {
-            return <AetherGateBanner />;
+            return <AetherGateBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_seraphim') {
-            return <SeraphimBanner />;
+            return <SeraphimBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_omegasphere') {
-            return <OmegasphereBanner />;
+            return <OmegasphereBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_infinite') {
-            return <InfiniteBanner />;
+            return <InfiniteBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_ascendant') {
-            return <AscendantBanner />;
+            return <AscendantBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_apex') {
-            return <ApexBanner />;
+            return <ApexBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_paradox') {
-            return <ParadoxBanner />;
+            return <ParadoxBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_opus') {
-            return <SpectrumBanner />;
+            return <SpectrumBanner color={activeColor} />;
         }
         if (mode === 'cosmic_flux') {
-            return <FluxBanner />;
+            return <FluxBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_ether') {
-            return <EtherBanner />;
+            return <EtherBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_resonance') {
-            return <ResonanceBanner />;
+            return <ResonanceBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_interference') {
-            return <InterferenceBanner />;
+            return <InterferenceBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_omniscience') {
-            return <OmniscienceBanner />;
+            return <OmniscienceBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_absolute') {
-            return <AbsoluteBanner />;
+            return <AbsoluteBanner color={activeColor} animationsEnabled={animationsEnabled} />;
         }
 
         if (mode === 'iso_wave') {
-            return <IsoWaveBanner color={color} starSettings={starSettings} />;
+            return <IsoWaveBanner color={activeColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'marmoris') {
-            return <MarmorisBanner variant={color || 'main'} starSettings={starSettings} />;
+            return <MarmorisBanner variant={color || 'main'} starSettings={starSettings} profileBorderColor={activeColor} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'wave_grid') {
-            return <WaveGridBanner color={color} starSettings={starSettings} />;
+            return <WaveGridBanner color={activeColor} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'cosmic_omega_borealis') {
-            return <OmegaBorealis />;
+            return <OmegaBorealis animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'elysium') {
-            return <ElysiumBanner starSettings={starSettings} />;
+            return <ElysiumBanner starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
 
         // --- ATMOS BANNERS ---
         if (mode === 'atmos_pulse') {
-            return <PulseBanner starSettings={starSettings} variant={color} />;
+            return <PulseBanner starSettings={starSettings} variant={color} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'atmos_flux') {
-            return <FluxBanner variant={color || 'main'} starSettings={starSettings} />;
+            return <FluxBanner variant={color || 'main'} starSettings={starSettings} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'atmos_aether') {
-            return <AetherBanner starSettings={starSettings} variant={color} />;
+            return <AetherBanner starSettings={starSettings} variant={color} animationsEnabled={animationsEnabled} />;
         }
         if (mode === 'atmos_globe') {
-            return <GlobeBanner starSettings={starSettings} variant={color} />;
+            return <GlobeBanner starSettings={starSettings} variant={color} animationsEnabled={animationsEnabled} />;
         }
 
         if (mode === 'cosmic_dreamworld') {
-            return <DreamworldBanner />;
+            return <DreamworldBanner animationsEnabled={animationsEnabled} />;
         }
 
         // 7.5 SYSTEM ENVIRONMENTS (Memory)
@@ -682,10 +903,10 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
         if (mode === 'cyberpunkLines') {
             const isBrand = color === 'brand';
             const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '#7FFFD4');
                 return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 255';
             };
-            const colorRgb = hexToRgb(isBrand ? '#7FFFD4' : color);
+            const colorRgb = hexToRgb(activeColor);
 
             // Brand Palette
             const colors = {
@@ -786,6 +1007,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
         // 2. NEON GRID - Retrowave / TRON
         if (mode === 'neonGrid') {
             const isBrand = color === 'brand';
+            const gridColor = activeColor;
             const brandRainbow = 'linear-gradient(to right, #FF914D, #FF5C8A, #FFB7D5, #5A3FFF, #A7B6FF, #1B82FF, #7FDBFF, #7FFFD4)';
 
             return (
@@ -804,7 +1026,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                         height: '200%',
                         background: isBrand
                             ? 'linear-gradient(to right, #7FFFD4, #FF5C8A, #5A3FFF, #1B82FF)'
-                            : color,
+                            : gridColor,
                         WebkitMaskImage: `
                         linear-gradient(#000 2px, transparent 2px),
                         linear-gradient(90deg, #000 2px, transparent 2px)
@@ -818,7 +1040,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                         transform: 'perspective(400px) rotateX(65deg) translateY(-80px)',
                         animation: 'gridScroll 15s linear infinite',
                         opacity: isBrand ? 0.6 : 0.4,
-                        filter: `drop-shadow(0 0 8px ${isBrand ? '#5A3FFF' : color})`
+                        filter: `drop-shadow(0 0 8px ${isBrand ? '#5A3FFF' : gridColor})`
                     }} />
 
                     {/* Horizon Glow */}
@@ -826,8 +1048,8 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                         position: 'absolute',
                         bottom: '40%',
                         left: 0, right: 0, height: '2px',
-                        background: isBrand ? brandRainbow : color,
-                        boxShadow: `0 0 20px 2px ${isBrand ? '#5A3FFF' : color}`,
+                        background: isBrand ? brandRainbow : gridColor,
+                        boxShadow: `0 0 20px 2px ${isBrand ? '#5A3FFF' : gridColor}`,
                         zIndex: 3
                     }} />
 
@@ -843,7 +1065,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                     <div style={{
                         position: 'absolute',
                         bottom: 0, left: 0, right: 0, height: '40%',
-                        background: `linear-gradient(to top, ${isBrand ? '#5A3FFF20' : color + '20'} 0%, transparent 100%)`,
+                        background: `linear-gradient(to top, ${isBrand ? '#5A3FFF20' : gridColor + '20'} 0%, transparent 100%)`,
                         zIndex: 1
                     }} />
 
@@ -857,11 +1079,11 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
             const isBrand = color === 'brand';
 
             const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '#7FFFD4');
                 return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '0, 255, 255';
             };
 
-            const colorRgb = hexToRgb(color);
+            const colorRgb = hexToRgb(activeColor);
 
             // Brand Rainbow Support - Randomized Splotches
             const brandRainbowSplotches = `
@@ -957,7 +1179,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                     ...overlayStyle,
                     background: isBrand
                         ? `linear-gradient(to bottom, #000000 0%, #111111 40%, transparent 100%), ${brandRainbow}`
-                        : `linear-gradient(to bottom, #000000 0%, #111111 40%, ${color} 100%)`
+                        : `linear-gradient(to bottom, #000000 0%, #111111 40%, ${activeColor} 100%)`
                 }} />
             )
         }
@@ -1157,6 +1379,21 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
 
 
 
+
+        if (mode === 'custom_snapshot') {
+            return (
+                <div style={overlayStyle}>
+                    <React.Suspense fallback={<div style={{ width: '100%', height: '100%', background: '#000' }} />}>
+                        <DeepSpaceSnapshotBanner
+                            seed={seed}
+                            color={activeColor}
+                            animationsEnabled={animationsEnabled}
+                        />
+                    </React.Suspense>
+                    <BannerOverlayRenderer overlays={overlays} />
+                </div>
+            );
+        }
 
         // 11. 2000 - PS2 Procedural System Environment (Code-First / Ambient / State-Based)
         if (mode === 'ps2_2000') {
@@ -1372,14 +1609,128 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
     };
 
     return (
-        <React.Suspense fallback={<div style={{ width: '100%', height: '100%', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '40px', height: '40px', border: '2px solid rgba(127, 255, 212, 0.1)', borderTopColor: '#7FFFD4', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>}>
-            <BannerOverlayRenderer overlays={overlays} monochromeColor={color}>
-                {renderContent()}
-            </BannerOverlayRenderer>
-        </React.Suspense>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
+            <React.Suspense fallback={<div style={{ width: '100%', height: '100%', background: '#000' }} />}>
+                <BannerOverlayRenderer overlays={overlays} monochromeColor={activeColor}>
+                    {renderContent()}
+                </BannerOverlayRenderer>
+            </React.Suspense>
+
+            {/* Centralized Custom Banner HUD */}
+            {isCustom && (
+                <>
+                    {/* Info Toggle Button - Dropped 40px below banner bottom */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowInfo(!showInfo);
+                        }}
+                        style={{
+                            position: 'absolute',
+                            bottom: '-40px',
+                            left: '12px',
+                            width: '32px',
+                            height: '24px',
+                            borderRadius: '6px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(127, 255, 212, 0.15)',
+                            color: 'rgba(127, 255, 212, 0.6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            zIndex: 1000,
+                            transition: 'all 0.2s ease',
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            outline: 'none',
+                            WebkitTapHighlightColor: 'transparent'
+                        }}
+                    >
+                        {showInfo ? '✕' : 'INF'}
+                    </button>
+
+                    {/* HUD Modal */}
+                    {showInfo && (
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                position: 'absolute',
+                                bottom: '48px',
+                                left: '12px',
+                                background: 'rgba(0, 0, 0, 0.85)',
+                                backdropFilter: 'blur(20px)',
+                                border: '1px solid rgba(127, 255, 212, 0.3)',
+                                borderRadius: '12px',
+                                padding: '16px',
+                                color: '#fff',
+                                fontFamily: 'monospace',
+                                fontSize: '0.75rem',
+                                zIndex: 1001,
+                                animation: 'fadeInUpTheme 0.3s ease',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                                minWidth: '220px',
+                                maxWidth: 'calc(100% - 24px)'
+                            }}>
+                            <div style={{ color: '#7FFFD4', marginBottom: '10px', fontWeight: 'bold', borderBottom: '1px solid rgba(127,255,212,0.2)', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>{engineDetails?.name}</span>
+                                <span style={{ opacity: 0.5 }}>{engineDetails?.version}</span>
+                            </div>
+
+                            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <span style={{ color: '#888' }}>SEED:</span> {seed}
+                                </div>
+                                <button
+                                    onClick={handleCopy}
+                                    style={{
+                                        background: copied ? 'rgba(127, 255, 212, 0.2)' : 'rgba(255,255,255,0.1)',
+                                        border: `1px solid ${copied ? '#7FFFD4' : 'rgba(255,255,255,0.2)'}`,
+                                        borderRadius: '4px',
+                                        color: copied ? '#7FFFD4' : '#fff',
+                                        padding: '2px 6px',
+                                        fontSize: '9px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'nowrap',
+                                        WebkitTapHighlightColor: 'transparent'
+                                    }}
+                                >
+                                    {copied ? 'COPIED!' : 'COPY'}
+                                </button>
+                            </div>
+
+                            {mode === 'custom_oscillator' ? (
+                                <>
+                                    <div style={{ marginBottom: '6px' }}><span style={{ color: '#888' }}>MODE:</span> {engineDetails.mode}</div>
+                                    <div style={{ marginBottom: '6px' }}><span style={{ color: '#888' }}>COMPLEXITY:</span> {engineDetails.complexity}</div>
+                                    <div style={{ marginBottom: '6px' }}><span style={{ color: '#888' }}>SYMMETRY:</span> {engineDetails.symmetry}</div>
+                                </>
+                            ) : (
+                                <>
+                                    <div style={{ marginBottom: '6px' }}><span style={{ color: '#888' }}>PALETTE:</span> {engineDetails.palette}</div>
+                                    <div style={{ marginBottom: '6px' }}><span style={{ color: '#888' }}>PARTICLES:</span> {engineDetails.particles}</div>
+                                    <div style={{ marginBottom: '6px' }}><span style={{ color: '#888' }}>CURVE:</span> {engineDetails.curl}</div>
+                                </>
+                            )}
+
+                            <div style={{ marginTop: '12px', color: 'rgba(255,255,255,0.3)', fontSize: '0.65rem', fontStyle: 'italic', lineHeight: '1.4' }}>
+                                Deterministic generative output derived from cosmic frequencies.
+                            </div>
+                        </div>
+                    )}
+
+                    <style>{`
+                        @keyframes fadeInUpTheme {
+                            from { opacity: 0; transform: translateY(10px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                    `}</style>
+                </>
+            )}
+        </div>
     );
 };
 

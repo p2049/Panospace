@@ -18,12 +18,23 @@ const PALETTES = {
     paradox_cyber: [BRAND.ION_BLUE, BRAND.MINT, BRAND.AURORA, BRAND.WHITE]
 };
 
-const OmniParadoxBanner = ({ color = 'paradox_prism', profileBorderColor, starSettings }) => {
+const OmniParadoxBanner = ({ color = 'paradox_prism', profileBorderColor, starSettings, animationsEnabled = true }) => {
     const canvasRef = useRef(null);
     const stateRef = useRef({ time: 0 });
 
     const world = useMemo(() => {
-        let activePalette = PALETTES[color] || PALETTES.paradox_prism;
+        let activePalette = PALETTES[color];
+
+        if (!activePalette) {
+            if (color === 'brand') {
+                activePalette = PALETTES.paradox_prism;
+            } else if (color.startsWith('#')) {
+                // Generate a custom palette based on the chosen hex
+                activePalette = [color, BRAND.DEEP_PURPLE, BRAND.ION_BLUE, BRAND.MINT];
+            } else {
+                activePalette = PALETTES.paradox_prism;
+            }
+        }
 
         // Paradox Blobs - Focused more towards the center-top to frame the profile info
         const blobs = Array.from({ length: 18 }, (_, i) => ({
@@ -65,11 +76,11 @@ const OmniParadoxBanner = ({ color = 'paradox_prism', profileBorderColor, starSe
                     left: Math.random() * 100 + '%',
                     opacity: Math.random() * 0.6 + 0.2,
                     boxShadow: `0 0 3px ${isBrand ? brandColors[i % 4] : starColor}`,
-                    animation: `paradox-star-twinkle ${Math.random() * 4 + 2}s infinite`
+                    animation: animationsEnabled ? `paradox-star-twinkle ${Math.random() * 4 + 2}s infinite` : 'none'
                 }}
             />
         ));
-    }, [starSettings?.enabled, starSettings?.color]);
+    }, [starSettings?.enabled, starSettings?.color, animationsEnabled]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -83,7 +94,9 @@ const OmniParadoxBanner = ({ color = 'paradox_prism', profileBorderColor, starSe
         };
 
         const render = () => {
-            stateRef.current.time += 0.012;
+            if (animationsEnabled) {
+                stateRef.current.time += 0.012;
+            }
             const t = stateRef.current.time;
             const w = canvas.width, h = canvas.height, dpr = window.devicePixelRatio || 1;
 
@@ -111,9 +124,11 @@ const OmniParadoxBanner = ({ color = 'paradox_prism', profileBorderColor, starSe
             ctx.filter = `blur(${18 * dpr}px) contrast(300%) brightness(120%)`;
 
             world.blobs.forEach(b => {
-                b.x += b.vx; b.y += b.vy;
-                if (b.x < -0.1) b.x = 1.1; if (b.x > 1.1) b.x = -0.1;
-                if (b.y < -0.1) b.y = 1.1; if (b.y > 1.1) b.y = -0.1;
+                if (animationsEnabled) {
+                    b.x += b.vx; b.y += b.vy;
+                    if (b.x < -0.1) b.x = 1.1; if (b.x > 1.1) b.x = -0.1;
+                    if (b.y < -0.1) b.y = 1.1; if (b.y > 1.1) b.y = -0.1;
+                }
 
                 const p = project((b.x - 0.5) * w, (b.y - 0.5) * h, b.z, w, h);
                 ctx.fillStyle = b.color;
@@ -199,16 +214,19 @@ const OmniParadoxBanner = ({ color = 'paradox_prism', profileBorderColor, starSe
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            animationFrame = requestAnimationFrame(render);
+            if (animationsEnabled) {
+                animationFrame = requestAnimationFrame(render);
+            }
         };
 
         const handleRes = () => {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+            render(); // Force one render on resize
         };
-        window.addEventListener('resize', handleRes); handleRes(); render();
+        window.addEventListener('resize', handleRes); handleRes(); // Initial kick-off
         return () => { window.removeEventListener('resize', handleRes); cancelAnimationFrame(animationFrame); };
-    }, [world, profileBorderColor]);
+    }, [world, profileBorderColor, animationsEnabled]);
 
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#000' }}>

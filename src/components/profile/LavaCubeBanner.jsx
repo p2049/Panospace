@@ -19,7 +19,7 @@ const PALETTES = {
     fusion_deep: [BRAND.DEEP_PURPLE, '#4326B3', '#8C75FF', BRAND.MINT]
 };
 
-const LavaCubeBanner = ({ color = BRAND.MINT, profileBorderColor, starSettings }) => {
+const LavaCubeBanner = ({ color = BRAND.MINT, profileBorderColor, starSettings, animationsEnabled = true }) => {
     const canvasRef = useRef(null);
     const stateRef = useRef({ time: 0 });
 
@@ -46,21 +46,23 @@ const LavaCubeBanner = ({ color = BRAND.MINT, profileBorderColor, starSettings }
                         left: Math.random() * 100 + '%',
                         opacity: Math.random() * 0.7 + 0.3,
                         boxShadow: `0 0 ${Math.random() * 4 + 2}px ${thisColor}`,
-                        animation: `fusion-star-twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                        animation: animationsEnabled ? `fusion-star-twinkle ${Math.random() * 3 + 2}s ease-in-out infinite` : 'none',
                         animationDelay: `${Math.random() * 5}s`
                     }}
                 />
             );
         });
-    }, [starSettings?.enabled, starSettings?.color]);
+    }, [starSettings?.enabled, starSettings?.color, animationsEnabled]);
 
     // 2. WORLD DATA
     const world = useMemo(() => {
         let activePalette = PALETTES.fusion_prism;
         if (PALETTES[color]) {
             activePalette = PALETTES[color];
+        } else if (color === 'brand') {
+            activePalette = PALETTES.fusion_prism;
         } else if (color?.startsWith('#')) {
-            activePalette = [color, color, color, color];
+            activePalette = [color, BRAND.DEEP_PURPLE, BRAND.ION_BLUE, BRAND.WHITE];
         }
 
         const createBlobs = (count, startId) => Array.from({ length: count }, (_, i) => ({
@@ -98,7 +100,9 @@ const LavaCubeBanner = ({ color = BRAND.MINT, profileBorderColor, starSettings }
         };
 
         const render = () => {
-            stateRef.current.time += 0.015;
+            if (animationsEnabled) {
+                stateRef.current.time += 0.015;
+            }
             const t = stateRef.current.time;
             const w = canvas.width, h = canvas.height, dpr = window.devicePixelRatio || 1;
 
@@ -120,7 +124,10 @@ const LavaCubeBanner = ({ color = BRAND.MINT, profileBorderColor, starSettings }
                     if (b.y < -0.2) b.y = 1.2; if (b.y > 1.2) b.y = -0.2;
                 });
             };
-            updateBlobs(world.bgBlobs); updateBlobs(world.fgBlobs);
+
+            if (animationsEnabled) {
+                updateBlobs(world.bgBlobs); updateBlobs(world.fgBlobs);
+            }
 
             // --- STAGE 1: BACKGROUND MELT ---
             ctx.save();
@@ -185,16 +192,19 @@ const LavaCubeBanner = ({ color = BRAND.MINT, profileBorderColor, starSettings }
             grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, `rgba(${hexToRgb(tintColor)}, 0.2)`);
             ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
 
-            animationFrame = requestAnimationFrame(render);
+            if (animationsEnabled) {
+                animationFrame = requestAnimationFrame(render);
+            }
         };
 
         const handleResize = () => {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+            render(); // Force one render on resize
         };
-        window.addEventListener('resize', handleResize); handleResize(); render();
+        window.addEventListener('resize', handleResize); handleResize(); // Initial kick-off
         return () => { window.removeEventListener('resize', handleResize); cancelAnimationFrame(animationFrame); };
-    }, [world, color, profileBorderColor]);
+    }, [world, color, profileBorderColor, animationsEnabled]);
 
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#000' }}>

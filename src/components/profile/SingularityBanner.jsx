@@ -8,9 +8,9 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 const RENDER_CACHE = new Map();
 
-function renderSingularity(canvas) {
+function renderSingularity(canvas, color) {
     if (!canvas) return '';
-    const cacheKey = 'singularity_prime';
+    const cacheKey = `singularity_prime_${color}`;
     if (RENDER_CACHE.has(cacheKey)) return RENDER_CACHE.get(cacheKey);
 
     const ctx = canvas.getContext('2d');
@@ -18,6 +18,12 @@ function renderSingularity(canvas) {
     const h = 1080;
     canvas.width = w;
     canvas.height = h;
+
+    const isBrand = color === 'brand';
+    const resolveColor = (fallback) => {
+        if (isBrand) return fallback;
+        return color || fallback;
+    };
 
     // 1. THE VOID SUBSTRATE (Obsidian)
     const base = ctx.createLinearGradient(0, 0, 0, h);
@@ -27,14 +33,13 @@ function renderSingularity(canvas) {
     ctx.fillRect(0, 0, w, h);
 
     // 2. THE EVENT HORIZON (A perfect curve)
-    // Not a planet, not a sun. A tear in the UI.
     const cx = w * 0.5;
     const cy = h * 0.85;
 
     // The Glow (Backlight)
     const glow = ctx.createRadialGradient(cx, cy, w * 0.1, cx, cy, w * 0.6);
-    glow.addColorStop(0, COLORS.deepOrbitPurple);
-    glow.addColorStop(0.5, COLORS.ionBlue);
+    glow.addColorStop(0, resolveColor(COLORS.deepOrbitPurple));
+    glow.addColorStop(0.5, resolveColor(COLORS.ionBlue));
     glow.addColorStop(1, 'transparent');
     ctx.globalCompositeOperation = 'screen';
     ctx.fillStyle = glow;
@@ -51,12 +56,10 @@ function renderSingularity(canvas) {
 
     ctx.fillStyle = tear;
     ctx.beginPath();
-    // A slight arc to suggest infinite horizon
     ctx.ellipse(cx, cy, w * 0.8, 10, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // 3. PRISMATIC DATA RAIN (Upward)
-    // Rising from the horizon like heat shimmer, but digital
     ctx.globalCompositeOperation = 'screen';
     ctx.lineWidth = 1;
 
@@ -66,8 +69,8 @@ function renderSingularity(canvas) {
         const height = 50 + Math.random() * 400;
 
         const grad = ctx.createLinearGradient(0, yStart, 0, yStart - height);
-        grad.addColorStop(0, Math.random() > 0.5 ? COLORS.auroraMint : COLORS.solarPink);
-        grad.addColorStop(1, 'transparent'); // Fade out going up
+        grad.addColorStop(0, Math.random() > 0.5 ? resolveColor(COLORS.auroraMint) : resolveColor(COLORS.solarPink));
+        grad.addColorStop(1, 'transparent');
 
         ctx.strokeStyle = grad;
         ctx.globalAlpha = 0.1 + Math.random() * 0.2;
@@ -85,17 +88,19 @@ function renderSingularity(canvas) {
         ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
     }
 
-    return canvas.toDataURL('image/webp', 0.95);
+    const result = canvas.toDataURL('image/webp', 0.95);
+    RENDER_CACHE.set(cacheKey, result);
+    return result;
 }
 
-const SingularityBanner = () => {
+const SingularityBanner = ({ color }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
-        const bg = renderSingularity(canvasRef.current);
+        const bg = renderSingularity(canvasRef.current, color);
         setBgImage(bg);
-    }, []);
+    }, [color]);
 
     return (
         <div style={{

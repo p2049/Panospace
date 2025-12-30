@@ -12,13 +12,14 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 const RENDER_CACHE = new Map();
 
-const SingularityCityBanner = () => {
+const SingularityCityBanner = ({ color: customColor }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
-        if (RENDER_CACHE.has('singularity_city')) {
-            setBgImage(RENDER_CACHE.get('singularity_city'));
+        const cacheKey = `singularity_city_${customColor || 'brand'}`;
+        if (RENDER_CACHE.has(cacheKey)) {
+            setBgImage(RENDER_CACHE.get(cacheKey));
             return;
         }
 
@@ -78,11 +79,12 @@ const SingularityCityBanner = () => {
 
                 // Brand Colors
                 const temp = Math.random();
-                const color = temp > 0.7 ? '#FFF'
-                    : (temp > 0.4 ? COLORS.ionBlue
-                        : (temp > 0.2 ? COLORS.solarPink : COLORS.deepOrbitPurple));
+                const isBrand = customColor === 'brand';
+                const pColor = isBrand
+                    ? (temp > 0.7 ? '#FFF' : (temp > 0.4 ? COLORS.ionBlue : (temp > 0.2 ? COLORS.solarPink : COLORS.deepOrbitPurple)))
+                    : (customColor ? (temp > 0.5 ? customColor : '#FFF') : (temp > 0.7 ? '#FFF' : (temp > 0.4 ? COLORS.ionBlue : COLORS.deepOrbitPurple)));
 
-                ctx.fillStyle = color;
+                ctx.fillStyle = pColor;
                 ctx.globalAlpha = 0.3 + Math.random() * 0.5;
                 ctx.globalCompositeOperation = 'screen';
                 ctx.fill();
@@ -100,10 +102,11 @@ const SingularityCityBanner = () => {
         ctx.fill();
 
         // Photon Ring
-        ctx.strokeStyle = COLORS.ionBlue;
+        const photonColor = customColor && customColor !== 'brand' ? customColor : COLORS.ionBlue;
+        ctx.strokeStyle = photonColor;
         ctx.lineWidth = 3;
         ctx.shadowBlur = 15;
-        ctx.shadowColor = COLORS.ionBlue;
+        ctx.shadowColor = photonColor;
         ctx.globalCompositeOperation = 'screen';
         ctx.stroke();
         ctx.shadowBlur = 0; // Reset
@@ -144,7 +147,10 @@ const SingularityCityBanner = () => {
                 for (let r = 0; r < rows; r++) {
                     if (Math.random() > 0.5) continue;
                     for (let c = 0; c < cols; c++) {
-                        ctx.fillStyle = Math.random() > 0.5 ? COLORS.ionBlue : COLORS.auroraMint;
+                        const winColor = customColor && customColor !== 'brand'
+                            ? (Math.random() > 0.3 ? customColor : '#FFF')
+                            : (Math.random() > 0.5 ? COLORS.ionBlue : COLORS.auroraMint);
+                        ctx.fillStyle = winColor;
                         ctx.globalAlpha = 0.6;
                         ctx.globalCompositeOperation = 'screen';
                         ctx.fillRect(bX + bW * 0.2 + c * winW * 1.2, floorY - bH + 20 + r * winH * 1.5, winW * 0.8, winH * 0.8);
@@ -164,13 +170,15 @@ const SingularityCityBanner = () => {
         ctx.fillRect(0, 0, w, h);
 
         const result = canvas.toDataURL('image/webp', 0.95);
-        RENDER_CACHE.set('singularity_city', result);
+        RENDER_CACHE.set(cacheKey, result);
         setBgImage(result);
 
-    }, []);
+    }, [customColor]);
 
     // --- CSS AURORA LAYER (From BannerThemeRenderer) ---
     // The "Literal" Northern Lights Background
+    const isBrand = customColor === 'brand';
+    const activeColor = customColor && !isBrand ? customColor : COLORS.auroraMint;
 
     return (
         <div style={{
@@ -196,17 +204,21 @@ const SingularityCityBanner = () => {
                 {/* Layer 1: Purple/Blue Deep Atmosphere wash */}
                 <div style={{
                     position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                    background: 'linear-gradient(to top, rgba(90, 63, 255, 0.1) 0%, rgba(27, 130, 255, 0.0) 50%, rgba(90, 63, 255, 0.4) 100%)',
+                    background: isBrand
+                        ? 'linear-gradient(to top, rgba(90, 63, 255, 0.1) 0%, rgba(27, 130, 255, 0.0) 50%, rgba(90, 63, 255, 0.4) 100%)'
+                        : `linear-gradient(to top, ${activeColor}1a 0%, transparent 50%, ${activeColor}33 100%)`,
                     filter: 'blur(30px)', opacity: 0.8
                 }} />
 
-                {/* Layer 2: Main Green Ribbon (Brand Mint) */}
+                {/* Layer 2: Main Ribbon */}
                 <div style={{
                     position: 'absolute', top: '-20%', left: '-20%', right: '-20%', bottom: '-20%',
                     transform: 'perspective(500px) rotateX(10deg) skewY(-5deg)',
                     filter: 'url(#aurora-curtains-banner) brightness(1.4)',
-                    background: 'repeating-linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1) 5%, rgba(0, 255, 136, 0.8) 15%, rgba(127, 255, 212, 0.5) 25%, transparent 35%, transparent 60%)',
-                    opacity: 0.9, mixBlendMode: 'screen' // Screen blend for brightness
+                    background: isBrand
+                        ? 'repeating-linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1) 5%, rgba(0, 255, 136, 0.8) 15%, rgba(127, 255, 212, 0.5) 25%, transparent 35%, transparent 60%)'
+                        : `repeating-linear-gradient(90deg, transparent, ${activeColor}1a 5%, ${activeColor}cc 15%, ${activeColor}80 25%, transparent 35%, transparent 60%)`,
+                    opacity: 0.9, mixBlendMode: 'screen'
                 }} />
 
                 {/* Layer 3: Secondary Curtains (Offset) */}
@@ -214,7 +226,9 @@ const SingularityCityBanner = () => {
                     position: 'absolute', top: '20%', left: '-20%', right: '-20%', bottom: '-20%',
                     transform: 'perspective(500px) rotateX(20deg) skewY(2deg)',
                     filter: 'url(#aurora-curtains-banner) hue-rotate(30deg)',
-                    background: 'repeating-linear-gradient(90deg, transparent, transparent 30%, rgba(0, 255, 136, 0.5) 45%, transparent 60%)',
+                    background: isBrand
+                        ? 'repeating-linear-gradient(90deg, transparent, transparent 30%, rgba(0, 255, 136, 0.5) 45%, transparent 60%)'
+                        : `repeating-linear-gradient(90deg, transparent, transparent 30%, ${activeColor}80 45%, transparent 60%)`,
                     opacity: 0.7, mixBlendMode: 'screen'
                 }} />
 
@@ -223,7 +237,9 @@ const SingularityCityBanner = () => {
                     position: 'absolute', top: '-10%', left: '-10%', right: '-10%', bottom: '0',
                     transform: 'perspective(500px) rotateX(15deg) skewY(-2deg)',
                     filter: 'url(#aurora-curtains-banner) blur(2px)',
-                    background: 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(255, 42, 109, 0.7) 42%, transparent 45%, transparent 80%, rgba(255, 42, 109, 0.6) 82%, transparent 85%)',
+                    background: isBrand
+                        ? 'repeating-linear-gradient(90deg, transparent, transparent 40%, rgba(255, 42, 109, 0.7) 42%, transparent 45%, transparent 80%, rgba(255, 42, 109, 0.6) 82%, transparent 85%)'
+                        : `repeating-linear-gradient(90deg, transparent, transparent 40%, ${activeColor}b3 42%, transparent 45%, transparent 80%, ${activeColor}99 82%, transparent 85%)`,
                     opacity: 1, mixBlendMode: 'screen'
                 }} />
             </div>

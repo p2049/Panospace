@@ -17,7 +17,17 @@ const BannerOverlayRenderer = ({ overlays = [], monochromeColor, children, targe
     const activeOverlays = overlays
         .filter(Boolean)
         .slice(0, 2)
-        .map(ov => typeof ov === 'string' ? BANNER_OVERLAYS.find(o => o.id === ov) : ov)
+        .map(ov => {
+            if (typeof ov === 'string') {
+                // Simple string ID - look it up
+                return BANNER_OVERLAYS.find(o => o.id === ov);
+            } else {
+                // Object with id and potentially selectedColor
+                const overlayDef = BANNER_OVERLAYS.find(o => o.id === ov.id);
+                // Merge the definition with any custom properties (like selectedColor)
+                return overlayDef ? { ...overlayDef, ...ov } : null;
+            }
+        })
         .filter(Boolean);
 
     // Check for pixelation overlay
@@ -2069,6 +2079,81 @@ const OverlayLayer = ({ overlay, index, monochromeColor, target, isSimplified })
                     }} />
                 </div>
             );
+
+        case 'firefly_normal': {
+            const FireflyOverlayNormal = React.lazy(() => import('./FireflyOverlay'));
+            // Get the color from the overlay definition's colorVariants
+            const overlayDef = BANNER_OVERLAYS.find(o => o.id === 'firefly_normal');
+            const selectedColorId = overlay.selectedColor || 'mint'; // Default to mint
+            const colorVariant = overlayDef?.colorVariants?.find(c => c.id === selectedColorId);
+            const fireflyColor = colorVariant?.color || '#7FFFD4';
+
+            return (
+                <React.Suspense fallback={null}>
+                    <FireflyOverlayNormal color={fireflyColor} density="medium" speed="slow" />
+                </React.Suspense>
+            );
+        }
+
+        case 'firefly_swarm': {
+            const FireflyOverlaySwarm = React.lazy(() => import('./FireflyOverlay'));
+            const overlayDef = BANNER_OVERLAYS.find(o => o.id === 'firefly_swarm');
+            const selectedColorId = overlay.selectedColor || 'mint';
+            const colorVariant = overlayDef?.colorVariants?.find(c => c.id === selectedColorId);
+            const fireflyColor = colorVariant?.color || '#7FFFD4';
+
+            return (
+                <React.Suspense fallback={null}>
+                    <FireflyOverlaySwarm color={fireflyColor} density="high" speed="medium" />
+                </React.Suspense>
+            );
+        }
+
+        case 'snow': {
+            const ParticleOverlaySnow = React.lazy(() => import('./ParticleOverlay'));
+            return (
+                <React.Suspense fallback={null}>
+                    <ParticleOverlaySnow type="snow" density="medium" speed="medium" color="#FFFFFF" />
+                </React.Suspense>
+            );
+        }
+
+        case 'rain': {
+            const ParticleOverlayRain = React.lazy(() => import('./ParticleOverlay'));
+            return (
+                <React.Suspense fallback={null}>
+                    <ParticleOverlayRain type="rain" density="medium" speed="medium" color="#7DA2D9" />
+                </React.Suspense>
+            );
+        }
+
+        case 'leaves': {
+            const ParticleOverlayLeaves = React.lazy(() => import('./ParticleOverlay'));
+            const overlayDef = BANNER_OVERLAYS.find(o => o.id === 'leaves');
+            const selectedColorId = overlay.selectedColor || 'orange';
+            const colorVariant = overlayDef?.colorVariants?.find(c => c.id === selectedColorId);
+            const leafColor = colorVariant?.color || '#FF914D';
+
+            return (
+                <React.Suspense fallback={null}>
+                    <ParticleOverlayLeaves type="leaves" density="low" speed="medium" color={leafColor} />
+                </React.Suspense>
+            );
+        }
+
+        case 'cherry_blossoms': {
+            const ParticleOverlayBlossoms = React.lazy(() => import('./ParticleOverlay'));
+            const overlayDef = BANNER_OVERLAYS.find(o => o.id === 'cherry_blossoms');
+            const selectedColorId = overlay.selectedColor || 'pink';
+            const colorVariant = overlayDef?.colorVariants?.find(c => c.id === selectedColorId);
+            const blossomColor = colorVariant?.color || '#FFB7C5';
+
+            return (
+                <React.Suspense fallback={null}>
+                    <ParticleOverlayBlossoms type="cherry_blossoms" density="low" speed="slow" color={blossomColor} />
+                </React.Suspense>
+            );
+        }
 
         default:
             return null;

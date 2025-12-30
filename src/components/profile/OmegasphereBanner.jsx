@@ -15,13 +15,14 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 const RENDER_CACHE = new Map();
 
-const OmegasphereBanner = () => {
+const OmegasphereBanner = ({ color }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
-        if (RENDER_CACHE.has('omegasphere')) {
-            setBgImage(RENDER_CACHE.get('omegasphere'));
+        const cacheKey = `omegasphere_${color || 'brand'}`;
+        if (RENDER_CACHE.has(cacheKey)) {
+            setBgImage(RENDER_CACHE.get(cacheKey));
             return;
         }
 
@@ -37,6 +38,9 @@ const OmegasphereBanner = () => {
         const cx = w * 0.5;
         const cy = h * 0.45;
 
+        const isBrand = color === 'brand';
+        const resolveColor = (fallback) => isBrand ? fallback : (color || fallback);
+
         // 1. VOID SUBSTRATE (Deepest Digital Black)
         const voidGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w);
         voidGrad.addColorStop(0, '#020002');
@@ -46,86 +50,65 @@ const OmegasphereBanner = () => {
         ctx.fillRect(0, 0, w, h);
 
         // 2. THE DIGITAL FLUX (Background Nebula of Code)
-        // We use thousands of tiny rectangles to simulate 'glitch fog'
-        // Optimized: 4000 -> 1000
         for (let i = 0; i < 1000; i++) {
             const x = Math.random() * w;
             const y = Math.random() * h;
             const s = Math.random() * 4;
 
             const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
-            if (dist < 500) continue; // Keep center clear for the Sphere
+            if (dist < 500) continue;
 
-            ctx.fillStyle = Math.random() > 0.5 ? COLORS.deepOrbitPurple : COLORS.ionBlue;
+            ctx.fillStyle = Math.random() > 0.5 ? resolveColor(COLORS.deepOrbitPurple) : resolveColor(COLORS.ionBlue);
             ctx.globalAlpha = (Math.random() * 0.1) + 0.02;
-            ctx.fillRect(x, y, s, s * 4); // Vertical data bits
+            ctx.fillRect(x, y, s, s * 4);
         }
 
         // 3. THE OMEGASPHERE (3D Point Cloud Projection)
-        // Optimized: 2500 -> 800 (Density maintained at lower res)
         const density = 800;
-        const radius = 225; // Scaled down for 1080p (was 450)
-
-        // Sphere function: Golden Spiral on Sphere surface
-        // Fibonacci Sphere algorithm for even distribution
-        const phi = Math.PI * (3 - Math.sqrt(5)); // Golden angle
+        const radius = 225;
+        const phi = Math.PI * (3 - Math.sqrt(5));
 
         for (let i = 0; i < density; i++) {
-            const y = 1 - (i / (density - 1)) * 2; // y goes from 1 to -1
-            const rRadius = Math.sqrt(1 - y * y); // radius at y
-
-            const theta = phi * i; // Golden angle increment
+            const y = 1 - (i / (density - 1)) * 2;
+            const rRadius = Math.sqrt(1 - y * y);
+            const theta = phi * i;
 
             const x = Math.cos(theta) * rRadius;
             const z = Math.sin(theta) * rRadius;
 
-            // PROJECT TO 2D
-            // Scale
             const scale = radius;
             const px = cx + x * scale;
             const py = cy + y * scale;
 
-            // Perspective / Z-Depth Logic
-            // Z goes from -1 (back) to 1 (front)
-            // We map size and spread based on Z
-
-            const size = 1.5 + (z + 1) * 2; // Front points bigger
+            const size = 1.5 + (z + 1) * 2;
             const alpha = 0.2 + (z + 1) * 0.4;
 
-            if (z < -0.8) continue; // Cull back-most faces for visual clarity (Hollow look)
+            if (z < -0.8) continue;
 
-            // DRAW SHARD
             ctx.save();
             ctx.translate(px, py);
-
-            // Rotate shard to face center
             const rot = Math.atan2(y, x);
             ctx.rotate(rot);
 
-            // Top tier points (Front facing) now Mint instead of White
-            ctx.fillStyle = z > 0.5 ? COLORS.auroraMint
-                : (Math.random() > 0.5 ? COLORS.ionBlue : COLORS.solarPink);
+            ctx.fillStyle = z > 0.5 ? resolveColor(COLORS.auroraMint)
+                : (Math.random() > 0.5 ? resolveColor(COLORS.ionBlue) : resolveColor(COLORS.solarPink));
 
             ctx.globalAlpha = alpha;
             ctx.globalCompositeOperation = 'screen';
 
-            // "Digital Shard" shape (Trapezoid)
             ctx.beginPath();
             ctx.moveTo(-size, -size / 2);
-            ctx.lineTo(size * 2, 0); // Point out
+            ctx.lineTo(size * 2, 0);
             ctx.lineTo(-size, size / 2);
             ctx.fill();
 
             ctx.restore();
 
-            // CONNECTING NEURONS (If neighbors close)
-            // ...too expensive for 2500 points n^2.
-            // visual fake: random arcs from point to center if on rim
             if (rRadius > 0.95 && Math.random() > 0.95) {
                 ctx.beginPath();
                 ctx.moveTo(px, py);
                 ctx.lineTo(cx, cy);
-                ctx.strokeStyle = COLORS.auroraMint;
+                ctx.strokeStyle = resolveColor(COLORS.auroraMint);
                 ctx.lineWidth = 0.5;
                 ctx.globalAlpha = 0.1;
                 ctx.stroke();
@@ -134,8 +117,8 @@ const OmegasphereBanner = () => {
 
         // 4. THE CORE PROCESSOR (Inside the Sphere)
         const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, 300);
-        core.addColorStop(0, COLORS.ionBlue); // Blue core instead of white
-        core.addColorStop(0.2, COLORS.auroraMint);
+        core.addColorStop(0, resolveColor(COLORS.ionBlue));
+        core.addColorStop(0.2, resolveColor(COLORS.auroraMint));
         core.addColorStop(0.5, 'transparent');
 
         ctx.fillStyle = core;
@@ -145,23 +128,22 @@ const OmegasphereBanner = () => {
         ctx.fill();
 
         // 5. ORBITAL RINGS (Holographic Interfaces)
-        const drawHoloRing = (rad, tilt, color) => {
-            const scaledRad = rad * 0.5; // Scale rings for 1080p
+        const drawHoloRing = (rad, tilt, ringColor) => {
+            const scaledRad = rad * 0.5;
             ctx.save();
             ctx.translate(cx, cy);
             ctx.rotate(tilt);
-            ctx.scale(1, 0.2); // Flatten
+            ctx.scale(1, 0.2);
 
             ctx.beginPath();
             ctx.arc(0, 0, scaledRad, 0, Math.PI * 2);
             ctx.lineWidth = 2;
-            ctx.strokeStyle = color;
-            ctx.shadowColor = color;
+            ctx.strokeStyle = ringColor;
+            ctx.shadowColor = ringColor;
             ctx.shadowBlur = 10;
             ctx.globalAlpha = 0.8;
             ctx.stroke();
 
-            // Data notches
             ctx.setLineDash([10, 20]);
             ctx.lineWidth = 4;
             ctx.globalAlpha = 0.4;
@@ -170,12 +152,11 @@ const OmegasphereBanner = () => {
             ctx.restore();
         };
 
-        drawHoloRing(600, Math.PI / 4, COLORS.ionBlue);
-        drawHoloRing(700, -Math.PI / 4, COLORS.deepOrbitPurple);
-        drawHoloRing(900, 0, COLORS.solarPink); // Equator
+        drawHoloRing(600, Math.PI / 4, resolveColor(COLORS.ionBlue));
+        drawHoloRing(700, -Math.PI / 4, resolveColor(COLORS.deepOrbitPurple));
+        drawHoloRing(900, 0, resolveColor(COLORS.solarPink));
 
         // 6. RAY TRACED BEAMS (Volumetric Lighting Rays)
-        // Emanating from center out
         for (let i = 0; i < 12; i++) {
             const angle = (i / 12) * Math.PI * 2;
             ctx.save();
@@ -183,7 +164,8 @@ const OmegasphereBanner = () => {
             ctx.rotate(angle);
 
             const beamGrad = ctx.createLinearGradient(0, 0, w, 0);
-            beamGrad.addColorStop(0, COLORS.auroraMint + '1A'); // Mint with low opacity (approx 0.1 hex is 1A)
+            const beamColor = resolveColor(COLORS.auroraMint);
+            beamGrad.addColorStop(0, beamColor + '1A');
             beamGrad.addColorStop(1, 'transparent');
 
             ctx.fillStyle = beamGrad;
@@ -208,10 +190,10 @@ const OmegasphereBanner = () => {
         ctx.fillRect(0, 0, w, h);
 
         const result = canvas.toDataURL('image/webp', 0.95);
-        RENDER_CACHE.set('omegasphere', result);
+        RENDER_CACHE.set(cacheKey, result);
         setBgImage(result);
 
-    }, []);
+    }, [color]);
 
     return (
         <div style={{

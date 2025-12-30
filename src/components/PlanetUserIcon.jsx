@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+
+// Lazy load SeedOscillatorAvatar to split bundle
+const SeedOscillatorAvatar = React.lazy(() => import('@/components/profile/SeedOscillatorAvatar'));
 
 // Custom "Planet Head" Default Avatar
-const PlanetUserIcon = ({ size = 32, color = "#7FFFD4", icon = "planet-head", glow = false, ...rest }) => {
+const PlanetUserIcon = ({ size = 32, color = "#7FFFD4", icon = "planet-head", glow = false, seed = 'panospace', ...rest }) => {
+    // Check for Seed Oscillator
+    if (icon === 'seed_oscillator') {
+        return (
+            <div style={{ width: size, height: size, position: 'relative' }}>
+                <Suspense fallback={<div style={{ width: '100%', height: '100%', background: 'transparent' }} />}>
+                    <SeedOscillatorAvatar seed={seed} color={color} />
+                </Suspense>
+            </div>
+        );
+    }
+
     // Ensure safe props
     const safeColor = (color && typeof color === 'string') ? color : "#7FFFD4";
     const safeIcon = (icon && typeof icon === 'string') ? icon : "planet-head";

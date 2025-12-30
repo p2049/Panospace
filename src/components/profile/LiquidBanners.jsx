@@ -1,3 +1,13 @@
+import React, { useRef, useEffect, useMemo } from 'react';
+
+// Brand colors for liquid banners
+const BRAND = {
+    MINT: '#7FFFD4',
+    ION_BLUE: '#1B82FF',
+    DEEP_PURPLE: '#5A3FFF',
+    SOLAR_PINK: '#FF5C8A'
+};
+
 // (Obsidian Mercury Removed)
 
 // (Solar Radiance Removed)

@@ -9,13 +9,14 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 const RENDER_CACHE = new Map();
 
-const NebulaBanner = () => {
+const NebulaBanner = ({ color }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
-        if (RENDER_CACHE.has('nebula')) {
-            setBgImage(RENDER_CACHE.get('nebula'));
+        const cacheKey = `nebula_${color || 'brand'}`;
+        if (RENDER_CACHE.has(cacheKey)) {
+            setBgImage(RENDER_CACHE.get(cacheKey));
             return;
         }
 
@@ -53,8 +54,14 @@ const NebulaBanner = () => {
 
         // 3. BRAND COLORED DUST (Very subtle)
         // Just small specs of Ion Blue / Pink floating
+        const isBrand = color === 'brand';
         for (let i = 0; i < 40; i++) {
-            ctx.fillStyle = Math.random() > 0.5 ? COLORS.ionBlue : COLORS.solarPink;
+            // If brand, mix blue and pink. If hex, use hex Primarily.
+            const dustColor = isBrand
+                ? (Math.random() > 0.5 ? COLORS.ionBlue : COLORS.solarPink)
+                : (color || (Math.random() > 0.5 ? COLORS.ionBlue : COLORS.solarPink));
+
+            ctx.fillStyle = dustColor;
             ctx.globalAlpha = Math.random() * 0.4;
             const s = Math.random() * 2;
             ctx.beginPath();
@@ -73,10 +80,13 @@ const NebulaBanner = () => {
         ctx.fillRect(0, 0, w, h);
 
         const result = canvas.toDataURL('image/webp', 0.95);
-        RENDER_CACHE.set('nebula', result);
+        RENDER_CACHE.set(cacheKey, result);
         setBgImage(result);
 
-    }, []);
+    }, [color]);
+
+    const isBrand = color === 'brand';
+    const activeColor = isBrand ? '#5A3FFF' : (color || '#2A0E61'); // Safe for CSS Gradients
 
     return (
         <div style={{
@@ -101,7 +111,7 @@ const NebulaBanner = () => {
                 {/* Deep Nebula Wash (Purple/Black Base) */}
                 <div style={{
                     position: 'absolute', inset: 0,
-                    background: 'radial-gradient(circle at 50% 30%, #2A0E61 0%, #000 70%)',
+                    background: `radial-gradient(circle at 50% 30%, ${activeColor}aa 0%, #000 70%)`,
                     opacity: 0.6
                 }} />
 
@@ -110,7 +120,9 @@ const NebulaBanner = () => {
                     position: 'absolute', top: 0, left: '-20%', right: '-20%', height: '100%',
                     filter: 'url(#nebula-noise-v2)',
                     // Complex brand gradient
-                    background: 'repeating-linear-gradient(45deg, transparent, rgba(90, 63, 255, 0.2) 10%, rgba(255, 92, 138, 0.2) 20%, rgba(27, 130, 255, 0.1) 30%, transparent 40%)',
+                    background: isBrand
+                        ? 'repeating-linear-gradient(45deg, transparent, rgba(90, 63, 255, 0.2) 10%, rgba(255, 92, 138, 0.2) 20%, rgba(27, 130, 255, 0.1) 30%, transparent 40%)'
+                        : `repeating-linear-gradient(45deg, transparent, ${activeColor}33 10%, rgba(255,255,255,0.05) 20%, ${activeColor}1a 30%, transparent 40%)`,
                     opacity: 0.8,
                     mixBlendMode: 'screen',
                     transform: 'scale(1.2)'
@@ -119,7 +131,9 @@ const NebulaBanner = () => {
                 {/* Rolling Fog (Mint Haze) */}
                 <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0, height: '60%',
-                    background: 'linear-gradient(to top, rgba(140, 255, 233, 0.05) 0%, transparent 100%)',
+                    background: isBrand
+                        ? 'linear-gradient(to top, rgba(140, 255, 233, 0.05) 0%, transparent 100%)'
+                        : `linear-gradient(to top, ${activeColor}1a 0%, transparent 100%)`,
                     filter: 'blur(40px)', opacity: 0.5
                 }} />
             </div>

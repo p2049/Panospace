@@ -8,7 +8,7 @@ const BRAND = {
     WHITE: '#FFFFFF'
 };
 
-const TranscendenceBanner = ({ color = 'math_fire', profileBorderColor, starSettings }) => {
+const TranscendenceBanner = ({ color = 'math_fire', profileBorderColor, starSettings, animationsEnabled = true }) => {
     const canvasRef = useRef(null);
     const stateRef = useRef({ time: 0 });
 
@@ -33,16 +33,28 @@ const TranscendenceBanner = ({ color = 'math_fire', profileBorderColor, starSett
         }
     })[color] || { id: 'Fractal Flame', points: 15000, dt: 0.005, spread: 0.8 }, [color]);
 
-    const systemsRef = useRef(Array.from({ length: 10 }, (_, i) => ({
-        x: (Math.random() - 0.5) * 400,
-        y: (Math.random() - 0.5) * 200,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        color: [BRAND.MINT, BRAND.ION_BLUE, BRAND.SOLAR_PINK, BRAND.DEEP_PURPLE, '#FFB7D5', '#A7B6FF', '#7FDBFF', BRAND.WHITE][i % 8],
-        rot: Math.random() * Math.PI,
-        rotV: (Math.random() - 0.5) * 0.04,
-        trail: []
-    })));
+    const systems = useMemo(() => Array.from({ length: 10 }, (_, i) => {
+        const brandPalette = [BRAND.MINT, BRAND.ION_BLUE, BRAND.SOLAR_PINK, BRAND.DEEP_PURPLE, '#FFB7D5', '#A7B6FF', '#7FDBFF', BRAND.WHITE];
+
+        let customColor = (i === 0 && profileBorderColor) ? profileBorderColor : null;
+        if (customColor === 'brand') customColor = brandPalette[0];
+
+        return {
+            x: (Math.random() - 0.5) * 400,
+            y: (Math.random() - 0.5) * 200,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            color: customColor || (profileBorderColor === 'brand' ? brandPalette[i % brandPalette.length] : brandPalette[i % 8]),
+            rot: Math.random() * Math.PI,
+            rotV: (Math.random() - 0.5) * 0.04,
+            trail: []
+        };
+    }), [profileBorderColor, color]);
+
+    const systemsRef = useRef([]);
+    useEffect(() => {
+        systemsRef.current = systems;
+    }, [systems]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -173,16 +185,24 @@ const TranscendenceBanner = ({ color = 'math_fire', profileBorderColor, starSett
                 drawSystem(sys.x, sys.y, 1, sys.color, sys.rot);
             });
 
-            animationFrame = requestAnimationFrame(render);
+            if (animationsEnabled) {
+                animationFrame = requestAnimationFrame(render);
+            }
         };
 
         const res = () => {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+            // Force one render on resize
+            render();
         };
-        window.addEventListener('resize', res); res(); render();
+        window.addEventListener('resize', res); res();
+
+        // Initial kick-off
+        render();
+
         return () => { window.removeEventListener('resize', res); cancelAnimationFrame(animationFrame); };
-    }, [config, color, profileBorderColor]);
+    }, [config, color, profileBorderColor, animationsEnabled]);
 
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#000' }}>

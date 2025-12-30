@@ -8,10 +8,10 @@ import { BRAND_COLORS as COLORS } from '../../core/constants/cityThemes';
 
 const RENDER_CACHE = new Map();
 
-function renderAuraToCanvas(canvas) {
+function renderAuraToCanvas(canvas, customColor) {
     if (!canvas) return '';
 
-    const cacheKey = `genesis_aura_v3_brand`;
+    const cacheKey = `genesis_aura_v3_${customColor || 'brand'}`;
     if (RENDER_CACHE.has(cacheKey)) return RENDER_CACHE.get(cacheKey);
 
     const ctx = canvas.getContext('2d');
@@ -23,24 +23,22 @@ function renderAuraToCanvas(canvas) {
     canvas.height = height;
 
     // 1. BRAND BASE: Void Purple Deep
-    // We mix black with void purple for a rich, dark substrate
     const baseGrad = ctx.createLinearGradient(0, 0, 0, height);
     baseGrad.addColorStop(0, COLORS.black);
-    baseGrad.addColorStop(1, '#05020a'); // Very dark void purple variant
+    baseGrad.addColorStop(1, '#05020a');
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // 2. ORBS OF BEING (Brand Palette Only)
-    // Baking the blur for performance
+    // 2. ORBS OF BEING
     ctx.filter = 'blur(80px)';
     ctx.globalCompositeOperation = 'screen';
 
     const orbs = [
-        { x: 0.2, y: 0.3, r: 0.5, c: COLORS.deepOrbitPurple }, // The Deep
-        { x: 0.8, y: 0.7, r: 0.6, c: COLORS.solarPink },       // The Passion
-        { x: 0.5, y: 0.5, r: 0.4, c: COLORS.ionBlue },         // The Logic
-        { x: 0.1, y: 0.9, r: 0.5, c: COLORS.auroraMint },      // The Growth
-        { x: 0.9, y: 0.1, r: 0.4, c: COLORS.stellarOrange }    // The Will
+        { x: 0.2, y: 0.3, r: 0.5, c: customColor || COLORS.deepOrbitPurple },
+        { x: 0.8, y: 0.7, r: 0.6, c: customColor || COLORS.solarPink },
+        { x: 0.5, y: 0.5, r: 0.4, c: customColor || COLORS.ionBlue },
+        { x: 0.1, y: 0.9, r: 0.5, c: customColor || COLORS.auroraMint },
+        { x: 0.9, y: 0.1, r: 0.4, c: customColor || COLORS.stellarOrange }
     ];
 
     orbs.forEach(orb => {
@@ -81,14 +79,14 @@ function renderAuraToCanvas(canvas) {
     return dataURL;
 }
 
-const GenesisAbstractBanner = () => {
+const GenesisAbstractBanner = ({ color }) => {
     const canvasRef = useRef(null);
     const [bgImage, setBgImage] = useState('');
 
     useEffect(() => {
-        const bg = renderAuraToCanvas(canvasRef.current);
+        const bg = renderAuraToCanvas(canvasRef.current, color);
         setBgImage(bg);
-    }, []);
+    }, [color]);
 
     return (
         <div style={{

@@ -1,7 +1,7 @@
-# 🌌 WALLPAPER STUDIO GENESIS: THE BLUEPRINT
+# 🌌 WALLPAPER STUDIO GENESIS: THE BLUEPRINT V2 (COMPLETE PORT)
 
 > **INSTRUCTIONS FOR ANTIGRAVITY:** 
-> When starting the new project, paste this entire file into your context. Use the "Genesis Prompt" at the bottom to initialize the application.
+> When starting the new project, paste this entire file into your context. Use the "Genesis Prompt" at the bottom to initialize the application. This is a BRUTAL PORT of the entire Panospace visual library.
 
 ---
 
@@ -19,18 +19,27 @@
 
 ## 🧩 THE CORE MODULES (TO BE REPLICATED)
 
-### 1. The Math Engine (Generative Art Capped)
-The app must include all 8 tiers of mathematical visualizations:
-*   **Attractors**: Aizawa, Lorenz, Rossler (Strange Attractors in 3D).
-*   **Manifolds**: Torus Knots, Enneper Surfaces, Mobius Strips.
-*   **Hyperplex**: 4D Tesseract projections, 24-Cell, Pentachon.
-*   **Quantum Flux**: Wave interference, Quantum Foam, Probability clouds.
-*   **Geometric Flora**: Fibonacci growth, Golden Angle Phyllotaxis.
-*   **Symmetry Fields**: Lissajous harmonics, Spirographs, Gielis Supershapes.
-*   **Cosmic Singularity**: Calabi-Yau 6D Manifolds, Event Horizon simulations.
-*   **Transcendence**: Fractal Flames (IFS), Spectral Snakes, Topological Nebulas.
+### 1. The Banner Engine (ALL 70+ VARIANTS)
+The app must include EVERY SINGLE banner type found in Panospace `BannerThemeRenderer.jsx`.
+*   **Technicolor Tech**: Hardware visualization.
+*   **Window Series**: Train, Shuttle, Plane, Metro, Boat, Submarine, Rocket, Aquarium (Single/Dual), Apartment, SkyDrive, Botanical, Lava Lamp, Omni Portal.
+*   **Liquid Dynamics**: Gossamer, Cyber Kinetic.
+*   **Cityscape Pack**: City Vista, Night City, Cyber Lofts.
+*   **Ocean Pack**: Lighthouse (Night/Day), Deep Underwater, Bio-Luminescence.
+*   **Abstract Pack**: Oscilloscope, Lava Cube, Omni Paradox, SciFi UI, Neural Silk, Genesis Core, Singularity, Black Mirror, Pinball.
+*   **Cosmic Pack**: Earth, Black Hole, Singularity City, Nebula, Galaxy, Aether Gate, Seraphim, Omegasphere, Infinite, Ascendant, Apex, Paradox, Opus, Flux, Ether, Resonance, Interference, Omniscience, Absolute.
+*   **Atmos Pack**: Pulse, Flux, Aether, Globe.
+*   **System Environments**: Static system memory visualizations.
 
-### 2. The Studio UI
+### 2. The Overlay System (CRITICAL)
+You must port the `BannerOverlayRenderer` logic 1:1.
+*   **Planet Horizon**: The complex conic gradient horizon with atmospheric haze.
+*   **Ice Planet**: Frozen world with cracked texture and mint/cyan aurora spikes.
+*   **Northern Lights**: All 12 palettes (Borealis, Australis, Polar, Deep, Plasma, etc.).
+*   **Cyberpunk Lines**: The rainbow-bracket HUD with SVG data lines and pulse.
+*   **Neon Grid**: Retrowave perspective grid with horizon glow.
+
+### 3. The Studio UI
 *   **Dynamic Controls**: Real-time sliders for Speed (`dt`), Complexity (Point counts), Scale, and Opacity.
 *   **Aspect Ratio Switching**: One-click toggles for Mobile (`9:16`), Desktop (`16:9`), and Ultrawide (`21:9`).
 *   **Live Export**: High-resolution Canvas-to-PNG export with resolution scaling (4K support).
@@ -40,31 +49,33 @@ The app must include all 8 tiers of mathematical visualizations:
 
 ## 🤖 THE GENESIS PROMPT (SEND THIS TO START)
 
-"Hey Antigravity, we are building 'WALLPAPER STUDIO'—a standalone generative art app based on the Panospace Vector Dynamics infrastructure. This is a 100% separate project.
+"Hey Antigravity, we are building 'WALLPAPER STUDIO'—a standalone generative art app based on the Panospace Vector Dynamics infrastructure. This is a 100% separate project, but we are stealing EVERYTHING from the source.
 
 **Phase 1: Foundation**
-1. Initialize a Vite-React project with a pure black background.
-2. Implement a 'Master Engine' that routes to different Mathematical Visualizers.
-3. Import the 'Transcendence' and 'Cosmic' logic: We need the IFS Fractal Flames, the Spectral Snake with power-decay trails, and the 6D Calabi-Yau manifold projections.
+1. Initialize a Vite-React project.
+2. Create a 'BannerRenderer' component that can swap between 70+ modes.
+3. Import the 'Transcendence' logic (Math Banners) as simply one category among many.
 
-**Phase 2: Visual Excellence**
-1. Re-implement the 'Panospace Overlay System': Add a cumulative Scanline overlay and a Radial Vignette that darkens the edges for depth.
-2. Every mathematical core must use 'Additive Blending' (globalCompositeOperation = 'screen' or 'lighter') for that glowing neon look.
-3. Ensure all 10 brand-colored entities bounce across the screen with smooth, high-fps physics.
+**Phase 2: The Great Port (Categories)**
+You must meticulously recreate these categories from the Blueprint:
+- **Windows**: (15 variants) Static background + animated rain/snow/stars/traffic.
+- **Liquid**: (2 variants) WebGL fluid simulations.
+- **Cosmic**: (20+ variants) Particle systems and rotating 3D meshes.
+- **Abstract**: (10+ variants) Oscilloscopes and geometric wireframes.
+- **City & Ocean**: Parallax scrolling layers.
 
-**Phase 3: Studio UI**
-1. Build a 'Glassmorphism' control panel on the left. It should be semi-transparent with a blur effect.
-2. Add sliders to control the internal math (e.g., speed of the Fractal Flame, length of the Spectral Snake's tail).
-3. Add a 'CAPTURE' button that saves the current canvas state as a 4K resolution PNG.
+**Phase 3: The Overlay Engine**
+Implement the 'Overlay Layer' that sits on top of any banner:
+- **Planet Mode**: Port the CSS `conic-gradient` earth horizon and stars.
+- **Aurora Mode**: Port the SVG `<filter>` turbulence for the northern lights.
+- **Cyberpunk Link**: Port the SVG brackets and data lines.
 
-**Phase 4: The Mathematical Library**
-Stitch in all existing visual variants from Panospace:
-- Strange Attractors (Rossler/Lorenz)
-- Topological Manifolds (Mobius/Enneper)
-- Quantum Probabilities (Wave/Foam)
-- Geometric Flora (Fibonacci/Spiral)
+**Phase 4: Studio UI**
+1. Build a 'Glassmorphism' control panel on the left.
+2. Add a 'CAPTURE' button that saves the current canvas state as a 4K resolution PNG.
+3. Add a 'Theme Selector' dropdown that is categorized (Window, Cosmic, Abstract, etc.).
 
-Do not use any external CSS libraries. Use vanilla CSS with modern variables. The goal is an app that looks like a high-end discovery engine for mathematical beauty."
+Do not use any external CSS libraries. Use vanilla CSS with modern variables. The goal is an app that looks like a high-end discovery engine for unique wallpapers."
 
 ---
 

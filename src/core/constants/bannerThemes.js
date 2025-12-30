@@ -107,41 +107,218 @@ export const BANNER_TYPES = [
         needsColor: false,
         description: 'Mesmerizing undulating grid of light'
     },
+    // --- VECTOR DYNAMICS PACK ---
     {
-        id: 'abstract_oscilloscope',
-        label: 'Vector Dynamics',
-        previewGradient: 'linear-gradient(to right, #000 0%, #7FFFD4 50%, #000 100%)',
+        id: 'math_god_equation',
+        label: 'God Elevation',
+        previewGradient: 'linear-gradient(135deg, #FFD700, #FFFFFF, #7FFFD4)',
         needsColor: true,
-        description: 'Advanced mathematical projections and vector visualizations.',
+        description: 'The Ultimate Mathematical Singularity. A living, breathing chaotic attractor.'
+    },
+    {
+        id: 'math_solar_system',
+        label: 'Orbital Mechanics',
+        previewGradient: 'radial-gradient(circle, #FFFFFF, #000)',
+        needsColor: true,
+        description: 'Dual solar systems orbiting in perfect synchronization.',
         customVariants: [
-            { id: 'os_classic', name: 'Digital Sphere', color: '#7FFFD4' },
-            { id: 'os_amber', name: 'Vintage Amber', color: '#FF914D' },
-            { id: 'os_cyan', name: 'Digital Cyan', color: '#1B82FF' },
-            { id: 'os_daft', name: 'Prism Geometry', color: 'linear-gradient(135deg, #FF5C8A, #1B82FF, #7FFFD4)' },
-            { id: 'os_tesseract', name: 'Hypercube 4D', color: 'linear-gradient(45deg, #5A3FFF, #7FFFD4)' },
-            { id: 'math_aizawa', name: 'Aizawa Chaos', color: '#7FFFD4' },
-            { id: 'math_lorenz', name: 'Lorenz Logic', color: '#1B82FF' },
-            { id: 'math_rossler', name: 'Rossler Band', color: '#FF5C8A' },
-            { id: 'math_knot', name: 'Torus Knot', color: '#1B82FF' },
-            { id: 'math_enneper', name: 'Enneper Field', color: '#5A3FFF' },
-            { id: 'math_mobius', name: 'Mobius Loop', color: '#7FFFD4' },
-            { id: 'math_pentachoron', name: '5-Cell Simplex', color: '#5A3FFF' },
-            { id: 'math_24cell', name: '24-Cell Project', color: '#1B82FF' },
-            { id: 'math_wave', name: 'Quantum Wave', color: '#7FFFD4' },
-            { id: 'math_interference', name: 'Interference', color: '#1B82FF' },
-            { id: 'math_quantum_foam', name: 'Quantum Foam', color: '#FF5C8A' },
-            { id: 'math_phyllotaxis', name: 'Golden Ratio', color: '#7FFFD4' },
-            { id: 'math_fibonacci', name: 'Fibonacci Life', color: '#FFFFFF' },
-            { id: 'math_lissajous', name: 'Harmonic Field', color: '#1B82FF' },
-            { id: 'math_hypotrochoid', name: 'Spirograph', color: '#FF5C8A' },
-            { id: 'math_supershape', name: 'Supershape', color: '#5A3FFF' },
-            { id: 'math_calabi', name: 'Calabi-Yau 6D', color: '#7FFFD4' },
-            { id: 'math_singularity', name: 'Event Horizon', color: '#000000' },
-            { id: 'math_ribbon', name: 'Attractor Ribbon', color: '#FF5C8A' },
-            { id: 'math_fire', name: 'Fractal Flame', color: '#FF5C8A' },
-            { id: 'math_mandala', name: 'Geo Symphony', color: '#5A3FFF' },
-            { id: 'math_nebula', name: 'Transcendence', color: '#7FFFD4' }
+            { id: 'solar_multi', name: 'Panospace Core', color: 'linear-gradient(135deg, #FF5C8A, #1B82FF, #7FFFD4)' },
+            { id: 'solar_mint', name: 'Mint', color: '#7FFFD4' },
+            { id: 'solar_pink', name: 'Solar Pink', color: '#FF5C8A' },
+            { id: 'solar_blue', name: 'Ion Blue', color: '#1B82FF' },
+            { id: 'solar_purple', name: 'Deep Orbit', color: '#5A3FFF' },
+            { id: 'solar_orange', name: 'Stellar Orange', color: '#FF914D' },
+            { id: 'solar_ice', name: 'Ice White', color: '#FFFFFF' }
         ]
+    },
+    {
+        id: 'os_classic',
+        label: 'Digital Sphere',
+        previewGradient: 'linear-gradient(to right, #000, #7FFFD4, #000)',
+        needsColor: false,
+        description: 'Classic green digital oscilloscope sphere'
+    },
+    {
+        id: 'os_amber',
+        label: 'Vintage Amber',
+        previewGradient: 'linear-gradient(to right, #000, #FF914D, #000)',
+        needsColor: false,
+        description: 'Retro monochrome amber display'
+    },
+    {
+        id: 'os_cyan',
+        label: 'Digital Cyan',
+        previewGradient: 'linear-gradient(to right, #000, #1B82FF, #000)',
+        needsColor: false,
+        description: 'High-tech blue vector grid'
+    },
+    {
+        id: 'os_daft',
+        label: 'Prism Geometry',
+        previewGradient: 'linear-gradient(135deg, #FF5C8A, #1B82FF, #7FFFD4)',
+        needsColor: false,
+        description: 'Multi-color geometric prism rotation'
+    },
+    {
+        id: 'os_tesseract',
+        label: 'Hypercube 4D',
+        previewGradient: 'linear-gradient(45deg, #5A3FFF, #7FFFD4)',
+        needsColor: false,
+        description: 'Four-dimensional tesseract projection'
+    },
+    {
+        id: 'math_aizawa',
+        label: 'Aizawa Chaos',
+        previewGradient: 'radial-gradient(circle, #7FFFD4, #000)',
+        needsColor: false,
+        description: 'Fluid-like chaotic attractor system'
+    },
+    {
+        id: 'math_lorenz',
+        label: 'Lorenz Logic',
+        previewGradient: 'radial-gradient(circle, #1B82FF, #000)',
+        needsColor: false,
+        description: 'The butterfly effect visualized'
+    },
+    {
+        id: 'math_rossler',
+        label: 'Rossler Band',
+        previewGradient: 'radial-gradient(circle, #FF5C8A, #000)',
+        needsColor: false,
+        description: 'Chaotic folding band structure'
+    },
+    {
+        id: 'math_knot',
+        label: 'Torus Knot',
+        previewGradient: 'radial-gradient(circle, #1B82FF, #000)',
+        needsColor: false,
+        description: 'Complex knotted geometry in 3D'
+    },
+    {
+        id: 'math_enneper',
+        label: 'Enneper Field',
+        previewGradient: 'radial-gradient(circle, #5A3FFF, #000)',
+        needsColor: false,
+        description: 'Self-intersecting minimal surface'
+    },
+    {
+        id: 'math_mobius',
+        label: 'Mobius Loop',
+        previewGradient: 'radial-gradient(circle, #7FFFD4, #000)',
+        needsColor: false,
+        description: 'Infinite non-orientable loop'
+    },
+    {
+        id: 'math_pentachoron',
+        label: '5-Cell Simplex',
+        previewGradient: 'linear-gradient(to right, #5A3FFF, #000)',
+        needsColor: false,
+        description: '4D simplex rotating in hyperspace'
+    },
+    {
+        id: 'math_24cell',
+        label: '24-Cell Project',
+        previewGradient: 'linear-gradient(to right, #1B82FF, #000)',
+        needsColor: false,
+        description: 'Complex 4D regular polytope'
+    },
+    {
+        id: 'math_wave',
+        label: 'Quantum Wave',
+        previewGradient: 'linear-gradient(to bottom, #000, #7FFFD4, #000)',
+        needsColor: false,
+        description: 'Oscillating quantum probability waves'
+    },
+    {
+        id: 'math_interference',
+        label: 'Interference',
+        previewGradient: 'linear-gradient(to bottom, #000, #1B82FF, #000)',
+        needsColor: false,
+        description: 'Wave interference patterns'
+    },
+    {
+        id: 'math_quantum_foam',
+        label: 'Quantum Foam',
+        previewGradient: 'linear-gradient(135deg, #FF5C8A, #000)',
+        needsColor: false,
+        description: 'Sub-atomic spacetime fluctuations'
+    },
+    {
+        id: 'math_phyllotaxis',
+        label: 'Golden Ratio',
+        previewGradient: 'radial-gradient(circle, #7FFFD4, #000)',
+        needsColor: false,
+        description: 'Organic growth spiral patterns'
+    },
+    {
+        id: 'math_fibonacci',
+        label: 'Fibonacci Life',
+        previewGradient: 'radial-gradient(circle, #FFFFFF, #000)',
+        needsColor: false,
+        description: 'Mathematical sequence of life'
+    },
+    {
+        id: 'math_lissajous',
+        label: 'Harmonic Field',
+        previewGradient: 'linear-gradient(45deg, #1B82FF, #000)',
+        needsColor: false,
+        description: 'Complex harmonic motion curves'
+    },
+    {
+        id: 'math_hypotrochoid',
+        label: 'Spirograph',
+        previewGradient: 'linear-gradient(45deg, #FF5C8A, #000)',
+        needsColor: false,
+        description: 'Geometric roulette curves'
+    },
+    {
+        id: 'math_supershape',
+        label: 'Supershape',
+        previewGradient: 'linear-gradient(45deg, #5A3FFF, #000)',
+        needsColor: false,
+        description: 'Gielis supershape formula visualization'
+    },
+    {
+        id: 'math_calabi',
+        label: 'Calabi-Yau 6D',
+        previewGradient: 'radial-gradient(circle, #7FFFD4, #5A3FFF, #000)',
+        needsColor: false,
+        description: 'String theory hidden dimensions'
+    },
+    {
+        id: 'math_singularity',
+        label: 'Event Horizon',
+        previewGradient: 'radial-gradient(circle, #000, #222)',
+        needsColor: false,
+        description: 'Black hole gravitational lensing'
+    },
+    {
+        id: 'math_ribbon',
+        label: 'Attractor Ribbon',
+        previewGradient: 'linear-gradient(to right, #FF5C8A, #000)',
+        needsColor: false,
+        description: 'Flowing chaos ribbon'
+    },
+    {
+        id: 'math_fire',
+        label: 'Fractal Flame',
+        previewGradient: 'radial-gradient(circle, #FF5C8A, #FF914D, #000)',
+        needsColor: false,
+        description: 'Recursive fractal fire'
+    },
+    {
+        id: 'math_mandala',
+        label: 'Geo Symphony',
+        previewGradient: 'radial-gradient(circle, #5A3FFF, #7FFFD4, #000)',
+        needsColor: false,
+        description: 'Rotating geometric mandala'
+    },
+    {
+        id: 'math_nebula',
+        label: 'Transcendence',
+        previewGradient: 'radial-gradient(circle, #7FFFD4, #1B82FF, #000)',
+        needsColor: false,
+        description: 'Nebula cloud simulation'
     },
     {
         id: 'abstract_lava_cube',
@@ -626,7 +803,7 @@ export const BANNER_TYPES = [
         id: 'cosmic_singularity_city',
         label: 'Cyber-Horizon',
         previewGradient: 'linear-gradient(to top, #000, #5A3FFF, #000)',
-        needsColor: false,
+        needsColor: true,
         isCosmic: true,
         description: 'Metropolis at the edge of forever'
     },
@@ -634,7 +811,7 @@ export const BANNER_TYPES = [
         id: 'cosmic_nebula',
         label: 'Deep Nebula',
         previewGradient: 'radial-gradient(circle, #2A0E61, #000)',
-        needsColor: false,
+        needsColor: true,
         isCosmic: true,
         description: 'Turbulent cosmic clouds'
     },
@@ -642,7 +819,7 @@ export const BANNER_TYPES = [
         id: 'cosmic_galaxy',
         label: 'Grand Galaxy',
         previewGradient: 'radial-gradient(circle, #FF5C8A, #1B82FF, #000)',
-        needsColor: false,
+        needsColor: true,
         isCosmic: true,
         description: 'A spiral of infinite color'
     },
@@ -714,7 +891,7 @@ export const BANNER_TYPES = [
         id: 'cosmic_ether',
         label: 'Ether',
         previewGradient: 'radial-gradient(circle, rgba(255,255,255,0.2), #000)',
-        needsColor: false,
+        needsColor: true,
         isCosmic: true,
         description: 'Next-Gen Glass OS'
     },
@@ -730,7 +907,7 @@ export const BANNER_TYPES = [
         id: 'system_memory',
         label: 'Memory Field',
         previewGradient: 'radial-gradient(#1B82FF 10%, #000 90%)',
-        needsColor: false,
+        needsColor: true,
         description: 'Data dreaming in the dark'
     },
     {
@@ -809,4 +986,284 @@ export const BANNER_TYPES = [
         description: 'High-velocity data streams in fluid motion.'
     },
 
+    // --- ADVANCED MATH VISUALIZATIONS (ADHD-FRIENDLY) ---
+
+    {
+        id: 'math_butterfly_effect',
+        label: 'Butterfly Effect',
+        previewGradient: 'linear-gradient(135deg, #000508 0%, #1B82FF 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Hypnotic Lorenz attractor chaos theory visualization.',
+        customVariants: [
+            { id: 'math_lorenz_classic', label: 'Butterfly Effect (Classic)' },
+            { id: 'math_lorenz_rainbow', label: 'Butterfly Effect (Rainbow)' }
+        ]
+    },
+    {
+        id: 'math_gravitational_dance',
+        label: 'Gravitational Dance',
+        previewGradient: 'linear-gradient(135deg, #00000a 0%, #7FFFD4 50%, #FF5C8A 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Mesmerizing particle physics simulation with gravitational attraction.'
+    },
+    {
+        id: 'math_golden_spiral',
+        label: 'Golden Ratio Spiral',
+        previewGradient: 'linear-gradient(135deg, #000510 0%, #FFD700 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Hypnotic Fibonacci spiral particles following the golden ratio.'
+    },
+
+    // --- ZEN & CALM PACK (ULTRA CHILL) ---
+
+    {
+        id: 'zen_silk_flow',
+        label: 'Silk Flow',
+        previewGradient: 'linear-gradient(135deg, #050208 0%, #7FFFD4 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Ethereal ribbons of light flowing like silk.'
+    },
+    {
+        id: 'zen_ripples',
+        label: 'Zen Ripples',
+        previewGradient: 'radial-gradient(circle, #7FFFD4 0%, #0a0a0f 70%)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Centering concentric waves reflecting calm waters.'
+    },
+    {
+        id: 'zen_bokeh',
+        label: 'Dreamy Bokeh',
+        previewGradient: 'radial-gradient(circle at 30% 30%, #FF5C8A 0%, #08050a 100%)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Soft floating orbs in a deep, peaceful blur.'
+    },
+    {
+        id: 'zen_mist',
+        label: 'Misty Clouds',
+        previewGradient: 'linear-gradient(to bottom, #0a0a1a, #1a1a2a)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Ethereal morning fog drifting through space.'
+    },
+    {
+        id: 'zen_stars',
+        label: 'Soothing Stars',
+        previewGradient: 'radial-gradient(circle, #7FFFD4 0%, #020205 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Slow, breathing starfield in a vast cosmic void.'
+    },
+    {
+        id: 'zen_monolith',
+        label: 'Zen Monolith',
+        previewGradient: 'linear-gradient(135deg, #030106 0%, #7FFFD4 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Rotating glass crystal with a glowing core.'
+    },
+    {
+        id: 'zen_lava',
+        label: 'Zen Lava',
+        previewGradient: 'radial-gradient(circle, #7FFFD4 0%, #040206 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Slow-motion melting liquid glass spheres.'
+    },
+    {
+        id: 'zen_mandala',
+        label: 'Zen Mandala',
+        previewGradient: 'radial-gradient(circle, #7FFFD4 0%, #020005 100%)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Breathing sacred geometry patterns.'
+    },
+    {
+        id: 'zen_aurora',
+        label: 'Zen Auroras',
+        previewGradient: 'linear-gradient(to right, #010408, #7FFFD4, #010408)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Vertical light curtains drifting like silk.'
+    },
+    {
+        id: 'zen_pulse',
+        label: 'Zen Pulse',
+        previewGradient: 'radial-gradient(circle, #7FFFD4 0%, #040104 100%)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Deep breathing orb of pure energy.'
+    },
+    {
+        id: 'zen_liquid',
+        label: 'Liquid Zen',
+        previewGradient: 'linear-gradient(to top, #050a08, #7FFFD4)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Rising glass bubbles in thick rhythmic oil.'
+    },
+    {
+        id: 'zen_neural',
+        label: 'Neural Zen',
+        previewGradient: 'linear-gradient(135deg, #020008 0%, #7FFFD4 100%)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Synaptic currents flowing through a calm mind.'
+    },
+    {
+        id: 'zen_cosmic',
+        label: 'Cosmic Zen',
+        previewGradient: 'radial-gradient(circle, #000005 0%, #7FFFD4 100%)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Breathing accretion disk around a silent star.'
+    },
+    {
+        id: 'zen_prismatic',
+        label: 'Prismatic Zen',
+        previewGradient: 'conic-gradient(#05050a, #7FFFD4, #05050a)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Light rays refracting through a rotating prism.'
+    },
+    {
+        id: 'zen_floral',
+        label: 'Floral Zen',
+        previewGradient: 'radial-gradient(circle, #0a0508 0%, #7FFFD4 100%)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Recursive symmetrical petal blooms.'
+    },
+    {
+        id: 'zen_rain',
+        label: 'Zen Rain',
+        previewGradient: 'linear-gradient(to bottom, #010508, #1B82FF)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Vertical mist falling slowly through a dark sky.'
+    },
+    {
+        id: 'zen_fireflies',
+        label: 'Zen Fireflies',
+        previewGradient: 'radial-gradient(circle, #FF914D, #050505)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Softly glowing spots drifting and fading in silence.'
+    },
+    {
+        id: 'zen_grid',
+        label: 'Zen Grid',
+        previewGradient: 'linear-gradient(to bottom, #030106, #5A3FFF)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Perspective grid of deep purple light.'
+    },
+    {
+        id: 'zen_heartbeat',
+        label: 'Zen Pulse Wave',
+        previewGradient: 'linear-gradient(to right, #050105, #FF5C8A, #050105)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'A single, oscillating heartbeat line.'
+    },
+    {
+        id: 'zen_raindrops',
+        label: 'Zen Raindrops',
+        previewGradient: 'radial-gradient(circle, #7FDBFF, #080a15)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Ripples appearing on a calm dark surface.'
+    },
+    {
+        id: 'zen_lanterns',
+        label: 'Zen Lanterns',
+        previewGradient: 'linear-gradient(to top, #0a0502, #FF914D)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Warm glowing lanterns drifting into the night.'
+    },
+    {
+        id: 'zen_tunnel',
+        label: 'Zen Tunnel',
+        previewGradient: 'radial-gradient(circle, #1B82FF, #000208)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Infinite receding geometric shapes.'
+    },
+    {
+        id: 'zen_borealis',
+        label: 'Zen Aurora Borealis',
+        previewGradient: 'linear-gradient(to right, #01050a, #7FFFD4, #01050a)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Dancing curtains of green and blue light.'
+    },
+    {
+        id: 'zen_geodesic',
+        label: 'Zen Sacred Sphere',
+        previewGradient: 'radial-gradient(circle, #FFFFFF, #000000)',
+        needsColor: true,
+        isCosmic: true,
+        description: 'Rotating wireframe sphere of pure light.'
+    },
+    {
+        id: 'zen_mercury',
+        label: 'Zen Mercury',
+        previewGradient: 'radial-gradient(circle, #FFFFFF, #0a0a0a)',
+        needsColor: true,
+        isCosmic: false,
+        description: 'Melting liquid metal blobs merging slowly.'
+    },
+
+    // --- CUSTOM SEED CATEGORY ---
+    {
+        id: 'custom_oscillator',
+        label: 'Seed Oscillator',
+        previewGradient: 'linear-gradient(45deg, #000, #7FFFD4, #000)',
+        needsColor: true,
+        isCustom: true,
+        needsSeed: true,
+        description: 'Procedurally generated dynamics derived from your unique code. Repeatable and infinite.'
+    },
+    {
+        id: 'custom_flow',
+        label: 'Flow Field',
+        previewGradient: 'linear-gradient(45deg, #021a1a, #2C7873, #021a1a)',
+        needsColor: true,
+        isCustom: true,
+        needsSeed: true,
+        description: 'Organic particle movement guided by mathematical noise. Flowing and liquid.'
+    },
+    {
+        id: 'custom_city',
+        label: 'Custom City',
+        previewGradient: 'linear-gradient(to top, #000, #1e90ff, #000)',
+        needsColor: false, // Color is derived from seed
+        isCustom: true,
+        needsSeed: true,
+        description: 'A procedural metropolis generated from your unique text code. Weather, layout, and atmosphere are all determined by the seed.'
+    },
+    {
+        id: 'custom_snapshot',
+        label: 'Space Snapshot',
+        previewGradient: 'radial-gradient(circle, #000 20%, #2A0E61 100%)',
+        needsColor: false, // Color is now internally managed by seed using Brand Colors
+        isCustom: true,
+        needsSeed: true,
+        description: 'A unique deep space view generated from your seed. Galaxy layout, stars, and planets are determined by your code.'
+    },
+    {
+        id: 'custom_voxel',
+        label: 'Voxel Biome',
+        previewGradient: 'linear-gradient(135deg, #4CAF50 30%, #795548 70%)',
+        needsColor: false,
+        isCustom: true,
+        needsSeed: true,
+        description: 'A procedural floating island generated from your seed. Discover rare biomes and structures.'
+    }
 ];

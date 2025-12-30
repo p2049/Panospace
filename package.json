@@ -57,6 +57,7 @@
     "react-icons": "^4.12.0",
     "react-router-dom": "^6.20.1",
     "react-window": "^2.2.3",
+    "simplex-noise": "^4.0.3",
     "stripe": "^20.0.0",
     "zustand": "^5.0.9"
   },

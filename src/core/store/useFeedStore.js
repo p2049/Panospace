@@ -126,7 +126,8 @@ export const useFeedStore = create(
             resetTooltip: () => {
                 set({ hasSeenSwipeTooltip: false });
                 if (typeof window !== 'undefined') {
-                    localStow                }
+                    localStow
+                }
             },
 
             // View Mode (Session Only - 'image' | 'list')
@@ -138,6 +139,14 @@ export const useFeedStore = create(
                 } else {
                     set({ feedViewMode: mode });
                 }
+            },
+
+            animationsEnabled: true,
+            toggleAnimations: () => {
+                set((state) => ({ animationsEnabled: !state.animationsEnabled }));
+            },
+            setAnimationsEnabled: (enabled) => {
+                set({ animationsEnabled: enabled });
             },
 
             // List View Filter (Session Only - 'all' | 'visual' | 'text')
@@ -160,7 +169,8 @@ export const useFeedStore = create(
                 createDefault: state.createDefault,
                 searchDefault: state.searchDefault,
                 ratingSystemDefault: state.ratingSystemDefault,
-                listFilter: state.listFilter
+                listFilter: state.listFilter,
+                animationsEnabled: state.animationsEnabled
             })
         }
     )
