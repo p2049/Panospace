@@ -1,5 +1,12 @@
 export const BANNER_TYPES = [
     {
+        id: 'custom_saved',
+        label: 'Saved',
+        previewGradient: 'linear-gradient(135deg, #7FFFD4, #1B82FF)',
+        isCustom: true,
+        description: 'Your collection of saved personal banner configurations.'
+    },
+    {
         id: 'stars',
         label: 'Stars',
         previewGradient: 'linear-gradient(to bottom, #000000, #111111)',
@@ -1265,5 +1272,59 @@ export const BANNER_TYPES = [
         isCustom: true,
         needsSeed: true,
         description: 'A procedural floating island generated from your seed. Discover rare biomes and structures.'
+    },
+    {
+        id: 'custom_digital_forest',
+        label: 'Digital Forest',
+        previewGradient: 'linear-gradient(to top, #000, #0f0)',
+        needsColor: false,
+        isCustom: true,
+        needsSeed: true,
+        description: 'Recursive high-tech forest composed of glowing circuit-trees.'
+    },
+    {
+        id: 'custom_digital_jungle',
+        label: 'Digi Jungle',
+        previewGradient: 'linear-gradient(to top, #051a14, #4a1d36, #ff4d00)',
+        needsColor: false,
+        isCustom: true,
+        needsSeed: true,
+        description: 'Lush procedural rainforest with exotic wildlife and hidden ponds.'
+    },
+    {
+        id: 'custom_liquid_fractal',
+        label: 'Liquid Fusion',
+        previewGradient: 'linear-gradient(135deg, #7FFFD4, #5A3FFF)',
+        needsColor: false,
+        isCustom: true,
+        needsSeed: true,
+        description: 'Deep-space liquid glass fractal fusion with real-time metaball physics.'
+    },
+    {
+        id: 'custom_jazz_cup',
+        label: 'Jazz',
+        previewGradient: 'linear-gradient(135deg, #ffffff 0%, #00A8A8 50%, #892CDC 100%)',
+        needsColor: false, // Preset palettes
+        isCustom: true,
+        needsSeed: true,
+        description: '90s paper cup aesthetic. Teal blobs, purple squiggles, and screen-printed grain.'
+    },
+    {
+        id: 'custom_memphis_pattern',
+        label: 'Memphis Pattern',
+        previewGradient: 'linear-gradient(45deg, #000 25%, #FF00CC 25%, #FF00CC 50%, #000 50%, #000 75%, #00DDFF 75%, #00DDFF 100%)',
+        needsColor: false,
+        isCustom: true,
+        needsSeed: true,
+        description: '80s/90s high-contrast geometric confetti. Randomized zigzags, squiggles, and shapes.'
+    },
+    {
+        id: 'custom_aquarium_abyss',
+        label: 'Aquarium Abyss',
+        previewGradient: 'linear-gradient(to bottom, #001421, #000)',
+        needsColor: false,
+        isCustom: true,
+        needsSeed: true,
+        description: 'A fullscreen procedural underwater ecosystem. Seed determines biomes, plant life, and the appearance of rare sharks.'
     }
 ];

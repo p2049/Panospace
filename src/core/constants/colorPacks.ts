@@ -7,7 +7,8 @@ export interface ColorOption {
 }
 
 // export const GLASS_COLOR = 'rgba(255, 255, 255, 0.3)'; // Removed
-export const BRAND_RAINBOW = 'conic-gradient(from 0deg, #FF914D, #FF5C8A, #FFB7D5, #5A3FFF, #A7B6FF, #1B82FF, #7FDBFF, #7FFFD4, #FF914D)';
+export const BRAND_COLORS = ['#FF914D', '#FF5C8A', '#FFB7D5', '#5A3FFF', '#A7B6FF', '#1B82FF', '#7FDBFF', '#7FFFD4'];
+export const BRAND_RAINBOW = `conic-gradient(from 0deg, ${[...BRAND_COLORS, BRAND_COLORS[0]].join(', ')})`;
 
 export const FREE_COLOR_PACK: ColorOption[] = [
     { id: 'transparent-border', name: 'Transparent', color: 'transparent', isPremium: false },

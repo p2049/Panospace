@@ -7,7 +7,7 @@ import { useLayoutEngine } from '../../core/responsive/useLayoutEngine';
  * Implements the Visual Overlay (Lens) system.
  * Applies display and capture simulations to the banner background.
  */
-const BannerOverlayRenderer = ({ overlays = [], monochromeColor, children, target = 'banner' }) => {
+const BannerOverlayRenderer = ({ overlays = [], monochromeColor, children, target = 'banner', childrenOnTop = false }) => {
     const { isPortrait, isMobile } = useLayoutEngine();
     const isSimplified = isPortrait && isMobile;
 
@@ -39,7 +39,7 @@ const BannerOverlayRenderer = ({ overlays = [], monochromeColor, children, targe
             <div style={{
                 position: 'absolute',
                 inset: 0,
-                zIndex: 1,
+                zIndex: childrenOnTop ? 200 : 1, // Move to top if requested
                 filter: pixelOverlay ? `url(#pixelate-filter)` : undefined
             }}>
                 {children}

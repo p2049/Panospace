@@ -333,6 +333,7 @@ const Profile = () => {
                         speed: user.profileTheme?.bannerSpeed || 1.0
                     }}
                     overlays={user.profileTheme?.overlays || []}
+                    showGenInfo={user.profileTheme?.showGenInfo}
                     profileBorderColor={user.profileTheme?.borderColor}
                 />
 

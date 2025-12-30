@@ -8,16 +8,22 @@ const BannerColorSelector = ({ selectedColor, onSelect, customVariants }) => {
     // Usually neon/accent colors should not be black.
     // prompt says "Only use the existing PanoSpace theme colors... NO additional colors."
     // ALL_COLORS includes 'event-horizon-black' which might be invisible on black bg.
-    // I will filter out black.
-    const displayColors = customVariants || ALL_COLORS.filter(c => c.color !== '#000000');
+    // Filter out black (invisible on bg), gradients (requested removal), and transparent (only for borders)
+    const displayColors = customVariants || ALL_COLORS.filter(c =>
+        c.color !== '#000000' &&
+        c.color !== 'transparent'
+    );
 
     return (
         <div className="custom-gradient-scrollbar" style={{
             display: 'flex',
             gap: '12px',
             overflowX: 'auto',
-            padding: '12px 4px', // Added vertical padding to prevent glow clipping
-            WebkitOverflowScrolling: 'touch'
+            padding: '15px 15px', // Increased padding to prevent glow clipping (10px shadow + safety)
+            WebkitOverflowScrolling: 'touch',
+            width: 'fit-content',
+            maxWidth: '100%',
+            margin: '0 auto'
         }}>
 
             {displayColors.map((opt) => {

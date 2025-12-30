@@ -6,7 +6,7 @@ import { db } from '@/firebase';
 // storage imports removed as they are handled by storageUploader
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/context/ToastContext';
-import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock, FaChevronLeft, FaChevronRight, FaStar, FaRegStar } from 'react-icons/fa';
+import { FaArrowLeft, FaCamera, FaSave, FaCheck, FaInfoCircle, FaLock, FaChevronLeft, FaChevronRight, FaStar, FaRegStar, FaTrash, FaRegSmile } from 'react-icons/fa';
 import { ART_DISCIPLINES } from '@/core/constants/artDisciplines';
 import { PROFILE_GRADIENTS, getGradientBackground, getCurrentGradientId, getUnlockedGradients } from '@/core/constants/gradients';
 import { ALL_COLORS, BRAND_RAINBOW } from '@/core/constants/colorPacks';
@@ -71,9 +71,10 @@ const EditProfile = () => {
     const [usernameColor, setUsernameColor] = useState('#FFFFFF'); // Default white
     const [bannerMode, setBannerMode] = useState('stars'); // 'stars' or 'gradient'
     const [bannerColor, setBannerColor] = useState('#7FFFD4'); // Separate from border color
-    const [bannerSeed, setBannerSeed] = useState('panospace');
+    const [bannerSeed, setBannerSeed] = useState(Math.random().toString(36).substring(7));
     const [bannerSpeed, setBannerSpeed] = useState(1.0);
     const [useStarsOverlay, setUseStarsOverlay] = useState(false);
+    const [showGenInfo, setShowGenInfo] = useState(false);
     const [textGlow, setTextGlow] = useState(false);
     const [selectedOverlays, setSelectedOverlays] = useState([]); // This tracks Banner Overlays (legacy name kept for safety)
     const [profileOverlays, setProfileOverlays] = useState([]); // Tracks Profile Picture Overlays
@@ -83,6 +84,8 @@ const EditProfile = () => {
     const [pfpOscColor, setPfpOscColor] = useState('#7FFFD4');
     const [showOscillatorPopup, setShowOscillatorPopup] = useState(false);
     const [catalogMode, setCatalogMode] = useState(null); // 'banner' | 'overlay' | null
+    const [savedBanners, setSavedBanners] = useState([]); // Array of saved banner objects
+    const [presetName, setPresetName] = useState(''); // Name for the next saved banner
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -122,12 +125,14 @@ const EditProfile = () => {
                         setBannerSeed(data.profileTheme.bannerSeed || 'panospace');
                         setBannerSpeed(data.profileTheme.bannerSpeed !== undefined ? data.profileTheme.bannerSpeed : 1.0);
                         setUseStarsOverlay(data.profileTheme.useStarsOverlay || false);
+                        setShowGenInfo(data.profileTheme.showGenInfo || false);
                         setTextGlow(data.profileTheme.textGlow || false);
                         setPixelGlow(data.profileTheme.pixelGlow || false);
                         setPixelGrid(data.profileTheme.pixelGrid !== false); // Default to true if undefined
                         setSelectedOverlays(data.profileTheme.overlays || []);
                         setProfileOverlays(data.profileTheme.profileOverlays || data.profileTheme.overlays || []); // Fallback to matching banner if new
                         setPixelAvatarData(data.pixel_avatar_data || null); // Load raw pixel data if exists
+                        setSavedBanners(data.profileTheme?.savedBanners || []);
                     }
                 }
             }
@@ -143,14 +148,17 @@ const EditProfile = () => {
     const [pixelAvatarData, setPixelAvatarData] = useState(null); // The raw pixel array (256 length)
     const [showDefaultIconPopup, setShowDefaultIconPopup] = useState(false); // Popup state for default icons
 
+    // Filter out multi-color/gradient options for borders
+    const availableBorderColors = ALL_COLORS.filter(c => !c.isGradient && c.color !== 'brand');
+
     const cycleBorderColor = (direction) => {
-        const currentIndex = ALL_COLORS.findIndex(c => c.color === profileBorderColor);
+        const currentIndex = availableBorderColors.findIndex(c => c.color === profileBorderColor);
         let nextIndex = (currentIndex !== -1 ? currentIndex : 0) + direction;
 
-        if (nextIndex < 0) nextIndex = ALL_COLORS.length - 1;
-        if (nextIndex >= ALL_COLORS.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = availableBorderColors.length - 1;
+        if (nextIndex >= availableBorderColors.length) nextIndex = 0;
 
-        setProfileBorderColor(ALL_COLORS[nextIndex].color);
+        setProfileBorderColor(availableBorderColors[nextIndex].color);
     };
 
     const cycleDefaultIcon = (direction) => {
@@ -362,6 +370,11 @@ const EditProfile = () => {
         if (mode === 'custom_oscillator' && bannerSpeed > 1.0) {
             setBannerSpeed(1.0);
         }
+
+        // Randomize Seed for Custom Generative Banners
+        if (mode.startsWith('custom_')) {
+            setBannerSeed(Math.random().toString(36).substring(7));
+        }
     };
 
     const handleBannerColorChange = (colorId) => {
@@ -371,6 +384,50 @@ const EditProfile = () => {
             setStarColor(NORTHERN_LIGHTS_STAR_DEFAULTS[colorId]);
             setUseStarsOverlay(true);
         }
+    };
+
+    const handleSaveCurrentBanner = () => {
+        if (savedBanners.length >= 25) {
+            showToast("You've reached the limit of 25 saved banners.", 'info');
+            return;
+        }
+
+        const defaultName = `gen${savedBanners.length + 1}`;
+        const finalName = presetName.trim() || defaultName;
+
+        const newSaved = {
+            id: `saved_${Date.now()}`,
+            name: finalName,
+            mode: bannerMode,
+            seed: bannerSeed,
+            color: bannerColor,
+            speed: bannerSpeed,
+            starSettings: {
+                enabled: useStarsOverlay,
+                color: starColor
+            }
+        };
+
+        setSavedBanners(prev => [...prev, newSaved]);
+        setPresetName(''); // Reset
+        showToast(`Configuration saved as "${finalName}"`, 'success');
+    };
+
+    const handleApplySavedBanner = (saved) => {
+        setBannerMode(saved.mode);
+        setBannerSeed(saved.seed);
+        setBannerColor(saved.color);
+        setBannerSpeed(saved.speed || 1.0);
+        if (saved.starSettings) {
+            setUseStarsOverlay(saved.starSettings.enabled);
+            setStarColor(saved.starSettings.color);
+        }
+        showToast(`Applied: ${saved.name}`, 'success');
+    };
+
+    const handleDeleteSavedBanner = (id) => {
+        setSavedBanners(prev => prev.filter(b => b.id !== id));
+        showToast("Saved banner removed.", 'info');
     };
 
     const handleSavePixelAvatar = async (payload) => {
@@ -661,13 +718,15 @@ const EditProfile = () => {
                     bannerSeed: bannerSeed || 'panospace',
                     bannerSpeed: bannerSpeed,
                     useStarsOverlay: useStarsOverlay || false,
+                    showGenInfo: showGenInfo || false,
                     textGlow: textGlow || false,
                     pixelGlow: pixelGlow || false, // Persist pixel glow
                     pixelGrid: pixelGrid, // Persist grid preference
                     overlays: selectedOverlays || [],
                     profileOverlays: profileOverlays || [],
                     pfpSeed: pfpSeed, // Duplicate to theme for safety
-                    pfpOscColor: pfpOscColor // Duplicate to theme
+                    pfpOscColor: pfpOscColor, // Duplicate to theme
+                    savedBanners: savedBanners || []
                 },
                 pixel_avatar_data: pixelAvatarData, // Save raw pixels for re-editing
                 defaultIconId: defaultIconId, // Save the selected default icon
@@ -1009,8 +1068,6 @@ const EditProfile = () => {
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value.toLowerCase())}
                                         onKeyDown={handleUsernameKeyDown}
-                                        onFocus={() => setShowSymbolGuide(true)} // Using existing state or new one for emoji bar? User said "emoji bar only pops up when active"
-                                        onBlur={() => setTimeout(() => setShowSymbolGuide(false), 200)} // Delay for click
                                         placeholder="@yourname"
                                         style={{
                                             width: 'calc(100% - 80px)', // Avoid arrows
@@ -1059,6 +1116,30 @@ const EditProfile = () => {
                                         }}
                                     >
                                         <FaChevronRight size={12} />
+                                    </button>
+                                    {/* Symbol Guide Toggle */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSymbolGuide(prev => !prev)}
+                                        style={{
+                                            position: 'absolute',
+                                            right: '50px', // Positioned inside next to arrow
+                                            background: showSymbolGuide ? 'rgba(127, 255, 212, 0.2)' : 'transparent',
+                                            border: 'none',
+                                            color: showSymbolGuide ? '#7FFFD4' : 'rgba(255,255,255,0.3)',
+                                            borderRadius: '50%',
+                                            width: '28px',
+                                            height: '28px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            zIndex: 25,
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="Toggle Symbols"
+                                    >
+                                        <FaRegSmile size={14} />
                                     </button>
                                 </div>
                             </div>
@@ -1564,6 +1645,7 @@ const EditProfile = () => {
                                         speed: bannerSpeed
                                     }}
                                     overlays={selectedOverlays}
+                                    showGenInfo={showGenInfo}
                                     profileBorderColor={profileBorderColor}
                                 />
                                 <div style={{ position: 'absolute', top: '8px', right: '12px', background: 'rgba(0,0,0,0.6)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.6rem', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', zIndex: 1000 }}>
@@ -1580,11 +1662,14 @@ const EditProfile = () => {
                                     bannerColor={bannerColor}
                                     onColorSelect={handleBannerColorChange}
                                     onOpenCatalog={() => setCatalogMode('banner')}
+                                    savedBanners={savedBanners}
+                                    onApplySaved={handleApplySavedBanner}
+                                    onDeleteSaved={handleDeleteSavedBanner}
                                 />
                             </div>
 
                             {/* CUSTOM SEED INPUT (BANNER) */}
-                            {['custom_oscillator', 'custom_flow', 'custom_city', 'custom_snapshot', 'custom_voxel'].includes(bannerMode) && (
+                            {['custom_oscillator', 'custom_flow', 'custom_city', 'custom_snapshot', 'custom_voxel', 'custom_digital_forest', 'custom_digital_jungle', 'custom_liquid_fractal', 'custom_aquarium_abyss', 'custom_jazz_cup', 'custom_memphis_pattern'].includes(bannerMode) && (
                                 <div style={{
                                     marginBottom: '1rem',
                                     padding: '12px',
@@ -1603,6 +1688,7 @@ const EditProfile = () => {
                                         type="text"
                                         value={bannerSeed}
                                         onChange={(e) => setBannerSeed(e.target.value)}
+                                        onFocus={() => setBannerSeed('')} // Clear on click as requested
                                         placeholder="Enter any code..."
                                         style={{
                                             width: '100%',
@@ -1649,6 +1735,100 @@ const EditProfile = () => {
                                             }}
                                         />
                                     </div>
+
+                                    {/* PRESET NAME INPUT */}
+                                    <div style={{ marginTop: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#7FFFD4', textTransform: 'uppercase' }}>
+                                                Preset Name (Optional)
+                                            </label>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={presetName}
+                                            onChange={(e) => setPresetName(e.target.value)}
+                                            placeholder={`Default: gen${savedBanners.length + 1}...`}
+                                            style={{
+                                                width: '100%',
+                                                background: '#000',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '8px',
+                                                padding: '10px 12px',
+                                                color: '#fff',
+                                                fontSize: '0.9rem',
+                                                fontFamily: 'monospace',
+                                                outline: 'none'
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* SHOW GEN INFO TOGGLE */}
+                                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#7FFFD4', textTransform: 'uppercase' }}>Show Generation Info</span>
+                                            <span style={{ fontSize: '0.6rem', color: '#888' }}>Display deterministic engine data on public profile</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowGenInfo(!showGenInfo)}
+                                            style={{
+                                                width: '40px',
+                                                height: '20px',
+                                                borderRadius: '10px',
+                                                background: showGenInfo ? '#7FFFD4' : 'rgba(255,255,255,0.1)',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                position: 'relative',
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                            }}
+                                        >
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '2px',
+                                                left: showGenInfo ? '22px' : '2px',
+                                                width: '16px',
+                                                height: '16px',
+                                                borderRadius: '50%',
+                                                background: showGenInfo ? '#000' : '#fff',
+                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                            }} />
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveCurrentBanner}
+                                        style={{
+                                            marginTop: '20px',
+                                            width: '100%',
+                                            padding: '12px',
+                                            background: 'rgba(127, 255, 212, 0.2)',
+                                            border: '2px solid #7FFFD4',
+                                            borderRadius: '10px',
+                                            color: '#7FFFD4',
+                                            fontSize: '0.8rem',
+                                            fontWeight: '900',
+                                            textTransform: 'uppercase',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '8px',
+                                            boxShadow: '0 0 15px rgba(127, 255, 212, 0.2)'
+                                        }}
+                                        onMouseOver={(e) => {
+                                            e.currentTarget.style.background = 'rgba(127, 255, 212, 0.3)';
+                                            e.currentTarget.style.boxShadow = '0 0 20px rgba(127, 255, 212, 0.4)';
+                                        }}
+                                        onMouseOut={(e) => {
+                                            e.currentTarget.style.background = 'rgba(127, 255, 212, 0.2)';
+                                            e.currentTarget.style.boxShadow = '0 0 15px rgba(127, 255, 212, 0.2)';
+                                        }}
+                                    >
+                                        <FaSave size={14} />
+                                        Save Current Generation
+                                    </button>
                                 </div>
                             )}
 
@@ -1668,7 +1848,7 @@ const EditProfile = () => {
                         */}
                             {/* Stars Overlay & Color - Expanded to Cities, Oceans, & Cosmic */}
                             {(bannerMode === 'gradient' || bannerMode === 'neonGrid' || bannerMode === 'cosmic-earth' || bannerMode === 'northern_lights' || bannerMode.startsWith('city') || (bannerMode.startsWith('ocean') && bannerMode !== 'underwaterY2K')) && (
-                                <div style={{ marginBottom: '1rem' }}>
+                                <div style={{ marginBottom: '1rem', padding: '10px' }}>
                                     <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         <button
                                             type="button"

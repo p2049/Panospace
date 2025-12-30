@@ -63,6 +63,12 @@ const FlowFieldBanner = React.lazy(() => import('./FlowFieldBanner'));
 const SeededCityBanner = React.lazy(() => import('./SeededCityBanner'));
 const DeepSpaceSnapshotBanner = React.lazy(() => import('./DeepSpaceSnapshotBanner'));
 const SeededVoxelBanner = React.lazy(() => import('./SeededVoxelBanner'));
+const DigitalForestBanner = React.lazy(() => import('./DigitalForestBanner'));
+const DigitalJungleBanner = React.lazy(() => import('./DigitalJungleBanner'));
+const LiquidFractalBanner = React.lazy(() => import('./LiquidFractalBanner'));
+const AquariumAbyssBanner = React.lazy(() => import('./AquariumAbyssBanner'));
+const JazzCupBanner = React.lazy(() => import('./JazzCupBanner'));
+const MemphisPatternBanner = React.lazy(() => import('./MemphisPatternBanner'));
 const SciFiUiBanner = React.lazy(() => import('./SciFiUiBanner'));
 const StaticSystemBanners = React.lazy(() => import('./SystemAbstractBanners'));
 const BannerOverlayRenderer = React.lazy(() => (import('./BannerOverlayRenderer')));
@@ -157,7 +163,143 @@ const resolveBannerColor = (color, profileBorderColor) => {
     return colorMap[color] || profileBorderColor || '#7FFFD4';
 };
 
-const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profileBorderColor }) => {
+const StaticStarField = React.memo(({ count, color, brandColors = [], isBrand = false, spread = 90 }) => {
+    const stars = React.useMemo(() => {
+        return [...Array(count)].map((_, i) => {
+            const starColor = isBrand && brandColors.length
+                ? brandColors[Math.floor(Math.random() * brandColors.length)]
+                : color;
+            return {
+                id: i,
+                size: Math.random() * 2 + 1,
+                top: Math.random() * spread + '%',
+                left: Math.random() * 100 + '%',
+                opacity: Math.random() * 0.7 + 0.3,
+                duration: Math.random() * 4 + 3,
+                delay: Math.random() * 5,
+                color: starColor,
+                glow: Math.random() * 4 + 1
+            };
+        });
+    }, [count, color, brandColors, isBrand, spread]);
+
+    return (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+            {stars.map(s => (
+                <div
+                    key={s.id}
+                    style={{
+                        position: 'absolute',
+                        width: s.size + 'px',
+                        height: s.size + 'px',
+                        background: s.color,
+                        borderRadius: '50%',
+                        top: s.top,
+                        left: s.left,
+                        opacity: s.opacity,
+                        boxShadow: `0 0 ${s.glow}px ${s.color}`,
+                        animation: `twinkle ${s.duration}s ease-in-out infinite`,
+                        animationDelay: `${s.delay}s`
+                    }}
+                />
+            ))}
+        </div>
+    );
+});
+
+const PS2SpiritGeometry = React.memo(({ theme, count = 15 }) => {
+    const elements = React.useMemo(() => {
+        const els = [];
+        for (let i = 0; i < count; i++) {
+            const isColumn = i % 3 !== 0;
+            const width = isColumn ? (40 + Math.random() * 120) : 1;
+            const xPos = Math.random() * 110 - 5;
+            const speed = 50 + Math.random() * 40;
+            const delay = -(Math.random() * 80);
+            const depth = -200 + (Math.random() * -600);
+            const blur = Math.max(0, (depth / -20));
+            els.push({ id: i, isColumn, width, xPos, speed, delay, depth, blur });
+        }
+        return els;
+    }, [count]);
+
+    return (
+        <>
+            {elements.map(e => (
+                <div
+                    key={e.id}
+                    style={{
+                        position: 'absolute',
+                        left: `${e.xPos}%`,
+                        top: '-20%',
+                        bottom: '-20%',
+                        width: `${e.width}px`,
+                        background: e.isColumn ? `linear-gradient(to right, transparent, ${theme.mutedCyan}dd, transparent)` : theme.ghostWhite,
+                        borderLeft: !e.isColumn ? `1px solid ${theme.ghostWhite}` : 'none',
+                        transformStyle: 'preserve-3d',
+                        transform: `translate3d(0, 0, ${e.depth}px)`,
+                        filter: `blur(${e.blur}px)`,
+                        opacity: e.isColumn ? 0.07 : 0.03,
+                        animation: `ps2SystemDrift ${e.speed}s linear infinite`,
+                        animationDelay: `${e.delay}s`,
+                        mixBlendMode: 'screen'
+                    }}
+                />
+            ))}
+        </>
+    );
+});
+
+const DeepUnderwaterLayers = React.memo(({ theme }) => {
+    const data = React.useMemo(() => {
+        const layers = [
+            { count: 6, z: -800, blur: 15, opacity: 0.2, speed: 45 },
+            { count: 8, z: -400, blur: 6, opacity: 0.15, speed: 35 },
+            { count: 5, z: 100, blur: 2, opacity: 0.1, speed: 25 }
+        ];
+        return layers.flatMap((layer, lIdx) =>
+            [...Array(layer.count)].map((_, i) => ({
+                id: `${lIdx}-${i}`,
+                width: 60 + Math.random() * 140,
+                xPos: Math.random() * 100,
+                delay: -(Math.random() * 40),
+                hScale: 1 + Math.random() * 2,
+                ...layer
+            }))
+        );
+    }, []);
+
+    return (
+        <>
+            {data.map(d => (
+                <div
+                    key={d.id}
+                    style={{
+                        position: 'absolute',
+                        left: `${d.xPos}%`,
+                        top: '-50%',
+                        bottom: '-50%',
+                        width: `${d.width}px`,
+                        transformStyle: 'preserve-3d',
+                        transform: `translate3d(0, 0, ${d.z}px) scaleY(${d.hScale})`,
+                        opacity: d.opacity,
+                        filter: `blur(${d.blur}px)`,
+                        animation: `ps2SystemIdle ${d.speed}s ease-in-out infinite alternate`,
+                        animationDelay: `${d.delay}s`
+                    }}
+                >
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        background: `linear-gradient(to bottom, transparent 0%, ${theme.core} 20%, ${theme.glow} 50%, ${theme.core} 80%, transparent 100%)`,
+                        boxShadow: `0 0 40px ${theme.glow}22`
+                    }} />
+                </div>
+            ))}
+        </>
+    );
+});
+
+const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profileBorderColor, showGenInfo = false }) => {
     // Resolve the final color to be used to avoid "solar_purple" and other ID strings
     // from crashing canvas gradients in simple components.
     const activeColor = resolveBannerColor(color, profileBorderColor);
@@ -165,7 +307,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
     const [showInfo, setShowInfo] = React.useState(false);
     const [copied, setCopied] = React.useState(false);
 
-    const isCustom = mode === 'custom_oscillator' || mode === 'custom_flow' || mode === 'custom_city' || mode === 'custom_snapshot' || mode === 'custom_voxel';
+    const isCustom = mode === 'custom_saved' || mode === 'custom_oscillator' || mode === 'custom_flow' || mode === 'custom_city' || mode === 'custom_snapshot' || mode === 'custom_voxel' || mode === 'custom_digital_forest' || mode === 'custom_digital_jungle' || mode === 'custom_liquid_fractal' || mode === 'custom_aquarium_abyss' || mode === 'custom_jazz_cup' || mode === 'custom_memphis_pattern';
     const seed = starSettings?.seed || 'panospace';
     const speed = starSettings?.speed || 1.0;
 
@@ -222,6 +364,48 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                 grid: '12x12 ISO',
                 biome: seed.substring(0, 3).toUpperCase()
             };
+        } else if (mode === 'custom_digital_forest') {
+            return {
+                name: 'DIGITAL FOREST',
+                version: 'v1.0',
+                trees: 30 + Math.floor(rand() * 20),
+                species: 'Binary Pine'
+            };
+        } else if (mode === 'custom_liquid_fractal') {
+            return {
+                name: 'LIQUID FUSION',
+                version: 'v2.1 (GPU)',
+                nodes: 128,
+                flow: 'Potential Field'
+            };
+        } else if (mode === 'custom_aquarium_abyss') {
+            return {
+                name: 'AQUARIUM ABYSS',
+                version: 'v1.0 (SIM)',
+                life: 30 + Math.floor(rand() * 20),
+                predators: seed.length % 2 === 0 ? 'ACTIVE' : 'NONE'
+            };
+        } else if (mode === 'custom_digital_jungle') {
+            return {
+                name: 'DIGITAL JUNGLE',
+                version: 'v1.0',
+                fauna: 5 + Math.floor(rand() * 10),
+                humidity: (80 + rand() * 15).toFixed(0) + '%'
+            };
+        } else if (mode === 'custom_jazz_cup') {
+            return {
+                name: 'JAZZ',
+                version: 'v3.0',
+                caffeine: '9000mg',
+                nostalgia: '100%'
+            };
+        } else if (mode === 'custom_memphis_pattern') {
+            return {
+                name: 'MEMPHIS GEN',
+                version: 'v1.0',
+                geometry: 'MAX',
+                chaos: 'ORDERED'
+            };
         }
         return null;
     }, [isCustom, mode, seed]);
@@ -235,6 +419,15 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
     };
 
     const renderContent = () => {
+        if (mode === 'custom_saved') {
+            return (
+                <div style={{ width: '100%', height: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ color: '#FFD700', fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.2em', opacity: 0.4 }}>
+                        SAVED PRESETS
+                    </div>
+                </div>
+            );
+        }
         // --- NEW CUSTOM SEED BANNER ---
         if (mode === 'custom_oscillator') {
             return <SeedOscillatorBanner seed={starSettings?.seed || 'panospace'} color={activeColor} speed={starSettings?.speed || 1.0} animationsEnabled={animationsEnabled} />;
@@ -247,6 +440,24 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
         }
         if (mode === 'custom_voxel') {
             return <SeededVoxelBanner seed={starSettings?.seed || 'panospace'} animationsEnabled={animationsEnabled} />;
+        }
+        if (mode === 'custom_digital_forest') {
+            return <DigitalForestBanner seed={starSettings?.seed || 'panospace'} speed={starSettings?.speed || 1.0} />;
+        }
+        if (mode === 'custom_digital_jungle') {
+            return <DigitalJungleBanner seed={starSettings?.seed || 'panospace'} />;
+        }
+        if (mode === 'custom_liquid_fractal') {
+            return <LiquidFractalBanner seed={starSettings?.seed || 'panospace'} color={activeColor} color2={profileBorderColor} speed={starSettings?.speed || 1.0} />;
+        }
+        if (mode === 'custom_aquarium_abyss') {
+            return <AquariumAbyssBanner seed={starSettings?.seed} color={activeColor} />;
+        }
+        if (mode === 'custom_jazz_cup') {
+            return <JazzCupBanner seed={starSettings?.seed} />;
+        }
+        if (mode === 'custom_memphis_pattern') {
+            return <MemphisPatternBanner seed={starSettings?.seed} />;
         }
 
         // --- NEW TECHNICOLOR TECH BANNER ---
@@ -516,33 +727,12 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                             top: 0, left: 0, right: 0, bottom: 0,
                             zIndex: 0
                         }}>
-                            {React.useMemo(() => {
-                                const brandColors = ['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D'];
-                                return [...Array(50)].map((_, i) => {
-                                    const thisStarColor = isBrand
-                                        ? brandColors[Math.floor(Math.random() * brandColors.length)]
-                                        : starColor;
-                                    return (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                position: 'absolute',
-                                                width: Math.random() * 2 + 1 + 'px',
-                                                height: Math.random() * 2 + 1 + 'px',
-                                                background: thisStarColor,
-                                                borderRadius: '50%',
-                                                top: Math.random() * 90 + '%', // Keep stars slightly higher
-                                                left: Math.random() * 100 + '%',
-                                                opacity: Math.random() * 0.6 + 0.2,
-                                                animation: `twinkle ${Math.random() * 4 + 2}s ease-in-out infinite`,
-                                                animationDelay: `${Math.random() * 3}s`,
-                                                boxShadow: `0 0 ${Math.random() * 4 + 2}px ${thisStarColor}`,
-                                                willChange: 'opacity'
-                                            }}
-                                        />
-                                    );
-                                });
-                            }, [isBrand, starColor])}
+                            <StaticStarField
+                                count={50}
+                                color={starColor}
+                                isBrand={isBrand}
+                                brandColors={['#7FFFD4', '#FF5C8A', '#5A3FFF', '#1B82FF', '#FF914D']}
+                            />
                         </div>
                     )}
 
@@ -621,26 +811,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
 
                     {/* 2. Stars (Ice Cold) */}
                     {starSettings?.enabled && (
-                        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-                            {React.useMemo(() => [...Array(60)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        position: 'absolute',
-                                        width: Math.random() * 2 + 1 + 'px',
-                                        height: Math.random() * 2 + 1 + 'px',
-                                        background: starColor,
-                                        borderRadius: '50%',
-                                        top: Math.random() * 90 + '%',
-                                        left: Math.random() * 100 + '%',
-                                        opacity: Math.random() * 0.7 + 0.3,
-                                        boxShadow: `0 0 ${Math.random() * 4 + 1}px ${starColor}`,
-                                        animation: `twinkle ${Math.random() * 4 + 3}s ease-in-out infinite`,
-                                        animationDelay: `${Math.random() * 5}s`
-                                    }}
-                                />
-                            )), [])}
-                        </div>
+                        <StaticStarField count={60} color={starColor} spread={90} />
                     )}
 
                     {/* 3. The Aurora Borealis (Matched Geometry to Planet) */}
@@ -808,26 +979,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
 
                     {/* Stars */}
                     {starSettings?.enabled && (
-                        <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-                            {React.useMemo(() => [...Array(80)].map((_, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        position: 'absolute',
-                                        width: Math.random() * 2 + 1 + 'px',
-                                        height: Math.random() * 2 + 1 + 'px',
-                                        background: p.star,
-                                        borderRadius: '50%',
-                                        top: Math.random() * 100 + '%',
-                                        left: Math.random() * 100 + '%',
-                                        opacity: Math.random() * 0.7 + 0.3,
-                                        boxShadow: `0 0 ${Math.random() * 3 + 1}px ${p.star}`,
-                                        animation: `twinkle ${Math.random() * 4 + 3}s ease-in-out infinite`,
-                                        animationDelay: `${Math.random() * 5}s`
-                                    }}
-                                />
-                            )), [p.star])}
-                        </div>
+                        <StaticStarField count={80} color={p.star} spread={100} />
                     )}
 
                     {/* THE AURORA BOREALIS - Full Sky Curtains */}
@@ -1437,43 +1589,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
 
                     {/* 3. Procedural Ghost Geometry (Vertical Indices & Light Fields) */}
                     <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
-                        {React.useMemo(() => {
-                            const count = 15;
-                            const elements = [];
-
-                            for (let i = 0; i < count; i++) {
-                                const isColumn = i % 3 !== 0; // Mix of light columns and ghost indices
-                                const width = isColumn ? (40 + Math.random() * 120) : 1;
-                                const xPos = Math.random() * 110 - 5;
-                                const speed = 50 + Math.random() * 40;
-                                const delay = -(Math.random() * 80);
-                                const depth = -200 + (Math.random() * -600);
-                                const blur = Math.max(0, (depth / -20)); // Distant elements are blurrier
-
-                                elements.push(
-                                    <div
-                                        key={i}
-                                        style={{
-                                            position: 'absolute',
-                                            left: `${xPos}%`,
-                                            top: '-20%',
-                                            bottom: '-20%',
-                                            width: `${width}px`,
-                                            background: isColumn ? `linear-gradient(to right, transparent, ${ps2Theme.mutedCyan}dd, transparent)` : ps2Theme.ghostWhite,
-                                            borderLeft: !isColumn ? `1px solid ${ps2Theme.ghostWhite}` : 'none',
-                                            transformStyle: 'preserve-3d',
-                                            transform: `translate3d(0, 0, ${depth}px)`,
-                                            filter: `blur(${blur}px)`,
-                                            opacity: isColumn ? 0.07 : 0.03,
-                                            animation: `ps2SystemDrift ${speed}s linear infinite`,
-                                            animationDelay: `${delay}s`,
-                                            mixBlendMode: 'screen'
-                                        }}
-                                    />
-                                );
-                            }
-                            return elements;
-                        }, [])}
+                        <PS2SpiritGeometry theme={ps2Theme} count={15} />
                     </div>
 
                     {/* 4. Atmosphere Layer - Global Fog and Banding */}
@@ -1542,47 +1658,7 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
                     <div style={{ position: 'absolute', inset: 0, background: oceanTheme.abyss, zIndex: 0 }} />
 
                     <div style={{ position: 'absolute', inset: '-20%', zIndex: 1, transformStyle: 'preserve-3d' }}>
-                        {React.useMemo(() => {
-                            const layers = [
-                                { count: 6, z: -800, blur: 15, opacity: 0.2, speed: 45 },
-                                { count: 8, z: -400, blur: 6, opacity: 0.15, speed: 35 },
-                                { count: 5, z: 100, blur: 2, opacity: 0.1, speed: 25 }
-                            ];
-
-                            return layers.flatMap((layer, lIdx) =>
-                                [...Array(layer.count)].map((_, i) => {
-                                    const width = 60 + Math.random() * 140;
-                                    const xPos = Math.random() * 100;
-                                    const delay = -(Math.random() * 40);
-                                    const heightScale = 1 + Math.random() * 2;
-
-                                    return (
-                                        <div
-                                            key={`${lIdx}-${i}`}
-                                            style={{
-                                                position: 'absolute',
-                                                left: `${xPos}%`,
-                                                top: '-50%',
-                                                bottom: '-50%',
-                                                width: `${width}px`,
-                                                transformStyle: 'preserve-3d',
-                                                transform: `translate3d(0, 0, ${layer.z}px) scaleY(${heightScale})`,
-                                                opacity: layer.opacity,
-                                                filter: `blur(${layer.blur}px)`,
-                                                animation: `ps2SystemIdle ${layer.speed}s ease-in-out infinite alternate`,
-                                                animationDelay: `${delay}s`
-                                            }}
-                                        >
-                                            <div style={{
-                                                position: 'absolute', inset: 0,
-                                                background: `linear-gradient(to bottom, transparent 0%, ${oceanTheme.core} 20%, ${oceanTheme.glow} 50%, ${oceanTheme.core} 80%, transparent 100%)`,
-                                                boxShadow: `0 0 40px ${oceanTheme.glow}22`
-                                            }} />
-                                        </div>
-                                    );
-                                })
-                            );
-                        }, [])}
+                        <DeepUnderwaterLayers theme={oceanTheme} />
                     </div>
 
                     <div style={{
@@ -1611,13 +1687,17 @@ const BannerThemeRenderer = ({ mode, color, starSettings, overlays = [], profile
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
             <React.Suspense fallback={<div style={{ width: '100%', height: '100%', background: '#000' }} />}>
-                <BannerOverlayRenderer overlays={overlays} monochromeColor={activeColor}>
+                <BannerOverlayRenderer
+                    overlays={overlays}
+                    monochromeColor={activeColor}
+                    childrenOnTop={mode === 'custom_liquid_fractal'}
+                >
                     {renderContent()}
                 </BannerOverlayRenderer>
             </React.Suspense>
 
             {/* Centralized Custom Banner HUD */}
-            {isCustom && (
+            {isCustom && showGenInfo && (
                 <>
                     {/* Info Toggle Button - Dropped 40px below banner bottom */}
                     <button
