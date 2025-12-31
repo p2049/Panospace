@@ -161,15 +161,23 @@ export const usePersonalizedFeed = ({
                 else if (feedType === 'CITY' && options.cityName) constraints.unshift(where('city', '==', options.cityName));
                 else if (feedType === 'EVENT' && options.eventId) constraints.unshift(where('eventId', '==', options.eventId));
 
-                // Apply Content Filter (Firestore)
-                // REMOVED STRICT FIRESTORE FILTER for HOME FEED to support legacy data.
-                // We will filter Art/Social in memory instead.
+                // Apply Post Type Filter (Firestore) - CRITICAL FIX
+                // Only filter if not requesting everything
+                if (!isAllPostType) {
+                    if (postType === 'text') {
+                        constraints.unshift(where('postType', '==', 'text'));
+                    } else if (postType === 'visual') {
+                        // For 'visual', we want standard posts AND legacy posts (missing field)
+                        // Firestore doesn't support "where field != value" efficiently mixed with other where clauses without composite indexes usually.
+                        // However, since 'text' is a specific opt-in type, we can filter for 'postType' != 'text' effectively by just filtering IN memory 
+                        // OR if we strictly assume all visuals have postType 'image' / 'visual'.
+                        // Safest approach: Don't filter 'visual' at DB level to capture legacy posts, filter in memory.
+                        // BUT user complains sorting is messed up. If we pull mixed data and filter 50% out, pagination breaks.
 
-                // Only keep strict social query if explicitly requested and NOT allowing both/art
-                // But as per user request, we remove Firestore filters for type entirely for global.
-
-                // Apply Post Type Filter (Firestore)
-                /* Removed for backward compatibility */
+                        // Let's rely on the memory filter for 'visual' to be safe for legacy, 
+                        // BUT for 'text' we MUST filter at DB level because they are sparse.
+                    }
+                }
 
                 logger.log('Feed: Strategy GLOBAL (Permissive)');
             }
@@ -231,7 +239,8 @@ export const usePersonalizedFeed = ({
                 if (postType === 'text') {
                     newPosts = newPosts.filter(p => p.postType === 'text');
                 } else if (postType === 'visual') {
-                    newPosts = newPosts.filter(p => p.postType !== 'text');
+                    // Treat undefined/null postType as visual (Legacy support)
+                    newPosts = newPosts.filter(p => !p.postType || p.postType !== 'text');
                 }
             }
 
