@@ -702,225 +702,7 @@ const MobileNavigation = () => {
 
 
 
-            {/* Filters Panel (Dedicated Feed Options for Mobile Vertical) */}
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                right: (isOpen && showFiltersPanel)
-                    ? (isMobileVertical ? '0' : '300px')
-                    : (isMobileVertical ? '-100%' : '-320px'),
-                width: isMobileVertical ? '300px' : '260px',
-                maxWidth: isMobileVertical ? '85vw' : 'none',
-                height: '100vh',
-                background: '#050505',
-                borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)',
-                transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                zIndex: isMobileVertical ? 100005 : 99999,
-                paddingTop: '80px',
-                display: 'flex',
-                flexDirection: 'column',
-                pointerEvents: isOpen ? 'auto' : 'none',
-                overflow: 'hidden'
-            }} onClick={(e) => e.stopPropagation()}>
 
-                {/* Header */}
-                <div style={{
-                    padding: '1.2rem 1.5rem',
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    minHeight: '60px'
-                }}>
-                    <h3 style={{
-                        margin: 0,
-                        fontSize: '0.85rem',
-                        color: '#fff',
-                        letterSpacing: '0.15em',
-                        fontWeight: '800',
-                        textAlign: 'center'
-                    }}>
-                        ORBIT FILTERS
-                    </h3>
-                </div>
-
-                {/* Filters Content */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem 1.5rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-
-                        {/* 1. Orbit Scope */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>ORBIT SCOPE</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                                {[
-                                    { id: 'all', label: 'ALL', color: BRAND_COLORS.mint, icon: FiLayers },
-                                    { id: 'following', label: 'ADDED', color: BRAND_COLORS.lightPink, icon: FiUsers },
-                                    { id: 'global', label: 'GLOBAL', color: BRAND_COLORS.ionBlue, icon: FiGlobe }
-                                ].map(option => {
-                                    const active = feedScope === option.id;
-                                    const Icon = option.icon;
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            onClick={() => setFeedScope(option.id)}
-                                            style={{
-                                                padding: '0.8rem 0.4rem',
-                                                borderRadius: '10px',
-                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
-                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
-                                                color: active ? option.color : '#666',
-                                                fontSize: '0.7rem',
-                                                fontWeight: '800',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                boxShadow: active ? `0 0 15px ${option.color}20` : 'none'
-                                            }}
-                                        >
-                                            <Icon size={14} />
-                                            {option.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* 2. Content Type */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>CONTENT TYPE</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                                {[
-                                    { id: 'all', label: 'ALL', color: BRAND_COLORS.mint, icon: FiLayers },
-                                    { id: 'art', label: 'ART', color: BRAND_COLORS.pink, icon: FiImage },
-                                    { id: 'social', label: 'SOCIAL', color: BRAND_COLORS.mint, icon: FiMessageSquare }
-                                ].map(option => {
-                                    const active = feedContentType === option.id;
-                                    const Icon = option.icon;
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            onClick={() => {
-                                                if (listFilter === 'text' && option.id !== 'social') setListFilter('all');
-                                                setFeedContentType(option.id);
-                                            }}
-                                            style={{
-                                                padding: '0.8rem 0.4rem',
-                                                borderRadius: '10px',
-                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
-                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
-                                                color: active ? option.color : '#666',
-                                                fontSize: '0.7rem',
-                                                fontWeight: '800',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                boxShadow: active ? `0 0 15px ${option.color}20` : 'none'
-                                            }}
-                                        >
-                                            <Icon size={14} />
-                                            {option.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* 3. List Filter */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>LIST FILTER</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                                {[
-                                    { id: 'all', label: 'ALL', color: BRAND_COLORS.mint, icon: FiLayers },
-                                    { id: 'visual', label: 'VISUAL', color: BRAND_COLORS.blue, icon: FiEye },
-                                    { id: 'text', label: 'PINGS', color: BRAND_COLORS.purple, icon: FiHash }
-                                ].map(option => {
-                                    const active = listFilter === option.id;
-                                    const Icon = option.icon;
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            onClick={() => {
-                                                if (option.id === 'text' && feedContentType !== 'social') setFeedContentType('social');
-                                                setListFilter(option.id);
-                                            }}
-                                            style={{
-                                                padding: '0.8rem 0.4rem',
-                                                borderRadius: '10px',
-                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
-                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
-                                                color: active ? option.color : '#666',
-                                                fontSize: '0.7rem',
-                                                fontWeight: '800',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                boxShadow: active ? `0 0 15px ${option.color}20` : 'none'
-                                            }}
-                                        >
-                                            <Icon size={14} />
-                                            {option.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* 4. Display Mode */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '1rem',
-                            marginTop: '0.5rem',
-                            borderTop: '1px solid rgba(255,255,255,0.05)',
-                            paddingTop: '2rem'
-                        }}>
-                            <div style={{ fontSize: '0.65rem', color: '#555', letterSpacing: '0.2em', fontWeight: '800' }}>DISPLAY MODE</div>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                {[
-                                    { id: 'image', label: 'VISUAL', icon: FiImage },
-                                    { id: 'list', label: 'LIST', icon: FiMenu }
-                                ].map(mode => {
-                                    const active = feedViewMode === mode.id;
-                                    const Icon = mode.icon;
-                                    return (
-                                        <button
-                                            key={mode.id}
-                                            onClick={() => setFeedViewMode(mode.id)}
-                                            style={{
-                                                flex: 1,
-                                                padding: '1rem',
-                                                borderRadius: '12px',
-                                                border: `1px solid ${active ? accentColor : 'rgba(255,255,255,0.05)'}`,
-                                                background: active ? `${accentColor}10` : 'transparent',
-                                                color: active ? '#fff' : '#444',
-                                                fontSize: '0.8rem',
-                                                fontWeight: '900',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.6rem',
-                                                transition: 'all 0.3s ease',
-                                                letterSpacing: '0.1em'
-                                            }}
-                                        >
-                                            <Icon size={16} color={active ? accentColor : '#444'} />
-                                            {mode.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* Custom Orbits Panel (Saved Custom Feeds) */}
             <div style={{
@@ -1960,19 +1742,177 @@ const MobileNavigation = () => {
 
                     {/* Feed Filters Option for Mobile Vertical (User Request) */}
                     {isMobileVertical && (
-                        <>
-                            <div onClick={toggleFiltersPanel} style={{
-                                ...navItemStyle,
-                                color: showFiltersPanel ? accentColor : '#fff',
-                                background: showFiltersPanel ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
-                                borderLeft: showFiltersPanel ? `2px solid ${accentColor}` : '2px solid transparent',
-                                marginTop: '1rem',
-                                borderTop: '1px solid rgba(255,255,255,0.1)'
-                            }}>
-                                <FaFilter color={showFiltersPanel ? accentColor : '#aaa'} size={18} />
-                                ORBIT FILTERS
+                        <div style={{
+                            marginTop: '1rem',
+                            borderTop: '1px solid rgba(255,255,255,0.1)',
+                            paddingTop: '1rem',
+                            paddingBottom: '4rem', // Extra space at bottom for scrolling
+                            paddingLeft: '0.5rem',
+                            paddingRight: '0.5rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.75rem' // Tighter spacing between rows
+                        }}>
+                            {/* 1. Orbit Scope - Compact Row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'all', label: 'ALL ORBITS', color: BRAND_COLORS.mint, icon: FiLayers },
+                                    { id: 'following', label: 'ADDED', color: BRAND_COLORS.lightPink, icon: FiUsers },
+                                    { id: 'global', label: 'GLOBAL', color: BRAND_COLORS.ionBlue, icon: FiGlobe }
+                                ].map(option => {
+                                    const active = feedScope === option.id;
+                                    const Icon = option.icon;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setFeedScope(option.id);
+                                            }}
+                                            style={{
+                                                padding: '0.6rem 0.2rem',
+                                                borderRadius: '8px',
+                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
+                                                color: active ? option.color : '#666',
+                                                fontSize: '0.65rem',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.3rem',
+                                                transition: 'all 0.2s',
+                                                boxShadow: active ? `0 0 10px ${option.color}15` : 'none',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Icon size={12} />
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        </>
+
+                            {/* 2. Content Type - Compact Row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'all', label: 'ALL TYPES', color: BRAND_COLORS.mint, icon: FiLayers },
+                                    { id: 'art', label: 'ART ONLY', color: BRAND_COLORS.pink, icon: FiImage },
+                                    { id: 'social', label: 'SOCIAL', color: BRAND_COLORS.mint, icon: FiMessageSquare }
+                                ].map(option => {
+                                    const active = feedContentType === option.id;
+                                    const Icon = option.icon;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (listFilter === 'text' && option.id !== 'social') setListFilter('all');
+                                                setFeedContentType(option.id);
+                                            }}
+                                            style={{
+                                                padding: '0.6rem 0.2rem',
+                                                borderRadius: '8px',
+                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
+                                                color: active ? option.color : '#666',
+                                                fontSize: '0.65rem',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.3rem',
+                                                transition: 'all 0.2s',
+                                                boxShadow: active ? `0 0 10px ${option.color}15` : 'none',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Icon size={12} />
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* 3. List Filter - Compact Row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                                {[
+                                    { id: 'all', label: 'ALL ITEMS', color: BRAND_COLORS.mint, icon: FiLayers },
+                                    { id: 'visual', label: 'VISUALS', color: BRAND_COLORS.blue, icon: FiEye },
+                                    { id: 'text', label: 'PINGS', color: BRAND_COLORS.purple, icon: FiHash }
+                                ].map(option => {
+                                    const active = listFilter === option.id;
+                                    const Icon = option.icon;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (option.id === 'text' && feedContentType !== 'social') setFeedContentType('social');
+                                                setListFilter(option.id);
+                                            }}
+                                            style={{
+                                                padding: '0.6rem 0.2rem',
+                                                borderRadius: '8px',
+                                                border: `1px solid ${active ? option.color : 'rgba(255,255,255,0.05)'}`,
+                                                background: active ? `${option.color}15` : 'rgba(255,255,255,0.02)',
+                                                color: active ? option.color : '#666',
+                                                fontSize: '0.65rem',
+                                                fontWeight: '800',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '0.3rem',
+                                                transition: 'all 0.2s',
+                                                boxShadow: active ? `0 0 10px ${option.color}15` : 'none',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Icon size={12} />
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* 4. Display Mode - Single Active Toggle */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFeedViewMode(feedViewMode === 'image' ? 'list' : 'image');
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.8rem',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${accentColor}`,
+                                    background: `${accentColor}15`,
+                                    color: accentColor, // Colored text to emphasize active state
+                                    fontSize: '0.7rem',
+                                    fontWeight: '900',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.6rem',
+                                    transition: 'all 0.3s ease',
+                                    letterSpacing: '0.1em',
+                                    cursor: 'pointer',
+                                    boxShadow: `0 0 15px ${accentColor}15`
+                                }}
+                            >
+                                {feedViewMode === 'image' ? (
+                                    <>
+                                        <FiImage size={14} />
+                                        VISUAL MODE
+                                    </>
+                                ) : (
+                                    <>
+                                        <FiMenu size={14} />
+                                        LIST MODE
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div >

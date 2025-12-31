@@ -6,6 +6,7 @@ import { FREE_COLOR_PACK } from '@/core/constants/colorPacks';
 import { RichTextRenderer } from '@/components/RichTextRenderer';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import PingDetailModal from '@/components/PingDetailModal';
+import LikeButton from './LikeButton';
 
 const BASE_WRITER_THEMES = {
     default: { id: 'default', name: 'Obsidian', bg: 'rgba(20, 20, 20, 0.6)', text: '#ffffff', border: '1px solid rgba(255,255,255,0.1)' },
@@ -31,11 +32,11 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
     const [isOverflowing, setIsOverflowing] = useState(false);
     const [showDetailModal, setShowDetailModal] = useState(false);
 
-    // Date formatter helper (duplicated for now to avoid props drilling complexity or external dep)
+    // Date formatter helper - MM/DD/YY
     const formatDate = (date) => {
         if (!date) return '';
         const d = new Date(date.seconds ? date.seconds * 1000 : date);
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
     };
 
     // Fallback content for older posts
@@ -45,7 +46,7 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
         const checkOverflow = () => {
             if (textBodyRef.current) {
                 // Check if scrollHeight is significantly larger than clientHeight
-                const overflowing = textBodyRef.current.scrollHeight > textBodyRef.current.clientHeight + 5;
+                const overflowing = textBodyRef.current.scrollHeight > textBodyRef.current.clientHeight + 15; // Increased tolerance
                 setIsOverflowing(overflowing);
             }
         };
@@ -92,12 +93,12 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                     background: theme.bg,
                     border: theme.border,
                     borderRadius: '12px',
-                    padding: '1.5rem',
+                    padding: '1.25rem', // Reduced padding
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '1rem',
+                    gap: '0.75rem', // Reduced gap
                     color: textColor,
                     zIndex: isExpanded ? 100 : 1, // Higher zIndex when expanded to overlay
                     overflow: isExpanded ? 'visible' : 'hidden', // Allow back button to float outside
@@ -107,7 +108,7 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                     // Strict height control: 100% matches the Grid Cell (Span 2) when collapsed
                     height: isExpanded ? 'auto' : (onResize ? '100%' : 'auto'),
                     maxHeight: isExpanded ? 'none' : (onResize ? 'none' : '320px'),
-                    minHeight: onResize ? '100%' : '160px',
+                    minHeight: onResize ? '100%' : '150px', // Matched Grid Row
                     justifyContent: 'space-between',
                 }}
                 onMouseEnter={e => { if (isOverflowing || onClick) e.currentTarget.style.transform = 'translateY(-4px)'; }}
@@ -152,17 +153,23 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                     </button>
                 )}
 
-                {/* Header: Author & Date */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.6, fontSize: '0.8rem', fontFamily: 'var(--font-family-mono)', flexShrink: 0 }}>
-                    <span>{renderCosmicUsername(post.authorName || post.username || 'Writer', textColor)}</span>
-                    <span>{formatDate(post.createdAt)}</span>
+                {/* Header: Author & Date & Like Button (Updated as requested) */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.6rem' }}>
+                        <span>{renderCosmicUsername(post.authorName || post.username || 'Writer', textColor)}</span>
+                        <span style={{ opacity: 0.5, fontFamily: 'var(--font-family-mono)', fontSize: '0.75rem', marginTop: '2px' }}>{formatDate(post.createdAt)}</span>
+                    </div>
+
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <LikeButton postId={post.id} enableRatings={post.enableRatings} showCount={true} />
+                    </div>
                 </div>
 
                 {/* Content Container - Flex grow to fill space */}
                 <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                     {post.title && (
                         <h3 style={{
-                            margin: '0 0 0.8rem 0',
+                            margin: '0 0 0.4rem 0', // Reduced margin
                             fontSize: '1.4rem',
                             fontFamily: '"Rajdhani", sans-serif',
                             fontWeight: '700',
@@ -191,14 +198,14 @@ const TextPostCard = ({ post, theme, textColor, onClick, navigate, contextPosts,
                         }}
                     >
                         {post.bodyRichText ? (
-                            <div style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                            <div style={{ overflowWrap: 'break-word', wordBreak: 'break-word', lineHeight: '1.35' }}>
                                 <RichTextRenderer content={post.bodyRichText} fontStyle={post.fontStyle} />
                             </div>
                         ) : (
                             <div style={{
                                 color: textColor,
                                 fontSize: '1rem',
-                                lineHeight: '1.6',
+                                lineHeight: '1.35', // Reduced line spacing
                                 fontFamily: 'var(--font-family-body)',
                                 whiteSpace: 'pre-line',
                                 opacity: 0.9,

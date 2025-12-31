@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -8,11 +9,9 @@ import { useCreateCollection } from '@/hooks/useCollections';
 import { db } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import exifr from 'exifr';
-// import { PRINT_PRODUCTS, PRINT_TIERS, calculateBundlePricing } from '@/domain/shop/pricing';
 import { getUserTier, USER_TIERS } from '@/core/services/firestore/monetization.service';
 import PaywallModal from '@/components/monetization/PaywallModal';
 import { logger } from '@/core/utils/logger';
-// const PRINT_SIZES = PRINT_PRODUCTS;
 
 import { createMagazine, calculateNextReleaseDate } from '@/services/magazineService';
 import ImageUploadPanel from '@/components/create-collection/ImageUploadPanel';
@@ -43,19 +42,20 @@ const CreateCollection = () => {
     const containerStyle = {
         maxWidth: layout.containerWidth === '100%' ? '100%' : layout.containerWidth,
         margin: '0 auto',
-        paddingLeft: layout.paddingX,
-        paddingRight: layout.paddingX,
-        paddingBottom: '6rem', // Always ensure space for bottom bar/scrolling
+        paddingLeft: isMobile ? '1rem' : layout.paddingX,
+        paddingRight: isMobile ? '1rem' : layout.paddingX,
+        paddingBottom: '8rem', // Extra space for mobile submit bar/scrolling
         width: '100%',
         boxSizing: 'border-box',
         minHeight: '100vh',
-        paddingTop: getSafeSpacing('top', layout.headerHeight)
+        // Standard spacing since Header is sticky (takes up space)
+        paddingTop: '1.5rem'
     };
 
     const gridStyle = {
         display: 'grid',
-        gridTemplateColumns: isMobile && !isLandscape ? '1fr' : '1fr 1fr',
-        gap: layout.gridGap && layout.gridGap !== '1px' ? layout.gridGap : (isMobile ? '2rem' : '3rem'),
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gap: isMobile ? '1.5rem' : (layout.gridGap && layout.gridGap !== '1px' ? layout.gridGap : '3rem'),
         alignItems: 'start'
     };
 
@@ -81,9 +81,6 @@ const CreateCollection = () => {
     const [description, setDescription] = useState('');
     const [visibility, setVisibility] = useState('public');
     const [postToFeed, setPostToFeed] = useState(true);
-    // const [showInStore, setShowInStore] = useState(false); // Removed
-    // const [productTier, setProductTier] = useState(PRINT_TIERS.ECONOMY); // Removed
-    // const [defaultSizeId, setDefaultSizeId] = useState('8x10'); // Removed
 
     // Magazine-specific state
     const [releaseFrequency, setReleaseFrequency] = useState('monthly');
@@ -154,8 +151,6 @@ const CreateCollection = () => {
                     aspectRatio: img.width / img.height,
                     width: img.width,
                     height: img.height,
-                    // sizeId: defaultSizeId, // Removed
-                    // sizeLabel: PRINT_SIZES.find(s => s.id === defaultSizeId)?.label || '8" × 10"' // Removed
                 };
             })
         );
@@ -318,23 +313,10 @@ const CreateCollection = () => {
                     exif: image.exif,
                     aspectRatio: image.aspectRatio,
                     storagePath: path,
-                    // sizeId: image.sizeId, // Removed
-                    // sizeLabel: image.sizeLabel // Removed
                 });
 
                 setUploadProgress(((i + 1) / images.length) * 100);
             }
-
-            // Bundle pricing removed
-            /*
-            const bundlePricing = calculateBundlePricing(
-                uploadedItems.map(item => ({
-                    sizeId: item.sizeId,
-                    sizeLabel: item.sizeLabel
-                })),
-                productTier
-            );
-            */
 
             const collectionData = {
                 type: creationMode, // 'collection' or 'gallery'
@@ -346,9 +328,6 @@ const CreateCollection = () => {
                 postRefs: [],
                 visibility,
                 postToFeed,
-                // productTier, // Removed
-                // bundlePricing, // Removed
-                // shopSettings: { showInStore: false } // Removed or explicitly false
             };
 
             const newCollection = await createCollection(collectionData);
@@ -396,21 +375,11 @@ const CreateCollection = () => {
                 ))}
             </div>
             <style>{`
-                @keyframes twinkle {
-                    0%, 100% { opacity: 0.3; transform: scale(1); }
-                    50% { opacity: 1; transform: scale(1.2); }
-                }
-            `}</style>
-
-            {/* 
-               Header now respects Safe Spacing via padding in parent or explicit margin
-               Since we are in a 'ps-page-overflow' (assuming it handles scrollTop), 
-               we might want absolute positioning or fixed header. 
-               The 'PageHeader' component likely handles its own positioning, 
-               but we should ensure it doesn't overlap. 
-               
-               Actually, PageHeader is usually fixed. 
-            */}
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.3; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.2); }
+            }
+        `}</style>
 
             <PageHeader
                 title={
@@ -420,25 +389,31 @@ const CreateCollection = () => {
                                 'Create Collection'
                 }
                 leftAction={
-                    <PSButton
-                        variant="ghost"
-                        size="md"
+                    <button
                         onClick={() => navigate(-1)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#fff',
+                            fontSize: '1.2rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '0.5rem'
+                        }}
                     >
-                        Cancel
-                    </PSButton>
+                        <FaArrowLeft />
+                    </button>
                 }
                 rightAction={
-                    <PSButton
-                        variant="mint"
-                        size="md"
-                        disabled={uploading || (creationMode !== 'museum' && creationMode !== 'magazine' && images.length === 0)}
-                        onClick={handleSubmit}
-                    >
-                        {uploading ? `${Math.round(uploadProgress)}%` : 'Create'}
-                    </PSButton>
+                    <div style={{ width: '2.5rem' }} /> // Dummy Spacer for centering
                 }
                 showProgress={uploading}
+                contentStyle={{
+                    paddingLeft: isMobile ? '0.5rem' : '0',
+                    paddingRight: isMobile ? '0.5rem' : '0'
+                }}
                 bottomSlot={
                     <ModeSelector
                         creationMode={creationMode}
@@ -446,9 +421,6 @@ const CreateCollection = () => {
                         noPadding={true}
                     />
                 }
-            // Pass layout config to PageHeader if it supports it, 
-            // or assume PageHeader handles basic top spacing. 
-            // We'll rely on the container's paddingTop for content spacing.
             />
 
             <div style={containerStyle}>
@@ -510,12 +482,6 @@ const CreateCollection = () => {
                                 setVisibility={setVisibility}
                                 postToFeed={postToFeed}
                                 setPostToFeed={setPostToFeed}
-                                /* showInStore={showInStore}
-                                setShowInStore={setShowInStore}
-                                productTier={productTier}
-                                setProductTier={setProductTier}
-                                defaultSizeId={defaultSizeId}
-                                setDefaultSizeId={setDefaultSizeId} */
                                 images={images}
                                 setImages={setImages}
                                 creationMode={creationMode}
@@ -530,12 +496,6 @@ const CreateCollection = () => {
                                 setVisibility={setVisibility}
                                 postToFeed={postToFeed}
                                 setPostToFeed={setPostToFeed}
-                                /* showInStore={showInStore}
-                                setShowInStore={setShowInStore}
-                                productTier={productTier}
-                                setProductTier={setProductTier}
-                                defaultSizeId={defaultSizeId}
-                                setDefaultSizeId={setDefaultSizeId} */
                                 images={images}
                                 setImages={setImages}
                                 creationMode={creationMode}
@@ -546,6 +506,8 @@ const CreateCollection = () => {
                     <SubmitBar
                         creationMode={creationMode}
                         images={images}
+                        onSubmit={handleSubmit}
+                        uploading={uploading}
                     />
                 </div>
             </div>

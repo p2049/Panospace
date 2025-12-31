@@ -191,10 +191,12 @@ const CreatePost = () => {
     const [contestRequirements, setContestRequirements] = useState({ camera: '', filmOnly: false, deadline: '' });
     const [eventSignalData, setEventSignalData] = useState({ location: '', time: '' });
 
-    // Safe Theme Lookup
-    const currentWriterTheme = useMemo(() => {
-        return WRITER_THEMES[writerTheme] || WRITER_THEMES.default;
-    }, [writerTheme]);
+    // Force Pings to be Social
+    useEffect(() => {
+        if (postType === 'text') {
+            setPrimaryMode('social');
+        }
+    }, [postType]);
 
     const getAvailableTextColors = useCallback((themeId) => {
         const theme = WRITER_THEMES[themeId] || WRITER_THEMES.default;
@@ -2690,7 +2692,7 @@ const CreatePost = () => {
                         height: auto !important;
                         overflow: visible;
                         padding: 1.5rem;
-                        padding-top: max(1.5rem, env(safe-area-inset-top));
+                        padding-top: max(3.5rem, env(safe-area-inset-top)); /* Increased padding for banner */
                         padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
                         gap: 1.5rem;
                         max-width: 100vw;
@@ -2703,16 +2705,19 @@ const CreatePost = () => {
                         width: 100%;
                         max-width: 100%;
                     }
-                    /* Move form to top on mobile portrait - REMOVED to keep Photos below Title (via duplication) */
-                    /* .form-column { order: -1; } */
+                    /* Move form to top on mobile portrait - ENABLED for Text Mode prioritization */
+                    .form-column { order: -1; }
                     
                     .create-post-container {
-                        position: relative !important; /* 🔓 UNLOCK FOR MOBILE SCROLL */
-                        overflow-x: hidden;
-                        overflow-y: auto;
-                        height: auto !important;
-                        min-height: 100dvh;
+                        position: fixed !important; /* 🔒 FIX FOR MOBILE SCROLL */
+                        inset: 0 !important;
+                        overflow-x: hidden !important;
+                        overflow-y: auto !important;
+                        height: 100dvh !important;
+                        display: flex !important;
+                        flex-direction: column;
                         padding-bottom: 80px; /* Space for mobile nav if needed */
+                        background: var(--black);
                     }
                     
                     /* Carousel Sizing - 16:9 Aspect Ratio */

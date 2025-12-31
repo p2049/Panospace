@@ -39,6 +39,7 @@ import { useLayoutEngine } from '@/core/responsive/useLayoutEngine';
 import SmartImage from '@/components/SmartImage';
 import ListViewContainer from '@/components/feed/ListViewContainer';
 import Post from '@/components/Post';
+import QuickPing from '@/components/feed/QuickPing';
 import { renderCosmicUsername } from '@/utils/usernameRenderer';
 import { BRAND_RAINBOW } from '@/core/constants/colorPacks';
 
@@ -881,68 +882,125 @@ const Profile = () => {
                             // Removed box shadow per user request
                         }
 
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => {
-                                    if (tab.id === 'posts' && activeTab === 'posts') {
-                                        toggleFeed();
-                                    } else {
-                                        setActiveTab(tab.id);
-                                    }
-                                }}
-                                style={{
-                                    flex: '0 0 auto',
-                                    height: isMobile ? '1.5rem' : '2rem', // Match username height (1.5rem)
-                                    // Use only longhand padding to avoid React style warning
-                                    paddingTop: '2px', // Micro-adjustment for visual centering of all-caps font
-                                    paddingBottom: '0',
-                                    paddingLeft: isMobile ? '12px' : '1.5rem',
-                                    paddingRight: isMobile ? '12px' : '1.5rem',
-                                    boxSizing: 'border-box',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    fontSize: isMobile ? '0.75rem' : '0.9rem',
-                                    lineHeight: '1',
-                                    fontWeight: isSelected ? '700' : '500',
-                                    fontFamily: 'var(--font-family-heading)',
-                                    letterSpacing: '0.05em',
-                                    textTransform: 'uppercase',
-                                    ...tabStyle
-                                }}
-                            >
-                                <Icon
-                                    size={tab.id === 'cards' ? (isMobile ? 24 : 28) : (isMobile ? 13 : 16)}
-                                    style={{ color: isSelected && isGradient ? user.profileTheme?.starColor : 'inherit' }}
-                                />
-                                {tab.label}
+                        // Handle Create Action based on active tab
+                        const handleCreateAction = () => {
+                            switch (tab.id) {
+                                case 'posts':
+                                    navigate('/create');
+                                    break;
+                                case 'writings':
+                                    navigate('/create', { state: { initialPostType: 'text' } });
+                                    break;
+                                case 'collections':
+                                    navigate('/create-collection');
+                                    break;
+                                case 'shop':
+                                    navigate('/create-post');
+                                    break;
+                                case 'gallery':
+                                    setShowCreateMuseumModal(true);
+                                    break;
+                                case 'cards':
+                                    setShowCreateCardModal(true);
+                                    break;
+                                default:
+                                    navigate('/create');
+                            }
+                        };
 
-                                {/* Feed Switcher - Only next to Posts tab */}
-                                {tab.id === 'posts' && (
-                                    <div
+                        return (
+                            <React.Fragment key={tab.id}>
+                                {/* Quick Create Action Button (Left of active tab) */}
+                                {isOwnProfile && isSelected && (
+                                    <button
                                         onClick={(e) => {
-                                            e.stopPropagation(); // Prevent tab switching if clicked directly (though we are on buttons)
-                                            toggleFeed();
+                                            e.stopPropagation();
+                                            handleCreateAction();
                                         }}
                                         style={{
-                                            marginLeft: '6px',
-                                            display: 'inline-flex',
+                                            width: isMobile ? '1.5rem' : '1.75rem',
+                                            height: isMobile ? '1.5rem' : '1.75rem',
+                                            borderRadius: '6px',
+                                            background: 'rgba(255, 255, 255, 0.1)',
+                                            border: `1px solid ${usernameColor.includes('gradient') ? 'rgba(255,255,255,0.3)' : usernameColor}`,
+                                            color: usernameColor.includes('gradient') ? '#fff' : usernameColor,
+                                            display: 'flex',
                                             alignItems: 'center',
-                                            padding: '4px',
+                                            justifyContent: 'center',
                                             cursor: 'pointer',
-                                            opacity: isSelected ? 1 : 0.5,
+                                            marginRight: '0.25rem', // Space between + and tab
                                             transition: 'transform 0.2s',
+                                            flexShrink: 0
                                         }}
-                                        title={`Current: ${feedType.charAt(0).toUpperCase() + feedType.slice(1)} Orbit. Click to switch.`}
+                                        title={`Create new ${tab.label}`}
+                                        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+                                        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                                     >
-                                        {feedType === 'art' ? <FaPalette size={14} /> : (feedType === 'social' ? <FaUserPlus size={14} /> : <FaTh size={14} />)}
-                                    </div>
+                                        <FaPlus size={10} />
+                                    </button>
                                 )}
-                            </button>
+
+                                <button
+                                    onClick={() => {
+                                        if (tab.id === 'posts' && activeTab === 'posts') {
+                                            toggleFeed();
+                                        } else {
+                                            setActiveTab(tab.id);
+                                        }
+                                    }}
+                                    style={{
+                                        flex: '0 0 auto',
+                                        height: isMobile ? '1.5rem' : '2rem', // Match username height (1.5rem)
+                                        // Use only longhand padding to avoid React style warning
+                                        paddingTop: '2px', // Micro-adjustment for visual centering of all-caps font
+                                        paddingBottom: '0',
+                                        paddingLeft: isMobile ? '12px' : '1.5rem',
+                                        paddingRight: isMobile ? '12px' : '1.5rem',
+                                        boxSizing: 'border-box',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: isMobile ? '0.75rem' : '0.9rem',
+                                        lineHeight: '1',
+                                        fontWeight: isSelected ? '700' : '500',
+                                        fontFamily: 'var(--font-family-heading)',
+                                        letterSpacing: '0.05em',
+                                        textTransform: 'uppercase',
+                                        ...tabStyle
+                                    }}
+                                >
+                                    <Icon
+                                        size={tab.id === 'cards' ? (isMobile ? 24 : 28) : (isMobile ? 13 : 16)}
+                                        style={{ color: isSelected && isGradient ? user.profileTheme?.starColor : 'inherit' }}
+                                    />
+                                    {tab.label}
+
+                                    {/* Feed Switcher - Only next to Posts tab */}
+                                    {tab.id === 'posts' && (
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevent tab switching if clicked directly (though we are on buttons)
+                                                toggleFeed();
+                                            }}
+                                            style={{
+                                                marginLeft: '6px',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                padding: '4px',
+                                                cursor: 'pointer',
+                                                opacity: isSelected ? 1 : 0.5,
+                                                transition: 'transform 0.2s',
+                                            }}
+                                            title={`Current: ${feedType.charAt(0).toUpperCase() + feedType.slice(1)} Orbit. Click to switch.`}
+                                        >
+                                            {feedType === 'art' ? <FaPalette size={14} /> : (feedType === 'social' ? <FaUserPlus size={14} /> : <FaTh size={14} />)}
+                                        </div>
+                                    )}
+                                </button>
+                            </React.Fragment>
                         );
                     })}
                 </div>
@@ -1015,6 +1073,11 @@ const Profile = () => {
                 {/* Writings Tab - Text Posts Only */}
                 {activeTab === 'writings' && (
                     <>
+                        {isOwnProfile && (
+                            <div style={{ maxWidth: '600px', margin: '0 auto 2rem auto', width: '100%' }}>
+                                <QuickPing onPostSuccess={() => window.location.reload()} />
+                            </div>
+                        )}
                         {(!textPosts || textPosts.length === 0) ? (
                             <div style={{
                                 textAlign: 'center',

@@ -78,12 +78,16 @@ export const usePersonalizedFeed = ({
         setError(null);
     }, [feedType, JSON.stringify(options), scope, content, postType, customFeedEnabled, activeCustomFeedId, prioritizeFollowing]);
 
-    const fetchPosts = useCallback(async (isRefresh = false) => {
-        // Prevent multiple simultaneous fetches unless it's a forced refresh
-        if (loading && !isRefresh) return;
+    const fetchPosts = useCallback(async (isRefresh = false, retryCount = 0) => {
+        // Prevent multiple simultaneous fetches unless it's a forced refresh or a meaningful retry
+        if (loading && !isRefresh && retryCount === 0) return;
 
         // DEBUG: Trace execution
-        logger.log('Feed: fetchPosts called', { scope, content, postType, loading, followingLoading });
+        if (retryCount === 0) {
+            logger.log('Feed: fetchPosts called', { scope, content, postType, loading, followingLoading });
+        } else {
+            logger.log(`Feed: Auto-Retry filtering gap (Attempt ${retryCount})`);
+        }
 
         // Wait for dependencies
         if (customFeedEnabled && (configLoading || !customFeedConfig)) {
@@ -96,7 +100,7 @@ export const usePersonalizedFeed = ({
         }
 
         try {
-            setLoading(true);
+            if (retryCount === 0) setLoading(true);
             if (isRefresh) {
                 setRefreshing(true);
                 setError(null);
@@ -125,7 +129,16 @@ export const usePersonalizedFeed = ({
 
             // Mobile optimization: smaller batch sizes for faster first paint
             const isMobile = typeof window !== 'undefined' && (window.innerWidth <= 768 || /Mobi|Android|iPhone/i.test(navigator.userAgent));
-            let limitSize = isFollowing ? (isMobile ? 20 : 50) : (isMobile ? 30 : 100);
+
+            // INCREASED LIMITS to prevent memory-filter starvation
+            // Use larger limits for retries to break through sparse areas faster
+            let limitSize = isFollowing ? (isMobile ? 30 : 50) : (isMobile ? 50 : 150);
+            if (retryCount > 0) limitSize = 100; // Efficient retry batch size
+
+            // STABILITY: Text posts are sparse. When filtering for them in mixed feeds (Following),
+            // we need a larger batch to find them among images.
+            if (postType === 'text') limitSize = Math.max(limitSize, 100);
+
             let constraints = [];
 
             // 1. STRATEGY: Following
@@ -161,25 +174,16 @@ export const usePersonalizedFeed = ({
                 else if (feedType === 'CITY' && options.cityName) constraints.unshift(where('city', '==', options.cityName));
                 else if (feedType === 'EVENT' && options.eventId) constraints.unshift(where('eventId', '==', options.eventId));
 
-                // Apply Post Type Filter (Firestore) - CRITICAL FIX
-                // Only filter if not requesting everything
-                if (!isAllPostType) {
-                    if (postType === 'text') {
-                        constraints.unshift(where('postType', '==', 'text'));
-                    } else if (postType === 'visual') {
-                        // For 'visual', we want standard posts AND legacy posts (missing field)
-                        // Firestore doesn't support "where field != value" efficiently mixed with other where clauses without composite indexes usually.
-                        // However, since 'text' is a specific opt-in type, we can filter for 'postType' != 'text' effectively by just filtering IN memory 
-                        // OR if we strictly assume all visuals have postType 'image' / 'visual'.
-                        // Safest approach: Don't filter 'visual' at DB level to capture legacy posts, filter in memory.
-                        // BUT user complains sorting is messed up. If we pull mixed data and filter 50% out, pagination breaks.
-
-                        // Let's rely on the memory filter for 'visual' to be safe for legacy, 
-                        // BUT for 'text' we MUST filter at DB level because they are sparse.
-                    }
-                }
-
                 logger.log('Feed: Strategy GLOBAL (Permissive)');
+            }
+
+            // GLOBAL FILTER: Apply Post Type Filter (Firestore)
+            // Critical for 'text' (pings) because they are sparse.
+            // If we don't filter at DB level, we fetch 50 images and filter them all out in memory.
+            if (postType === 'text') {
+                // Insert at start to optimize query? Or just push?
+                // Order matters for some composite indexes but usually equality first is good.
+                constraints.unshift(where('postType', '==', 'text'));
             }
 
             // Pagination
@@ -230,16 +234,18 @@ export const usePersonalizedFeed = ({
 
             // 1. Content Type (Art/Social/All)
             if (!isAllContent) {
+                // strict filter only if user explicitly asked for one type
                 if (content === 'social') newPosts = newPosts.filter(p => p.type === 'social');
                 else if (content === 'art') newPosts = newPosts.filter(p => p.type === 'art');
             }
 
-            // 2. Post Type (Visual/Ping/All) - Memory filter is safest
+            // 2. Post Type (Visual/Ping/All)
             if (!isAllPostType) {
+                // strict filter only if user explicitly asked for one type
                 if (postType === 'text') {
                     newPosts = newPosts.filter(p => p.postType === 'text');
                 } else if (postType === 'visual') {
-                    // Treat undefined/null postType as visual (Legacy support)
+                    // Be permissive: Allow explicit 'visual' OR legacy items (undefined)
                     newPosts = newPosts.filter(p => !p.postType || p.postType !== 'text');
                 }
             }
@@ -306,7 +312,24 @@ export const usePersonalizedFeed = ({
                 lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
             }
 
-            setHasMore(snapshot.docs.length >= limitSize);
+            // AUTO-RETRY LOGIC: If filtered result is empty but DB has more, fetch again
+            const hasMoreInDb = snapshot.docs.length >= limitSize;
+
+            if (newPosts.length === 0 && hasMoreInDb && retryCount < 5) {
+                return fetchPosts(false, retryCount + 1);
+            }
+
+            setHasMore(hasMoreInDb);
+
+            if (isRefresh) {
+                setPosts(newPosts);
+            } else {
+                setPosts(prev => {
+                    const existingIds = new Set(prev.map(p => p.id));
+                    const uniqueNew = newPosts.filter(p => !existingIds.has(p.id));
+                    return [...prev, ...uniqueNew];
+                });
+            }
 
         } catch (err) {
             logger.error('Feed error:', err);

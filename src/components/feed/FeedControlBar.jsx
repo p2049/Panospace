@@ -81,12 +81,12 @@ const FeedControlBar = () => {
     };
 
     const buttonStyle = (isActive) => ({
-        padding: isMobile ? '6px 10px' : '7px 14px',
+        padding: isMobile ? '10px 14px' : '7px 14px', // Increased mobile padding
         borderRadius: '8px',
         border: '1px solid transparent',
         background: 'transparent',
         color: 'rgba(255,255,255,0.6)',
-        fontSize: isMobile ? '0.65rem' : '0.8rem',
+        fontSize: isMobile ? '0.9rem' : '0.8rem', // Increased mobile font size
         fontWeight: '600',
         letterSpacing: '0.05em',
         cursor: 'pointer',
@@ -97,7 +97,7 @@ const FeedControlBar = () => {
         whiteSpace: 'nowrap',
         minWidth: isMobile ? 'auto' : '85px',
         fontFamily: "'Orbitron', sans-serif",
-        gap: isMobile ? '3px' : '6px'
+        gap: isMobile ? '5px' : '6px'
     });
 
     const hexToRgb = (hex) => {
@@ -117,12 +117,12 @@ const FeedControlBar = () => {
         justifyContent: 'flex-end',
         height: '100%',
         position: 'relative',
-        paddingTop: isMobile ? '20px' : '24px' // Increased from 14/18 to create more separation from ALL button
+        paddingTop: isMobile ? '24px' : '24px' // Adjusted for better mobile spacing with larger buttons
     };
 
     const bothButtonStyle = (isActive) => ({
-        fontSize: isMobile ? '0.55rem' : '0.65rem',
-        padding: isMobile ? '3px 8px' : '3px 12px',
+        fontSize: isMobile ? '0.75rem' : '0.65rem', // Enlarged mobile font
+        padding: isMobile ? '5px 12px' : '3px 12px', // Enlarged mobile padding
         background: isActive ? `rgba(${hexToRgb(COLORS.mint)}, 0.1)` : 'transparent',
         border: 'none',
         borderRadius: '4px',
@@ -136,14 +136,14 @@ const FeedControlBar = () => {
         textShadow: isActive ? `0 0 10px ${COLORS.mint}` : 'none',
         display: 'flex',
         alignItems: 'center',
-        gap: isMobile ? '2px' : '4px',
+        gap: isMobile ? '4px' : '4px',
         fontFamily: "'Orbitron', sans-serif",
         transform: isActive ? 'scale(1.05)' : 'scale(1)'
     });
 
     const pillContainerStyle = {
         display: 'flex',
-        gap: isMobile ? '2px' : '4px',
+        gap: isMobile ? '4px' : '4px',
         background: 'rgba(255,255,255,0.05)',
         borderRadius: '8px',
         padding: '2px',
@@ -160,8 +160,8 @@ const FeedControlBar = () => {
             background: active ? `rgba(${hexToRgb(activeColor)}, 0.15)` : 'transparent',
             color: color,
             boxShadow: isSelected ? `0 0 12px ${activeColor}30` : 'none',
-            fontSize: isMobile ? '0.6rem' : '0.7rem',
-            padding: isMobile ? '5px 8px' : '7px 14px',
+            fontSize: isMobile ? '0.8rem' : '0.7rem', // Larger mobile font
+            padding: isMobile ? '8px 12px' : '7px 14px', // Larger mobile padding
             minWidth: isMobile ? 'auto' : '85px'
         };
     };
@@ -170,12 +170,15 @@ const FeedControlBar = () => {
         <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            gap: isMobile ? '8px' : '16px',
-            width: 'auto',
-            margin: '0 auto',
+            justifyContent: isMobile ? 'center' : 'center', // Center content within the padded area
+            paddingLeft: isMobile ? '90px' : '0', // Logo Clearance
+            paddingRight: isMobile ? '120px' : '0', // Popout Menu Clearance (Shift Left)
+            gap: isMobile ? '2px' : '16px',
+            width: isMobile ? '100%' : 'auto',
+            margin: isMobile ? '0' : '0 auto',
             height: 'auto',
-            padding: '2px 0 8px 0',
+            paddingTop: '2px',
+            paddingBottom: '8px',
             background: 'transparent',
             boxSizing: 'border-box'
         }}>
@@ -183,36 +186,36 @@ const FeedControlBar = () => {
             {/* Scope Group */}
             <div style={{
                 ...groupContainerStyle,
-                paddingTop: isMobile ? '28px' : '34px' // Substantially increased gap
+                paddingTop: isMobile ? '36px' : '34px'
             }}>
                 <button
                     onClick={() => setFeedScope(feedScope === 'all' ? 'global' : 'all')}
                     style={bothButtonStyle(feedScope === 'all')}
                 >
-                    <FiLayers size={isMobile ? 8 : 10} /> ALL
+                    <FiLayers size={isMobile ? 12 : 10} /> ALL
                 </button>
                 <div style={pillContainerStyle}>
                     <button
                         onClick={() => setFeedScope('following')}
                         style={getPillStyle(feedScope === 'following', feedScope === 'all', COLORS.lightPink)}
                     >
-                        <FiUsers size={isMobile ? 10 : 12} /> {isMobile ? '' : 'ADDED'}
+                        <FiUsers size={isMobile ? 16 : 12} /> {isMobile ? '' : 'ADDED'}
                     </button>
                     <button
                         onClick={() => setFeedScope('global')}
                         style={getPillStyle(feedScope === 'global', feedScope === 'all', COLORS.ionBlue)}
                     >
-                        <FiGlobe size={isMobile ? 10 : 12} /> {isMobile ? '' : 'GLOBAL'}
+                        <FiGlobe size={isMobile ? 16 : 12} /> {isMobile ? '' : 'GLOBAL'}
                     </button>
                 </div>
             </div>
 
-            <div style={{ width: '1px', height: isMobile ? '14px' : '18px', background: 'rgba(255,255,255,0.1)', marginBottom: isMobile ? '6px' : '8px' }} />
+            <div style={{ width: '1px', height: isMobile ? '20px' : '18px', background: 'rgba(255,255,255,0.1)', marginBottom: isMobile ? '6px' : '8px' }} />
 
             {/* Content Group */}
             <div style={{
                 ...groupContainerStyle,
-                paddingTop: isMobile ? '28px' : '34px'
+                paddingTop: isMobile ? '36px' : '34px'
             }}>
                 <button
                     onClick={() => {
@@ -224,7 +227,7 @@ const FeedControlBar = () => {
                     }}
                     style={bothButtonStyle(feedContentType === 'all')}
                 >
-                    <FiLayers size={isMobile ? 8 : 10} /> ALL
+                    <FiLayers size={isMobile ? 12 : 10} /> ALL
                 </button>
                 <div style={pillContainerStyle}>
                     <button
@@ -237,42 +240,42 @@ const FeedControlBar = () => {
                         }}
                         style={getPillStyle(feedContentType === 'art', feedContentType === 'all', COLORS.pink)}
                     >
-                        <FiImage size={isMobile ? 10 : 12} /> {isMobile ? '' : 'ART'}
+                        <FiImage size={isMobile ? 16 : 12} /> {isMobile ? '' : 'ART'}
                     </button>
                     <button
                         onClick={() => setFeedContentType('social')}
                         style={getPillStyle(feedContentType === 'social', feedContentType === 'all', COLORS.mint)}
                     >
-                        <FiMessageSquare size={isMobile ? 10 : 12} /> {isMobile ? '' : 'SOCIAL'}
+                        <FiMessageSquare size={isMobile ? 16 : 12} /> {isMobile ? '' : 'SOCIAL'}
                     </button>
                 </div>
             </div>
 
-            <div style={{ width: '1px', height: isMobile ? '14px' : '18px', background: 'rgba(255,255,255,0.1)', marginBottom: isMobile ? '6px' : '8px' }} />
+            <div style={{ width: '1px', height: isMobile ? '20px' : '18px', background: 'rgba(255,255,255,0.1)', marginBottom: isMobile ? '6px' : '8px' }} />
 
             {/* List Group */}
             <div style={{
                 ...groupContainerStyle,
-                paddingTop: isMobile ? '28px' : '34px'
+                paddingTop: isMobile ? '36px' : '34px'
             }}>
                 <button
                     onClick={() => setListFilter(listFilter === 'all' ? 'visual' : 'all')}
                     style={bothButtonStyle(listFilter === 'all')}
                 >
-                    <FiLayers size={isMobile ? 8 : 10} /> ALL
+                    <FiLayers size={isMobile ? 12 : 10} /> ALL
                 </button>
                 <div style={pillContainerStyle}>
                     <button
                         onClick={() => setListFilter('visual')}
                         style={getPillStyle(listFilter === 'visual', listFilter === 'all', COLORS.blue)}
                     >
-                        <FiEye size={isMobile ? 10 : 12} /> {isMobile ? '' : 'VISUAL'}
+                        <FiEye size={isMobile ? 16 : 12} /> {isMobile ? '' : 'VISUAL'}
                     </button>
                     <button
                         onClick={() => setListFilter('text')}
                         style={getPillStyle(listFilter === 'text', listFilter === 'all', COLORS.purple)}
                     >
-                        <FiHash size={isMobile ? 10 : 12} /> {isMobile ? '' : 'PINGS'}
+                        <FiHash size={isMobile ? 16 : 12} /> {isMobile ? '' : 'PINGS'}
                     </button>
                 </div>
             </div>

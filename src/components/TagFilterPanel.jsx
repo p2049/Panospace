@@ -78,8 +78,8 @@ const TagFilterPanel = ({
                 borderRadius: '12px',
                 border: '1px solid rgba(127, 255, 212, 0.3)',
                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(127, 255, 212, 0.05)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
+                /* backdropFilter: 'blur(12px)', Removed for iOS stability */
+                /* WebkitBackdropFilter: 'blur(12px)', Removed for iOS stability */
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
                 width: '100%',
@@ -244,7 +244,7 @@ const TagFilterPanel = ({
                                                     boxShadow: isSelected ? '0 0 15px rgba(127, 255, 212, 0.15), inset 0 0 10px rgba(127, 255, 212, 0.05)' : 'none',
                                                     position: 'relative',
                                                     overflow: 'visible',
-                                                    backdropFilter: 'blur(5px)',
+                                                    /* backdropFilter: 'blur(5px)', Removed for iOS stability */
                                                     minWidth: 'fit-content',
                                                     width: 'auto'
                                                 }}

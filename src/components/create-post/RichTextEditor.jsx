@@ -88,7 +88,7 @@ export const EditorToolbar = ({ editor }) => {
             background: 'rgba(20, 20, 20, 0.98)',
             position: 'relative', /* Changed from sticky to relative per user request */
             zIndex: 10,
-            backdropFilter: 'blur(15px)',
+            /* backdropFilter: 'blur(15px)', Removed for iOS stability */
             borderTopLeftRadius: '12px',
             borderTopRightRadius: '12px',
             alignItems: 'center',
@@ -206,7 +206,7 @@ export const EditorCanvas = ({ editor, limit = 3000 }) => {
                     borderRadius: '4px 0 0 0',
                     pointerEvents: 'none',
                     zIndex: 20,
-                    backdropFilter: 'blur(4px)',
+                    /* backdropFilter: 'blur(4px)', Removed for iOS stability */
                     borderTop: '1px solid rgba(255,255,255,0.1)',
                     borderLeft: '1px solid rgba(255,255,255,0.1)'
                 }}>

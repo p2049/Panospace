@@ -119,7 +119,7 @@ const QuickPing = ({ onPostSuccess }) => {
             title: title.trim(),
             body: body.trim(),
             postType: 'text',
-            type: 'social', // Pings are social
+            type: 'social', // Pings are strictly SOCIAL posts
             writerTextColor: selectedTextColor,
             atmosphereBackground: selectedColor.isGradient ? selectedColor.color : 'black',
             tags: isSignal ? ['ping', 'Signal'] : ['ping'],
@@ -139,7 +139,7 @@ const QuickPing = ({ onPostSuccess }) => {
             setIsSignal(false);
             // Small delay to allow Firestore to index the new document before refreshing
             if (onPostSuccess) {
-                setTimeout(() => onPostSuccess(), 500);
+                setTimeout(() => onPostSuccess(), 1000);
             }
         } catch (error) {
             console.error('Quick Ping failed:', error);
@@ -168,8 +168,8 @@ const QuickPing = ({ onPostSuccess }) => {
             return { background: selectedColor.color };
         }
         return {
-            background: fadeColor(selectedColor.color, 0.15),
-            border: `1px solid ${fadeColor(selectedColor.color, 0.3)}`
+            background: fadeColor(selectedColor.color, 0.25), // Increased opacity for better color visibility
+            border: `1px solid ${selectedColor.color}` // Use full color for border
         };
     };
 
@@ -197,7 +197,7 @@ const QuickPing = ({ onPostSuccess }) => {
                     position: 'relative',
                     overflow: 'hidden',
                     backdropFilter: 'blur(10px)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+                    boxShadow: `0 8px 32px ${fadeColor(selectedColor.color, 0.2)}` // Colored shadow
                 }}
             >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -277,7 +277,7 @@ const QuickPing = ({ onPostSuccess }) => {
                             padding: '2px 0'
                         }}
                     >
-                        {FREE_COLOR_PACK.filter(c => c.id !== 'brand-colors' && c.id !== 'transparent').map((color) => (
+                        {FREE_COLOR_PACK.filter(c => !['brand-colors', 'transparent', 'clear'].includes(c.id)).map((color) => (
                             <button
                                 key={color.id}
                                 onClick={() => setSelectedColor(color)}
@@ -291,10 +291,10 @@ const QuickPing = ({ onPostSuccess }) => {
                                         : 'transparent',
                                     backdropFilter: selectedColor.id === color.id ? 'blur(2px)' : 'none',
                                     border: selectedColor.id === color.id
-                                        ? `2px solid ${(color.color.includes('gradient')) ? '#fff' : color.color}`
+                                        ? ((color.color === '#000000' || color.id === 'event-horizon-black') ? '2px solid #7FFFD4' : (color.color.includes('gradient') ? '2px solid #fff' : `2px solid ${color.color}`))
                                         : '1px solid rgba(255,255,255,0.2)',
                                     boxShadow: selectedColor.id === color.id
-                                        ? `0 0 10px ${(color.color.includes('gradient')) ? 'rgba(255,255,255,0.5)' : (color.color === '#000000' ? '#7FFFD4' : color.color)}`
+                                        ? ((color.color === '#000000' || color.id === 'event-horizon-black') ? '0 0 10px rgba(127, 255, 212, 0.5)' : (color.color.includes('gradient') ? '0 0 10px rgba(255,255,255,0.5)' : `0 0 10px ${color.color}`))
                                         : 'none',
                                     cursor: 'pointer',
                                     padding: 0,
@@ -309,7 +309,8 @@ const QuickPing = ({ onPostSuccess }) => {
                                     height: selectedColor.id === color.id ? '10px' : '100%',
                                     borderRadius: '50%',
                                     background: color.color,
-                                    boxShadow: color.color === '#000000' ? '0 0 4px rgba(127, 255, 212, 0.5)' : 'none',
+                                    border: (color.color === '#000000' || color.id === 'event-horizon-black') ? '1px solid #333' : 'none', // Ensure black circle is visible if unselected
+                                    boxShadow: (color.color === '#000000' || color.id === 'event-horizon-black') ? '0 0 4px rgba(127, 255, 212, 0.5)' : 'none',
                                     transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                                 }} />
                             </button>

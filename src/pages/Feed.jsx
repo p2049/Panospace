@@ -58,14 +58,15 @@ const Feed = () => {
         feedFilters: {
             scope: feedScope,
             content: feedContentType,
-            // STABILITY FIX: In Visual Mode (image), always request visuals. 
-            // In List Mode, respect the user's listFilter toggle.
-            postType: feedViewMode === 'image' ? 'visual' : (listFilter === 'all' ? 'both' : listFilter)
+            // STABILITY FIX: Request 'both' for Visual feed too, to ensure we catch all visual posts
+            // (including legacy ones) and let the client-side filter handle the 'text' exclusion.
+            // This prevents "missing posts" that might be mis-indexed in the DB.
+            postType: feedViewMode === 'image' ? 'both' : (listFilter === 'all' ? 'both' : listFilter)
         },
         customFeedEnabled,
         activeCustomFeedId,
-        // Prioritize following on the 'regular' Visual Feed as requested
-        prioritizeFollowing: feedViewMode === 'image'
+        // Disable forced following prioritization for now to ensure user sees "Most Recent" as expected
+        prioritizeFollowing: false
     });
 
 
